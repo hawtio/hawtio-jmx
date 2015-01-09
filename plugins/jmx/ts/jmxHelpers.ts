@@ -72,7 +72,9 @@ module Core {
  */
 module Jmx {
 
-  export var log:Logging.Logger = Logger.get("JMX");
+  export var pluginName = 'hawtio-jmx';
+  export var log:Logging.Logger = Logger.get(pluginName);
+  export var currentProcessId = '';
 
   var attributesToolBars = {};
 

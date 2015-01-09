@@ -1239,7 +1239,9 @@ var Core;
  */
 var Jmx;
 (function (Jmx) {
-    Jmx.log = Logger.get("JMX");
+    Jmx.pluginName = 'hawtio-jmx';
+    Jmx.log = Logger.get(Jmx.pluginName);
+    Jmx.currentProcessId = '';
     var attributesToolBars = {};
     function findLazyLoadingFunction(workspace, folder) {
         var factories = workspace.jmxTreeLazyLoadRegistry[folder.domain];
@@ -1581,9 +1583,7 @@ var Jmx;
 /// <reference path="workspace.ts"/>
 var Jmx;
 (function (Jmx) {
-    var pluginName = 'jmx';
-    Jmx.currentProcessId = '';
-    Jmx._module = angular.module(pluginName, []);
+    Jmx._module = angular.module(Jmx.pluginName, []);
     Jmx._module.config(["$routeProvider", function ($routeProvider) {
         $routeProvider.when('/jmx/attributes', { templateUrl: 'app/jmx/html/attributes.html' }).when('/jmx/operations', { templateUrl: 'app/jmx/html/operations.html' }).when('/jmx/charts', { templateUrl: 'app/jmx/html/charts.html' }).when('/jmx/chartEdit', { templateUrl: 'app/jmx/html/chartEdit.html' }).when('/jmx/help/:tabName', { templateUrl: 'app/core/html/help.html' }).when('/jmx/widget/donut', { templateUrl: 'app/jmx/html/donutChart.html' }).when('/jmx/widget/area', { templateUrl: 'app/jmx/html/areaChart.html' });
     }]);
@@ -1596,18 +1596,9 @@ var Jmx;
     // Create the workspace object used in all kinds of places
     Jmx._module.factory('workspace', ["$location", "jmxTreeLazyLoadRegistry", "$compile", "$templateCache", "localStorage", "jolokia", "jolokiaStatus", "$rootScope", "userDetails", function ($location, jmxTreeLazyLoadRegistry, $compile, $templateCache, localStorage, jolokia, jolokiaStatus, $rootScope, userDetails) {
         var answer = new Workspace(jolokia, jolokiaStatus, jmxTreeLazyLoadRegistry, $location, $compile, $templateCache, localStorage, $rootScope, userDetails);
-        answer.loadTree();
+        // TODO we should try and let this be async
+        //answer.loadTree();
         return answer;
-    }]);
-    Jmx._module.service('ConnectOptions', ['$location', function ($location) {
-        var connectionName = Core.ConnectionName;
-        if (!Core.isBlank(connectionName)) {
-            var answer = Core.getConnectOptions(connectionName);
-            Jmx.log.debug("ConnectOptions: ", answer);
-            return answer;
-        }
-        Jmx.log.debug("No connection options, connected to local JVM");
-        return null;
     }]);
     // local storage service to wrap the HTML5 browser storage
     Jmx._module.service('localStorage', function () {
@@ -1617,6 +1608,9 @@ var Jmx;
     Jmx._module.factory('viewRegistry', function () {
         return {};
     });
+    // TODO placeholders for now
+    Jmx._module.constant('layoutTree', '');
+    Jmx._module.constant('layoutFull', '');
     // the jolokia URL we're connected to, could probably be a constant
     Jmx._module.factory('jolokiaUrl', function () {
         // TODO
@@ -1650,10 +1644,27 @@ var Jmx;
     Jmx._module.factory('jmxTreeLazyLoadRegistry', function () {
         return Core.lazyLoaders;
     });
+    // TODO placeholder
     Jmx._module.factory('userDetails', function () {
         return {
             username: '',
             password: ''
+        };
+    });
+    // TODO placeholder
+    Jmx._module.factory('helpRegistry', function () {
+        return {
+            addUserDoc: function () {
+            },
+            addDevDoc: function () {
+            }
+        };
+    });
+    // TODO placeholder
+    Jmx._module.factory('preferencesRegistry', function () {
+        return {
+            addTab: function () {
+            }
         };
     });
     Jmx._module.run(["$location", "workspace", "viewRegistry", "layoutTree", "jolokia", "helpRegistry", function ($location, workspace, viewRegistry, layoutTree, jolokia, helpRegistry) {
@@ -1710,7 +1721,7 @@ var Jmx;
             href: function () { return "#/jmx/chartEdit"; }
         });
     }]);
-    hawtioPluginLoader.addModule(pluginName);
+    hawtioPluginLoader.addModule(Jmx.pluginName);
 })(Jmx || (Jmx = {}));
 
 /**
@@ -4033,6 +4044,16 @@ var JVM;
         $routeProvider.when('/jvm/discover', { templateUrl: JVM.templatePath + 'discover.html' }).when('/jvm/connect', { templateUrl: JVM.templatePath + 'connect.html' }).when('/jvm/local', { templateUrl: JVM.templatePath + 'local.html' });
     }]);
     JVM._module.constant('mbeanName', 'hawtio:type=JVMList');
+    JVM._module.service('ConnectOptions', ['$location', function ($location) {
+        var connectionName = Core.ConnectionName;
+        if (!Core.isBlank(connectionName)) {
+            var answer = Core.getConnectOptions(connectionName);
+            JVM.log.debug("ConnectOptions: ", answer);
+            return answer;
+        }
+        JVM.log.debug("No connection options, connected to local JVM");
+        return null;
+    }]);
     JVM._module.run(["$location", "workspace", "viewRegistry", "layoutFull", "helpRegistry", "preferencesRegistry", "ConnectOptions", function ($location, workspace, viewRegistry, layoutFull, helpRegistry, preferencesRegistry, connectOptions) {
         viewRegistry[JVM.pluginName] = JVM.templatePath + 'layoutConnect.html';
         helpRegistry.addUserDoc('jvm', 'app/jvm/doc/help.md');

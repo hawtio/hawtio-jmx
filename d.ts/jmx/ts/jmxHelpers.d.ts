@@ -40,7 +40,9 @@ declare module Core {
  * @module Jmx
  */
 declare module Jmx {
+    var pluginName: string;
     var log: Logging.Logger;
+    var currentProcessId: string;
     function findLazyLoadingFunction(workspace: any, folder: any): any;
     function registerLazyLoadHandler(domain: string, lazyLoaderFactory: (folder: Core.Folder) => any): void;
     function unregisterLazyLoadHandler(domain: string, lazyLoaderFactory: (folder: Core.Folder) => any): void;

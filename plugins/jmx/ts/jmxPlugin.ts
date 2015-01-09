@@ -7,9 +7,6 @@
 /// <reference path="widgetRepository.ts"/>
 /// <reference path="workspace.ts"/>
 module Jmx {
-  var pluginName = 'jmx';
-
-  export var currentProcessId = '';
 
   export var _module = angular.module(pluginName, []);
 
@@ -36,19 +33,9 @@ module Jmx {
   _module.factory('workspace',["$location", "jmxTreeLazyLoadRegistry","$compile", "$templateCache", "localStorage", "jolokia", "jolokiaStatus", "$rootScope", "userDetails", ($location:ng.ILocationService,jmxTreeLazyLoadRegistry, $compile:ng.ICompileService,$templateCache:ng.ITemplateCacheService, localStorage:WindowLocalStorage, jolokia, jolokiaStatus, $rootScope, userDetails) => {
 
       var answer = new Workspace(jolokia, jolokiaStatus, jmxTreeLazyLoadRegistry, $location, $compile, $templateCache, localStorage, $rootScope, userDetails);
-      answer.loadTree();
+      // TODO we should try and let this be async
+      //answer.loadTree();
       return answer;
-  }]);
-
-  _module.service('ConnectOptions', ['$location', ($location:ng.ILocationService) => {
-    var connectionName = Core.ConnectionName;
-    if (!Core.isBlank(connectionName)) {
-      var answer = Core.getConnectOptions(connectionName);
-      log.debug("ConnectOptions: ", answer);
-      return answer;
-    }
-    log.debug("No connection options, connected to local JVM");
-    return null;
   }]);
 
   // local storage service to wrap the HTML5 browser storage
@@ -60,6 +47,10 @@ module Jmx {
   _module.factory('viewRegistry',() => {
     return {};
   });
+
+  // TODO placeholders for now
+  _module.constant('layoutTree', '');
+  _module.constant('layoutFull', '');
 
   // the jolokia URL we're connected to, could probably be a constant
   _module.factory('jolokiaUrl', () => {
@@ -98,11 +89,27 @@ module Jmx {
     return Core.lazyLoaders;
   });
 
+  // TODO placeholder
   _module.factory('userDetails', () => {
     return {
       username: '',
       password: ''
     };
+  });
+
+  // TODO placeholder
+  _module.factory('helpRegistry', () => {
+    return {
+      addUserDoc: () => {},
+      addDevDoc: () => {}
+    }
+  });
+
+  // TODO placeholder
+  _module.factory('preferencesRegistry', () => {
+    return {
+      addTab: () => {}
+    }
   });
 
 

@@ -7,7 +7,6 @@
  * @main Jmx
  */
 declare module Jmx {
-    var currentProcessId: string;
     var _module: ng.IModule;
     var DEFAULT_MAX_DEPTH: number;
     var DEFAULT_MAX_COLLECTION_SIZE: number;

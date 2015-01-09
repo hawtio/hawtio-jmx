@@ -20,6 +20,18 @@ module JVM {
 
   _module.constant('mbeanName', 'hawtio:type=JVMList');
 
+  _module.service('ConnectOptions', ['$location', ($location:ng.ILocationService) => {
+    var connectionName = Core.ConnectionName;
+    if (!Core.isBlank(connectionName)) {
+      var answer = Core.getConnectOptions(connectionName);
+      log.debug("ConnectOptions: ", answer);
+      return answer;
+    }
+    log.debug("No connection options, connected to local JVM");
+    return null;
+  }]);
+
+
   _module.run(["$location", "workspace", "viewRegistry", "layoutFull", "helpRegistry", "preferencesRegistry", "ConnectOptions", ($location, workspace:Workspace, viewRegistry, layoutFull, helpRegistry, preferencesRegistry, connectOptions:Core.ConnectOptions) => {
 
     viewRegistry[pluginName] = templatePath + 'layoutConnect.html';
