@@ -5,6 +5,11 @@
     "hawtio"
   ],
   "main": [
+    "dist/d3.js",
+    "dist/jolokia.js",
+    "dist/cubism.v1.js",
+    "dist/jolokia-simple.js",
+    "dist/jolokia-cubism.js",
     "dist/hawtio-jmx.js"
   ],
   "ignore": [
@@ -20,7 +25,8 @@
     "hawtio-core": "~2.0.0",
     "hawtio-core-navigation": "~2.0.0",
     "hawtio-utilities": "~2.0.0",
-    "hawtio-forms": "~2.0.0"
+    "hawtio-forms": "~2.0.0",
+    "dagre": "~0.7.1"
   },
   "devDependencies": {
     "bootstrap": "~3.3.1",

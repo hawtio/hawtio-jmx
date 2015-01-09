@@ -49,7 +49,7 @@ module Tree {
     }
   }
 
-  export var _module = angular.module(pluginName, ['bootstrap', 'ngResource', 'hawtioCore']);
+  export var _module = angular.module(pluginName, []);
 
   _module.directive('hawtioTree', ["workspace", "$timeout", "$location", (workspace, $timeout, $location) => {
     // return the directive link function. (compile function not needed)

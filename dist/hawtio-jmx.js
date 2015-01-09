@@ -1583,7 +1583,7 @@ var Jmx;
 (function (Jmx) {
     var pluginName = 'jmx';
     Jmx.currentProcessId = '';
-    Jmx._module = angular.module(pluginName, ['bootstrap', 'dangle', 'ui.bootstrap', 'ui.bootstrap.modal']);
+    Jmx._module = angular.module(pluginName, []);
     Jmx._module.config(["$routeProvider", function ($routeProvider) {
         $routeProvider.when('/jmx/attributes', { templateUrl: 'app/jmx/html/attributes.html' }).when('/jmx/operations', { templateUrl: 'app/jmx/html/operations.html' }).when('/jmx/charts', { templateUrl: 'app/jmx/html/charts.html' }).when('/jmx/chartEdit', { templateUrl: 'app/jmx/html/chartEdit.html' }).when('/jmx/help/:tabName', { templateUrl: 'app/core/html/help.html' }).when('/jmx/widget/donut', { templateUrl: 'app/jmx/html/donutChart.html' }).when('/jmx/widget/area', { templateUrl: 'app/jmx/html/areaChart.html' });
     }]);
@@ -1593,7 +1593,71 @@ var Jmx;
     Jmx._module.factory('jmxWidgets', function () {
         return Jmx.jmxWidgets;
     });
+    // Create the workspace object used in all kinds of places
+    Jmx._module.factory('workspace', ["$location", "jmxTreeLazyLoadRegistry", "$compile", "$templateCache", "localStorage", "jolokia", "jolokiaStatus", "$rootScope", "userDetails", function ($location, jmxTreeLazyLoadRegistry, $compile, $templateCache, localStorage, jolokia, jolokiaStatus, $rootScope, userDetails) {
+        var answer = new Workspace(jolokia, jolokiaStatus, jmxTreeLazyLoadRegistry, $location, $compile, $templateCache, localStorage, $rootScope, userDetails);
+        answer.loadTree();
+        return answer;
+    }]);
+    Jmx._module.service('ConnectOptions', ['$location', function ($location) {
+        var connectionName = Core.ConnectionName;
+        if (!Core.isBlank(connectionName)) {
+            var answer = Core.getConnectOptions(connectionName);
+            Jmx.log.debug("ConnectOptions: ", answer);
+            return answer;
+        }
+        Jmx.log.debug("No connection options, connected to local JVM");
+        return null;
+    }]);
+    // local storage service to wrap the HTML5 browser storage
+    Jmx._module.service('localStorage', function () {
+        return Core.getLocalStorage();
+    });
+    // Holds a mapping of plugins to layouts, plugins use this to specify a full width view, tree view or their own custom view
+    Jmx._module.factory('viewRegistry', function () {
+        return {};
+    });
+    // the jolokia URL we're connected to, could probably be a constant
+    Jmx._module.factory('jolokiaUrl', function () {
+        // TODO
+        return '/jolokia';
+    });
+    // holds the status returned from the last jolokia call (?)
+    Jmx._module.factory('jolokiaStatus', function () {
+        return {
+            xhr: null
+        };
+    });
+    Jmx.DEFAULT_MAX_DEPTH = 7;
+    Jmx.DEFAULT_MAX_COLLECTION_SIZE = 500;
+    Jmx._module.factory('jolokiaParams', ["jolokiaUrl", "localStorage", function (jolokiaUrl, localStorage) {
+        var answer = {
+            canonicalNaming: false,
+            ignoreErrors: true,
+            mimeType: 'application/json',
+            maxDepth: Jmx.DEFAULT_MAX_DEPTH,
+            maxCollectionSize: Jmx.DEFAULT_MAX_COLLECTION_SIZE
+        };
+        if ('jolokiaParams' in localStorage) {
+            answer = angular.fromJson(localStorage['jolokiaParams']);
+        }
+        else {
+            localStorage['jolokiaParams'] = angular.toJson(answer);
+        }
+        answer['url'] = jolokiaUrl;
+        return answer;
+    }]);
+    Jmx._module.factory('jmxTreeLazyLoadRegistry', function () {
+        return Core.lazyLoaders;
+    });
+    Jmx._module.factory('userDetails', function () {
+        return {
+            username: '',
+            password: ''
+        };
+    });
     Jmx._module.run(["$location", "workspace", "viewRegistry", "layoutTree", "jolokia", "helpRegistry", function ($location, workspace, viewRegistry, layoutTree, jolokia, helpRegistry) {
+        Jmx.log.debug('loaded');
         viewRegistry['jmx'] = layoutTree;
         helpRegistry.addUserDoc('jmx', 'app/jmx/doc/help.md');
         /*
@@ -3380,7 +3444,7 @@ var Tree;
         }
     }
     Tree.sanitize = sanitize;
-    Tree._module = angular.module(Tree.pluginName, ['bootstrap', 'ngResource', 'hawtioCore']);
+    Tree._module = angular.module(Tree.pluginName, []);
     Tree._module.directive('hawtioTree', ["workspace", "$timeout", "$location", function (workspace, $timeout, $location) {
         // return the directive link function. (compile function not needed)
         return function (scope, element, attrs) {
@@ -3964,7 +4028,7 @@ var JVM;
     JVM.rootPath = 'app/jvm';
     JVM.templatePath = JVM.rootPath + '/html/';
     JVM.pluginName = 'jvm';
-    JVM._module = angular.module(JVM.pluginName, ['bootstrap', 'ngResource', 'datatable', 'hawtioCore', 'hawtio-forms', 'ui']);
+    JVM._module = angular.module(JVM.pluginName, []);
     JVM._module.config(["$routeProvider", function ($routeProvider) {
         $routeProvider.when('/jvm/discover', { templateUrl: JVM.templatePath + 'discover.html' }).when('/jvm/connect', { templateUrl: JVM.templatePath + 'connect.html' }).when('/jvm/local', { templateUrl: JVM.templatePath + 'local.html' });
     }]);

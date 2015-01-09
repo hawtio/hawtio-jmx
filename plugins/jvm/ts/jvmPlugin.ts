@@ -9,7 +9,7 @@ module JVM {
   export var templatePath = rootPath + '/html/';
   export var pluginName = 'jvm';
 
-  export var _module = angular.module(pluginName, ['bootstrap', 'ngResource', 'datatable', 'hawtioCore', 'hawtio-forms', 'ui']);
+  export var _module = angular.module(pluginName, []);
 
   _module.config(["$routeProvider", ($routeProvider) => {
     $routeProvider.
