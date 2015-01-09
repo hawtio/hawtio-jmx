@@ -5,7 +5,9 @@ var gulp = require('gulp'),
     map = require('vinyl-map'),
     fs = require('fs'),
     path = require('path'),
-    s = require('underscore.string');
+    s = require('underscore.string'),
+    url = require('url'),
+    proxy = require('proxy-middleware');
 
 var plugins = gulpLoadPlugins({});
 var pkg = require('./package.json');
@@ -105,7 +107,15 @@ gulp.task('connect', ['watch'], function() {
     root: '.',
     livereload: true,
     port: 2772,
-    fallback: 'index.html'
+    fallback: 'index.html',
+    middleware: function(connect, options) {
+      return [
+        (function() {
+          var proxyOptions = url.parse('http://localhost:8282/hawtio/jolokia');
+          proxyOptions.route = '/jolokia';
+          return proxy(proxyOptions);
+        })() ];
+    }
   });
 });
 
