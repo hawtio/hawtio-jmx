@@ -264,7 +264,7 @@ var Core;
      * @class Workspace
      */
     var Workspace = (function () {
-        function Workspace(jolokia, jolokiaStatus, jmxTreeLazyLoadRegistry, $location, $compile, $templateCache, localStorage, $rootScope, userDetails) {
+        function Workspace(jolokia, jolokiaStatus, jmxTreeLazyLoadRegistry, $location, $compile, $templateCache, localStorage, $rootScope, userDetails, HawtioNav) {
             this.jolokia = jolokia;
             this.jolokiaStatus = jolokiaStatus;
             this.jmxTreeLazyLoadRegistry = jmxTreeLazyLoadRegistry;
@@ -274,13 +274,14 @@ var Core;
             this.localStorage = localStorage;
             this.$rootScope = $rootScope;
             this.userDetails = userDetails;
+            this.HawtioNav = HawtioNav;
             this.operationCounter = 0;
             this.tree = new Core.Folder('MBeans');
             this.mbeanTypesToDomain = {};
             this.mbeanServicesToDomain = {};
             this.attributeColumnDefs = {};
             this.treePostProcessors = [];
-            this.topLevelTabs = [];
+            this.topLevelTabs = undefined;
             this.subLevelTabs = [];
             this.keyToNodeMap = {};
             this.pluginRegisterHandle = null;
@@ -297,6 +298,21 @@ var Core;
             if (!('updateRate' in localStorage)) {
                 localStorage['updateRate'] = 5000;
             }
+            var workspace = this;
+            this.topLevelTabs = {
+                push: function (item) {
+                    log.debug("Added menu item: ", item);
+                    workspace.HawtioNav.add({
+                        id: item.id,
+                        title: function () { return item.content; },
+                        isValid: function () { return item.isValid(workspace); },
+                        href: function () { return UrlHelpers.noHash(item.href()); },
+                        isActive: function () { return item.isActive(workspace); }
+                    });
+                },
+                find: function (search) {
+                }
+            };
         }
         /**
          * Creates a shallow copy child workspace with its own selection and location
@@ -305,7 +321,7 @@ var Core;
          * @return {Workspace}
          */
         Workspace.prototype.createChildWorkspace = function (location) {
-            var child = new Workspace(this.jolokia, this.jolokiaStatus, this.jmxTreeLazyLoadRegistry, this.$location, this.$compile, this.$templateCache, this.localStorage, this.$rootScope, this.userDetails);
+            var child = new Workspace(this.jolokia, this.jolokiaStatus, this.jmxTreeLazyLoadRegistry, this.$location, this.$compile, this.$templateCache, this.localStorage, this.$rootScope, this.userDetails, this.HawtioNav);
             // lets copy across all the properties just in case
             angular.forEach(this, function (value, key) { return child[key] = value; });
             child.$location = location;
@@ -1216,18 +1232,19 @@ var Core;
      * @param localStorage
      * @return {Core.Workspace|Workspace}
      */
-    function createRemoteWorkspace(remoteJolokia, $location, localStorage, $rootScope, $compile, $templateCache, userDetails) {
+    function createRemoteWorkspace(remoteJolokia, $location, localStorage, $rootScope, $compile, $templateCache, userDetails, HawtioNav) {
         if ($rootScope === void 0) { $rootScope = null; }
         if ($compile === void 0) { $compile = null; }
         if ($templateCache === void 0) { $templateCache = null; }
         if (userDetails === void 0) { userDetails = null; }
+        if (HawtioNav === void 0) { HawtioNav = null; }
         // lets create a child workspace object for the remote container
         var jolokiaStatus = {
             xhr: null
         };
         // disable reload notifications
         var jmxTreeLazyLoadRegistry = Core.lazyLoaders;
-        var profileWorkspace = new Core.Workspace(remoteJolokia, jolokiaStatus, jmxTreeLazyLoadRegistry, $location, $compile, $templateCache, localStorage, $rootScope, userDetails);
+        var profileWorkspace = new Core.Workspace(remoteJolokia, jolokiaStatus, jmxTreeLazyLoadRegistry, $location, $compile, $templateCache, localStorage, $rootScope, userDetails, HawtioNav);
         Core.log.info("Loading the profile using jolokia: " + remoteJolokia);
         profileWorkspace.loadTree();
         return profileWorkspace;
@@ -1242,6 +1259,7 @@ var Jmx;
     Jmx.pluginName = 'hawtio-jmx';
     Jmx.log = Logger.get(Jmx.pluginName);
     Jmx.currentProcessId = '';
+    Jmx.templatePath = 'plugins/jmx/html';
     var attributesToolBars = {};
     function findLazyLoadingFunction(workspace, folder) {
         var factories = workspace.jmxTreeLazyLoadRegistry[folder.domain];
@@ -1302,7 +1320,9 @@ var Jmx;
      * @param {String} defaultValue
      */
     function getAttributeToolBar(node, defaultValue) {
-        if (defaultValue === void 0) { defaultValue = "app/jmx/html/attributeToolBar.html"; }
+        if (!defaultValue) {
+            defaultValue = UrlHelpers.join(Jmx.templatePath, 'attributeToolBar.html');
+        }
         var answer = null;
         var jmxDomain = (node) ? node.domain : null;
         if (jmxDomain) {
@@ -1584,8 +1604,8 @@ var Jmx;
 var Jmx;
 (function (Jmx) {
     Jmx._module = angular.module(Jmx.pluginName, []);
-    Jmx._module.config(["$routeProvider", function ($routeProvider) {
-        $routeProvider.when('/jmx/attributes', { templateUrl: 'app/jmx/html/attributes.html' }).when('/jmx/operations', { templateUrl: 'app/jmx/html/operations.html' }).when('/jmx/charts', { templateUrl: 'app/jmx/html/charts.html' }).when('/jmx/chartEdit', { templateUrl: 'app/jmx/html/chartEdit.html' }).when('/jmx/help/:tabName', { templateUrl: 'app/core/html/help.html' }).when('/jmx/widget/donut', { templateUrl: 'app/jmx/html/donutChart.html' }).when('/jmx/widget/area', { templateUrl: 'app/jmx/html/areaChart.html' });
+    Jmx._module.config(['HawtioNavBuilderProvider', "$routeProvider", function (builder, $routeProvider) {
+        $routeProvider.when('/jmx/attributes', { templateUrl: UrlHelpers.join(Jmx.templatePath, 'attributes.html') }).when('/jmx/operations', { templateUrl: UrlHelpers.join(Jmx.templatePath, 'operations.html') }).when('/jmx/charts', { templateUrl: UrlHelpers.join(Jmx.templatePath, 'charts.html') }).when('/jmx/chartEdit', { templateUrl: UrlHelpers.join(Jmx.templatePath, 'chartEdit.html') }).when('/jmx/help/:tabName', { templateUrl: 'app/core/html/help.html' }).when('/jmx/widget/donut', { templateUrl: UrlHelpers.join(Jmx.templatePath, 'donutChart.html') }).when('/jmx/widget/area', { templateUrl: UrlHelpers.join(Jmx.templatePath, 'areaChart.html') });
     }]);
     Jmx._module.factory('jmxWidgetTypes', function () {
         return Jmx.jmxWidgetTypes;
@@ -1594,10 +1614,9 @@ var Jmx;
         return Jmx.jmxWidgets;
     });
     // Create the workspace object used in all kinds of places
-    Jmx._module.factory('workspace', ["$location", "jmxTreeLazyLoadRegistry", "$compile", "$templateCache", "localStorage", "jolokia", "jolokiaStatus", "$rootScope", "userDetails", function ($location, jmxTreeLazyLoadRegistry, $compile, $templateCache, localStorage, jolokia, jolokiaStatus, $rootScope, userDetails) {
-        var answer = new Workspace(jolokia, jolokiaStatus, jmxTreeLazyLoadRegistry, $location, $compile, $templateCache, localStorage, $rootScope, userDetails);
-        // TODO we should try and let this be async
-        //answer.loadTree();
+    Jmx._module.factory('workspace', ["$location", "jmxTreeLazyLoadRegistry", "$compile", "$templateCache", "localStorage", "jolokia", "jolokiaStatus", "$rootScope", "userDetails", "HawtioNav", function ($location, jmxTreeLazyLoadRegistry, $compile, $templateCache, localStorage, jolokia, jolokiaStatus, $rootScope, userDetails, HawtioNav) {
+        var answer = new Workspace(jolokia, jolokiaStatus, jmxTreeLazyLoadRegistry, $location, $compile, $templateCache, localStorage, $rootScope, userDetails, HawtioNav);
+        answer.loadTree();
         return answer;
     }]);
     // local storage service to wrap the HTML5 browser storage
@@ -4036,7 +4055,7 @@ var JVM;
 /// <reference path="jvmHelpers.ts"/>
 var JVM;
 (function (JVM) {
-    JVM.rootPath = 'app/jvm';
+    JVM.rootPath = 'plugins/jvm';
     JVM.templatePath = JVM.rootPath + '/html/';
     JVM.pluginName = 'jvm';
     JVM._module = angular.module(JVM.pluginName, []);

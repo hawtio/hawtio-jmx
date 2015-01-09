@@ -51,14 +51,14 @@ module Core {
    * @param localStorage
    * @return {Core.Workspace|Workspace}
    */
-  export function createRemoteWorkspace(remoteJolokia, $location, localStorage, $rootScope = null, $compile = null, $templateCache = null, userDetails = null) {
+  export function createRemoteWorkspace(remoteJolokia, $location, localStorage, $rootScope = null, $compile = null, $templateCache = null, userDetails = null, HawtioNav = null) {
     // lets create a child workspace object for the remote container
     var jolokiaStatus = {
       xhr: null
     };
     // disable reload notifications
     var jmxTreeLazyLoadRegistry = Core.lazyLoaders;
-    var profileWorkspace = new Workspace(remoteJolokia, jolokiaStatus, jmxTreeLazyLoadRegistry, $location, $compile, $templateCache, localStorage, $rootScope, userDetails);
+    var profileWorkspace = new Workspace(remoteJolokia, jolokiaStatus, jmxTreeLazyLoadRegistry, $location, $compile, $templateCache, localStorage, $rootScope, userDetails, HawtioNav);
 
     log.info("Loading the profile using jolokia: " + remoteJolokia);
     profileWorkspace.loadTree();
@@ -75,6 +75,7 @@ module Jmx {
   export var pluginName = 'hawtio-jmx';
   export var log:Logging.Logger = Logger.get(pluginName);
   export var currentProcessId = '';
+  export var templatePath = 'plugins/jmx/html';
 
   var attributesToolBars = {};
 
@@ -137,7 +138,10 @@ module Jmx {
    * @param {Core.NodeSelection} node
    * @param {String} defaultValue
    */
-  export function getAttributeToolBar(node: NodeSelection, defaultValue: string = "app/jmx/html/attributeToolBar.html") {
+  export function getAttributeToolBar(node: NodeSelection, defaultValue?:string) {
+    if (!defaultValue) {
+      defaultValue = UrlHelpers.join(templatePath, 'attributeToolBar.html');
+    }
     var answer = null;
     var jmxDomain = (node) ? node.domain : null;
     if (jmxDomain) {

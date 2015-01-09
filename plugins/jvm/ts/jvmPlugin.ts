@@ -5,7 +5,7 @@
 /// <reference path="jvmHelpers.ts"/>
 module JVM {
 
-  export var rootPath = 'app/jvm';
+  export var rootPath = 'plugins/jvm';
   export var templatePath = rootPath + '/html/';
   export var pluginName = 'jvm';
 

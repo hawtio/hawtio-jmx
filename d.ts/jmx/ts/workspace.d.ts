@@ -29,6 +29,7 @@ declare module Core {
         localStorage: WindowLocalStorage;
         $rootScope: any;
         userDetails: any;
+        HawtioNav: HawtioMainNav.Registry;
         operationCounter: number;
         selection: NodeSelection;
         tree: Folder;
@@ -36,7 +37,7 @@ declare module Core {
         mbeanServicesToDomain: {};
         attributeColumnDefs: {};
         treePostProcessors: any[];
-        topLevelTabs: NavMenuItem[];
+        topLevelTabs: any;
         subLevelTabs: any[];
         keyToNodeMap: {};
         pluginRegisterHandle: any;
@@ -45,7 +46,7 @@ declare module Core {
         treeWatcherCounter: any;
         treeElement: any;
         mapData: {};
-        constructor(jolokia: any, jolokiaStatus: any, jmxTreeLazyLoadRegistry: any, $location: any, $compile: ng.ICompileService, $templateCache: ng.ITemplateCacheService, localStorage: WindowLocalStorage, $rootScope: any, userDetails: any);
+        constructor(jolokia: any, jolokiaStatus: any, jmxTreeLazyLoadRegistry: any, $location: any, $compile: ng.ICompileService, $templateCache: ng.ITemplateCacheService, localStorage: WindowLocalStorage, $rootScope: any, userDetails: any, HawtioNav: HawtioMainNav.Registry);
         /**
          * Creates a shallow copy child workspace with its own selection and location
          * @method createChildWorkspace
@@ -80,7 +81,7 @@ declare module Core {
          * @method getActiveTab
          * @return {Boolean}
          */
-        getActiveTab(): NavMenuItem;
+        getActiveTab(): any;
         private getStrippedPathName();
         linkContains(...words: String[]): boolean;
         /**

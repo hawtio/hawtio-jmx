@@ -32,7 +32,7 @@ module Core {
     public mbeanServicesToDomain = {};
     public attributeColumnDefs = {};
     public treePostProcessors = [];
-    public topLevelTabs = <Array<NavMenuItem>>[];
+    public topLevelTabs:any = undefined 
     public subLevelTabs = [];
     public keyToNodeMap = {};
     public pluginRegisterHandle = null;
@@ -51,7 +51,8 @@ module Core {
                 public $templateCache:ng.ITemplateCacheService,
                 public localStorage:WindowLocalStorage,
                 public $rootScope,
-                public userDetails) {
+                public userDetails,
+                public HawtioNav:HawtioMainNav.Registry) {
 
       // set defaults
       if (!('autoRefresh' in localStorage)) {
@@ -60,6 +61,23 @@ module Core {
       if (!('updateRate' in localStorage)) {
         localStorage['updateRate'] = 5000;
       }
+      var workspace = this;
+      this.topLevelTabs = {
+        push: (item:NavMenuItem) => {
+          log.debug("Added menu item: ", item);
+          workspace.HawtioNav.add({
+            id: item.id,
+            title: () => item.content,
+            isValid: () => item.isValid(workspace),
+            href: () => UrlHelpers.noHash(item.href()),
+            isActive: () => item.isActive(workspace)
+          });
+        },
+        find: (search:(NavMenuItem) => void) => {
+
+        }
+      };
+
     }
 
     /**
@@ -70,7 +88,7 @@ module Core {
      */
     public createChildWorkspace(location): Workspace {
       var child = new Workspace(this.jolokia, this.jolokiaStatus, this.jmxTreeLazyLoadRegistry,
-              this.$location, this.$compile, this.$templateCache, this.localStorage, this.$rootScope, this.userDetails);
+              this.$location, this.$compile, this.$templateCache, this.localStorage, this.$rootScope, this.userDetails, this.HawtioNav);
       // lets copy across all the properties just in case
       angular.forEach(this, (value, key) => child[key] = value);
       child.$location = location;

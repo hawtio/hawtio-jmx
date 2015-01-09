@@ -34,7 +34,7 @@ declare module Core {
      * @param localStorage
      * @return {Core.Workspace|Workspace}
      */
-    function createRemoteWorkspace(remoteJolokia: any, $location: any, localStorage: any, $rootScope?: any, $compile?: any, $templateCache?: any, userDetails?: any): Workspace;
+    function createRemoteWorkspace(remoteJolokia: any, $location: any, localStorage: any, $rootScope?: any, $compile?: any, $templateCache?: any, userDetails?: any, HawtioNav?: any): Workspace;
 }
 /**
  * @module Jmx
@@ -43,6 +43,7 @@ declare module Jmx {
     var pluginName: string;
     var log: Logging.Logger;
     var currentProcessId: string;
+    var templatePath: string;
     function findLazyLoadingFunction(workspace: any, folder: any): any;
     function registerLazyLoadHandler(domain: string, lazyLoaderFactory: (folder: Core.Folder) => any): void;
     function unregisterLazyLoadHandler(domain: string, lazyLoaderFactory: (folder: Core.Folder) => any): void;

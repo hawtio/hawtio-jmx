@@ -10,15 +10,16 @@ module Jmx {
 
   export var _module = angular.module(pluginName, []);
 
-  _module.config(["$routeProvider", ($routeProvider) => {
+  _module.config(['HawtioNavBuilderProvider', "$routeProvider", (builder:HawtioMainNav.BuilderFactory, $routeProvider) => {
+
     $routeProvider.
-            when('/jmx/attributes', {templateUrl: 'app/jmx/html/attributes.html'}).
-            when('/jmx/operations', {templateUrl: 'app/jmx/html/operations.html'}).
-            when('/jmx/charts', {templateUrl: 'app/jmx/html/charts.html'}).
-            when('/jmx/chartEdit', {templateUrl: 'app/jmx/html/chartEdit.html'}).
-            when('/jmx/help/:tabName', {templateUrl: 'app/core/html/help.html'}).
-            when('/jmx/widget/donut', {templateUrl: 'app/jmx/html/donutChart.html'}).
-            when('/jmx/widget/area', {templateUrl: 'app/jmx/html/areaChart.html'});
+      when('/jmx/attributes', {templateUrl: UrlHelpers.join(templatePath, 'attributes.html')}).
+      when('/jmx/operations', {templateUrl: UrlHelpers.join(templatePath, 'operations.html')}).
+      when('/jmx/charts', {templateUrl: UrlHelpers.join(templatePath, 'charts.html')}).
+      when('/jmx/chartEdit', {templateUrl: UrlHelpers.join(templatePath, 'chartEdit.html')}).
+      when('/jmx/help/:tabName', {templateUrl: 'app/core/html/help.html'}).
+      when('/jmx/widget/donut', {templateUrl: UrlHelpers.join(templatePath, 'donutChart.html')}).
+      when('/jmx/widget/area', {templateUrl: UrlHelpers.join(templatePath, 'areaChart.html')});
   }]);
 
   _module.factory('jmxWidgetTypes', () => {
@@ -30,11 +31,10 @@ module Jmx {
   });
 
   // Create the workspace object used in all kinds of places
-  _module.factory('workspace',["$location", "jmxTreeLazyLoadRegistry","$compile", "$templateCache", "localStorage", "jolokia", "jolokiaStatus", "$rootScope", "userDetails", ($location:ng.ILocationService,jmxTreeLazyLoadRegistry, $compile:ng.ICompileService,$templateCache:ng.ITemplateCacheService, localStorage:WindowLocalStorage, jolokia, jolokiaStatus, $rootScope, userDetails) => {
+  _module.factory('workspace',["$location", "jmxTreeLazyLoadRegistry","$compile", "$templateCache", "localStorage", "jolokia", "jolokiaStatus", "$rootScope", "userDetails", "HawtioNav", ($location:ng.ILocationService,jmxTreeLazyLoadRegistry, $compile:ng.ICompileService,$templateCache:ng.ITemplateCacheService, localStorage:WindowLocalStorage, jolokia, jolokiaStatus, $rootScope, userDetails, HawtioNav) => {
 
-      var answer = new Workspace(jolokia, jolokiaStatus, jmxTreeLazyLoadRegistry, $location, $compile, $templateCache, localStorage, $rootScope, userDetails);
-      // TODO we should try and let this be async
-      //answer.loadTree();
+      var answer = new Workspace(jolokia, jolokiaStatus, jmxTreeLazyLoadRegistry, $location, $compile, $templateCache, localStorage, $rootScope, userDetails, HawtioNav);
+      answer.loadTree();
       return answer;
   }]);
 
