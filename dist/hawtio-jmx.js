@@ -1628,8 +1628,8 @@ var Jmx;
         return {};
     });
     // TODO placeholders for now
-    Jmx._module.constant('layoutTree', '');
-    Jmx._module.constant('layoutFull', '');
+    Jmx._module.constant('layoutTree', 'plugins/jmx/html/layoutTree.html');
+    Jmx._module.constant('layoutFull', 'plugins/jmx/html/layoutFull.html');
     // the jolokia URL we're connected to, could probably be a constant
     Jmx._module.factory('jolokiaUrl', function () {
         // TODO
@@ -3981,6 +3981,73 @@ var Jmx;
 })(Jmx || (Jmx = {}));
 
 /**
+ * @module Core
+ */
+/// <reference path="jmxPlugin.ts"/>
+var Jmx;
+(function (Jmx) {
+    // NOTE - $route is brought in here to ensure the factory for that service
+    // has been called, otherwise the ng-include directive doesn't show the partial
+    // after a refresh until you click a top-level link.
+    Jmx.ViewController = Jmx._module.controller("Jmx.ViewController", ["$scope", "$route", "$location", "layoutTree", "layoutFull", "viewRegistry", function ($scope, $route, $location, layoutTree, layoutFull, viewRegistry) {
+        findViewPartial();
+        $scope.$on("$routeChangeSuccess", function (event, current, previous) {
+            findViewPartial();
+        });
+        function searchRegistry(path) {
+            var answer = undefined;
+            _.forIn(viewRegistry, function (value, key) {
+                if (!answer) {
+                    if (key.startsWith("/") && key.endsWith("/")) {
+                        // assume its a regex
+                        var text = key.substring(1, key.length - 1);
+                        try {
+                            var reg = new RegExp(text, "");
+                            if (reg.exec(path)) {
+                                answer = value;
+                            }
+                        }
+                        catch (e) {
+                            Jmx.log.debug("Invalid RegExp " + text + " for viewRegistry value: " + value);
+                        }
+                    }
+                    else {
+                        if (path.startsWith(key)) {
+                            answer = value;
+                        }
+                    }
+                }
+            });
+            //log.debug("Searching for: " + path + " returning: ", answer);
+            return answer;
+        }
+        function findViewPartial() {
+            var answer = null;
+            var hash = $location.search();
+            var tab = hash['tab'];
+            if (angular.isString(tab)) {
+                answer = searchRegistry(tab);
+            }
+            if (!answer) {
+                var path = $location.path();
+                if (path) {
+                    if (path.startsWith("/")) {
+                        path = path.substring(1);
+                    }
+                    answer = searchRegistry(path);
+                }
+            }
+            if (!answer) {
+                answer = layoutTree;
+            }
+            $scope.viewPartial = answer;
+            Jmx.log.debug("Using view partial: " + answer);
+            return answer;
+        }
+    }]);
+})(Jmx || (Jmx = {}));
+
+/**
  * @module JVM
  */
 /// <reference path="../../includes.ts"/>
@@ -4460,6 +4527,8 @@ $templateCache.put("plugins/jmx/html/attributes.html","<script type=\"text/ng-te
 $templateCache.put("plugins/jmx/html/chartEdit.html","<div ng-controller=\"Jmx.ChartEditController\">\n  <form>\n    <fieldset>\n      <div class=\"control-group\" ng-show=\"canViewChart()\">\n        <input type=\"submit\" class=\"btn\" value=\"View Chart\" ng-click=\"viewChart()\"\n               ng-disabled=\"!selectedAttributes.length && !selectedMBeans.length\"/>\n      </div>\n      <div class=\"control-group\">\n        <table class=\"table\">\n          <thead>\n          <tr>\n            <th ng-show=\"showAttributes()\">Attributes</th>\n            <th ng-show=\"showElements()\">Elements</th>\n          </tr>\n          </thead>\n          <tbody>\n          <tr>\n            <td ng-show=\"showAttributes()\">\n              <select id=\"attributes\" size=\"20\" multiple ng-multiple=\"true\" ng-model=\"selectedAttributes\"\n                      ng-options=\"name | humanize for (name, value) in metrics\"></select>\n            </td>\n            <td ng-show=\"showElements()\">\n              <select id=\"mbeans\" size=\"20\" multiple ng-multiple=\"true\" ng-model=\"selectedMBeans\"\n                      ng-options=\"name for (name, value) in mbeans\"></select>\n            </td>\n          </tr>\n          </tbody>\n        </table>\n\n        <div class=\"alert\" ng-show=\"!canViewChart()\">\n          <button type=\"button\" class=\"close\" data-dismiss=\"alert\">×</button>\n          <strong>No numeric metrics available!</strong> Try select another item to chart on.\n        </div>\n      </div>\n    </fieldset>\n  </form>\n</div>\n");
 $templateCache.put("plugins/jmx/html/charts.html","<div ng-controller=\"Jmx.ChartController\" ng-switch=\"errorMessage()\">\n  <div ng-switch-when=\"metrics\">No valid metrics to show for this mbean.</div>\n  <div ng-switch-when=\"updateRate\">Charts aren\'t available when the update rate is set to \"No refreshes\", go to the <a ng-href=\"#/preferences{{hash}}\">Preferences</a> panel and set a refresh rate to enable charts</div>\n  <div id=\"charts\"></div>\n</div>\n\n");
 $templateCache.put("plugins/jmx/html/donutChart.html","<div ng-controller=\"Jmx.DonutChartController\">\n  <script type=\"text/ng-template\" id=\"donut\">\n    <fs-donut bind=\"data\" outer-radius=\"200\" inner-radius=\"75\"></fs-donut>\n  </script>\n  <div compile=\"template\"></div>\n</div>\n");
+$templateCache.put("plugins/jmx/html/layoutFull.html","<div class=\"row-fluid\">\n  <div ng-controller=\"Jmx.MBeansController\"></div>\n  <div ng-view></div>\n</div>\n\n\n");
+$templateCache.put("plugins/jmx/html/layoutTree.html","<script type=\"text/ng-template\" id=\"header\">\n  <div class=\"tree-header\" ng-controller=\"Jmx.TreeHeaderController\">\n    <div class=\"left\">\n    </div>\n    <div class=\"right\">\n      <i class=\"icon-chevron-down clickable\"\n         title=\"Expand all nodes\"\n         ng-click=\"expandAll()\"></i>\n      <i class=\"icon-chevron-up clickable\"\n         title=\"Unexpand all nodes\"\n         ng-click=\"contractAll()\"></i>\n    </div>\n  </div>\n</script>\n\n<hawtio-pane position=\"left\" width=\"300\" header=\"header\">\n  <div id=\"tree-container\"\n       ng-controller=\"Jmx.MBeansController\">\n    <div id=\"jmxtree\"></div>\n  </div>\n</hawtio-pane>\n\n<div class=\"row-fluid\">\n  <ng-include src=\"\'app/jmx/html/subLevelTabs.html\'\"></ng-include>\n  <div id=\"properties\" ng-view></div>\n</div>\n\n\n");
 $templateCache.put("plugins/jmx/html/operations.html","<div  id=\"threadForm\" ng-controller=\"Jmx.OperationsController\">\n\n  <div class=\"row-fluid\" ng-show=\"isOperationsEmpty()\">\n    The selected MBean has no JMX operations.\n  </div>\n\n  <div class=\"row-fluid\" ng-hide=\"isOperationsEmpty() || showInvoke\">\n    <div class=\"pull-right\">\n      <hawtio-filter ng-model=\"methodFilter\" placeholder=\"Filter...\" save-as=\"{{objectName}}-text-filter\"></hawtio-filter>\n    </div>\n  </div>\n  <script type=\"text/ng-template\" id=\"operationTemplate\">\n    <div>\n      <div ng-controller=\"Jmx.OperationController\">\n\n        <div ng-show=\"operationResult!=\'\'\">\n          <div class=\"row-fluid\">\n            <div class=\"control-group pull-right\">\n              <div class=\"controls\">\n                <button class=\"btn\"\n                        zero-clipboard\n                        data-clipboard-text=\"{{operationResult}}\"\n                        title=\"Copy value to clipboard\">\n                  <i class=\"icon-copy\"></i>\n                </button>\n                <button class=\"btn cancel\"\n                        ng-click=\"close()\">\n                  <i class=\"icon-remove\"></i> Close\n                </button>\n                <button class=\"btn\"\n                        ng-click=\"ok()\">\n                  <i class=\"icon-ok\"></i> Back\n                </button>\n              </div>\n            </div>\n          </div>\n          <div class=\"row-fluid\">\n            <div hawtio-editor=\"operationResult\" mode=\"mode\"></div>\n          </div>\n        </div>\n        <div ng-show=\"operationResult==\'\'\">\n          <div class=\"row-fluid\">\n            <div class=\"control-group pull-right\">\n              <div class=\"controls\">\n                <button class=\"btn\"\n                        ng-click=\"reset()\"\n                        ng-show=\"args\">\n                  <i class=\"icon-undo\"></i> Reset\n                </button>\n                <button class=\"btn cancel\"\n                        ng-click=\"close()\">\n                  <i class=\"icon-remove\"></i> Close\n                </button>\n                <button class=\"btn btn-success execute\"\n                        hawtio-submit=\"entryForm\">\n                <i class=\"{{executeIcon}}\"></i> Execute\n                </button>\n              </div>\n            </div>\n            <div simple-form data=\"formConfig\"\n                 entity=\"entity\"\n                 name=\"entryForm\"></div>\n          </div>\n        </div>\n        <div class=\"row-fluid\">\n          <i><label for=\"jolokiaUrl\">Jolokia REST Url:</label></i>\n          <div class=\"pull-right\">\n            <input type=\"text\" name=\"jolokiaUrl\" id=\"jolokiaUrl\" value=\"{{jolokiaUrl}}\" style=\"width: 60em;\" readonly/>\n              <span style=\"vertical-align: super;\">\n                <button class=\"btn\"\n                zero-clipboard\n                data-clipboard-text=\"{{jolokiaUrl}}\"\n                title=\"Copy Jolokia REST Url to clipboard\">\n                <i class=\"icon-copy\"></i>\n                </button>\n              </span>\n          </div>\n        </div>\n      </div>\n    </div>\n  </script>\n\n  <div ng-show=\"showInvoke\">\n    <div compile=\"template\"></div>\n  </div>\n\n  <ul ng-hide=\"showInvoke\" class=\"zebra-list\" ng-hide=\"isOperationsEmpty()\">\n    <li class=\"operation-row\"\n        ng-repeat=\"operation in operations\"\n        ng-show=\"doFilter(operation)\"\n        ng-click=\"invokeOp(operation)\"\n        ng-class=\"getClass(operation)\"\n        title=\"Click to invoke {{operation.name}}\"\n        data-placement=\"bottom\">\n      <i class=\"icon-cog\"\n         ng-class=\"getClass(operation)\"></i>\n      <span>{{operation.name}}</span>\n      <span class=\"operation-actions\">\n        <button class=\"btn\"\n                zero-clipboard\n                data-clipboard-text=\"{{operation.name}}\"\n                title=\"Copy method name to clipboard\">\n          <i class=\"icon-copy\"></i>\n        </button>\n      </span>\n    </li>\n  </ul>\n\n</div>\n");
 $templateCache.put("plugins/jmx/html/subLevelTabs.html","<ul class=\"nav nav-tabs\" ng-controller=\"Core.NavBarController\" hawtio-auto-dropdown>\n  <li ng-repeat=\"nav in subLevelTabs track by $index | orderBy:index\" ng-show=\"isValid(nav)\" ng-class=\"{active : isActive(nav)}\">\n    <a ng-href=\"{{nav.href()}}{{hash}}\" title=\"{{nav.title}}\"\n       data-placement=\"bottom\" ng-bind-html-unsafe=\"nav.content\">\n    </a>\n  </li>\n\n  <li class=\"pull-right\">\n    <a ng-href=\"{{fullScreenLink()}}\" title=\"Show this view in full screen\" data-placement=\"bottom\">\n      <i class=\"icon-fullscreen\"></i>\n    </a>\n  </li>\n  <li class=\"pull-right\">\n    <a ng-href=\"{{addToDashboardLink()}}\" title=\"Add this view to a dashboard\" data-placement=\"bottom\">\n      <i class=\"icon-share\"></i>\n    </a>\n  </li>\n  <li class=\"pull-right dropdown overflow\" style=\"visibility: hidden;\">\n    <a href=\"#\" class=\"dropdown-toggle\" data-toggle=\"dropdown\"><i class=\"icon-chevron-down\"></i></a>\n    <ul class=\"dropdown-menu right\"></ul>\n  </li>\n\n\n</ul>\n\n");
 $templateCache.put("plugins/jvm/html/connect.html","<div ng-controller=\"JVM.ConnectController\">\n\n  <div class=\"row-fluid connect-column-container\" hawtio-auto-columns=\".connect-column\">\n\n    <div class=\"connect-column\">\n      <div class=\"alert alert-info\">\n        <p>\n          This page allows you to connect to remote processes which <strong>already have a <a\n                href=\"http://jolokia.org/\">jolokia agent</a> running inside them</strong>. You will need to know the\n          host name, port and path of the jolokia agent to be able to connect.\n        </p>\n\n        <p>\n          If the process you wish to connect to does not have a jolokia agent inside, please refer to the <a\n                href=\"http://jolokia.org/agent.html\">jolokia documentation</a> for how to add a JVM, servlet or OSGi\n          based agent inside it.\n        </p>\n\n        <p>\n          If you are using <a href=\"http://fabric8.io/\">Fabric8</a>, <a href=\"http://www.jboss.org/products/fuse\">JBoss Fuse</a>, or <a href=\"http://activemq.apache.org\">Apache ActiveMQ</a>;\n          then a jolokia agent is included by default. Or you can always just deploy hawtio inside the process (which includes the jolokia agent).\n        </p>\n\n        <p>\n          <strong>Use Proxy</strong>:\n          hawtio is running in your browser; usually due to CORS; you cannot open a different host or port from your browser (due to browse security restrictions);\n          so we have to use a proxy servlet inside the hawtio web app to proxy all requests for a different jolokia server - so we can communicate with a different jolokia agent.\n          If you use the hawtio Chrome Extension this isn’t required; since Chrome Extensions are allowed to connect to any host/port.\n        </p>\n\n        <p ng-show=\"hasLocalMBean()\">\n          Use the <strong><a href=\"#/jvm/local\">Local Tab</a></strong> to connect to processes locally on this machine (which will install a jolokia agent automatically if required).\n        </p>\n\n        <p ng-show=\"!hasLocalMBean()\">\n          The <strong>Local Tab</strong> is not currently enabled because either the server side <strong>hawtio-local-jvm-mbean plugin</strong> is not installed or this\n          JVM cannot find the <strong>com.sun.tools.attach.VirtualMachine</strong> API usually found in the <strong>tool.jar</strong>.\n          Please see the <a href=\"http://hawt.io/faq/index.html\">FAQ entry</a> for more details.\n        </p>\n      </div>\n    </div>\n\n    <div class=\"connect-column\">\n\n      <dl>\n        <dt>Saved Connections</dt>\n        <dd>\n          <form class=\"form-horizontal no-bottom-margin\">\n            <fieldset>\n              <div class=\"control-group\">\n                <label class=\"control-label\">Connections: </label>\n                <div class=\"controls\">\n                  <select ng-model=\"lastConnection\"\n                          ng-options=\"value.name as key for (key, value) in connectionConfigs\">\n                    <option value=\"\"\n                            ng-hide=\"lastConnection\">New connection...</option>\n                  </select>\n                  <button class=\"btn btn-success\"\n                          title=\"Connect to this server\"\n                          ng-disabled=\"!lastConnection\"\n                          ng-click=\"gotoServer()\"><i class=\"icon-share\"></i></button>\n                  <button class=\"btn btn-danger\"\n                          title=\"Delete this connection\"\n                          ng-disabled=\"!lastConnection\"\n                          ng-click=\"deleteConnection()\"><i class=\"icon-remove-sign\"></i></button>\n                  <button class=\"btn btn-primary\"\n                          title=\"Create a new connection\"\n                          ng-disabled=\"!lastConnection\"\n                          ng-click=\"newConnection()\"><i class=\"icon-plus\"></i></button>\n                </div>\n              </div>\n            </fieldset>\n          </form>\n        </dd>\n      </dl>\n\n      <dl>\n        <dt>Connection Settings</dt>\n        <dd>\n          <div simple-form name=\"connectForm\" data=\"formConfig\" entity=\"currentConfig\" onSubmit=\"gotoServer()\"></div>\n\n          <div class=\"centered\">\n            <button class=\"btn btn-primary\"\n                    ng-disabled=\"!forms.connectForm.$valid\"\n                    hawtio-submit=\"connectForm\"\n                    title=\"Saves the connection and opens a new browser window connecting to the given JVM process via its Jolokia servlet URL\">Connect to remote server</button>\n            <button class=\"btn\"\n                    title=\"Save this configuration but don\'t open a new tab\"\n                    ng-disabled=\"!forms.connectForm.$valid\"\n                    ng-click=\"save()\">Save</button>\n          </div>\n        </dd>\n      </dl>\n\n    </div>\n\n  </div>\n\n</div>\n");

@@ -49,8 +49,8 @@ module Jmx {
   });
 
   // TODO placeholders for now
-  _module.constant('layoutTree', '');
-  _module.constant('layoutFull', '');
+  _module.constant('layoutTree', 'plugins/jmx/html/layoutTree.html');
+  _module.constant('layoutFull', 'plugins/jmx/html/layoutFull.html');
 
   // the jolokia URL we're connected to, could probably be a constant
   _module.factory('jolokiaUrl', () => {

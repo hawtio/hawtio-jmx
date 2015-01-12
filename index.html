@@ -9,6 +9,7 @@
 
     <link rel="stylesheet" href="libs/bootstrap/dist/css/bootstrap.css" />
     <link rel="stylesheet" href="libs/patternfly/dist/css/patternfly.css" />
+    <link rel="stylesheet" href="dist/ui.dynatree.css"/>
 
     <!-- bower:css -->
     <link rel="stylesheet" href="libs/codemirror/lib/codemirror.css" />
@@ -80,8 +81,15 @@
       <ul class="nav navbar-nav" hawtio-sub-tabs></ul>
     </nav>
 
+    <!--
     <div class="container-fluid" ng-view></div>
+    -->
 
+    <div id="main" class="container-fluid ng-cloak" ng-controller="Jmx.ViewController">
+      <div ng-include src="viewPartial"></div>
+    </div>
+
+    <script src="dist/jquery.dynatree.js"></script>
     <script src="dist/d3.js"></script>
     <script src="dist/jolokia.js"></script>
     <script src="dist/cubism.v1.js"></script>
