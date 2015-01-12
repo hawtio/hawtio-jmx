@@ -104,17 +104,15 @@ module Core {
     }
 
     public loadTree() {
-      // Make an initial blocking call to ensure the JMX tree is populated while the
-      // app is initializing...
       var flags = {ignoreErrors: true, maxDepth: 7};
-      var data = this.jolokia.list(null, onSuccess(null, flags));
-
-      if (data) {
-        this.jolokiaStatus.xhr = null;
-      }
-      this.populateTree({
-        value: data
-      });
+      var workspace = this;
+      this.jolokia.request({ 'type': 'list' }, Core.onSuccess((response) => {
+        if (response.value) {
+          this.jolokiaStatus.xhr = null;
+        }
+        workspace.populateTree(response);  
+        Core.$apply(workspace.$rootScope);
+      }, flags));
     }
 
 
@@ -366,6 +364,7 @@ module Core {
         if (rootScope) {
           rootScope.$broadcast('jmxTreeUpdated');
         }
+        Core.$apply(rootScope);
       }
     }
 
@@ -514,8 +513,8 @@ module Core {
         if (fn) {
           var href = fn();
           if (href) {
-            if (href.startsWith("#/")) {
-              href = href.substring(2);
+            if (href.startsWith("#")) {
+              href = href.substring(1);
             }
             return href === uri;
           }
@@ -527,7 +526,7 @@ module Core {
         tab = this.topLevelTabs.find(filter);
       }
       if (tab) {
-        //console.log("Found tab " + JSON.stringify(tab));
+        console.log("Found tab: ", tab);
         var validFn = tab['isValid'];
         return !angular.isDefined(validFn) || validFn(workspace);
       } else {

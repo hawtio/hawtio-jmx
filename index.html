@@ -9,7 +9,6 @@
 
     <link rel="stylesheet" href="libs/bootstrap/dist/css/bootstrap.css" />
     <link rel="stylesheet" href="libs/patternfly/dist/css/patternfly.css" />
-    <link rel="stylesheet" href="dist/ui.dynatree.css"/>
 
     <!-- bower:css -->
     <link rel="stylesheet" href="libs/codemirror/lib/codemirror.css" />
@@ -73,6 +72,17 @@
     <script src="libs/bootstrap/dist/js/bootstrap.js"></script>
     <script src="libs/patternfly/dist/js/patternfly.js"></script>
 
+    <style>
+      body, html {
+        height: 100%;
+      }
+
+      div: {
+        height: 100%;
+      }
+
+    </style>
+
   </head>
 
   <body>
@@ -89,7 +99,6 @@
       <div ng-include src="viewPartial"></div>
     </div>
 
-    <script src="dist/jquery.dynatree.js"></script>
     <script src="dist/d3.js"></script>
     <script src="dist/jolokia.js"></script>
     <script src="dist/cubism.v1.js"></script>

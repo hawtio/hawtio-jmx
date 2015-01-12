@@ -48,6 +48,16 @@ module Jmx {
     return {};
   });
 
+  _module.controller("Jmx.MBeanTreeController", ['$scope', 'workspace', ($scope, workspace) => {
+    $scope.tree = undefined;
+    workspace.addTreePostProcessor((tree:Core.Folder) => {
+      $scope.tree = tree;
+    });
+    $scope.select = (node) => {
+      workspace.updateSelectionNode(node);
+    }
+  }]);
+
   // TODO placeholders for now
   _module.constant('layoutTree', 'plugins/jmx/html/layoutTree.html');
   _module.constant('layoutFull', 'plugins/jmx/html/layoutFull.html');
@@ -140,7 +150,7 @@ module Jmx {
       content: "JMX",
       title: "View the JMX MBeans in this process",
       isValid: (workspace: Workspace) => workspace.hasMBeans(),
-      href: () => "#/jmx/attributes",
+      href: () => "/jmx/attributes",
       isActive: (workspace: Workspace) => workspace.isTopTabActive("jmx")
     });
 
@@ -149,26 +159,26 @@ module Jmx {
       content: '<i class="icon-list"></i> Attributes',
       title: "View the attribute values on your selection",
       isValid: (workspace: Workspace) => true,
-      href: () => "#/jmx/attributes",
+      href: () => "/jmx/attributes",
       index: -1
     }, 0);
     workspace.subLevelTabs.push( {
       content: '<i class="icon-leaf"></i> Operations',
       title: "Execute operations on your selection",
       isValid: (workspace: Workspace) => true,
-      href: () => "#/jmx/operations"
+      href: () => "/jmx/operations"
     });
     workspace.subLevelTabs.push( {
       content: '<i class="icon-bar-chart"></i> Chart',
       title: "View a chart of the metrics on your selection",
       isValid: (workspace: Workspace) => true,
-      href: () => "#/jmx/charts"
+      href: () => "/jmx/charts"
     });
     workspace.subLevelTabs.push( {
       content: '<i class="icon-cog"></i> Edit Chart',
       title: "Edit the chart configuration",
       isValid: (workspace: Workspace) => workspace.isLinkActive("jmx/chart"),
-      href: () => "#/jmx/chartEdit"
+      href: () => "/jmx/chartEdit"
     });
 
   }]);

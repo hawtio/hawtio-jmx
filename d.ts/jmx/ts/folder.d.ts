@@ -112,8 +112,10 @@ declare module Core {
     class Folder implements NodeSelection {
         title: string;
         constructor(title: string);
+        id: string;
         key: string;
         typeName: string;
+        items: NodeSelection[];
         children: NodeSelection[];
         folderNames: string[];
         domain: string;

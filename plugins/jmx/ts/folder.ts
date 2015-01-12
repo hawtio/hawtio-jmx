@@ -117,9 +117,26 @@ module Core {
       this.addClass = escapeTreeCssStyles(title);
     }
 
-    key:string = null;
+    id:string = null;
+
+
+    get key():string {
+      return this.id;
+    }
+    set key(key:string) {
+      this.id = key;
+    } 
+
     typeName:string = null;
-    children = <Array<NodeSelection>>[];
+    items = <Array<NodeSelection>>[];
+
+    get children():Array<NodeSelection> {
+      return this.items;
+    }
+    set children(items:Array<NodeSelection>) {
+      this.items = items;
+    }
+
     folderNames:string[] = [];
     domain:string = null;
     objectName:string = null;
