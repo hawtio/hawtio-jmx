@@ -15,7 +15,7 @@ module Jmx {
       field: 'value',
       displayName: 'Value',
       width: "70%",
-      cellTemplate: '<div class="ngCellText mouse-pointer" ng-click="row.entity.onViewAttribute()" title="{{row.entity.tooltip}}" ng-bind-html-unsafe="row.entity.summary"></div>'
+      cellTemplate: '<div class="ngCellText mouse-pointer" ng-click="row.entity.onViewAttribute()" title="{{row.entity.tooltip}}" ng-bind-html="row.entity.summary"></div>'
     }
   ];
 
