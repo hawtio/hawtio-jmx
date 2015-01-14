@@ -31,7 +31,7 @@ module Core {
     public mbeanTypesToDomain = {};
     public mbeanServicesToDomain = {};
     public attributeColumnDefs = {};
-    public treePostProcessors = [];
+    public treePostProcessors = {};
     public topLevelTabs:any = undefined 
     public subLevelTabs = [];
     public keyToNodeMap = {};
@@ -111,7 +111,6 @@ module Core {
           this.jolokiaStatus.xhr = null;
         }
         workspace.populateTree(response);  
-        Core.$apply(workspace.$rootScope);
       }, flags));
     }
 
@@ -123,13 +122,20 @@ module Core {
      * @param {Function} processor
      */
     public addTreePostProcessor(processor:(tree:any) => void) {
-      this.treePostProcessors.push(processor);
+      var numKeys = _.keys(this.treePostProcessors).length;
+      var nextKey = numKeys + 1;
+      return this.addNamedTreePostProcessor(nextKey + '', processor);
+    }
 
+    public addNamedTreePostProcessor(name:string, processor:(tree:any) => void) {
+      this.treePostProcessors[name] = processor;
       var tree = this.tree;
       if (tree) {
         // the tree is loaded already so lets process it now :)
         processor(tree);
       }
+      return name;
+
     }
 
     public maybeMonitorPlugins() {
@@ -356,15 +362,18 @@ module Core {
         this.tree = tree;
 
         var processors = this.treePostProcessors;
-        angular.forEach(processors, (processor) => processor(tree));
+        _.forIn(processors, (fn, key) => {
+          log.debug("Running tree post processor: ", key);
+          fn(tree);
+        });
 
         this.maybeMonitorPlugins();
 
         var rootScope = this.$rootScope;
         if (rootScope) {
           rootScope.$broadcast('jmxTreeUpdated');
+          Core.$apply(rootScope);
         }
-        Core.$apply(rootScope);
       }
     }
 

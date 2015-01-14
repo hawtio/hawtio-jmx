@@ -38,19 +38,9 @@ module Jmx {
       return answer;
   }]);
 
-  // local storage service to wrap the HTML5 browser storage
-  _module.service('localStorage',() => {
-    return Core.getLocalStorage();
-  });
-
-  // Holds a mapping of plugins to layouts, plugins use this to specify a full width view, tree view or their own custom view
-  _module.factory('viewRegistry',() => {
-    return {};
-  });
-
   _module.controller("Jmx.MBeanTreeController", ['$scope', 'workspace', ($scope, workspace) => {
-    $scope.tree = undefined;
-    workspace.addTreePostProcessor((tree:Core.Folder) => {
+    //$scope.tree = undefined;
+    workspace.addNamedTreePostProcessor('MBeanTree', (tree:Core.Folder) => {
       $scope.tree = tree;
     });
     $scope.select = (node) => {
@@ -58,9 +48,13 @@ module Jmx {
     }
   }]);
 
-  // TODO placeholders for now
+  _module.factory('rbacACLMBean', function() {
+    return {
+      then: function() {}
+    }
+  });
+
   _module.constant('layoutTree', 'plugins/jmx/html/layoutTree.html');
-  _module.constant('layoutFull', 'plugins/jmx/html/layoutFull.html');
 
   // the jolokia URL we're connected to, could probably be a constant
   _module.factory('jolokiaUrl', () => {
@@ -99,37 +93,12 @@ module Jmx {
     return Core.lazyLoaders;
   });
 
-  // TODO placeholder
-  _module.factory('userDetails', () => {
-    return {
-      username: '',
-      password: ''
-    };
-  });
-
-  // TODO placeholder
-  _module.factory('helpRegistry', () => {
-    return {
-      addUserDoc: () => {},
-      addDevDoc: () => {}
-    }
-  });
-
-  // TODO placeholder
-  _module.factory('preferencesRegistry', () => {
-    return {
-      addTab: () => {}
-    }
-  });
-
-
-  _module.run(["$location", "workspace", "viewRegistry", "layoutTree", "jolokia", "helpRegistry", ($location: ng.ILocationService, workspace:Core.Workspace, viewRegistry, layoutTree, jolokia, helpRegistry) => {
+  _module.run(["$location", "workspace", "viewRegistry", "layoutTree", "jolokia", "helpRegistry", "pageTitle", ($location: ng.ILocationService, workspace:Core.Workspace, viewRegistry, layoutTree, jolokia, helpRegistry, pageTitle) => {
     log.debug('loaded');
 
     viewRegistry['jmx'] = layoutTree;
     helpRegistry.addUserDoc('jmx', 'app/jmx/doc/help.md');
 
-    /*
     pageTitle.addTitleElement(():string => {
       if (Jmx.currentProcessId === '') {
         try {
@@ -143,7 +112,6 @@ module Jmx {
       }
       return Jmx.currentProcessId;
     });
-    */
 
     workspace.topLevelTabs.push( {
       id: "jmx",

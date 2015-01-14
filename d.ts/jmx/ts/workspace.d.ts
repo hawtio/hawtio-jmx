@@ -36,7 +36,7 @@ declare module Core {
         mbeanTypesToDomain: {};
         mbeanServicesToDomain: {};
         attributeColumnDefs: {};
-        treePostProcessors: any[];
+        treePostProcessors: {};
         topLevelTabs: any;
         subLevelTabs: any[];
         keyToNodeMap: {};
@@ -63,7 +63,8 @@ declare module Core {
          * @method addTreePostProcessor
          * @param {Function} processor
          */
-        addTreePostProcessor(processor: (tree: any) => void): void;
+        addTreePostProcessor(processor: (tree: any) => void): string;
+        addNamedTreePostProcessor(name: string, processor: (tree: any) => void): string;
         maybeMonitorPlugins(): void;
         maybeUpdatePlugins(response: any): void;
         maybeReloadTree(response: any): void;

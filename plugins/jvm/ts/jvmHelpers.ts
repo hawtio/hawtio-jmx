@@ -47,19 +47,19 @@ module JVM {
         content: '<i class=" icon-signin"></i> Remote',
         title: "Connect to a remote JVM running Jolokia",
         isValid: (workspace:Workspace) => true,
-        href: "#/jvm/connect"
+        href: "/jvm/connect"
       },
       {
         content: '<i class="icon-list-ul"></i> Local',
         title: "View a diagram of the route",
         isValid: (workspace:Workspace) => hasLocalMBean(workspace),
-        href: "#/jvm/local"
+        href: "/jvm/local"
       },
       {
         content: '<i class="icon-signin"></i> Discovery',
         title: "Discover",
         isValid: (workspace:Workspace) => hasDiscoveryMBean(workspace),
-        href: "#/jvm/discover"
+        href: "/jvm/discover"
       }
     ];
   }

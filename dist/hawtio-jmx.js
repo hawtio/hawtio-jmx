@@ -1,4 +1,5 @@
-
+/// <reference path="../libs/hawtio-ui/defs.d.ts"/>
+/// <reference path="../libs/hawtio-forms/defs.d.ts"/>
 
 /// <reference path="../../includes.ts"/>
 var Example;
@@ -300,7 +301,7 @@ var Core;
             this.mbeanTypesToDomain = {};
             this.mbeanServicesToDomain = {};
             this.attributeColumnDefs = {};
-            this.treePostProcessors = [];
+            this.treePostProcessors = {};
             this.topLevelTabs = undefined;
             this.subLevelTabs = [];
             this.keyToNodeMap = {};
@@ -362,7 +363,6 @@ var Core;
                     _this.jolokiaStatus.xhr = null;
                 }
                 workspace.populateTree(response);
-                Core.$apply(workspace.$rootScope);
             }, flags));
         };
         /**
@@ -372,12 +372,18 @@ var Core;
          * @param {Function} processor
          */
         Workspace.prototype.addTreePostProcessor = function (processor) {
-            this.treePostProcessors.push(processor);
+            var numKeys = _.keys(this.treePostProcessors).length;
+            var nextKey = numKeys + 1;
+            return this.addNamedTreePostProcessor(nextKey + '', processor);
+        };
+        Workspace.prototype.addNamedTreePostProcessor = function (name, processor) {
+            this.treePostProcessors[name] = processor;
             var tree = this.tree;
             if (tree) {
                 // the tree is loaded already so lets process it now :)
                 processor(tree);
             }
+            return name;
         };
         Workspace.prototype.maybeMonitorPlugins = function () {
             if (this.treeContainsDomainAndProperties("hawtio", { type: "Registry" })) {
@@ -595,13 +601,16 @@ var Core;
                 this.enableLazyLoading(tree);
                 this.tree = tree;
                 var processors = this.treePostProcessors;
-                angular.forEach(processors, function (processor) { return processor(tree); });
+                _.forIn(processors, function (fn, key) {
+                    log.debug("Running tree post processor: ", key);
+                    fn(tree);
+                });
                 this.maybeMonitorPlugins();
                 var rootScope = this.$rootScope;
                 if (rootScope) {
                     rootScope.$broadcast('jmxTreeUpdated');
+                    Core.$apply(rootScope);
                 }
-                Core.$apply(rootScope);
             }
         };
         Workspace.prototype.enableLazyLoading = function (folder) {
@@ -1640,26 +1649,22 @@ var Jmx;
         answer.loadTree();
         return answer;
     }]);
-    // local storage service to wrap the HTML5 browser storage
-    Jmx._module.service('localStorage', function () {
-        return Core.getLocalStorage();
-    });
-    // Holds a mapping of plugins to layouts, plugins use this to specify a full width view, tree view or their own custom view
-    Jmx._module.factory('viewRegistry', function () {
-        return {};
-    });
     Jmx._module.controller("Jmx.MBeanTreeController", ['$scope', 'workspace', function ($scope, workspace) {
-        $scope.tree = undefined;
-        workspace.addTreePostProcessor(function (tree) {
+        //$scope.tree = undefined;
+        workspace.addNamedTreePostProcessor('MBeanTree', function (tree) {
             $scope.tree = tree;
         });
         $scope.select = function (node) {
             workspace.updateSelectionNode(node);
         };
     }]);
-    // TODO placeholders for now
+    Jmx._module.factory('rbacACLMBean', function () {
+        return {
+            then: function () {
+            }
+        };
+    });
     Jmx._module.constant('layoutTree', 'plugins/jmx/html/layoutTree.html');
-    Jmx._module.constant('layoutFull', 'plugins/jmx/html/layoutFull.html');
     // the jolokia URL we're connected to, could probably be a constant
     Jmx._module.factory('jolokiaUrl', function () {
         // TODO
@@ -1693,48 +1698,23 @@ var Jmx;
     Jmx._module.factory('jmxTreeLazyLoadRegistry', function () {
         return Core.lazyLoaders;
     });
-    // TODO placeholder
-    Jmx._module.factory('userDetails', function () {
-        return {
-            username: '',
-            password: ''
-        };
-    });
-    // TODO placeholder
-    Jmx._module.factory('helpRegistry', function () {
-        return {
-            addUserDoc: function () {
-            },
-            addDevDoc: function () {
-            }
-        };
-    });
-    // TODO placeholder
-    Jmx._module.factory('preferencesRegistry', function () {
-        return {
-            addTab: function () {
-            }
-        };
-    });
-    Jmx._module.run(["$location", "workspace", "viewRegistry", "layoutTree", "jolokia", "helpRegistry", function ($location, workspace, viewRegistry, layoutTree, jolokia, helpRegistry) {
+    Jmx._module.run(["$location", "workspace", "viewRegistry", "layoutTree", "jolokia", "helpRegistry", "pageTitle", function ($location, workspace, viewRegistry, layoutTree, jolokia, helpRegistry, pageTitle) {
         Jmx.log.debug('loaded');
         viewRegistry['jmx'] = layoutTree;
         helpRegistry.addUserDoc('jmx', 'app/jmx/doc/help.md');
-        /*
-        pageTitle.addTitleElement(():string => {
-          if (Jmx.currentProcessId === '') {
-            try {
-              Jmx.currentProcessId = jolokia.getAttribute('java.lang:type=Runtime', 'Name');
-            } catch (e) {
-              // ignore
+        pageTitle.addTitleElement(function () {
+            if (Jmx.currentProcessId === '') {
+                try {
+                    Jmx.currentProcessId = jolokia.getAttribute('java.lang:type=Runtime', 'Name');
+                }
+                catch (e) {
+                }
+                if (Jmx.currentProcessId && Jmx.currentProcessId.has("@")) {
+                    Jmx.currentProcessId = "pid:" + Jmx.currentProcessId.split("@")[0];
+                }
             }
-            if (Jmx.currentProcessId && Jmx.currentProcessId.has("@")) {
-              Jmx.currentProcessId = "pid:" +  Jmx.currentProcessId.split("@")[0];
-            }
-          }
-          return Jmx.currentProcessId;
+            return Jmx.currentProcessId;
         });
-        */
         workspace.topLevelTabs.push({
             id: "jmx",
             content: "JMX",
@@ -4213,19 +4193,19 @@ var JVM;
                 content: '<i class=" icon-signin"></i> Remote',
                 title: "Connect to a remote JVM running Jolokia",
                 isValid: function (workspace) { return true; },
-                href: "#/jvm/connect"
+                href: "/jvm/connect"
             },
             {
                 content: '<i class="icon-list-ul"></i> Local',
                 title: "View a diagram of the route",
                 isValid: function (workspace) { return hasLocalMBean(workspace); },
-                href: "#/jvm/local"
+                href: "/jvm/local"
             },
             {
                 content: '<i class="icon-signin"></i> Discovery',
                 title: "Discover",
                 isValid: function (workspace) { return hasDiscoveryMBean(workspace); },
-                href: "#/jvm/discover"
+                href: "/jvm/discover"
             }
         ];
     }
@@ -4658,6 +4638,6 @@ $templateCache.put("plugins/jmx/html/operations.html","<div  id=\"threadForm\" n
 $templateCache.put("plugins/jmx/html/subLevelTabs.html","<ul class=\"nav nav-tabs\" ng-controller=\"Jmx.NavBarController\" hawtio-auto-dropdown>\n  <li ng-repeat=\"nav in subLevelTabs track by $index | orderBy:index\" ng-show=\"isValid(nav)\" ng-class=\"{active : isActive(nav)}\">\n    <a ng-href=\"{{nav.href()}}{{hash}}\" title=\"{{nav.title}}\"\n       data-placement=\"bottom\" ng-bind-html=\"nav.content\">\n    </a>\n  </li>\n\n  <li class=\"pull-right\">\n    <a ng-href=\"{{fullScreenLink()}}\" title=\"Show this view in full screen\" data-placement=\"bottom\">\n      <i class=\"icon-fullscreen\"></i>\n    </a>\n  </li>\n  <li class=\"pull-right\">\n    <a ng-href=\"{{addToDashboardLink()}}\" title=\"Add this view to a dashboard\" data-placement=\"bottom\">\n      <i class=\"icon-share\"></i>\n    </a>\n  </li>\n  <li class=\"pull-right dropdown overflow\" style=\"visibility: hidden;\">\n    <a href=\"#\" class=\"dropdown-toggle\" data-toggle=\"dropdown\"><i class=\"icon-chevron-down\"></i></a>\n    <ul class=\"dropdown-menu right\"></ul>\n  </li>\n\n\n</ul>\n\n");
 $templateCache.put("plugins/jvm/html/connect.html","<div ng-controller=\"JVM.ConnectController\">\n\n  <div class=\"row-fluid connect-column-container\" hawtio-auto-columns=\".connect-column\">\n\n    <div class=\"connect-column\">\n      <div class=\"alert alert-info\">\n        <p>\n          This page allows you to connect to remote processes which <strong>already have a <a\n                href=\"http://jolokia.org/\">jolokia agent</a> running inside them</strong>. You will need to know the\n          host name, port and path of the jolokia agent to be able to connect.\n        </p>\n\n        <p>\n          If the process you wish to connect to does not have a jolokia agent inside, please refer to the <a\n                href=\"http://jolokia.org/agent.html\">jolokia documentation</a> for how to add a JVM, servlet or OSGi\n          based agent inside it.\n        </p>\n\n        <p>\n          If you are using <a href=\"http://fabric8.io/\">Fabric8</a>, <a href=\"http://www.jboss.org/products/fuse\">JBoss Fuse</a>, or <a href=\"http://activemq.apache.org\">Apache ActiveMQ</a>;\n          then a jolokia agent is included by default. Or you can always just deploy hawtio inside the process (which includes the jolokia agent).\n        </p>\n\n        <p>\n          <strong>Use Proxy</strong>:\n          hawtio is running in your browser; usually due to CORS; you cannot open a different host or port from your browser (due to browse security restrictions);\n          so we have to use a proxy servlet inside the hawtio web app to proxy all requests for a different jolokia server - so we can communicate with a different jolokia agent.\n          If you use the hawtio Chrome Extension this isn’t required; since Chrome Extensions are allowed to connect to any host/port.\n        </p>\n\n        <p ng-show=\"hasLocalMBean()\">\n          Use the <strong><a href=\"#/jvm/local\">Local Tab</a></strong> to connect to processes locally on this machine (which will install a jolokia agent automatically if required).\n        </p>\n\n        <p ng-show=\"!hasLocalMBean()\">\n          The <strong>Local Tab</strong> is not currently enabled because either the server side <strong>hawtio-local-jvm-mbean plugin</strong> is not installed or this\n          JVM cannot find the <strong>com.sun.tools.attach.VirtualMachine</strong> API usually found in the <strong>tool.jar</strong>.\n          Please see the <a href=\"http://hawt.io/faq/index.html\">FAQ entry</a> for more details.\n        </p>\n      </div>\n    </div>\n\n    <div class=\"connect-column\">\n\n      <dl>\n        <dt>Saved Connections</dt>\n        <dd>\n          <form class=\"form-horizontal no-bottom-margin\">\n            <fieldset>\n              <div class=\"control-group\">\n                <label class=\"control-label\">Connections: </label>\n                <div class=\"controls\">\n                  <select ng-model=\"lastConnection\"\n                          ng-options=\"value.name as key for (key, value) in connectionConfigs\">\n                    <option value=\"\"\n                            ng-hide=\"lastConnection\">New connection...</option>\n                  </select>\n                  <button class=\"btn btn-success\"\n                          title=\"Connect to this server\"\n                          ng-disabled=\"!lastConnection\"\n                          ng-click=\"gotoServer()\"><i class=\"icon-share\"></i></button>\n                  <button class=\"btn btn-danger\"\n                          title=\"Delete this connection\"\n                          ng-disabled=\"!lastConnection\"\n                          ng-click=\"deleteConnection()\"><i class=\"icon-remove-sign\"></i></button>\n                  <button class=\"btn btn-primary\"\n                          title=\"Create a new connection\"\n                          ng-disabled=\"!lastConnection\"\n                          ng-click=\"newConnection()\"><i class=\"icon-plus\"></i></button>\n                </div>\n              </div>\n            </fieldset>\n          </form>\n        </dd>\n      </dl>\n\n      <dl>\n        <dt>Connection Settings</dt>\n        <dd>\n          <div simple-form name=\"connectForm\" data=\"formConfig\" entity=\"currentConfig\" onSubmit=\"gotoServer()\"></div>\n\n          <div class=\"centered\">\n            <button class=\"btn btn-primary\"\n                    ng-disabled=\"!forms.connectForm.$valid\"\n                    hawtio-submit=\"connectForm\"\n                    title=\"Saves the connection and opens a new browser window connecting to the given JVM process via its Jolokia servlet URL\">Connect to remote server</button>\n            <button class=\"btn\"\n                    title=\"Save this configuration but don\'t open a new tab\"\n                    ng-disabled=\"!forms.connectForm.$valid\"\n                    ng-click=\"save()\">Save</button>\n          </div>\n        </dd>\n      </dl>\n\n    </div>\n\n  </div>\n\n</div>\n");
 $templateCache.put("plugins/jvm/html/discover.html","<div ng-controller=\"JVM.DiscoveryController\">\n\n  <div class=\"row-fluid\">\n\n    <div class=\"pull-right\">\n      <button class=\"btn\" ng-click=\"fetch()\" title=\"Refresh\"><i class=\"icon-refresh\"></i></button>\n    </div>\n    <div class=\"pull-right\">\n      <input class=\"search-query\" type=\"text\" ng-model=\"filter\" placeholder=\"Filter...\">\n    </div>\n\n    <script type=\"text/ng-template\" id=\"authPrompt\">\n      <div class=\"auth-form\">\n        <form name=\"authForm\">\n          <input type=\"text\"\n                 class=\"input-small\"\n                 placeholder=\"Username...\"\n                 ng-model=\"agent.username\"\n                 required>\n          <input type=\"password\"\n                 class=\"input-small\"\n                 placeholder=\"Password...\"\n                 ng-model=\"agent.password\"\n                 required>\n          <button ng-disabled=\"!authForm.$valid\"\n                  ng-click=\"connectWithCredentials($event, agent)\"\n                  class=\"btn btn-success\">\n            <i class=\"icon-share\"></i> Connect\n          </button>\n          <button class=\"btn\" ng-click=\"closePopover($event)\"><i class=\"icon-remove\"></i></button>\n        </form>\n      </div>\n    </script>\n\n  </div>\n\n  <div class=\"row-fluid\">\n\n    <div ng-show=\"discovering\">\n      <p></p>\n\n      <div class=\"alert alert-info\">\n        <i class=\"icon-spinner icon-spin\"></i> Please wait, discovering agents ...\n      </div>\n    </div>\n\n    <div ng-hide=\"discovering\">\n      <div ng-hide=\"agents\">\n        <p></p>\n\n        <div class=\"alert alert-warning\">\n          No agents discovered.\n        </div>\n      </div>\n      <div ng-show=\"agents\">\n        <ul class=\"discovery zebra-list\">\n          <li ng-repeat=\"agent in agents track by $index\" ng-show=\"filterMatches(agent)\">\n\n            <div class=\"inline-block\">\n              <img ng-src=\"{{getLogo(agent)}}\">\n            </div>\n\n            <div class=\"inline-block\">\n              <p ng-hide=\"!hasName(agent)\">\n              <span class=\"strong\"\n                    ng-show=\"agent.server_vendor\">\n                {{agent.server_vendor}} {{agent.server_product.titleize()}} {{agent.server_version}}\n              </span>\n              </p>\n            <span ng-class=\"getAgentIdClass(agent)\">\n              <strong ng-show=\"hasName(agent)\">Agent ID: </strong>{{agent.agent_id}}<br/>\n              <strong ng-show=\"hasName(agent)\">Agent Version: </strong><span ng-hide=\"hasName(agent)\"> Version: </span>{{agent.agent_version}}</span><br/>\n              <strong ng-show=\"hasName(agent)\">Agent Description: </strong><span\n                ng-hide=\"hasName(agent)\"> Description: </span>{{agent.agent_description}}</span><br/>\n\n              <p ng-hide=\"!agent.url\"><strong>Agent URL: </strong><a ng-href=\"{{agent.url}}\"\n                                                                     target=\"_blank\">{{agent.url}}</a>\n              </p>\n            </div>\n\n            <div class=\"inline-block lock\" ng-show=\"agent.secured\">\n              <i class=\"icon-lock\" title=\"A valid username and password will be required to connect\"></i>\n            </div>\n\n            <div class=\"inline-block\">\n              <div class=\"connect-button\"\n                   ng-click=\"gotoServer($event, agent)\"\n                   hawtio-template-popover\n                   content=\"authPrompt\"\n                   trigger=\"manual\"\n                   placement=\"auto\"\n                   data-title=\"Please enter your username and password\">\n                <i ng-show=\"agent.url\" class=\"icon-play-circle\"></i>\n              </div>\n            </div>\n\n          </li>\n        </ul>\n      </div>\n    </div>\n  </div>\n</div>\n");
-$templateCache.put("plugins/jvm/html/layoutConnect.html","<ul class=\"nav nav-tabs connected\" ng-controller=\"JVM.NavController\">\n  <li ng-repeat=\"link in breadcrumbs\" ng-show=\"isValid(link)\" ng-class=\'{active : isActive(link.href)}\'>\n    <a ng-href=\"{{link.href}}{{hash}}\" ng-bind-html-unsafe=\"link.content\"></a>\n  </li>\n</ul>\n<div class=\"row-fluid\">\n  <div ng-view></div>\n</div>\n");
+$templateCache.put("plugins/jvm/html/layoutConnect.html","<ul class=\"nav nav-tabs connected\" ng-controller=\"JVM.NavController\">\n  <li ng-repeat=\"link in breadcrumbs\" ng-show=\"isValid(link)\" ng-class=\'{active : isActive(link.href)}\'>\n    <a ng-href=\"{{link.href}}{{hash}}\" ng-bind-html=\"link.content\"></a>\n  </li>\n</ul>\n<div class=\"row-fluid\">\n  <div ng-view></div>\n</div>\n");
 $templateCache.put("plugins/jvm/html/local.html","<div ng-controller=\"JVM.JVMsController\">\n\n  <div class=\"row-fluid\">\n    <div class=\"pull-right\">\n      <button class=\"btn\" ng-click=\"fetch()\" title=\"Refresh\"><i class=\"icon-refresh\"></i></button>\n    </div>\n    <div class=\"pull-right\">\n      <input class=\"search-query\" type=\"text\" ng-model=\"filter\" placeholder=\"Filter...\">\n    </div>\n  </div>\n\n  <div ng-hide=\"initDone\">\n    <div class=\"alert alert-info\">\n      <i class=\"icon-spinner icon-spin\"></i> Please wait, discovering local JVM processes ...\n    </div>\n  </div>\n\n  <div ng-hide=\'data.length > 0\' class=\'row-fluid\'>\n    {{status}}\n  </div>\n\n  <div ng-show=\'data.length > 0\' class=\"row-fluid\">\n    <table class=\'centered table table-bordered table-condensed table-striped\'>\n      <thead>\n      <tr>\n        <th style=\"width: 70px\">PID</th>\n        <th>Name</th>\n        <th style=\"width: 300px\">Agent URL</th>\n        <th style=\"width: 50px\"></th>\n      </tr>\n      </thead>\n      <tbody>\n      <tr ng-repeat=\"jvm in data track by $index\" ng-show=\"filterMatches(jvm)\">\n        <td>{{jvm.id}}</td>\n        <td title=\"{{jvm.displayName}}\">{{jvm.alias}}</td>\n        <td><a href=\'\' title=\"Connect to this agent\"\n               ng-click=\"connectTo(jvm.url, jvm.scheme, jvm.hostname, jvm.port, jvm.path)\">{{jvm.agentUrl}}</a></td>\n        <td>\n          <a class=\'btn control-button\' href=\"\" title=\"Stop agent\" ng-show=\"jvm.agentUrl\"\n             ng-click=\"stopAgent(jvm.id)\"><i class=\"icon-off\"></i></a>\n          <a class=\'btn control-button\' href=\"\" title=\"Start agent\" ng-hide=\"jvm.agentUrl\"\n             ng-click=\"startAgent(jvm.id)\"><i class=\"icon-play-circle\"></i></a>\n        </td>\n      </tr>\n\n      </tbody>\n    </table>\n\n  </div>\n\n\n</div>\n");
 $templateCache.put("plugins/jvm/html/reset.html","<div ng-controller=\"JVM.ResetController\">\n  <form class=\"form-horizontal\">\n    <fieldset>\n      <div class=\"control-group\">\n        <label class=\"control-label\">\n          <strong>\n            <i class=\'yellow text-shadowed icon-warning-sign\'></i> Clear saved connections\n          </strong>\n        </label>\n        <div class=\"controls\">\n          <button class=\"btn btn-danger\" ng-click=\"doClearConnectSettings()\">Clear saved connections</button>\n          <span class=\"help-block\">Wipe all saved connection settings stored by {{branding.appName}} in your browser\'s local storage</span>\n        </div>\n      </div>\n    </fieldset>\n  </form>\n</div>\n\n");}]); hawtioPluginLoader.addModule("hawtio-jmx-templates");
