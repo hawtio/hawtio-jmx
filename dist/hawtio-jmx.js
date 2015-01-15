@@ -596,21 +596,21 @@ var Core;
                         log.info("No folder found for lastPath: " + lastPath);
                     }
                 }
-                tree.sortChildren(true);
-                // now lets mark the nodes with no children as lazy loading...
-                this.enableLazyLoading(tree);
-                this.tree = tree;
-                var processors = this.treePostProcessors;
-                _.forIn(processors, function (fn, key) {
-                    log.debug("Running tree post processor: ", key);
-                    fn(tree);
-                });
-                this.maybeMonitorPlugins();
-                var rootScope = this.$rootScope;
-                if (rootScope) {
-                    rootScope.$broadcast('jmxTreeUpdated');
-                    Core.$apply(rootScope);
-                }
+            }
+            tree.sortChildren(true);
+            // now lets mark the nodes with no children as lazy loading...
+            this.enableLazyLoading(tree);
+            this.tree = tree;
+            var processors = this.treePostProcessors;
+            _.forIn(processors, function (fn, key) {
+                log.debug("Running tree post processor: ", key);
+                fn(tree);
+            });
+            this.maybeMonitorPlugins();
+            var rootScope = this.$rootScope;
+            if (rootScope) {
+                rootScope.$broadcast('jmxTreeUpdated');
+                Core.$apply(rootScope);
             }
         };
         Workspace.prototype.enableLazyLoading = function (folder) {

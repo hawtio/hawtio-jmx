@@ -354,26 +354,26 @@ module Core {
             log.info("No folder found for lastPath: " + lastPath);
           }
         }
+      }
 
-        tree.sortChildren(true);
+      tree.sortChildren(true);
 
-        // now lets mark the nodes with no children as lazy loading...
-        this.enableLazyLoading(tree);
-        this.tree = tree;
+      // now lets mark the nodes with no children as lazy loading...
+      this.enableLazyLoading(tree);
+      this.tree = tree;
 
-        var processors = this.treePostProcessors;
-        _.forIn(processors, (fn, key) => {
-          log.debug("Running tree post processor: ", key);
-          fn(tree);
-        });
+      var processors = this.treePostProcessors;
+      _.forIn(processors, (fn, key) => {
+        log.debug("Running tree post processor: ", key);
+        fn(tree);
+      });
 
-        this.maybeMonitorPlugins();
+      this.maybeMonitorPlugins();
 
-        var rootScope = this.$rootScope;
-        if (rootScope) {
-          rootScope.$broadcast('jmxTreeUpdated');
-          Core.$apply(rootScope);
-        }
+      var rootScope = this.$rootScope;
+      if (rootScope) {
+        rootScope.$broadcast('jmxTreeUpdated');
+        Core.$apply(rootScope);
       }
     }
 
