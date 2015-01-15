@@ -39,9 +39,11 @@ module Jmx {
   }]);
 
   _module.controller("Jmx.MBeanTreeController", ['$scope', 'workspace', ($scope, workspace) => {
-    //$scope.tree = undefined;
+    $scope.node = {};
     workspace.addNamedTreePostProcessor('MBeanTree', (tree:Core.Folder) => {
-      $scope.tree = tree;
+      angular.copy(tree, $scope.node);
+      $scope.node.open = true;
+      log.debug("got tree: ", $scope.node);
     });
     $scope.select = (node) => {
       workspace.updateSelectionNode(node);
@@ -152,4 +154,8 @@ module Jmx {
   }]);
 
   hawtioPluginLoader.addModule(pluginName);
+  /*
+  hawtioPluginLoader.addModule('dotjem.angular.tree');
+  */
+
 }

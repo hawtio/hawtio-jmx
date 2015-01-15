@@ -14,19 +14,11 @@
   </div>
 </script>
 -->
+  <!--
 
-<!--
 <hawtio-pane position="left" width="300" header="header">
-  <div id="tree-container"
-    ng-controller="Jmx.MBeansController">
-    <div id="jmxtree"></div>
-  </div>
-</hawtio-pane>
--->
-<div class="row">
-  <div class="col-sm-9 col-md-10 col-sm-push-3 col-md-push-2">
-    <ng-include src="'plugins/jmx/html/subLevelTabs.html'"></ng-include>
-    <div id="properties" ng-view></div>
+  <div ng-controller="Jmx.MBeanTreeController">
+    <treecontrol class="tree-classic" tree-model="tree" options=treeOptions" on-selection="select(node)"></treecontrol>
   </div>
   <div class="col-sm-3 col-md-2 col-sm-pull-9 col-md-pull-10 sidebar-pf sidebar-pf-left">
     <div ng-controller="Jmx.MBeanTreeController">
@@ -45,6 +37,26 @@
           <li ng-repeat="node in tree.items" ui-tree-node ng-include="'nodes_renderer.html'"></li>
         </ul>
       </div>
+    </div>
+  </div>
+</hawtio-pane>
+-->
+
+<script type="text/ng-template" id="node.html">
+  <span ng-bind-html="node.title" ng-click="select(node)"></span>
+  <ul>
+    <li ng-repeat="node in node.items" ng-include="'node.html'"></li>
+  </ul>
+</script>
+
+<div class="row">
+  <div class="col-sm-9 col-md-10 col-sm-push-3 col-md-push-2">
+    <ng-include src="'plugins/jmx/html/subLevelTabs.html'"></ng-include>
+    <div id="properties" ng-view></div>
+  </div>
+  <div class="col-sm-3 col-md-2 col-sm-pull-9 col-md-pull-10 sidebar-pf sidebar-pf-left">
+    <div ng-controller="Jmx.MBeanTreeController">
+      <div ng-include="'node.html'"></li>
     </div>
   </div>
 </div>
