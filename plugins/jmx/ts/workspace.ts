@@ -65,13 +65,16 @@ module Core {
       this.topLevelTabs = {
         push: (item:NavMenuItem) => {
           log.debug("Added menu item: ", item);
-          workspace.HawtioNav.add({
+          var tab = {
             id: item.id,
             title: () => item.content,
             isValid: () => item.isValid(workspace),
             href: () => UrlHelpers.noHash(item.href()),
-            isActive: () => item.isActive(workspace)
-          });
+          }
+          if (item.isActive) {
+            tab['isSelected'] = () => item.isActive(workspace);
+          }
+          workspace.HawtioNav.add(tab);
         },
         find: (search:(NavMenuItem) => void) => {
 
@@ -424,7 +427,7 @@ module Core {
 
     private getStrippedPathName():String {
       var pathName = Core.trimLeading((this.$location.path() || '/'), "#");
-      pathName = Core.trimLeading(pathName, "/");
+      pathName = pathName.replace(/^\//, '');
       return pathName;
     }
 

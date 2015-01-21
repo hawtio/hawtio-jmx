@@ -323,13 +323,16 @@ var Core;
             this.topLevelTabs = {
                 push: function (item) {
                     log.debug("Added menu item: ", item);
-                    workspace.HawtioNav.add({
+                    var tab = {
                         id: item.id,
                         title: function () { return item.content; },
                         isValid: function () { return item.isValid(workspace); },
                         href: function () { return UrlHelpers.noHash(item.href()); },
-                        isActive: function () { return item.isActive(workspace); }
-                    });
+                    };
+                    if (item.isActive) {
+                        tab['isSelected'] = function () { return item.isActive(workspace); };
+                    }
+                    workspace.HawtioNav.add(tab);
                 },
                 find: function (search) {
                 }
@@ -660,7 +663,7 @@ var Core;
         };
         Workspace.prototype.getStrippedPathName = function () {
             var pathName = Core.trimLeading((this.$location.path() || '/'), "#");
-            pathName = Core.trimLeading(pathName, "/");
+            pathName = pathName.replace(/^\//, '');
             return pathName;
         };
         Workspace.prototype.linkContains = function () {
