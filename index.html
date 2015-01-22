@@ -19,6 +19,7 @@
     <link rel="stylesheet" href="libs/hawtio-ui/dist/hawtio-ui.css" />
     <!-- endbower -->
 
+    <link rel="stylesheet" href="dist/dynatree-icons.css" />
     <link rel="stylesheet" href="libs/codemirror/theme/solarized.css" />
 
     <!-- ES6/ES6 shim -->
@@ -105,15 +106,19 @@
   </head>
 
   <body>
-    <nav class="navbar navbar-default navbar-pf" role="navigation">
-      <ul class="nav navbar-nav navbar-primary" hawtio-main-nav></ul>
-      <ul class="nav navbar-nav" hawtio-sub-tabs></ul>
+    <nav class="navbar navbar-default navbar-fixed-top navbar-pf" role="navigation">
+      <div class="container-fluid">
+        <ul class="nav navbar-nav navbar-primary" hawtio-main-nav></ul>
+        <ul class="nav navbar-nav" hawtio-sub-tabs></ul>
+      </div>
     </nav>
 
     <div id="main" class="container-fluid ng-cloak" ng-controller="HawtioNav.ViewController">
       <div ng-include src="viewPartial"></div>
     </div>
 
+    <script src="dist/jquery-ui.custom.js"></script>
+    <script src="dist/jquery.dynatree.js"></script>
     <script src="dist/jolokia.js"></script>
     <script src="dist/cubism.v1.js"></script>
     <script src="dist/jolokia-simple.js"></script>
