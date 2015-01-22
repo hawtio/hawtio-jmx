@@ -450,7 +450,7 @@ module Core {
       var pathName = this.getStrippedPathName();
 
       var link = Core.trimLeading(href, "#");
-      link = Core.trimLeading(link, "/");
+      link = link.replace(/^\//, '');
       // strip any query arguments
       var idx = link.indexOf('?');
       if (idx >= 0) {
@@ -475,7 +475,7 @@ module Core {
       var pathName = this.getStrippedPathName();
 
       var link = Core.trimLeading(href, "#");
-      link = Core.trimLeading(link, "/");
+      link = link.replace(/^\//, '');
       // strip any query arguments
       var idx = link.indexOf('?');
       if (idx >= 0) {

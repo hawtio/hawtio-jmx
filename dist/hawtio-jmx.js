@@ -687,7 +687,7 @@ var Core;
             // lets trim the leading slash
             var pathName = this.getStrippedPathName();
             var link = Core.trimLeading(href, "#");
-            link = Core.trimLeading(link, "/");
+            link = link.replace(/^\//, '');
             // strip any query arguments
             var idx = link.indexOf('?');
             if (idx >= 0) {
@@ -711,7 +711,7 @@ var Core;
             // lets trim the leading slash
             var pathName = this.getStrippedPathName();
             var link = Core.trimLeading(href, "#");
-            link = Core.trimLeading(link, "/");
+            link = link.replace(/^\//, '');
             // strip any query arguments
             var idx = link.indexOf('?');
             if (idx >= 0) {
