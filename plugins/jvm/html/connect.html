@@ -1,6 +1,6 @@
 <div ng-controller="JVM.ConnectController">
 
-  <div class="row-fluid connect-column-container" hawtio-auto-columns=".connect-column">
+  <div class="row connect-column-container" hawtio-auto-columns=".connect-column">
 
     <div class="connect-column">
       <div class="alert alert-info">
@@ -58,7 +58,7 @@
                   <button class="btn btn-success"
                           title="Connect to this server"
                           ng-disabled="!lastConnection"
-                          ng-click="gotoServer()"><i class="icon-share"></i></button>
+                          ng-click="gotoServer()"><i class="glyphicon glyphicon-share"></i></button>
                   <button class="btn btn-danger"
                           title="Delete this connection"
                           ng-disabled="!lastConnection"
@@ -66,7 +66,7 @@
                   <button class="btn btn-primary"
                           title="Create a new connection"
                           ng-disabled="!lastConnection"
-                          ng-click="newConnection()"><i class="icon-plus"></i></button>
+                          ng-click="newConnection()"><i class="glyphicon glyphicon-plus"></i></button>
                 </div>
               </div>
             </fieldset>

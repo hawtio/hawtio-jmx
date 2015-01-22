@@ -1,5 +1,8 @@
 ### Change Log
 
+#### 2.0.3
+* Search/replace bootstrap 2.x classes to 3.x
+
 #### 2.0.2
 * Use a tab's isActive function to check if a tab is selected
 

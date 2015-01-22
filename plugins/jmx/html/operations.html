@@ -1,10 +1,10 @@
 <div  id="threadForm" ng-controller="Jmx.OperationsController">
 
-  <div class="row-fluid" ng-show="isOperationsEmpty()">
+  <div class="row" ng-show="isOperationsEmpty()">
     The selected MBean has no JMX operations.
   </div>
 
-  <div class="row-fluid" ng-hide="isOperationsEmpty() || showInvoke">
+  <div class="row" ng-hide="isOperationsEmpty() || showInvoke">
     <div class="pull-right">
       <hawtio-filter ng-model="methodFilter" placeholder="Filter..." save-as="{{objectName}}-text-filter"></hawtio-filter>
     </div>
@@ -14,42 +14,42 @@
       <div ng-controller="Jmx.OperationController">
 
         <div ng-show="operationResult!=''">
-          <div class="row-fluid">
+          <div class="row">
             <div class="control-group pull-right">
               <div class="controls">
                 <button class="btn"
                         zero-clipboard
                         data-clipboard-text="{{operationResult}}"
                         title="Copy value to clipboard">
-                  <i class="icon-copy"></i>
+                  <i class="glyphicon glyphicon-copy"></i>
                 </button>
                 <button class="btn cancel"
                         ng-click="close()">
-                  <i class="icon-remove"></i> Close
+                  <i class="glyphicon glyphicon-remove"></i> Close
                 </button>
                 <button class="btn"
                         ng-click="ok()">
-                  <i class="icon-ok"></i> Back
+                  <i class="glyphicon glyphicon-ok"></i> Back
                 </button>
               </div>
             </div>
           </div>
-          <div class="row-fluid">
+          <div class="row">
             <div hawtio-editor="operationResult" mode="mode"></div>
           </div>
         </div>
         <div ng-show="operationResult==''">
-          <div class="row-fluid">
+          <div class="row">
             <div class="control-group pull-right">
               <div class="controls">
                 <button class="btn"
                         ng-click="reset()"
                         ng-show="args">
-                  <i class="icon-undo"></i> Reset
+                  <i class="glyphicon glyphicon-undo"></i> Reset
                 </button>
                 <button class="btn cancel"
                         ng-click="close()">
-                  <i class="icon-remove"></i> Close
+                  <i class="glyphicon glyphicon-remove"></i> Close
                 </button>
                 <button class="btn btn-success execute"
                         hawtio-submit="entryForm">
@@ -62,7 +62,7 @@
                  name="entryForm"></div>
           </div>
         </div>
-        <div class="row-fluid">
+        <div class="row">
           <i><label for="jolokiaUrl">Jolokia REST Url:</label></i>
           <div class="pull-right">
             <input type="text" name="jolokiaUrl" id="jolokiaUrl" value="{{jolokiaUrl}}" style="width: 60em;" readonly/>
@@ -71,7 +71,7 @@
                 zero-clipboard
                 data-clipboard-text="{{jolokiaUrl}}"
                 title="Copy Jolokia REST Url to clipboard">
-                <i class="icon-copy"></i>
+                <i class="glyphicon glyphicon-copy"></i>
                 </button>
               </span>
           </div>
@@ -92,7 +92,7 @@
         ng-class="getClass(operation)"
         title="Click to invoke {{operation.name}}"
         data-placement="bottom">
-      <i class="icon-cog"
+      <i class="glyphicon glyphicon-cog"
          ng-class="getClass(operation)"></i>
       <span>{{operation.name}}</span>
       <span class="operation-actions">
@@ -100,7 +100,7 @@
                 zero-clipboard
                 data-clipboard-text="{{operation.name}}"
                 title="Copy method name to clipboard">
-          <i class="icon-copy"></i>
+          <i class="glyphicon glyphicon-copy"></i>
         </button>
       </span>
     </li>

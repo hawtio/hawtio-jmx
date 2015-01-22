@@ -44,6 +44,7 @@
     <script src="libs/uri.js/src/jquery.URI.min.js"></script>
     <script src="libs/uri.js/src/URI.fragmentQuery.js"></script>
     <script src="libs/uri.js/src/URI.fragmentURI.js"></script>
+    <script src="libs/hawtio-utilities/dist/angular-file-upload.js"></script>
     <script src="libs/hawtio-utilities/dist/hawtio-utilities.js"></script>
     <script src="libs/codemirror/lib/codemirror.js"></script>
     <script src="libs/graphlib/dist/graphlib.core.js"></script>
@@ -53,6 +54,9 @@
     <script src="libs/zeroclipboard/dist/ZeroClipboard.js"></script>
     <script src="libs/hawtio-ui/dist/ui-bootstrap.js"></script>
     <script src="libs/hawtio-ui/dist/ui-bootstrap-tpls.js"></script>
+    <script src="libs/hawtio-ui/dist/transition.js"></script>
+    <script src="libs/hawtio-ui/dist/dialog.js"></script>
+    <script src="libs/hawtio-ui/dist/modal.js"></script>
     <script src="libs/hawtio-ui/dist/jquery.jsPlumb-1.7.2.js"></script>
     <script src="libs/hawtio-ui/dist/marked.js"></script>
     <script src="libs/hawtio-ui/dist/d3.js"></script>
@@ -100,7 +104,7 @@
       <ul class="nav navbar-nav" hawtio-sub-tabs></ul>
     </nav>
 
-    <div id="main" class="container-fluid ng-cloak" ng-controller="HawtioNav.ViewController">
+    <div id="main" class="container ng-cloak" ng-controller="HawtioNav.ViewController">
       <div ng-include src="viewPartial"></div>
     </div>
 
