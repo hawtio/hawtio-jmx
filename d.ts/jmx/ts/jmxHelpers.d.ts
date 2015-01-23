@@ -55,7 +55,7 @@ declare module Jmx {
      * @param {String} jmxDomain the JMX domain to avoid having to evaluate too many functions on each selection
      * @param {Function} fn the function used to decide which attributes tool bar should be used for the given select
      */
-    function addAttributeToolBar(pluginName: string, jmxDomain: string, fn: (NodeSelection: any) => string): void;
+    function addAttributeToolBar(pluginName: string, jmxDomain: string, fn: (NodeSelection) => string): void;
     /**
      * Try find a custom toolbar HTML template for the given selection or returns the default value
      * @method getAttributeToolbar

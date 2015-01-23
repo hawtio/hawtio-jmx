@@ -55,7 +55,7 @@ declare module Core {
          * @type NodeSelection
          * @optional
          */
-        children?: NodeSelection[];
+        children?: Array<NodeSelection>;
         /**
          * @property parent
          * @type NodeSelection
@@ -116,7 +116,7 @@ declare module Core {
         key: string;
         typeName: string;
         items: NodeSelection[];
-        children: NodeSelection[];
+        children: Array<NodeSelection>;
         folderNames: string[];
         domain: string;
         objectName: string;

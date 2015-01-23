@@ -12,8 +12,8 @@ declare module Core {
         id: string;
         content: string;
         title?: string;
-        isValid?: (workspace: Workspace, perspectiveId?: string) => any;
-        isActive?: (worksace: Workspace) => boolean;
+        isValid?: (workspace: Core.Workspace, perspectiveId?: string) => any;
+        isActive?: (worksace: Core.Workspace) => boolean;
         href: () => any;
     }
     /**
@@ -157,8 +157,8 @@ declare module Core {
          */
         expandSelection(flag: any): void;
         private matchesProperties(entries, properties);
-        hasInvokeRightsForName(objectName: string, ...methods: string[]): any;
-        hasInvokeRights(selection: NodeSelection, ...methods: string[]): boolean;
+        hasInvokeRightsForName(objectName: string, ...methods: Array<string>): any;
+        hasInvokeRights(selection: Core.NodeSelection, ...methods: Array<string>): boolean;
         treeContainsDomainAndProperties(domainName: any, properties?: any): boolean;
         private matches(folder, properties, propertiesCount);
         hasDomainAndProperties(domainName: any, properties?: any, propertiesCount?: any): boolean;

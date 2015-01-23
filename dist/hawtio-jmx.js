@@ -180,7 +180,7 @@ var Core;
         Folder.prototype.insertBefore = function (child, referenceFolder) {
             child.detach();
             child.parent = this;
-            var idx = _.indexOf(this.children, referenceFolder);
+            var idx = _.indexOf((this.children), referenceFolder);
             if (idx >= 0) {
                 this.children.splice(idx, 0, child);
             }
@@ -188,7 +188,7 @@ var Core;
         Folder.prototype.insertAfter = function (child, referenceFolder) {
             child.detach();
             child.parent = this;
-            var idx = _.indexOf(this.children, referenceFolder);
+            var idx = _.indexOf((this.children), referenceFolder);
             if (idx >= 0) {
                 this.children.splice(idx + 1, 0, child);
             }

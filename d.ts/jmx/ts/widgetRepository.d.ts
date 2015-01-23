@@ -19,5 +19,17 @@ declare module Jmx {
         size_y: number;
         title: string;
     }[];
-    var jmxWidgets: {}[];
+    var jmxWidgets: ({
+        type: string;
+        title: string;
+        mbean: string;
+        total: string;
+        terms: string;
+        remaining: string;
+    } | {
+        type: string;
+        title: string;
+        mbean: string;
+        attribute: string;
+    })[];
 }
