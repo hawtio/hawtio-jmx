@@ -22,12 +22,12 @@
       <!-- have a form for view and another for edit -->
       <div simple-form ng-hide="!entity.rw" name="attributeEditor" mode="edit" entity='entity' data='attributeSchemaEdit'></div>
       <button ng-hide="!entity.rw" class="pull-right btn" zero-clipboard data-clipboard-text="{{entity.attrValueEdit}}" title="Copy value to clipboard">
-        <i class="glyphicon glyphicon-copy"></i>
+        <i class="fa fa-copy"></i>
       </button>
 
       <div simple-form ng-hide="entity.rw" name="attributeViewer" mode="view" entity='entity' data='attributeSchemaView'></div>
       <button ng-hide="entity.rw" class="pull-right btn" zero-clipboard data-clipboard-text="{{entity.attrValueView}}" title="Copy value to clipboard">
-        <i class="glyphicon glyphicon-copy"></i>
+        <i class="fa fa-copy"></i>
       </button>
     </div>
   </div>

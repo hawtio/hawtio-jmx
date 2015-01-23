@@ -2,7 +2,7 @@
 
   <div class="row">
     <div class="pull-right">
-      <button class="btn" ng-click="fetch()" title="Refresh"><i class="glyphicon glyphicon-refresh"></i></button>
+      <button class="btn" ng-click="fetch()" title="Refresh"><i class="fa fa-refresh"></i></button>
     </div>
     <div class="pull-right">
       <input class="search-query" type="text" ng-model="filter" placeholder="Filter...">
@@ -11,7 +11,7 @@
 
   <div ng-hide="initDone">
     <div class="alert alert-info">
-      <i class="glyphicon glyphicon-spinner icon-spin"></i> Please wait, discovering local JVM processes ...
+      <i class="fa fa-spinner icon-spin"></i> Please wait, discovering local JVM processes ...
     </div>
   </div>
 
@@ -37,7 +37,7 @@
                ng-click="connectTo(jvm.url, jvm.scheme, jvm.hostname, jvm.port, jvm.path)">{{jvm.agentUrl}}</a></td>
         <td>
           <a class='btn control-button' href="" title="Stop agent" ng-show="jvm.agentUrl"
-             ng-click="stopAgent(jvm.id)"><i class="glyphicon glyphicon-off"></i></a>
+             ng-click="stopAgent(jvm.id)"><i class="fa fa-off"></i></a>
           <a class='btn control-button' href="" title="Start agent" ng-hide="jvm.agentUrl"
              ng-click="startAgent(jvm.id)"><i class="icon-play-circle"></i></a>
         </td>

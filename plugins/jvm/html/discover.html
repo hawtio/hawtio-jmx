@@ -3,7 +3,7 @@
   <div class="row">
 
     <div class="pull-right">
-      <button class="btn" ng-click="fetch()" title="Refresh"><i class="glyphicon glyphicon-refresh"></i></button>
+      <button class="btn" ng-click="fetch()" title="Refresh"><i class="fa fa-refresh"></i></button>
     </div>
     <div class="pull-right">
       <input class="search-query" type="text" ng-model="filter" placeholder="Filter...">
@@ -25,9 +25,9 @@
           <button ng-disabled="!authForm.$valid"
                   ng-click="connectWithCredentials($event, agent)"
                   class="btn btn-success">
-            <i class="glyphicon glyphicon-share"></i> Connect
+            <i class="fa fa-share"></i> Connect
           </button>
-          <button class="btn" ng-click="closePopover($event)"><i class="glyphicon glyphicon-remove"></i></button>
+          <button class="btn" ng-click="closePopover($event)"><i class="fa fa-remove"></i></button>
         </form>
       </div>
     </script>
@@ -40,7 +40,7 @@
       <p></p>
 
       <div class="alert alert-info">
-        <i class="glyphicon glyphicon-spinner icon-spin"></i> Please wait, discovering agents ...
+        <i class="fa fa-spinner icon-spin"></i> Please wait, discovering agents ...
       </div>
     </div>
 
@@ -79,7 +79,7 @@
             </div>
 
             <div class="inline-block lock" ng-show="agent.secured">
-              <i class="glyphicon glyphicon-lock" title="A valid username and password will be required to connect"></i>
+              <i class="fa fa-lock" title="A valid username and password will be required to connect"></i>
             </div>
 
             <div class="inline-block">

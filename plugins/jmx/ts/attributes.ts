@@ -387,7 +387,7 @@ module Jmx {
       if (!row.getProperty) {
         return "";
       }
-      return row.getProperty("objectName") ? "icon-cog" : "icon-folder-close";
+      return row.getProperty("objectName") ? "fa fa-cog" : "fa fa-folder-close";
     };
 
     function operationComplete() {

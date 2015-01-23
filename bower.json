@@ -5,6 +5,7 @@
     "hawtio"
   ],
   "main": [
+    "dist/ui.dynatree.css",
     "dist/dynatree-icons.css",
     "dist/jquery-ui.custom.js",
     "dist/jquery.dynatree.js",

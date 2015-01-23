@@ -28,7 +28,7 @@ module Jmx {
   export var jmxWidgetTypes = [
     {
       type: "donut",
-      icon: "icon-smile",
+      icon: "fa fa-smile",
       route: "/jmx/widget/donut",
       size_x: 2,
       size_y: 2,
@@ -36,7 +36,7 @@ module Jmx {
     },
     {
       type: "area",
-      icon: "icon-bar-chart",
+      icon: "fa fa-bar-chart",
       route: "/jmx/widget/area",
       size_x: 4,
       size_y: 2,

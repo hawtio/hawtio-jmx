@@ -126,26 +126,26 @@ module Jmx {
 
     // we want attributes to be listed first, so add it at index 0
     workspace.subLevelTabs.add( {
-      content: '<i class="icon-list"></i> Attributes',
+      content: '<i class="fa fa-list"></i> Attributes',
       title: "View the attribute values on your selection",
       isValid: (workspace: Workspace) => true,
       href: () => "/jmx/attributes",
       index: -1
     }, 0);
     workspace.subLevelTabs.push( {
-      content: '<i class="icon-leaf"></i> Operations',
+      content: '<i class="fa fa-leaf"></i> Operations',
       title: "Execute operations on your selection",
       isValid: (workspace: Workspace) => true,
       href: () => "/jmx/operations"
     });
     workspace.subLevelTabs.push( {
-      content: '<i class="icon-bar-chart"></i> Chart',
+      content: '<i class="fa fa-bar-chart"></i> Chart',
       title: "View a chart of the metrics on your selection",
       isValid: (workspace: Workspace) => true,
       href: () => "/jmx/charts"
     });
     workspace.subLevelTabs.push( {
-      content: '<i class="icon-cog"></i> Edit Chart',
+      content: '<i class="fa fa-cog"></i> Edit Chart',
       title: "Edit the chart configuration",
       isValid: (workspace: Workspace) => workspace.isLinkActive("jmx/chart"),
       href: () => "/jmx/chartEdit"

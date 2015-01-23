@@ -21,15 +21,15 @@
                         zero-clipboard
                         data-clipboard-text="{{operationResult}}"
                         title="Copy value to clipboard">
-                  <i class="glyphicon glyphicon-copy"></i>
+                  <i class="fa fa-copy"></i>
                 </button>
                 <button class="btn cancel"
                         ng-click="close()">
-                  <i class="glyphicon glyphicon-remove"></i> Close
+                  <i class="fa fa-remove"></i> Close
                 </button>
                 <button class="btn"
                         ng-click="ok()">
-                  <i class="glyphicon glyphicon-ok"></i> Back
+                  <i class="fa fa-ok"></i> Back
                 </button>
               </div>
             </div>
@@ -45,11 +45,11 @@
                 <button class="btn"
                         ng-click="reset()"
                         ng-show="args">
-                  <i class="glyphicon glyphicon-undo"></i> Reset
+                  <i class="fa fa-undo"></i> Reset
                 </button>
                 <button class="btn cancel"
                         ng-click="close()">
-                  <i class="glyphicon glyphicon-remove"></i> Close
+                  <i class="fa fa-remove"></i> Close
                 </button>
                 <button class="btn btn-success execute"
                         hawtio-submit="entryForm">
@@ -71,7 +71,7 @@
                 zero-clipboard
                 data-clipboard-text="{{jolokiaUrl}}"
                 title="Copy Jolokia REST Url to clipboard">
-                <i class="glyphicon glyphicon-copy"></i>
+                <i class="fa fa-copy"></i>
                 </button>
               </span>
           </div>
@@ -92,7 +92,7 @@
         ng-class="getClass(operation)"
         title="Click to invoke {{operation.name}}"
         data-placement="bottom">
-      <i class="glyphicon glyphicon-cog"
+      <i class="fa fa-cog"
          ng-class="getClass(operation)"></i>
       <span>{{operation.name}}</span>
       <span class="operation-actions">
@@ -100,7 +100,7 @@
                 zero-clipboard
                 data-clipboard-text="{{operation.name}}"
                 title="Copy method name to clipboard">
-          <i class="glyphicon glyphicon-copy"></i>
+          <i class="fa fa-copy"></i>
         </button>
       </span>
     </li>
