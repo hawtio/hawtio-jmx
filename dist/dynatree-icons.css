@@ -104,6 +104,36 @@ span.dynatree-icon:before {
     content: "\f013";
 }
 
+span.dynatree-icon {
+  position: relative;
+  top: -2px;
+  font-size: 17px;
+}
+
+span:not(.dynatree-has-children) .dynatree-icon:before {
+  font-family: FontAwesome;
+  content: "\f1b2" !important;
+}
+
+[class^="dynatree-folder icon-"], [class*=" dynatree-folder icon-"] {
+
+}
+
+[class^="dynatree-folder icon-"]:before, [class*=" dynatree-folder icon-"]:before {
+  font-size: 17px;
+  margin-left: 18px;
+}
+
+[class^="dynatree-folder icon-"], [class*=" dynatree-folder icon-"] .dynatree-connector {
+  display: none;
+}
+
+[class^="dynatree-folder icon-"], [class*=" dynatree-folder icon-"] .dynatree-icon {
+  display: none;
+}
+
+
+
 /* org.apache.camel */
 span.org-apache-camel span.dynatree-icon:before,
 span.org-apache-camel-context-folder span.dynatree-icon:before {
