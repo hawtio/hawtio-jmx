@@ -132,7 +132,7 @@ gulp.task('connect', ['watch'], function() {
             res.statusCode = 404;
             res.end();
           } else {
-            console.log("allowing: ", path);
+            // console.log("allowing: ", path);
             next();
           }
         });

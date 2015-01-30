@@ -24,3 +24,5 @@
 /// <reference path="d.ts/jvm/ts/local.d.ts"/>
 /// <reference path="d.ts/jvm/ts/navbar.d.ts"/>
 /// <reference path="d.ts/jvm/ts/reset.d.ts"/>
+/// <reference path="d.ts/threads/ts/threadsPlugin.d.ts"/>
+/// <reference path="d.ts/threads/ts/threads.d.ts"/>
