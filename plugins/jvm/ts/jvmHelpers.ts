@@ -42,26 +42,6 @@ module JVM {
       return JVM.hasLocalMBean(workspace);
     };
 
-    $scope.breadcrumbs = [
-      {
-        content: '<i class=" fa fa-signin"></i> Remote',
-        title: "Connect to a remote JVM running Jolokia",
-        isValid: (workspace:Workspace) => true,
-        href: "/jvm/connect"
-      },
-      {
-        content: '<i class="fa fa-list-ul"></i> Local',
-        title: "View a diagram of the route",
-        isValid: (workspace:Workspace) => hasLocalMBean(workspace),
-        href: "/jvm/local"
-      },
-      {
-        content: '<i class="fa fa-signin"></i> Discovery',
-        title: "Discover",
-        isValid: (workspace:Workspace) => hasDiscoveryMBean(workspace),
-        href: "/jvm/discover"
-      }
-    ];
   }
 
   export function hasLocalMBean(workspace) {

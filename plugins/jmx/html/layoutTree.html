@@ -3,10 +3,10 @@
     <div class="left">
     </div>
     <div class="right">
-      <i class="icon-chevron-down clickable"
+      <i class="fa fa-chevron-down clickable"
          title="Expand all nodes"
          ng-click="expandAll()"></i>
-      <i class="icon-chevron-up clickable"
+      <i class="fa fa-chevron-up clickable"
          title="Unexpand all nodes"
          ng-click="contractAll()"></i>
     </div>
@@ -21,7 +21,9 @@
 </hawtio-pane>
 
 <div class="row-fluid">
+  <!--
   <ng-include src="'plugins/jmx/html/subLevelTabs.html'"></ng-include>
+  -->
   <div id="properties" ng-view></div>
 </div>
 

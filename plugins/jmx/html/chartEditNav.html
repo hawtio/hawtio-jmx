@@ -1,0 +1,3 @@
+<li ng-controller="Jmx.EditChartNav" ng-show="valid()" ng-class="{ active: item.isSelected() }">
+  <a ng-href="{{item.href()}}" ng-click="item.click($event)">{{item.title()}}</a>
+</li>

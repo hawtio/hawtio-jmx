@@ -519,6 +519,9 @@ module Core {
      * @return {Boolean}
      */
     public validSelection(uri:string) {
+      return true;
+      /*
+      // TODO
       var workspace = this;
       var filter = (t) => {
         var fn = t.href;
@@ -545,6 +548,7 @@ module Core {
         log.info("Could not find tab for " + uri);
         return false;
       }
+      */
   /*
       var value = this.uriValidations[uri];
       if (value) {

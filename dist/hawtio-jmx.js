@@ -717,33 +717,36 @@ var Core;
          * @return {Boolean}
          */
         Workspace.prototype.validSelection = function (uri) {
+            return true;
+            /*
+            // TODO
             var workspace = this;
-            var filter = function (t) {
-                var fn = t.href;
-                if (fn) {
-                    var href = fn();
-                    if (href) {
-                        if (href.startsWith("#")) {
-                            href = href.substring(1);
-                        }
-                        return href === uri;
-                    }
+            var filter = (t) => {
+              var fn = t.href;
+              if (fn) {
+                var href = fn();
+                if (href) {
+                  if (href.startsWith("#")) {
+                    href = href.substring(1);
+                  }
+                  return href === uri;
                 }
-                return false;
+              }
+              return false;
             };
             var tab = this.subLevelTabs.find(filter);
             if (!tab) {
-                tab = this.topLevelTabs.find(filter);
+              tab = this.topLevelTabs.find(filter);
             }
             if (tab) {
-                console.log("Found tab: ", tab);
-                var validFn = tab['isValid'];
-                return !angular.isDefined(validFn) || validFn(workspace);
+              console.log("Found tab: ", tab);
+              var validFn = tab['isValid'];
+              return !angular.isDefined(validFn) || validFn(workspace);
+            } else {
+              log.info("Could not find tab for " + uri);
+              return false;
             }
-            else {
-                log.info("Could not find tab for " + uri);
-                return false;
-            }
+            */
             /*
                 var value = this.uriValidations[uri];
                 if (value) {
@@ -1604,7 +1607,7 @@ var Jmx;
 (function (Jmx) {
     Jmx._module = angular.module(Jmx.pluginName, []);
     Jmx._module.config(['HawtioNavBuilderProvider', "$routeProvider", function (builder, $routeProvider) {
-        $routeProvider.when('/jmx/attributes', { templateUrl: UrlHelpers.join(Jmx.templatePath, 'attributes.html') }).when('/jmx/operations', { templateUrl: UrlHelpers.join(Jmx.templatePath, 'operations.html') }).when('/jmx/charts', { templateUrl: UrlHelpers.join(Jmx.templatePath, 'charts.html') }).when('/jmx/chartEdit', { templateUrl: UrlHelpers.join(Jmx.templatePath, 'chartEdit.html') }).when('/jmx/help/:tabName', { templateUrl: 'app/core/html/help.html' }).when('/jmx/widget/donut', { templateUrl: UrlHelpers.join(Jmx.templatePath, 'donutChart.html') }).when('/jmx/widget/area', { templateUrl: UrlHelpers.join(Jmx.templatePath, 'areaChart.html') });
+        $routeProvider.when('/jmx', { redirectTo: '/jmx/attributes' }).when('/jmx/attributes', { templateUrl: UrlHelpers.join(Jmx.templatePath, 'attributes.html') }).when('/jmx/operations', { templateUrl: UrlHelpers.join(Jmx.templatePath, 'operations.html') }).when('/jmx/charts', { templateUrl: UrlHelpers.join(Jmx.templatePath, 'charts.html') }).when('/jmx/chartEdit', { templateUrl: UrlHelpers.join(Jmx.templatePath, 'chartEdit.html') }).when('/jmx/help/:tabName', { templateUrl: 'app/core/html/help.html' }).when('/jmx/widget/donut', { templateUrl: UrlHelpers.join(Jmx.templatePath, 'donutChart.html') }).when('/jmx/widget/area', { templateUrl: UrlHelpers.join(Jmx.templatePath, 'areaChart.html') });
     }]);
     Jmx._module.factory('jmxWidgetTypes', function () {
         return Jmx.jmxWidgetTypes;
@@ -1669,7 +1672,12 @@ var Jmx;
     Jmx._module.factory('jmxTreeLazyLoadRegistry', function () {
         return Core.lazyLoaders;
     });
-    Jmx._module.run(["$location", "workspace", "viewRegistry", "layoutTree", "jolokia", "helpRegistry", "pageTitle", function ($location, workspace, viewRegistry, layoutTree, jolokia, helpRegistry, pageTitle) {
+    Jmx._module.controller('Jmx.EditChartNav', ['$scope', '$location', function ($scope, $location) {
+        $scope.valid = function () {
+            return $location.path().startsWith('/jmx/chart');
+        };
+    }]);
+    Jmx._module.run(["HawtioNav", "$location", "workspace", "viewRegistry", "layoutTree", "jolokia", "helpRegistry", "pageTitle", "$templateCache", function (nav, $location, workspace, viewRegistry, layoutTree, jolokia, helpRegistry, pageTitle, $templateCache) {
         Jmx.log.debug('loaded');
         viewRegistry['jmx'] = layoutTree;
         helpRegistry.addUserDoc('jmx', 'app/jmx/doc/help.md');
@@ -1686,40 +1694,42 @@ var Jmx;
             }
             return Jmx.currentProcessId;
         });
-        workspace.topLevelTabs.push({
-            id: "jmx",
-            content: "JMX",
-            title: "View the JMX MBeans in this process",
-            isValid: function (workspace) { return workspace.hasMBeans(); },
-            href: function () { return "/jmx/attributes"; },
-            isActive: function (workspace) { return workspace.isTopTabActive("jmx"); }
-        });
+        var builder = nav.builder();
+        var toolbar = builder.id('jmx-toolbar').template(function () { return $templateCache.get(UrlHelpers.join(Jmx.templatePath, 'subLevelTabs.html')); }).build();
+        var attributes = builder.id('jmx-attributes').title(function () { return 'Attributes'; }).href(function () { return '/jmx/attributes' + workspace.hash(); }).isSelected(function () { return workspace.isLinkActive('jmx/attributes'); }).build();
+        var operations = builder.id('jmx-operations').title(function () { return 'Operations'; }).href(function () { return ' /jmx/operations' + workspace.hash(); }).isSelected(function () { return workspace.isLinkActive('jmx/operations'); }).build();
+        var chart = builder.id('jmx-chart').title(function () { return 'Charts'; }).href(function () { return ' /jmx/charts' + workspace.hash(); }).isSelected(function () { return workspace.isLinkActive('jmx/charts'); }).build();
+        var editChart = builder.id('jmx-edit-chart').title(function () { return 'Edit Chart'; }).href(function () { return ' /jmx/chartEdit' + workspace.hash(); }).template(function () { return $templateCache.get(UrlHelpers.join(Jmx.templatePath, 'chartEditNav.html')); }).isSelected(function () { return workspace.isLinkActive('jmx/chartEdit'); }).build();
+        var tab = builder.id('jmx').title(function () { return 'JMX'; }).isValid(function () { return workspace.hasMBeans(); }).href(function () { return '/jmx'; }).isSelected(function () { return workspace.isTopTabActive('jmx'); }).tabs(attributes, operations, chart, editChart).build();
+        nav.add(tab);
         // we want attributes to be listed first, so add it at index 0
-        workspace.subLevelTabs.add({
-            content: '<i class="fa fa-list"></i> Attributes',
-            title: "View the attribute values on your selection",
-            isValid: function (workspace) { return true; },
-            href: function () { return "/jmx/attributes"; },
-            index: -1
+        /*
+        workspace.subLevelTabs.add( {
+          content: '<i class="fa fa-list"></i> Attributes',
+          title: "View the attribute values on your selection",
+          isValid: (workspace: Workspace) => true,
+          href: () => "/jmx/attributes",
+          index: -1
         }, 0);
-        workspace.subLevelTabs.push({
-            content: '<i class="fa fa-leaf"></i> Operations',
-            title: "Execute operations on your selection",
-            isValid: function (workspace) { return true; },
-            href: function () { return "/jmx/operations"; }
+        workspace.subLevelTabs.push( {
+          content: '<i class="fa fa-leaf"></i> Operations',
+          title: "Execute operations on your selection",
+          isValid: (workspace: Workspace) => true,
+          href: () => "/jmx/operations"
         });
-        workspace.subLevelTabs.push({
-            content: '<i class="fa fa-bar-chart"></i> Chart',
-            title: "View a chart of the metrics on your selection",
-            isValid: function (workspace) { return true; },
-            href: function () { return "/jmx/charts"; }
+        workspace.subLevelTabs.push( {
+          content: '<i class="fa fa-bar-chart"></i> Chart',
+          title: "View a chart of the metrics on your selection",
+          isValid: (workspace: Workspace) => true,
+          href: () => "/jmx/charts"
         });
-        workspace.subLevelTabs.push({
-            content: '<i class="fa fa-cog"></i> Edit Chart',
-            title: "Edit the chart configuration",
-            isValid: function (workspace) { return workspace.isLinkActive("jmx/chart"); },
-            href: function () { return "/jmx/chartEdit"; }
+        workspace.subLevelTabs.push( {
+          content: '<i class="fa fa-cog"></i> Edit Chart',
+          title: "Edit the chart configuration",
+          isValid: (workspace: Workspace) => workspace.isLinkActive("jmx/chart"),
+          href: () => "/jmx/chartEdit"
         });
+        */
     }]);
     hawtioPluginLoader.addModule(Jmx.pluginName);
 })(Jmx || (Jmx = {}));
@@ -4159,26 +4169,6 @@ var JVM;
         $scope.hasLocalMBean = function () {
             return JVM.hasLocalMBean(workspace);
         };
-        $scope.breadcrumbs = [
-            {
-                content: '<i class=" fa fa-signin"></i> Remote',
-                title: "Connect to a remote JVM running Jolokia",
-                isValid: function (workspace) { return true; },
-                href: "/jvm/connect"
-            },
-            {
-                content: '<i class="fa fa-list-ul"></i> Local',
-                title: "View a diagram of the route",
-                isValid: function (workspace) { return hasLocalMBean(workspace); },
-                href: "/jvm/local"
-            },
-            {
-                content: '<i class="fa fa-signin"></i> Discovery',
-                title: "Discover",
-                isValid: function (workspace) { return hasDiscoveryMBean(workspace); },
-                href: "/jvm/discover"
-            }
-        ];
     }
     JVM.configureScope = configureScope;
     function hasLocalMBean(workspace) {
@@ -4203,7 +4193,7 @@ var JVM;
     JVM.pluginName = 'jvm';
     JVM._module = angular.module(JVM.pluginName, []);
     JVM._module.config(["$routeProvider", function ($routeProvider) {
-        $routeProvider.when('/jvm/discover', { templateUrl: JVM.templatePath + 'discover.html' }).when('/jvm/connect', { templateUrl: JVM.templatePath + 'connect.html' }).when('/jvm/local', { templateUrl: JVM.templatePath + 'local.html' });
+        $routeProvider.when('/jvm', { redirectTo: '/jvm/connect' }).when('/jvm/discover', { templateUrl: JVM.templatePath + 'discover.html' }).when('/jvm/connect', { templateUrl: JVM.templatePath + 'connect.html' }).when('/jvm/local', { templateUrl: JVM.templatePath + 'local.html' });
     }]);
     JVM._module.constant('mbeanName', 'hawtio:type=JVMList');
     JVM._module.service('ConnectOptions', ['$location', function ($location) {
@@ -4216,23 +4206,31 @@ var JVM;
         JVM.log.debug("No connection options, connected to local JVM");
         return null;
     }]);
-    JVM._module.run(["$location", "workspace", "viewRegistry", "layoutFull", "helpRegistry", "preferencesRegistry", "ConnectOptions", function ($location, workspace, viewRegistry, layoutFull, helpRegistry, preferencesRegistry, connectOptions) {
-        viewRegistry[JVM.pluginName] = JVM.templatePath + 'layoutConnect.html';
+    JVM._module.run(["HawtioNav", "$location", "workspace", "viewRegistry", "layoutFull", "helpRegistry", "preferencesRegistry", "ConnectOptions", function (nav, $location, workspace, viewRegistry, layoutFull, helpRegistry, preferencesRegistry, connectOptions) {
+        //viewRegistry[pluginName] = templatePath + 'layoutConnect.html';
+        var builder = nav.builder();
+        var remote = builder.id('jvm-remote').href(function () { return '/jvm/connect'; }).title(function () { return 'Remote'; }).build();
+        var local = builder.id('jvm-local').href(function () { return '/jvm/local'; }).title(function () { return 'Local'; }).isValid(function () { return JVM.hasLocalMBean(workspace); }).build();
+        var discover = builder.id('jvm-discover').href(function () { return '/jvm/discover'; }).title(function () { return 'Discover'; }).isValid(function () { return JVM.hasDiscoveryMBean(workspace); }).build();
+        var tab = builder.id('jvm').href(function () { return '/jvm'; }).title(function () { return 'Connect'; }).isValid(function () { return connectOptions == null || connectOptions.name == null; }).tabs(remote, local, discover).build();
+        nav.add(tab);
         helpRegistry.addUserDoc('jvm', 'app/jvm/doc/help.md');
         preferencesRegistry.addTab("Connect", 'app/jvm/html/reset.html');
+        /*
         workspace.topLevelTabs.push({
-            id: "connect",
-            content: "Connect",
-            title: "Connect to other JVMs",
-            isValid: function (workspace) {
-                // we only want to be valid if we are not already connected from another hawtio
-                return connectOptions == null || connectOptions.name == null;
-            },
-            href: function () {
-                return '#/jvm/connect';
-            },
-            isActive: function (workspace) { return workspace.isLinkActive("jvm"); }
+          id: "connect",
+          content: "Connect",
+          title: "Connect to other JVMs",
+          isValid: (workspace) => {
+            // we only want to be valid if we are not already connected from another hawtio
+            return connectOptions == null || connectOptions.name == null
+          },
+          href: () => {
+            return '#/jvm/connect';
+          },
+          isActive: (workspace:Workspace) => workspace.isLinkActive("jvm")
         });
+        */
     }]);
     hawtioPluginLoader.addModule(JVM.pluginName);
 })(JVM || (JVM = {}));
@@ -4918,9 +4916,10 @@ angular.module("hawtio-jmx-templates", []).run(["$templateCache", function($temp
 $templateCache.put("plugins/jmx/html/attributeToolBar.html","<div class=\"pull-right\">\n  <hawtio-filter ng-model=\"gridOptions.filterOptions.filterText\" placeholder=\"Filter...\" save-as=\"{{nid}}-filter-text\"></hawtio-filter>\n</div>\n");
 $templateCache.put("plugins/jmx/html/attributes.html","<script type=\"text/ng-template\" id=\"gridTemplate\">\n  <table id=\"attributesGrid\"\n         class=\"table table-condensed table-striped\"\n         hawtio-simple-table=\"gridOptions\">\n  </table>\n</script>\n\n<div ng-controller=\"Jmx.AttributesController\">\n  <div ng-include src=\"toolBarTemplate()\"></div>\n\n  <div class=\"attributes-wrapper gridStyle\">\n    <div compile=\"attributes\"></div>\n  </div>\n\n  <!-- modal dialog to show/edit the attribute -->\n  <div hawtio-confirm-dialog=\"showAttributeDialog\"\n       ok-button-text=\"Update\" show-ok-button=\"{{entity.rw ? \'true\' : \'false\'}}\" on-ok=\"onUpdateAttribute()\" on-cancel=\"onCancelAttribute()\"\n       cancel-button-text=\"Close\"\n       title=\"Attribute: {{entity.key}}\">\n    <div class=\"dialog-body\">\n\n      <!-- have a form for view and another for edit -->\n      <div simple-form ng-hide=\"!entity.rw\" name=\"attributeEditor\" mode=\"edit\" entity=\'entity\' data=\'attributeSchemaEdit\'></div>\n      <button ng-hide=\"!entity.rw\" class=\"pull-right btn\" zero-clipboard data-clipboard-text=\"{{entity.attrValueEdit}}\" title=\"Copy value to clipboard\">\n        <i class=\"fa fa-copy\"></i>\n      </button>\n\n      <div simple-form ng-hide=\"entity.rw\" name=\"attributeViewer\" mode=\"view\" entity=\'entity\' data=\'attributeSchemaView\'></div>\n      <button ng-hide=\"entity.rw\" class=\"pull-right btn\" zero-clipboard data-clipboard-text=\"{{entity.attrValueView}}\" title=\"Copy value to clipboard\">\n        <i class=\"fa fa-copy\"></i>\n      </button>\n    </div>\n  </div>\n\n</div>\n");
 $templateCache.put("plugins/jmx/html/chartEdit.html","<div ng-controller=\"Jmx.ChartEditController\">\n  <form>\n    <fieldset>\n      <div class=\"control-group\" ng-show=\"canViewChart()\">\n        <input type=\"submit\" class=\"btn\" value=\"View Chart\" ng-click=\"viewChart()\"\n               ng-disabled=\"!selectedAttributes.length && !selectedMBeans.length\"/>\n      </div>\n      <div class=\"control-group\">\n        <table class=\"table\">\n          <thead>\n          <tr>\n            <th ng-show=\"showAttributes()\">Attributes</th>\n            <th ng-show=\"showElements()\">Elements</th>\n          </tr>\n          </thead>\n          <tbody>\n          <tr>\n            <td ng-show=\"showAttributes()\">\n              <select id=\"attributes\" size=\"20\" multiple ng-multiple=\"true\" ng-model=\"selectedAttributes\"\n                      ng-options=\"name | humanize for (name, value) in metrics\"></select>\n            </td>\n            <td ng-show=\"showElements()\">\n              <select id=\"mbeans\" size=\"20\" multiple ng-multiple=\"true\" ng-model=\"selectedMBeans\"\n                      ng-options=\"name for (name, value) in mbeans\"></select>\n            </td>\n          </tr>\n          </tbody>\n        </table>\n\n        <div class=\"alert\" ng-show=\"!canViewChart()\">\n          <button type=\"button\" class=\"close\" data-dismiss=\"alert\">×</button>\n          <strong>No numeric metrics available!</strong> Try select another item to chart on.\n        </div>\n      </div>\n    </fieldset>\n  </form>\n</div>\n");
+$templateCache.put("plugins/jmx/html/chartEditNav.html","<li ng-controller=\"Jmx.EditChartNav\" ng-show=\"valid()\" ng-class=\"{ active: item.isSelected() }\">\n  <a ng-href=\"{{item.href()}}\" ng-click=\"item.click($event)\">{{item.title()}}</a>\n</li>\n");
 $templateCache.put("plugins/jmx/html/charts.html","<div ng-controller=\"Jmx.ChartController\" ng-switch=\"errorMessage()\">\n  <div ng-switch-when=\"metrics\">No valid metrics to show for this mbean.</div>\n  <div ng-switch-when=\"updateRate\">Charts aren\'t available when the update rate is set to \"No refreshes\", go to the <a ng-href=\"#/preferences{{hash}}\">Preferences</a> panel and set a refresh rate to enable charts</div>\n  <div id=\"charts\"></div>\n</div>\n\n");
 $templateCache.put("plugins/jmx/html/donutChart.html","<div ng-controller=\"Jmx.DonutChartController\">\n  <script type=\"text/ng-template\" id=\"donut\">\n    <fs-donut bind=\"data\" outer-radius=\"200\" inner-radius=\"75\"></fs-donut>\n  </script>\n  <div compile=\"template\"></div>\n</div>\n");
-$templateCache.put("plugins/jmx/html/layoutTree.html","<script type=\"text/ng-template\" id=\"header\">\n  <div class=\"tree-header\" ng-controller=\"Jmx.TreeHeaderController\">\n    <div class=\"left\">\n    </div>\n    <div class=\"right\">\n      <i class=\"icon-chevron-down clickable\"\n         title=\"Expand all nodes\"\n         ng-click=\"expandAll()\"></i>\n      <i class=\"icon-chevron-up clickable\"\n         title=\"Unexpand all nodes\"\n         ng-click=\"contractAll()\"></i>\n    </div>\n  </div>\n</script>\n\n<hawtio-pane position=\"left\" width=\"300\" header=\"header\">\n  <div id=\"tree-container\"\n       ng-controller=\"Jmx.MBeansController\">\n    <div id=\"jmxtree\"></div>\n  </div>\n</hawtio-pane>\n\n<div class=\"row-fluid\">\n  <ng-include src=\"\'plugins/jmx/html/subLevelTabs.html\'\"></ng-include>\n  <div id=\"properties\" ng-view></div>\n</div>\n\n\n");
+$templateCache.put("plugins/jmx/html/layoutTree.html","<script type=\"text/ng-template\" id=\"header\">\n  <div class=\"tree-header\" ng-controller=\"Jmx.TreeHeaderController\">\n    <div class=\"left\">\n    </div>\n    <div class=\"right\">\n      <i class=\"fa fa-chevron-down clickable\"\n         title=\"Expand all nodes\"\n         ng-click=\"expandAll()\"></i>\n      <i class=\"fa fa-chevron-up clickable\"\n         title=\"Unexpand all nodes\"\n         ng-click=\"contractAll()\"></i>\n    </div>\n  </div>\n</script>\n\n<hawtio-pane position=\"left\" width=\"300\" header=\"header\">\n  <div id=\"tree-container\"\n       ng-controller=\"Jmx.MBeansController\">\n    <div id=\"jmxtree\"></div>\n  </div>\n</hawtio-pane>\n\n<div class=\"row-fluid\">\n  <!--\n  <ng-include src=\"\'plugins/jmx/html/subLevelTabs.html\'\"></ng-include>\n  -->\n  <div id=\"properties\" ng-view></div>\n</div>\n\n\n");
 $templateCache.put("plugins/jmx/html/operations.html","<div  id=\"threadForm\" ng-controller=\"Jmx.OperationsController\">\n\n  <div class=\"row\" ng-show=\"isOperationsEmpty()\">\n    The selected MBean has no JMX operations.\n  </div>\n\n  <div class=\"row\" ng-hide=\"isOperationsEmpty() || showInvoke\">\n    <div class=\"pull-right\">\n      <hawtio-filter ng-model=\"methodFilter\" placeholder=\"Filter...\" save-as=\"{{objectName}}-text-filter\"></hawtio-filter>\n    </div>\n  </div>\n  <script type=\"text/ng-template\" id=\"operationTemplate\">\n    <div>\n      <div ng-controller=\"Jmx.OperationController\">\n\n        <div ng-show=\"operationResult!=\'\'\">\n          <div class=\"row\">\n            <div class=\"control-group pull-right\">\n              <div class=\"controls\">\n                <button class=\"btn\"\n                        zero-clipboard\n                        data-clipboard-text=\"{{operationResult}}\"\n                        title=\"Copy value to clipboard\">\n                  <i class=\"fa fa-copy\"></i>\n                </button>\n                <button class=\"btn cancel\"\n                        ng-click=\"close()\">\n                  <i class=\"fa fa-remove\"></i> Close\n                </button>\n                <button class=\"btn\"\n                        ng-click=\"ok()\">\n                  <i class=\"fa fa-ok\"></i> Back\n                </button>\n              </div>\n            </div>\n          </div>\n          <div class=\"row\">\n            <div hawtio-editor=\"operationResult\" mode=\"mode\"></div>\n          </div>\n        </div>\n        <div ng-show=\"operationResult==\'\'\">\n          <div class=\"row\">\n            <div class=\"control-group pull-right\">\n              <div class=\"controls\">\n                <button class=\"btn\"\n                        ng-click=\"reset()\"\n                        ng-show=\"args\">\n                  <i class=\"fa fa-undo\"></i> Reset\n                </button>\n                <button class=\"btn cancel\"\n                        ng-click=\"close()\">\n                  <i class=\"fa fa-remove\"></i> Close\n                </button>\n                <button class=\"btn btn-success execute\"\n                        hawtio-submit=\"entryForm\">\n                <i class=\"{{executeIcon}}\"></i> Execute\n                </button>\n              </div>\n            </div>\n            <div simple-form data=\"formConfig\"\n                 entity=\"entity\"\n                 name=\"entryForm\"></div>\n          </div>\n        </div>\n        <div class=\"row\">\n          <i><label for=\"jolokiaUrl\">Jolokia REST Url:</label></i>\n          <div class=\"pull-right\">\n            <input type=\"text\" name=\"jolokiaUrl\" id=\"jolokiaUrl\" value=\"{{jolokiaUrl}}\" style=\"width: 60em;\" readonly/>\n              <span style=\"vertical-align: super;\">\n                <button class=\"btn\"\n                zero-clipboard\n                data-clipboard-text=\"{{jolokiaUrl}}\"\n                title=\"Copy Jolokia REST Url to clipboard\">\n                <i class=\"fa fa-copy\"></i>\n                </button>\n              </span>\n          </div>\n        </div>\n      </div>\n    </div>\n  </script>\n\n  <div ng-show=\"showInvoke\">\n    <div compile=\"template\"></div>\n  </div>\n\n  <ul ng-hide=\"showInvoke\" class=\"zebra-list\" ng-hide=\"isOperationsEmpty()\">\n    <li class=\"operation-row\"\n        ng-repeat=\"operation in operations\"\n        ng-show=\"doFilter(operation)\"\n        ng-click=\"invokeOp(operation)\"\n        ng-class=\"getClass(operation)\"\n        title=\"Click to invoke {{operation.name}}\"\n        data-placement=\"bottom\">\n      <i class=\"fa fa-cog\"\n         ng-class=\"getClass(operation)\"></i>\n      <span>{{operation.name}}</span>\n      <span class=\"operation-actions\">\n        <button class=\"btn\"\n                zero-clipboard\n                data-clipboard-text=\"{{operation.name}}\"\n                title=\"Copy method name to clipboard\">\n          <i class=\"fa fa-copy\"></i>\n        </button>\n      </span>\n    </li>\n  </ul>\n\n</div>\n");
 $templateCache.put("plugins/jmx/html/subLevelTabs.html","<ul class=\"nav nav-tabs\" ng-controller=\"Jmx.NavBarController\" hawtio-auto-dropdown>\n  <li ng-repeat=\"nav in subLevelTabs track by $index | orderBy:index\" ng-show=\"isValid(nav)\" ng-class=\"{active : isActive(nav)}\">\n    <a ng-href=\"{{nav.href()}}{{hash}}\" title=\"{{nav.title}}\"\n       data-placement=\"bottom\" ng-bind-html=\"nav.content\">\n    </a>\n  </li>\n\n  <li class=\"pull-right\">\n    <a ng-href=\"{{fullScreenLink()}}\" title=\"Show this view in full screen\" data-placement=\"bottom\">\n      <i class=\"fa fa-fullscreen\"></i>\n    </a>\n  </li>\n  <li class=\"pull-right\">\n    <a ng-href=\"{{addToDashboardLink()}}\" title=\"Add this view to a dashboard\" data-placement=\"bottom\">\n      <i class=\"fa fa-share\"></i>\n    </a>\n  </li>\n  <li class=\"pull-right dropdown overflow\" style=\"visibility: hidden;\">\n    <a href=\"#\" class=\"dropdown-toggle\" data-toggle=\"dropdown\"><i class=\"icon-chevron-down\"></i></a>\n    <ul class=\"dropdown-menu right\"></ul>\n  </li>\n\n\n</ul>\n\n");
 $templateCache.put("plugins/jvm/html/connect.html","<div ng-controller=\"JVM.ConnectController\">\n\n  <div class=\"row connect-column-container\" hawtio-auto-columns=\".connect-column\">\n\n    <div class=\"connect-column\">\n      <div class=\"alert alert-info\">\n        <p>\n          This page allows you to connect to remote processes which <strong>already have a <a\n                href=\"http://jolokia.org/\">jolokia agent</a> running inside them</strong>. You will need to know the\n          host name, port and path of the jolokia agent to be able to connect.\n        </p>\n\n        <p>\n          If the process you wish to connect to does not have a jolokia agent inside, please refer to the <a\n                href=\"http://jolokia.org/agent.html\">jolokia documentation</a> for how to add a JVM, servlet or OSGi\n          based agent inside it.\n        </p>\n\n        <p>\n          If you are using <a href=\"http://fabric8.io/\">Fabric8</a>, <a href=\"http://www.jboss.org/products/fuse\">JBoss Fuse</a>, or <a href=\"http://activemq.apache.org\">Apache ActiveMQ</a>;\n          then a jolokia agent is included by default. Or you can always just deploy hawtio inside the process (which includes the jolokia agent).\n        </p>\n\n        <p>\n          <strong>Use Proxy</strong>:\n          hawtio is running in your browser; usually due to CORS; you cannot open a different host or port from your browser (due to browse security restrictions);\n          so we have to use a proxy servlet inside the hawtio web app to proxy all requests for a different jolokia server - so we can communicate with a different jolokia agent.\n          If you use the hawtio Chrome Extension this isn’t required; since Chrome Extensions are allowed to connect to any host/port.\n        </p>\n\n        <p ng-show=\"hasLocalMBean()\">\n          Use the <strong><a href=\"#/jvm/local\">Local Tab</a></strong> to connect to processes locally on this machine (which will install a jolokia agent automatically if required).\n        </p>\n\n        <p ng-show=\"!hasLocalMBean()\">\n          The <strong>Local Tab</strong> is not currently enabled because either the server side <strong>hawtio-local-jvm-mbean plugin</strong> is not installed or this\n          JVM cannot find the <strong>com.sun.tools.attach.VirtualMachine</strong> API usually found in the <strong>tool.jar</strong>.\n          Please see the <a href=\"http://hawt.io/faq/index.html\">FAQ entry</a> for more details.\n        </p>\n      </div>\n    </div>\n\n    <div class=\"connect-column\">\n\n      <dl>\n        <dt>Saved Connections</dt>\n        <dd>\n          <form class=\"form-horizontal no-bottom-margin\">\n            <fieldset>\n              <div class=\"control-group\">\n                <label class=\"control-label\">Connections: </label>\n                <div class=\"controls\">\n                  <select ng-model=\"lastConnection\"\n                          ng-options=\"value.name as key for (key, value) in connectionConfigs\">\n                    <option value=\"\"\n                            ng-hide=\"lastConnection\">New connection...</option>\n                  </select>\n                  <button class=\"btn btn-success\"\n                          title=\"Connect to this server\"\n                          ng-disabled=\"!lastConnection\"\n                          ng-click=\"gotoServer()\"><i class=\"fa fa-share\"></i></button>\n                  <button class=\"btn btn-danger\"\n                          title=\"Delete this connection\"\n                          ng-disabled=\"!lastConnection\"\n                          ng-click=\"deleteConnection()\"><i class=\"icon-remove-sign\"></i></button>\n                  <button class=\"btn btn-primary\"\n                          title=\"Create a new connection\"\n                          ng-disabled=\"!lastConnection\"\n                          ng-click=\"newConnection()\"><i class=\"fa fa-plus\"></i></button>\n                </div>\n              </div>\n            </fieldset>\n          </form>\n        </dd>\n      </dl>\n\n      <dl>\n        <dt>Connection Settings</dt>\n        <dd>\n          <div simple-form name=\"connectForm\" data=\"formConfig\" entity=\"currentConfig\" onSubmit=\"gotoServer()\"></div>\n\n          <div class=\"centered\">\n            <button class=\"btn btn-primary\"\n                    ng-disabled=\"!forms.connectForm.$valid\"\n                    hawtio-submit=\"connectForm\"\n                    title=\"Saves the connection and opens a new browser window connecting to the given JVM process via its Jolokia servlet URL\">Connect to remote server</button>\n            <button class=\"btn\"\n                    title=\"Save this configuration but don\'t open a new tab\"\n                    ng-disabled=\"!forms.connectForm.$valid\"\n                    ng-click=\"save()\">Save</button>\n          </div>\n        </dd>\n      </dl>\n\n    </div>\n\n  </div>\n\n</div>\n");

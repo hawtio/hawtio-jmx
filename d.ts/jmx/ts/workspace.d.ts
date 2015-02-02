@@ -120,7 +120,7 @@ declare module Core {
          * @param {String} uri
          * @return {Boolean}
          */
-        validSelection(uri: string): any;
+        validSelection(uri: string): boolean;
         /**
          * In cases where we have just deleted something we typically want to change
          * the selection to the parent node

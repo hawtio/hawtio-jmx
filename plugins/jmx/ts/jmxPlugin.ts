@@ -12,14 +12,15 @@ module Jmx {
 
   _module.config(['HawtioNavBuilderProvider', "$routeProvider", (builder:HawtioMainNav.BuilderFactory, $routeProvider) => {
 
-    $routeProvider.
-      when('/jmx/attributes', {templateUrl: UrlHelpers.join(templatePath, 'attributes.html')}).
-      when('/jmx/operations', {templateUrl: UrlHelpers.join(templatePath, 'operations.html')}).
-      when('/jmx/charts', {templateUrl: UrlHelpers.join(templatePath, 'charts.html')}).
-      when('/jmx/chartEdit', {templateUrl: UrlHelpers.join(templatePath, 'chartEdit.html')}).
-      when('/jmx/help/:tabName', {templateUrl: 'app/core/html/help.html'}).
-      when('/jmx/widget/donut', {templateUrl: UrlHelpers.join(templatePath, 'donutChart.html')}).
-      when('/jmx/widget/area', {templateUrl: UrlHelpers.join(templatePath, 'areaChart.html')});
+    $routeProvider
+      .when('/jmx', { redirectTo: '/jmx/attributes' })
+      .when('/jmx/attributes', {templateUrl: UrlHelpers.join(templatePath, 'attributes.html')})
+      .when('/jmx/operations', {templateUrl: UrlHelpers.join(templatePath, 'operations.html')})
+      .when('/jmx/charts', {templateUrl: UrlHelpers.join(templatePath, 'charts.html')})
+      .when('/jmx/chartEdit', {templateUrl: UrlHelpers.join(templatePath, 'chartEdit.html')})
+      .when('/jmx/help/:tabName', {templateUrl: 'app/core/html/help.html'})
+      .when('/jmx/widget/donut', {templateUrl: UrlHelpers.join(templatePath, 'donutChart.html')})
+      .when('/jmx/widget/area', {templateUrl: UrlHelpers.join(templatePath, 'areaChart.html')});
   }]);
 
   _module.factory('jmxWidgetTypes', () => {
@@ -95,7 +96,13 @@ module Jmx {
     return Core.lazyLoaders;
   });
 
-  _module.run(["$location", "workspace", "viewRegistry", "layoutTree", "jolokia", "helpRegistry", "pageTitle", ($location: ng.ILocationService, workspace:Core.Workspace, viewRegistry, layoutTree, jolokia, helpRegistry, pageTitle) => {
+  _module.controller('Jmx.EditChartNav', ['$scope', '$location', ($scope, $location) => {
+    $scope.valid = () => {
+      return $location.path().startsWith('/jmx/chart');
+    } 
+  }]);
+
+  _module.run(["HawtioNav", "$location", "workspace", "viewRegistry", "layoutTree", "jolokia", "helpRegistry", "pageTitle", "$templateCache", (nav:HawtioMainNav.Registry, $location: ng.ILocationService, workspace:Core.Workspace, viewRegistry, layoutTree, jolokia, helpRegistry, pageTitle, $templateCache) => {
     log.debug('loaded');
 
     viewRegistry['jmx'] = layoutTree;
@@ -115,16 +122,49 @@ module Jmx {
       return Jmx.currentProcessId;
     });
 
-    workspace.topLevelTabs.push( {
-      id: "jmx",
-      content: "JMX",
-      title: "View the JMX MBeans in this process",
-      isValid: (workspace: Workspace) => workspace.hasMBeans(),
-      href: () => "/jmx/attributes",
-      isActive: (workspace: Workspace) => workspace.isTopTabActive("jmx")
-    });
+    var builder = nav.builder();
+
+    var toolbar = builder.id('jmx-toolbar')
+                    .template( () => $templateCache.get(UrlHelpers.join(templatePath, 'subLevelTabs.html')) )
+                    .build();
+
+    var attributes = builder.id('jmx-attributes')
+                       .title( () => 'Attributes' )
+                       .href( () => '/jmx/attributes' + workspace.hash() )
+                       .isSelected( () => workspace.isLinkActive('jmx/attributes') )
+                       .build();
+
+    var operations = builder.id('jmx-operations')
+                      .title( () => 'Operations' )
+                      .href( () => ' /jmx/operations' + workspace.hash() )
+                      .isSelected( () => workspace.isLinkActive('jmx/operations') )
+                      .build();
+
+    var chart = builder.id('jmx-chart')
+                      .title( () => 'Charts' )
+                      .href( () => ' /jmx/charts' + workspace.hash() )
+                      .isSelected( () => workspace.isLinkActive('jmx/charts') )
+                      .build();
+
+    var editChart = builder.id('jmx-edit-chart')
+                      .title( () => 'Edit Chart' )
+                      .href( () => ' /jmx/chartEdit' + workspace.hash() )
+                      .template( () => $templateCache.get(UrlHelpers.join(templatePath, 'chartEditNav.html')) )
+                      .isSelected( () => workspace.isLinkActive('jmx/chartEdit') )
+                      .build();
+
+    var tab = builder.id('jmx')
+                .title( () => 'JMX' )
+                .isValid( () => workspace.hasMBeans() )
+                .href( () => '/jmx' )
+                .isSelected( () => workspace.isTopTabActive('jmx') )
+                .tabs(attributes, operations, chart, editChart)
+                .build();
+
+    nav.add(tab);
 
     // we want attributes to be listed first, so add it at index 0
+    /*
     workspace.subLevelTabs.add( {
       content: '<i class="fa fa-list"></i> Attributes',
       title: "View the attribute values on your selection",
@@ -150,12 +190,10 @@ module Jmx {
       isValid: (workspace: Workspace) => workspace.isLinkActive("jmx/chart"),
       href: () => "/jmx/chartEdit"
     });
+    */
 
   }]);
 
   hawtioPluginLoader.addModule(pluginName);
-  /*
-  hawtioPluginLoader.addModule('dotjem.angular.tree');
-  */
 
 }
