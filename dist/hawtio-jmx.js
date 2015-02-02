@@ -4621,14 +4621,6 @@ var Threads;
         var toolbar = builder.id('threads-toolbar').href(function () { return '#'; }).template(function () { return $templateCache.get(UrlHelpers.join(Threads.templatePath, 'toolbar.html')); }).build();
         var tab = builder.id('threads').href(function () { return '/threads'; }).isValid(function () { return workspace.treeContainsDomainAndProperties(Threads.jmxDomain, { type: Threads.mbeanType }); }).title(function () { return 'Threads'; }).isSelected(function () { return workspace.isTopTabActive("threads"); }).tabs(toolbar).build();
         nav.add(tab);
-        workspace.topLevelTabs.push({
-            id: "threadsold",
-            content: "Threads",
-            title: "JVM Threads",
-            isValid: function (workspace) { return workspace.treeContainsDomainAndProperties(Threads.jmxDomain, { type: Threads.mbeanType }); },
-            href: function () { return "#/threads"; },
-            isActive: function (workspace) { return workspace.isTopTabActive("threads"); }
-        });
     }]);
     hawtioPluginLoader.addModule(Threads.pluginName);
 })(Threads || (Threads = {}));

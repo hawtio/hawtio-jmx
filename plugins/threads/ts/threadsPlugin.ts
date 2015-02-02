@@ -39,17 +39,6 @@ module Threads {
                 .build();
 
     nav.add(tab);
-
-
-    workspace.topLevelTabs.push({
-      id: "threadsold",
-      content: "Threads",
-      title: "JVM Threads",
-      isValid: (workspace:Core.Workspace) => workspace.treeContainsDomainAndProperties(jmxDomain, {type: mbeanType}),
-      href: () => "#/threads",
-      isActive: (workspace:Core.Workspace) => workspace.isTopTabActive("threads")
-    });
-
   }]);
 
   hawtioPluginLoader.addModule(pluginName);
