@@ -77,6 +77,37 @@ module Jmx {
   export var currentProcessId = '';
   export var templatePath = 'plugins/jmx/html';
 
+  export function getNavItems(builder, workspace, $templateCache):Array<HawtioMainNav.NavItem> {
+
+    var attributes = builder.id('jmx-attributes')
+                       .title( () => 'Attributes' )
+                       .href( () => '/jmx/attributes' + workspace.hash() )
+                       .isSelected( () => workspace.isLinkActive('jmx/attributes') )
+                       .build();
+
+    var operations = builder.id('jmx-operations')
+                      .title( () => 'Operations' )
+                      .href( () => ' /jmx/operations' + workspace.hash() )
+                      .isSelected( () => workspace.isLinkActive('jmx/operations') )
+                      .build();
+
+    var chart = builder.id('jmx-chart')
+                      .title( () => 'Charts' )
+                      .href( () => ' /jmx/charts' + workspace.hash() )
+                      .isSelected( () => workspace.isLinkActive('jmx/charts') )
+                      .build();
+
+    var editChart = builder.id('jmx-edit-chart')
+                      .title( () => 'Edit Chart' )
+                      .href( () => ' /jmx/chartEdit' + workspace.hash() )
+                      .template( () => $templateCache.get(UrlHelpers.join(Jmx.templatePath, 'chartEditNav.html')) )
+                      .isSelected( () => workspace.isLinkActive('jmx/chartEdit') )
+                      .build();
+
+    return [attributes, operations, chart, editChart];
+
+  }
+
   var attributesToolBars = {};
 
   export function findLazyLoadingFunction(workspace, folder) {

@@ -1262,6 +1262,14 @@ var Jmx;
     Jmx.log = Logger.get(Jmx.pluginName);
     Jmx.currentProcessId = '';
     Jmx.templatePath = 'plugins/jmx/html';
+    function getNavItems(builder, workspace, $templateCache) {
+        var attributes = builder.id('jmx-attributes').title(function () { return 'Attributes'; }).href(function () { return '/jmx/attributes' + workspace.hash(); }).isSelected(function () { return workspace.isLinkActive('jmx/attributes'); }).build();
+        var operations = builder.id('jmx-operations').title(function () { return 'Operations'; }).href(function () { return ' /jmx/operations' + workspace.hash(); }).isSelected(function () { return workspace.isLinkActive('jmx/operations'); }).build();
+        var chart = builder.id('jmx-chart').title(function () { return 'Charts'; }).href(function () { return ' /jmx/charts' + workspace.hash(); }).isSelected(function () { return workspace.isLinkActive('jmx/charts'); }).build();
+        var editChart = builder.id('jmx-edit-chart').title(function () { return 'Edit Chart'; }).href(function () { return ' /jmx/chartEdit' + workspace.hash(); }).template(function () { return $templateCache.get(UrlHelpers.join(Jmx.templatePath, 'chartEditNav.html')); }).isSelected(function () { return workspace.isLinkActive('jmx/chartEdit'); }).build();
+        return [attributes, operations, chart, editChart];
+    }
+    Jmx.getNavItems = getNavItems;
     var attributesToolBars = {};
     function findLazyLoadingFunction(workspace, folder) {
         var factories = workspace.jmxTreeLazyLoadRegistry[folder.domain];
@@ -1695,12 +1703,8 @@ var Jmx;
             return Jmx.currentProcessId;
         });
         var builder = nav.builder();
-        var toolbar = builder.id('jmx-toolbar').template(function () { return $templateCache.get(UrlHelpers.join(Jmx.templatePath, 'subLevelTabs.html')); }).build();
-        var attributes = builder.id('jmx-attributes').title(function () { return 'Attributes'; }).href(function () { return '/jmx/attributes' + workspace.hash(); }).isSelected(function () { return workspace.isLinkActive('jmx/attributes'); }).build();
-        var operations = builder.id('jmx-operations').title(function () { return 'Operations'; }).href(function () { return ' /jmx/operations' + workspace.hash(); }).isSelected(function () { return workspace.isLinkActive('jmx/operations'); }).build();
-        var chart = builder.id('jmx-chart').title(function () { return 'Charts'; }).href(function () { return ' /jmx/charts' + workspace.hash(); }).isSelected(function () { return workspace.isLinkActive('jmx/charts'); }).build();
-        var editChart = builder.id('jmx-edit-chart').title(function () { return 'Edit Chart'; }).href(function () { return ' /jmx/chartEdit' + workspace.hash(); }).template(function () { return $templateCache.get(UrlHelpers.join(Jmx.templatePath, 'chartEditNav.html')); }).isSelected(function () { return workspace.isLinkActive('jmx/chartEdit'); }).build();
-        var tab = builder.id('jmx').title(function () { return 'JMX'; }).isValid(function () { return workspace.hasMBeans(); }).href(function () { return '/jmx'; }).isSelected(function () { return workspace.isTopTabActive('jmx'); }).tabs(attributes, operations, chart, editChart).build();
+        var tab = builder.id('jmx').title(function () { return 'JMX'; }).isValid(function () { return workspace.hasMBeans(); }).href(function () { return '/jmx'; }).isSelected(function () { return workspace.isTopTabActive('jmx'); }).build();
+        tab.tabs = Jmx.getNavItems(builder, workspace, $templateCache);
         nav.add(tab);
         // we want attributes to be listed first, so add it at index 0
         /*

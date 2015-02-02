@@ -124,42 +124,14 @@ module Jmx {
 
     var builder = nav.builder();
 
-    var toolbar = builder.id('jmx-toolbar')
-                    .template( () => $templateCache.get(UrlHelpers.join(templatePath, 'subLevelTabs.html')) )
-                    .build();
-
-    var attributes = builder.id('jmx-attributes')
-                       .title( () => 'Attributes' )
-                       .href( () => '/jmx/attributes' + workspace.hash() )
-                       .isSelected( () => workspace.isLinkActive('jmx/attributes') )
-                       .build();
-
-    var operations = builder.id('jmx-operations')
-                      .title( () => 'Operations' )
-                      .href( () => ' /jmx/operations' + workspace.hash() )
-                      .isSelected( () => workspace.isLinkActive('jmx/operations') )
-                      .build();
-
-    var chart = builder.id('jmx-chart')
-                      .title( () => 'Charts' )
-                      .href( () => ' /jmx/charts' + workspace.hash() )
-                      .isSelected( () => workspace.isLinkActive('jmx/charts') )
-                      .build();
-
-    var editChart = builder.id('jmx-edit-chart')
-                      .title( () => 'Edit Chart' )
-                      .href( () => ' /jmx/chartEdit' + workspace.hash() )
-                      .template( () => $templateCache.get(UrlHelpers.join(templatePath, 'chartEditNav.html')) )
-                      .isSelected( () => workspace.isLinkActive('jmx/chartEdit') )
-                      .build();
-
     var tab = builder.id('jmx')
                 .title( () => 'JMX' )
                 .isValid( () => workspace.hasMBeans() )
                 .href( () => '/jmx' )
                 .isSelected( () => workspace.isTopTabActive('jmx') )
-                .tabs(attributes, operations, chart, editChart)
                 .build();
+
+    tab.tabs = getNavItems(builder, workspace, $templateCache);
 
     nav.add(tab);
 

@@ -44,6 +44,7 @@ declare module Jmx {
     var log: Logging.Logger;
     var currentProcessId: string;
     var templatePath: string;
+    function getNavItems(builder: any, workspace: any, $templateCache: any): Array<HawtioMainNav.NavItem>;
     function findLazyLoadingFunction(workspace: any, folder: any): any;
     function registerLazyLoadHandler(domain: string, lazyLoaderFactory: (folder: Core.Folder) => any): void;
     function unregisterLazyLoadHandler(domain: string, lazyLoaderFactory: (folder: Core.Folder) => any): void;
