@@ -121,48 +121,15 @@ module Jmx {
       }
       return Jmx.currentProcessId;
     });
-
     var builder = nav.builder();
-
     var tab = builder.id('jmx')
                 .title( () => 'JMX' )
                 .isValid( () => workspace.hasMBeans() )
                 .href( () => '/jmx' )
                 .isSelected( () => workspace.isTopTabActive('jmx') )
                 .build();
-
     tab.tabs = getNavItems(builder, workspace, $templateCache);
-
     nav.add(tab);
-
-    // we want attributes to be listed first, so add it at index 0
-    /*
-    workspace.subLevelTabs.add( {
-      content: '<i class="fa fa-list"></i> Attributes',
-      title: "View the attribute values on your selection",
-      isValid: (workspace: Workspace) => true,
-      href: () => "/jmx/attributes",
-      index: -1
-    }, 0);
-    workspace.subLevelTabs.push( {
-      content: '<i class="fa fa-leaf"></i> Operations',
-      title: "Execute operations on your selection",
-      isValid: (workspace: Workspace) => true,
-      href: () => "/jmx/operations"
-    });
-    workspace.subLevelTabs.push( {
-      content: '<i class="fa fa-bar-chart"></i> Chart',
-      title: "View a chart of the metrics on your selection",
-      isValid: (workspace: Workspace) => true,
-      href: () => "/jmx/charts"
-    });
-    workspace.subLevelTabs.push( {
-      content: '<i class="fa fa-cog"></i> Edit Chart',
-      title: "Edit the chart configuration",
-      isValid: (workspace: Workspace) => workspace.isLinkActive("jmx/chart"),
-      href: () => "/jmx/chartEdit"
-    });
-    */
 
   }]);
 
