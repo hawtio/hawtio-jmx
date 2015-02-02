@@ -18,6 +18,7 @@ var config = {
   templateModule: pkg.name + '-templates',
   dist: './dist/',
   js: pkg.name + '.js',
+  css: pkg.name + '.css',
   tsProject: plugins.typescript.createProject({
     target: 'ES5',
     module: 'commonjs',
@@ -98,7 +99,7 @@ gulp.task('clean', ['concat'], function() {
 });
 
 gulp.task('watch', ['build'], function() {
-  plugins.watch(['libs/**/*.js', 'libs/**/*.css', 'index.html', config.dist + '/' + config.js], function() {
+  plugins.watch(['libs/**/*.js', 'libs/**/*.css', 'index.html', config.dist + '/' + config.js, config.dist + '/' + config.css], function() {
     gulp.start('reload');
   });
   plugins.watch(['libs/**/*.d.ts', config.ts, config.templates], function() {
