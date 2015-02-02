@@ -17,20 +17,39 @@ module Threads {
 
   _module.config(["$routeProvider", ($routeProvider) => {
     $routeProvider.
-        when('/threads', {templateUrl: templatePath + 'index.html'});
+        when('/threads', {templateUrl: UrlHelpers.join(templatePath, 'index.html')});
   }]);
 
-  _module.run(["$location", "workspace", "viewRegistry", "layoutFull", "helpRegistry", ($location:ng.ILocationService, workspace:Core.Workspace, viewRegistry, layoutFull, helpRegistry) => {
+  _module.run(["$templateCache", "workspace", "viewRegistry", "layoutFull", "helpRegistry", "HawtioNav", ($templateCache:ng.ITemplateCacheService, workspace:Core.Workspace, viewRegistry, layoutFull, helpRegistry, nav:HawtioMainNav.Registry) => {
     viewRegistry['threads'] = layoutFull;
     helpRegistry.addUserDoc('threads', 'plugins/threads/doc/help.md');
+
+    var builder = nav.builder();
+    var toolbar = builder.id('threads-toolbar')
+                    .href(() => '#')
+                    .template( () => $templateCache.get(UrlHelpers.join(templatePath, 'toolbar.html')) )
+                    .build();
+
+    var tab = builder.id('threads')
+                .href(() => '/threads')
+                .isValid(() => workspace.treeContainsDomainAndProperties(jmxDomain, { type: mbeanType }))
+                .title(() => 'Threads')
+                .isSelected(() => workspace.isTopTabActive("threads"))
+                .tabs(toolbar)
+                .build();
+
+    nav.add(tab);
+
+
     workspace.topLevelTabs.push({
-      id: "threads",
+      id: "threadsold",
       content: "Threads",
       title: "JVM Threads",
       isValid: (workspace:Core.Workspace) => workspace.treeContainsDomainAndProperties(jmxDomain, {type: mbeanType}),
       href: () => "#/threads",
       isActive: (workspace:Core.Workspace) => workspace.isTopTabActive("threads")
     });
+
   }]);
 
   hawtioPluginLoader.addModule(pluginName);

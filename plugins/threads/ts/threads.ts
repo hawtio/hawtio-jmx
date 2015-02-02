@@ -4,7 +4,50 @@
 /// <reference path="./threadsPlugin.ts"/>
 module Threads {
 
-  _module.controller("Threads.ThreadsController", ["$scope", "$routeParams", "$templateCache", "jolokia", ($scope, $routeParams, $templateCache, jolokia) => {
+  _module.controller("Threads.ToolbarController", ["$scope", "$rootScope", "jolokia", ($scope, $rootScope, jolokia) => {
+    $scope.$on('ThreadControllerSupport', ($event, support) => {
+      $scope.support = support;
+    });
+    $scope.$on('ThreadControllerThreads', ($event, threads) => {
+      log.debug("got threads: ", threads);
+      $scope.unfilteredThreads = threads;
+      $scope.totals = {};
+      threads.forEach((t) => {
+        // calculate totals
+        var state = t.threadState;
+        if (!(state in $scope.totals)) {
+          $scope.totals[state] = 1;
+        } else {
+          $scope.totals[state]++
+        }
+      });
+      $scope.threads = threads;
+    });
+    $scope.stateFilter = 'NONE';
+    $scope.filterOn = (state) => {
+      $scope.stateFilter = state;
+      $rootScope.$broadcast('ThreadsToolbarState', state);
+    };
+    $scope.selectedFilterClass = (state) => {
+      if (state === $scope.stateFilter) {
+        return "active";
+      } else {
+        return "";
+      }
+    };
+    $scope.getMonitorClass = (name, value) => {
+      return value.toString();
+    };
+
+    $scope.getMonitorName = (name) => {
+      name = name.replace('Supported', '');
+      return name.titleize();
+    };
+
+
+  }]);
+
+  _module.controller("Threads.ThreadsController", ["$scope", "$rootScope", "$routeParams", "$templateCache", "jolokia", ($scope, $rootScope, $routeParams, $templateCache, jolokia) => {
 
     $scope.selectedRowJson = '';
 
@@ -126,6 +169,10 @@ module Threads {
       }
     }, true);
 
+    $scope.$on('ThreadsToolbarState', ($event, state) => {
+      $scope.filterOn(state);
+    });
+
     $scope.filterOn = (state) => {
       $scope.stateFilter = state;
     };
@@ -138,14 +185,6 @@ module Threads {
       return threads.filter((t) => {
         return t && t['threadState'] === state;
       });
-    };
-
-    $scope.selectedFilterClass = (state) => {
-      if (state === $scope.stateFilter) {
-        return "active";
-      } else {
-        return "";
-      }
     };
 
     $scope.deselect = () => {
@@ -162,7 +201,18 @@ module Threads {
         return t && t['threadId'] == selectedThread.entity['threadId'];
       });
     };
-
+    function render(response) {
+      var responseJson = angular.toJson(response.value, true);
+      if ($scope.getThreadInfoResponseJson !== responseJson) {
+        $scope.getThreadInfoResponseJson = responseJson;
+        var threads = response.value.exclude((t) => { return t === null; });
+        $scope.unfilteredThreads = threads;
+        threads = $scope.filterThreads($scope.stateFilter, threads);
+        $scope.threads = threads;
+        $rootScope.$broadcast('ThreadControllerThreads', threads);
+        Core.$apply($scope);
+      }
+    }
     $scope.init = () => {
 
       jolokia.request(
@@ -183,16 +233,19 @@ module Threads {
         success: [
           (response) => {
             $scope.support.threadContentionMonitoringSupported = response.value;
+            $rootScope.$broadcast('ThreadControllerSupport', $scope.support);
             log.debug("ThreadContentionMonitoringSupported: ", $scope.support.threadContentionMonitoringSupported);
             $scope.maybeRegister();
           },
           (response) => {
             $scope.support.objectMonitorUsageSupported = response.value;
+            $rootScope.$broadcast('ThreadControllerSupport', $scope.support);
             log.debug("ObjectMonitorUsageSupported: ", $scope.support.objectMonitorUsageSupported);
             $scope.maybeRegister();
           },
           (response) => {
             $scope.support.synchronizerUsageSupported = response.value;
+            $rootScope.$broadcast('ThreadControllerSupport', $scope.support);
             log.debug("SynchronizerUsageSupported: ", $scope.support.synchronizerUsageSupported);
             $scope.maybeRegister();
           }],
@@ -251,41 +304,6 @@ module Threads {
       }
       Core.$apply($scope);
     };
-
-    $scope.getMonitorClass = (name, value) => {
-      return value.toString();
-    };
-
-    $scope.getMonitorName = (name) => {
-      name = name.replace('Supported', '');
-      return name.titleize();
-    };
-
-    function render(response) {
-      var responseJson = angular.toJson(response.value, true);
-      if ($scope.getThreadInfoResponseJson !== responseJson) {
-        $scope.getThreadInfoResponseJson = responseJson;
-
-        var threads = response.value.exclude((t) => { return t === null; });
-
-        $scope.unfilteredThreads = threads;
-        $scope.totals = {};
-        threads.forEach((t) => {
-          // calculate totals
-          var state = t.threadState;
-          if (!(state in $scope.totals)) {
-            $scope.totals[state] = 1;
-          } else {
-            $scope.totals[state]++
-          }
-        });
-
-        threads = $scope.filterThreads($scope.stateFilter, threads);
-
-        $scope.threads = threads;
-        Core.$apply($scope);
-      }
-    }
 
     initFunc();
 

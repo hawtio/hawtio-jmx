@@ -1,61 +1,6 @@
 <div ng-controller="Threads.ThreadsController">
 
-  <script type="text/ng-template" id="threadStateTemplate">
-    <div class="thread-state-indicator"
-         title="{{row.entity.threadState | humanize}}"
-         ng-switch on="row.entity.threadState">
-      <i ng-switch-when="NEW"
-         class="lightgreen icon-bolt"></i>
-      <i ng-switch-when="RUNNABLE"
-         class="green icon-play-circle"></i>
-      <i ng-switch-when="BLOCKED"
-         class="red icon-stop"></i>
-      <i ng-switch-when="WAITING"
-         class="darkgray icon-pause"></i>
-      <i ng-switch-when="TIMED_WAITING"
-         class="orange icon-time"></i>
-      <i ng-switch-default="TERMINATED"
-         class="darkred icon-remove"></i>
-    </div>
-  </script>
-
-  <div ng-class="isInDashboardClass()">
-    <div class="logbar-container">
-
-      <div class="state-panel inline-block">
-        <ul class="inline">
-          <li ng-click="filterOn('NONE')"
-              title="Clear state filter"
-              ng-class="selectedFilterClass('NONE')">
-            <span class="clickable no-fade total">Total:</span> {{unfilteredThreads.length}}
-          </li>
-          <li ng-repeat="(state, total) in totals track by $index"
-              ng-click="filterOn(state)"
-              title="Filter by {{state}}"
-              ng-class="selectedFilterClass(state)">
-            <span class="clickable no-fade {{state.dasherize()}}">{{state | humanize}}:</span> {{total}}
-          </li>
-        </ul>
-      </div>
-
-      <div class="inline-block support-panel pull-right">
-        <ul class="inline">
-          <li ng-repeat="(name, value) in support track by $index">
-            <span class="monitor-indicator {{getMonitorClass(name, value)}}" ng-click="maybeToggleMonitor(name, value)">{{getMonitorName(name)}}</span>
-          </li>
-          <li ng-hide="inDashboard">
-            <a ng-href="{{addToDashboardLink()}}" title="Add this view to a dashboard">
-              <i class="icon-share"></i>
-            </a>
-          </li>
-        </ul>
-      </div>
-
-    </div>
-  </div>
-
-
-  <div class="wiki-fixed">
+  <div>
     <div class="pull-right">
       <hawtio-filter ng-model="searchFilter" placeholder="Filter..." save-as="threads-text-filter"></hawtio-filter>
     </div>
