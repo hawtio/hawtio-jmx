@@ -1,22 +1,83 @@
 /**
- * @module Core
+ * @module JVM
  */
 /// <reference path="../../includes.ts"/>
-/// <reference path="jmxPlugin.ts"/>
-module Jmx {
+/// <reference path="jvmPlugin.ts"/>
+module JVM {
 
   export interface DummyJolokia extends Jolokia.IJolokia {
     running:boolean;
   }
 
-  _module.factory('jolokia',["$location", "localStorage", "jolokiaStatus", "$rootScope", "userDetails", "jolokiaParams", "jolokiaUrl", ($location:ng.ILocationService, localStorage, jolokiaStatus, $rootScope, userDetails:Core.UserDetails, jolokiaParams, jolokiaUrl):Jolokia.IJolokia => {
+  _module.service('ConnectionName', ['$location', ($location:ng.ILocationService) => {
+    var answer:string = null;
+    return (reset = false):string => {
+      if (!Core.isBlank(answer) && !reset) {
+        return answer;
+      } 
+      answer = '';
+      var search = $location.search();
+      if ('con' in window) {
+        answer = <string> window['con'];
+        log.debug("Using connection name from window: ", answer);
+      }
+      if ('con' in search) {
+        answer = search['con'];
+        log.debug("Using connection name from URL: ", answer);
+      }
+      if (Core.isBlank(answer)) {
+        log.debug("No connection name found, using direct connection to JVM");
+      }
+      return answer;
+    }
+  }]);
+
+  _module.service('ConnectOptions', ['ConnectionName', (ConnectionName) => {
+    if (!Core.isBlank(ConnectionName())) {
+      var answer = Core.getConnectOptions(ConnectionName());
+      return answer;
+    }
+    return null;
+  }]);
+
+  // the jolokia URL we're connected to, could probably be a constant
+  _module.factory('jolokiaUrl', () => {
+    // TODO
+    return '/jolokia';
+  });
+
+  // holds the status returned from the last jolokia call (?)
+  _module.factory('jolokiaStatus', () => {
+    return {
+      xhr: null
+    };
+  });
+
+  export var DEFAULT_MAX_DEPTH = 7;
+  export var DEFAULT_MAX_COLLECTION_SIZE = 500;
+
+  _module.factory('jolokiaParams', ["jolokiaUrl", "localStorage", (jolokiaUrl, localStorage) => {
+    var answer = {
+      canonicalNaming: false,
+      ignoreErrors: true,
+      mimeType: 'application/json',
+      maxDepth: DEFAULT_MAX_DEPTH,
+      maxCollectionSize: DEFAULT_MAX_COLLECTION_SIZE
+    };
+    if ('jolokiaParams' in localStorage) {
+      answer = angular.fromJson(localStorage['jolokiaParams']);
+    } else {
+      localStorage['jolokiaParams'] = angular.toJson(answer);
+    }
+    answer['url'] = jolokiaUrl;
+    return answer;
+  }]);
+
+  _module.factory('jolokia',["$location", "localStorage", "jolokiaStatus", "$rootScope", "userDetails", "jolokiaParams", "jolokiaUrl", "ConnectionName", "ConnectOptions", ($location:ng.ILocationService, localStorage, jolokiaStatus, $rootScope, userDetails:Core.UserDetails, jolokiaParams, jolokiaUrl, connectionName, connectionOptions):Jolokia.IJolokia => {
     // TODO - Maybe have separate URLs or even jolokia instances for loading plugins vs. application stuff
     // var jolokiaUrl = $location.search()['url'] || Core.url("/jolokia");
     log.debug("Jolokia URL is " + jolokiaUrl);
     if (jolokiaUrl) {
-
-      var connectionName = Core.getConnectionNameParameter($location.search());
-      var connectionOptions = Core.getConnectOptions(connectionName);
 
       // pass basic auth credentials down to jolokia if set
       var username:String = null;

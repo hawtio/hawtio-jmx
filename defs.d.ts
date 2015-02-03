@@ -11,7 +11,6 @@
 /// <reference path="d.ts/jmx/ts/charts.d.ts"/>
 /// <reference path="d.ts/jmx/ts/donutChart.d.ts"/>
 /// <reference path="d.ts/jmx/ts/graphs.d.ts"/>
-/// <reference path="d.ts/jmx/ts/jolokiaService.d.ts"/>
 /// <reference path="d.ts/tree/ts/treePlugin.d.ts"/>
 /// <reference path="d.ts/jmx/ts/mbeans.d.ts"/>
 /// <reference path="d.ts/jmx/ts/navbar.d.ts"/>
@@ -21,6 +20,7 @@
 /// <reference path="d.ts/jvm/ts/jvmPlugin.d.ts"/>
 /// <reference path="d.ts/jvm/ts/connect.d.ts"/>
 /// <reference path="d.ts/jvm/ts/discover.d.ts"/>
+/// <reference path="d.ts/jvm/ts/jolokiaService.d.ts"/>
 /// <reference path="d.ts/jvm/ts/local.d.ts"/>
 /// <reference path="d.ts/jvm/ts/navbar.d.ts"/>
 /// <reference path="d.ts/jvm/ts/reset.d.ts"/>
