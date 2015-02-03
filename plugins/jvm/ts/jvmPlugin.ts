@@ -3,11 +3,11 @@
  * @main JVM
  */
 /// <reference path="jvmHelpers.ts"/>
-module JVM {
+// TODO move this out of here and enable per-logger settings easily in the UI
+Logger.get('$templateCache').setLevel(Logger.WARN);
+Logger.get('$templateRequest').setLevel(Logger.WARN);
 
-  export var rootPath = 'plugins/jvm';
-  export var templatePath = UrlHelpers.join(rootPath, '/html');
-  export var pluginName = 'jvm';
+module JVM {
 
   export var _module = angular.module(pluginName, []);
 
@@ -28,8 +28,8 @@ module JVM {
       if (!HawtioCore.injector) {
         return;
       }
-      log.debug("ConParam task firing, newUrl: ", newUrl, " oldUrl: ", oldUrl, " ConnectOptions: ", ConnectOptions);
-      if (!ConnectOptions.name || !newUrl) {
+      //log.debug("ConParam task firing, newUrl: ", newUrl, " oldUrl: ", oldUrl, " ConnectOptions: ", ConnectOptions);
+      if (!ConnectOptions || !ConnectOptions.name || !newUrl) {
         return;
       }
       var newQuery:any = $location.search();

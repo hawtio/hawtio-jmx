@@ -3982,7 +3982,10 @@ var Jmx;
 /// <reference path="../../jmx/ts/workspace.ts"/>
 var JVM;
 (function (JVM) {
-    JVM.log = Logger.get("JVM");
+    JVM.rootPath = 'plugins/jvm';
+    JVM.templatePath = UrlHelpers.join(JVM.rootPath, '/html');
+    JVM.pluginName = 'hawtio-jvm';
+    JVM.log = Logger.get(JVM.pluginName);
     JVM.connectControllerKey = "jvmConnectSettings";
     JVM.connectionSettingsKey = Core.connectionSettingsKey;
     JVM.logoPath = 'img/icons/jvm/';
@@ -4156,75 +4159,19 @@ var Core;
             answer = options.jolokiaUrl;
         }
         if (answer === null) {
-            answer = options.scheme || 'http';
-            answer += '://' + (options.host || 'localhost');
-            if (options.port) {
-                answer += ':' + options.port;
+            var uri = new URI();
+            uri.protocol(options.scheme || 'http').host(options.host || 'localhost').port((options.port || '80')).path(options.path);
+            if (options.useProxy) {
+                answer = UrlHelpers.join('/proxy', uri.protocol(), uri.hostname(), uri.port(), uri.path());
             }
-            if (options.path) {
-                answer = UrlHelpers.join(answer, options.path);
+            else {
+                answer = uri.toString();
             }
         }
-        if (options.useProxy) {
-            answer = UrlHelpers.join('proxy', answer);
-        }
-        Logger.get("Core").debug("Using URL: ", answer);
+        Logger.get(JVM.pluginName).debug("Using URL: ", answer);
         return answer;
     }
     Core.createServerConnectionUrl = createServerConnectionUrl;
-    /**
-     * Returns Jolokia URL by checking its availability if not in local mode
-     *
-     * @returns {*}
-     */
-    function getJolokiaUrl() {
-        // TODO
-        return '/jolokia';
-        /*
-            var query = UrlHelpers.parseQueryString();
-            var localMode = query['localMode'];
-            if (localMode) {
-              Logger.get("Core").debug("local mode so not using jolokia URL");
-              jolokiaUrls = <string[]>[];
-              return null;
-            }
-            var uri:String = null;
-            var connectionName = Core.getConnectionNameParameter(query);
-            if (connectionName) {
-              var connectOptions = Core.getConnectOptions(connectionName);
-              if (connectOptions) {
-                uri = createServerConnectionUrl(connectOptions);
-                Logger.get("Core").debug("Using jolokia URI: ", uri, " from local storage");
-              } else {
-                Logger.get("Core").debug("Connection parameter found but no stored connections under name: ", connectionName);
-              }
-            }
-            if (!uri) {
-              var fakeCredentials = {
-                username: 'public',
-                password: 'biscuit'
-              };
-              var localStorage = getLocalStorage();
-              if ('userDetails' in window) {
-                fakeCredentials = window['userDetails'];
-              } else if ('userDetails' in localStorage) {
-                // user checked 'rememberMe'
-                fakeCredentials = angular.fromJson(localStorage['userDetails']);
-              }
-              uri = <String> jolokiaUrls.find((url:String):boolean => {
-                var jqxhr = (<JQueryStatic>$).ajax(<string>url, {
-                  async: false,
-                  username: fakeCredentials.username,
-                  password: fakeCredentials.password
-                });
-                return jqxhr.status === 200 || jqxhr.status === 401 || jqxhr.status === 403;
-              });
-              Logger.get("Core").debug("Using jolokia URI: ", uri, " via discovery");
-            }
-            return uri;
-            */
-    }
-    Core.getJolokiaUrl = getJolokiaUrl;
 })(Core || (Core = {}));
 
 /**
@@ -4232,11 +4179,11 @@ var Core;
  * @main JVM
  */
 /// <reference path="jvmHelpers.ts"/>
+// TODO move this out of here and enable per-logger settings easily in the UI
+Logger.get('$templateCache').setLevel(Logger.WARN);
+Logger.get('$templateRequest').setLevel(Logger.WARN);
 var JVM;
 (function (JVM) {
-    JVM.rootPath = 'plugins/jvm';
-    JVM.templatePath = UrlHelpers.join(JVM.rootPath, '/html');
-    JVM.pluginName = 'jvm';
     JVM._module = angular.module(JVM.pluginName, []);
     JVM._module.config(["$routeProvider", function ($routeProvider) {
         $routeProvider.when('/jvm', { redirectTo: '/jvm/connect' }).when('/jvm/discover', { templateUrl: UrlHelpers.join(JVM.templatePath, 'discover.html') }).when('/jvm/connect', { templateUrl: UrlHelpers.join(JVM.templatePath, 'connect.html') }).when('/jvm/local', { templateUrl: UrlHelpers.join(JVM.templatePath, 'local.html') });
@@ -4249,8 +4196,8 @@ var JVM;
             if (!HawtioCore.injector) {
                 return;
             }
-            JVM.log.debug("ConParam task firing, newUrl: ", newUrl, " oldUrl: ", oldUrl, " ConnectOptions: ", ConnectOptions);
-            if (!ConnectOptions.name || !newUrl) {
+            //log.debug("ConParam task firing, newUrl: ", newUrl, " oldUrl: ", oldUrl, " ConnectOptions: ", ConnectOptions);
+            if (!ConnectOptions || !ConnectOptions.name || !newUrl) {
                 return;
             }
             var newQuery = $location.search();
@@ -4522,6 +4469,58 @@ var JVM;
 /// <reference path="jvmPlugin.ts"/>
 var JVM;
 (function (JVM) {
+    var urlCandidates = ['/hawtio/jolokia', '/jolokia', 'jolokia'];
+    var discoveredUrl = null;
+    hawtioPluginLoader.registerPreBootstrapTask(function (next) {
+        var uri = new URI();
+        var connectionName = uri.query(true)['con'];
+        if (connectionName) {
+            JVM.log.debug("Not discovering jolokia");
+            // a connection name is set, no need to discover a jolokia instance
+            next();
+            return;
+        }
+        function maybeCheckNext(candidates) {
+            if (candidates.length === 0) {
+                next();
+            }
+            else {
+                checkNext(candidates.pop());
+            }
+        }
+        function checkNext(url) {
+            JVM.log.debug("trying URL: ", url);
+            $.ajax(url).always(function (data, statusText, jqXHR) {
+                if (jqXHR.status === 200) {
+                    try {
+                        var resp = angular.fromJson(data);
+                        JVM.log.debug("Got response: ", resp);
+                        if ('value' in resp && 'agent' in resp.value) {
+                            discoveredUrl = url;
+                            JVM.log.debug("Using URL: ", url);
+                            next();
+                        }
+                        else {
+                            maybeCheckNext(urlCandidates);
+                        }
+                    }
+                    catch (e) {
+                        maybeCheckNext(urlCandidates);
+                    }
+                }
+                else if (jqXHR.status === 401 || jqXHR.status === 403) {
+                    // I guess this could be it...
+                    discoveredUrl = url;
+                    JVM.log.debug("Using URL: ", url);
+                    next();
+                }
+                else {
+                    maybeCheckNext(urlCandidates);
+                }
+            });
+        }
+        checkNext(urlCandidates.pop());
+    });
     JVM._module.service('ConnectionName', ['$location', function ($location) {
         var answer = null;
         return function (reset) {
@@ -4548,15 +4547,25 @@ var JVM;
     JVM._module.service('ConnectOptions', ['ConnectionName', function (ConnectionName) {
         if (!Core.isBlank(ConnectionName())) {
             var answer = Core.getConnectOptions(ConnectionName());
+            try {
+                if (window.opener && "passUserDetails" in window.opener) {
+                    answer.userName = window.opener["passUserDetails"].username;
+                    answer.password = window.opener["passUserDetails"].password;
+                }
+            }
+            catch (securityException) {
+            }
             return answer;
         }
         return null;
     }]);
     // the jolokia URL we're connected to, could probably be a constant
-    JVM._module.factory('jolokiaUrl', function () {
-        // TODO
-        return '/jolokia';
-    });
+    JVM._module.factory('jolokiaUrl', ['ConnectOptions', function (ConnectOptions) {
+        if (!ConnectOptions || !ConnectOptions.name) {
+            return discoveredUrl;
+        }
+        return Core.createServerConnectionUrl(ConnectOptions);
+    }]);
     // holds the status returned from the last jolokia call (?)
     JVM._module.factory('jolokiaStatus', function () {
         return {
@@ -4583,73 +4592,34 @@ var JVM;
         return answer;
     }]);
     JVM._module.factory('jolokia', ["$location", "localStorage", "jolokiaStatus", "$rootScope", "userDetails", "jolokiaParams", "jolokiaUrl", "ConnectionName", "ConnectOptions", function ($location, localStorage, jolokiaStatus, $rootScope, userDetails, jolokiaParams, jolokiaUrl, connectionName, connectionOptions) {
-        // TODO - Maybe have separate URLs or even jolokia instances for loading plugins vs. application stuff
-        // var jolokiaUrl = $location.search()['url'] || Core.url("/jolokia");
-        JVM.log.debug("Jolokia URL is " + jolokiaUrl);
         if (jolokiaUrl) {
             // pass basic auth credentials down to jolokia if set
             var username = null;
             var password = null;
-            var found = false;
-            try {
-                if (window.opener && "passUserDetails" in window.opener) {
-                    username = window.opener["passUserDetails"].username;
-                    password = window.opener["passUserDetails"].password;
-                    found = true;
-                }
+            if (connectionOptions && connectionOptions.userName && connectionOptions.password) {
+                username = connectionOptions.userName;
+                password = connectionOptions.password;
             }
-            catch (securityException) {
+            else if (angular.isDefined(userDetails) && angular.isDefined(userDetails.username) && angular.isDefined(userDetails.password)) {
+                username = userDetails.username;
+                password = userDetails.password;
             }
-            if (!found) {
-                if (connectionOptions && connectionOptions.userName && connectionOptions.password) {
-                    username = connectionOptions.userName;
-                    password = connectionOptions.password;
-                }
-                else if (angular.isDefined(userDetails) && angular.isDefined(userDetails.username) && angular.isDefined(userDetails.password)) {
-                    username = userDetails.username;
-                    password = userDetails.password;
-                }
-                else {
-                    // lets see if they are passed in via request parameter...
-                    var search = UrlHelpers.parseQueryString();
-                    username = search["_user"];
-                    password = search["_pwd"];
-                    if (angular.isArray(username))
-                        username = username[0];
-                    if (angular.isArray(password))
-                        password = password[0];
-                }
+            else {
+                // lets see if they are passed in via request parameter...
+                var search = $location.search();
+                username = search["_user"];
+                password = search["_pwd"];
+                if (angular.isArray(username))
+                    username = username[0];
+                if (angular.isArray(password))
+                    password = password[0];
             }
             if (username && password) {
                 userDetails.username = username;
                 userDetails.password = password;
                 $.ajaxSetup({
                     beforeSend: function (xhr) {
-                        xhr.setRequestHeader('Authorization', Core.getBasicAuthHeader(userDetails.username, userDetails.password));
-                    }
-                });
-                var loginUrl = jolokiaUrl.replace("jolokia", "auth/login/");
-                $.ajax(loginUrl, {
-                    type: "POST",
-                    success: function (response) {
-                        if (response['credentials'] || response['principals']) {
-                            userDetails.loginDetails = {
-                                'credentials': response['credentials'],
-                                'principals': response['principals']
-                            };
-                        }
-                        else {
-                            var doc = Core.pathGet(response, ['children', 0, 'innerHTML']);
-                            // hmm, maybe we got an XML document, let's log it just in case...
-                            if (doc) {
-                                Core.log.debug("Response is a document (ignoring this): ", doc);
-                            }
-                        }
-                        Core.executePostLoginTasks();
-                    },
-                    error: function (xhr, textStatus, error) {
-                        // silently ignore, we could be using the proxy
-                        Core.executePostLoginTasks();
+                        xhr.setRequestHeader('Authorization', Core.getBasicAuthHeader(username, password));
                     }
                 });
             }
@@ -4658,9 +4628,7 @@ var JVM;
                     userDetails.username = null;
                     userDetails.password = null;
                     delete userDetails.loginDetails;
-                    if (found) {
-                        delete window.opener["passUserDetails"];
-                    }
+                    delete window.opener["passUserDetails"];
                 }
                 else {
                     jolokiaStatus.xhr = xhr;

@@ -5,13 +5,13 @@
 /// <reference path="../../jmx/ts/workspace.ts"/>
 module JVM {
 
-  export var log:Logging.Logger = Logger.get("JVM");
-
+  export var rootPath = 'plugins/jvm';
+  export var templatePath = UrlHelpers.join(rootPath, '/html');
+  export var pluginName = 'hawtio-jvm';
+  export var log:Logging.Logger = Logger.get(pluginName);
   export var connectControllerKey = "jvmConnectSettings";
   export var connectionSettingsKey = Core.connectionSettingsKey;
-
   export var logoPath = 'img/icons/jvm/';
-
   export var logoRegistry = {
     'jetty': logoPath + 'jetty-logo-80x22.png',
     'tomcat': logoPath + 'tomcat-logo.gif',
@@ -177,78 +177,26 @@ module Core {
    */
   export function createServerConnectionUrl(options:Core.ConnectOptions) {
     Logger.get("Core").debug("Connect to server, options: ", StringHelpers.toString(options));
-    var answer:String = null;
+    var answer:string = null;
     if (options.jolokiaUrl) {
-      answer = options.jolokiaUrl;
+      answer = <string>options.jolokiaUrl;
     }
     if (answer === null) {
-      answer = options.scheme || 'http';
-      answer += '://' + (options.host || 'localhost');
-      if (options.port) {
-        answer += ':' + options.port;
-      }
-      if (options.path) {
-        answer = UrlHelpers.join(<string>answer, <string>options.path);
+      var uri = new URI();
+      uri.protocol(<string> options.scheme || 'http')
+         .host(<string> options.host || 'localhost')
+         .port(<string> (options.port || '80'))
+         .path(<string> options.path);
+
+      if (options.useProxy) {
+        answer = UrlHelpers.join('/proxy', uri.protocol(), uri.hostname(), uri.port(), uri.path());
+      } else {
+        answer = uri.toString();
       }
     }
-    if (options.useProxy) {
-      answer = UrlHelpers.join('proxy', <string>answer);
-    }
-    Logger.get("Core").debug("Using URL: ", answer);
+    Logger.get(JVM.pluginName).debug("Using URL: ", answer);
     return answer;
   }
 
-  /**
-   * Returns Jolokia URL by checking its availability if not in local mode
-   *
-   * @returns {*}
-   */
-  export function getJolokiaUrl():String {
-    // TODO
-    return '/jolokia';
-/*
-    var query = UrlHelpers.parseQueryString();
-    var localMode = query['localMode'];
-    if (localMode) {
-      Logger.get("Core").debug("local mode so not using jolokia URL");
-      jolokiaUrls = <string[]>[];
-      return null;
-    }
-    var uri:String = null;
-    var connectionName = Core.getConnectionNameParameter(query);
-    if (connectionName) {
-      var connectOptions = Core.getConnectOptions(connectionName);
-      if (connectOptions) {
-        uri = createServerConnectionUrl(connectOptions);
-        Logger.get("Core").debug("Using jolokia URI: ", uri, " from local storage");
-      } else {
-        Logger.get("Core").debug("Connection parameter found but no stored connections under name: ", connectionName);
-      }
-    }
-    if (!uri) {
-      var fakeCredentials = {
-        username: 'public',
-        password: 'biscuit'
-      };
-      var localStorage = getLocalStorage();
-      if ('userDetails' in window) {
-        fakeCredentials = window['userDetails'];
-      } else if ('userDetails' in localStorage) {
-        // user checked 'rememberMe'
-        fakeCredentials = angular.fromJson(localStorage['userDetails']);
-      }
-      uri = <String> jolokiaUrls.find((url:String):boolean => {
-        var jqxhr = (<JQueryStatic>$).ajax(<string>url, {
-          async: false,
-          username: fakeCredentials.username,
-          password: fakeCredentials.password
-        });
-        return jqxhr.status === 200 || jqxhr.status === 401 || jqxhr.status === 403;
-      });
-      Logger.get("Core").debug("Using jolokia URI: ", uri, " via discovery");
-    }
-    return uri;
-    */
-  }
 
 }

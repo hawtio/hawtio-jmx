@@ -4,6 +4,9 @@
  * @module JVM
  */
 declare module JVM {
+    var rootPath: string;
+    var templatePath: string;
+    var pluginName: string;
     var log: Logging.Logger;
     var connectControllerKey: string;
     var connectionSettingsKey: string;
@@ -61,11 +64,5 @@ declare module Core {
     /**
      * Creates the Jolokia URL string for the given connection options
      */
-    function createServerConnectionUrl(options: Core.ConnectOptions): String;
-    /**
-     * Returns Jolokia URL by checking its availability if not in local mode
-     *
-     * @returns {*}
-     */
-    function getJolokiaUrl(): String;
+    function createServerConnectionUrl(options: Core.ConnectOptions): string;
 }
