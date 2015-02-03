@@ -4138,6 +4138,10 @@ var Core;
         localStorage[Core.connectionSettingsKey] = angular.toJson(map);
     }
     Core.saveConnectionMap = saveConnectionMap;
+    function getConnectionNameParameter() {
+        return new URI().search(true)['con'];
+    }
+    Core.getConnectionNameParameter = getConnectionNameParameter;
     /**
      * Returns the connection options for the given connection name from localStorage
      */

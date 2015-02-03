@@ -57,6 +57,7 @@ declare module Core {
      * @param map
      */
     function saveConnectionMap(map: Core.ConnectionMap): void;
+    function getConnectionNameParameter(): any;
     /**
      * Returns the connection options for the given connection name from localStorage
      */

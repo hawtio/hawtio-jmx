@@ -162,6 +162,10 @@ module Core {
     localStorage[Core.connectionSettingsKey] = angular.toJson(map);
   }
 
+  export function getConnectionNameParameter() {
+    return new URI().search(true)['con'];
+  }
+
   /**
    * Returns the connection options for the given connection name from localStorage
    */
