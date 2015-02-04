@@ -22,6 +22,7 @@ module JVM {
   }
 
   export var ConnectController = _module.controller("JVM.ConnectController", ["$scope", "$location", "localStorage", "workspace", ($scope:ConnectControllerScope, $location:ng.ILocationService, localStorage:WindowLocalStorage, workspace:Core.Workspace) => {
+    JVM.configureScope($scope, $location, workspace);
 
     function newConfig() {
       return Core.createConnectOptions({
@@ -37,10 +38,14 @@ module JVM {
 
     $scope.forms = {};
 
-    var hasMBeans = workspace && workspace.tree && workspace.tree.children && workspace.tree.children.length;
+    var hasMBeans = false;
 
-    $scope.disableProxy = !hasMBeans || Core.isChromeApp();
-
+    workspace.addNamedTreePostProcessor('ConnectTab', (tree) => {
+      hasMBeans = workspace && workspace.tree && workspace.tree.children && workspace.tree.children.length > 0;
+      $scope.disableProxy = !hasMBeans || Core.isChromeApp();
+      Core.$apply($scope);
+    });
+    
     $scope.lastConnection = '';
 
     // load settings like current tab, last used connection

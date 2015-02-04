@@ -1,8 +1,7 @@
 <div ng-controller="JVM.ConnectController">
 
-  <div class="row connect-column-container" hawtio-auto-columns=".connect-column">
-
-    <div class="connect-column">
+  <div class="row">
+    <div class="col-md-6">
       <div class="alert alert-info">
         <p>
           This page allows you to connect to remote processes which <strong>already have a <a
@@ -40,8 +39,7 @@
       </div>
     </div>
 
-    <div class="connect-column">
-
+    <div class="col-md-6">
       <dl>
         <dt>Saved Connections</dt>
         <dd>
@@ -62,7 +60,7 @@
                   <button class="btn btn-danger"
                           title="Delete this connection"
                           ng-disabled="!lastConnection"
-                          ng-click="deleteConnection()"><i class="icon-remove-sign"></i></button>
+                          ng-click="deleteConnection()"><i class="fa fa-remove"></i></button>
                   <button class="btn btn-primary"
                           title="Create a new connection"
                           ng-disabled="!lastConnection"

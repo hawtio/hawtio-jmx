@@ -47,12 +47,12 @@ module JVM {
     var local = builder.id('jvm-local')
                   .href( () => '/jvm/local' )
                   .title( () => 'Local' )
-                  .isValid( () => hasLocalMBean(workspace) )
+                  .show( () => hasLocalMBean(workspace) )
                   .build();
     var discover = builder.id('jvm-discover')
                   .href( () => '/jvm/discover' )
                   .title( () => 'Discover' )
-                  .isValid( () => hasDiscoveryMBean(workspace) )
+                  .show( () => hasDiscoveryMBean(workspace) )
                   .build();
     var tab = builder.id('jvm')
                   .href( () => '/jvm' )
