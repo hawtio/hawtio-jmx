@@ -4166,7 +4166,7 @@ var Core;
             var uri = new URI();
             uri.protocol(options.scheme || 'http').host(options.host || 'localhost').port((options.port || '80')).path(options.path);
             if (options.useProxy) {
-                answer = UrlHelpers.join('/proxy', uri.protocol(), uri.hostname(), uri.port(), uri.path());
+                answer = UrlHelpers.join('proxy', uri.protocol(), uri.hostname(), uri.port(), uri.path());
             }
             else {
                 answer = uri.toString();

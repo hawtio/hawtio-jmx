@@ -193,7 +193,7 @@ module Core {
          .path(<string> options.path);
 
       if (options.useProxy) {
-        answer = UrlHelpers.join('/proxy', uri.protocol(), uri.hostname(), uri.port(), uri.path());
+        answer = UrlHelpers.join('proxy', uri.protocol(), uri.hostname(), uri.port(), uri.path());
       } else {
         answer = uri.toString();
       }
