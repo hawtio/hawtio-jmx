@@ -21,7 +21,7 @@ module JVM {
     gotoServer: (options?:Core.ConnectOptions, form?:JQueryStatic, save?:boolean) => void;
   }
 
-  export var ConnectController = _module.controller("JVM.ConnectController", ["$scope", "$location", "localStorage", "workspace", ($scope:ConnectControllerScope, $location:ng.ILocationService, localStorage:WindowLocalStorage, workspace:Core.Workspace) => {
+  export var ConnectController = _module.controller("JVM.ConnectController", ["$scope", "$location", "localStorage", "workspace", "$http", ($scope:ConnectControllerScope, $location:ng.ILocationService, localStorage:WindowLocalStorage, workspace:Core.Workspace, $http:ng.IHttpService) => {
     JVM.configureScope($scope, $location, workspace);
 
     function newConfig() {
@@ -37,6 +37,14 @@ module JVM {
     };
 
     $scope.forms = {};
+    $http.get('proxy').then((resp) => {
+      if (resp.status === 200 && Core.isBlank(resp.data)) {
+        $scope.disableProxy = false;
+      } else {
+        $scope.disableProxy = true;
+      }
+    });
+
 
     var hasMBeans = false;
 
