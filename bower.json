@@ -10,6 +10,8 @@
     "dist/dynatree-icons.css",
     "dist/jquery-ui.custom.js",
     "dist/jquery.dynatree.js",
+    "dist/graphlib.core.js",
+    "dist/dagre.core.js",
     "dist/jolokia.js",
     "dist/cubism.v1.js",
     "dist/jolokia-simple.js",
@@ -30,12 +32,10 @@
     "hawtio-core-navigation": "~2.0.0",
     "hawtio-utilities": "~2.0.0",
     "hawtio-forms": "~2.0.0",
-    "dagre": "~0.7.1",
     "dotjem-angular-tree": "~0.1.4",
     "hawtio-ui": "~2.0.5",
     "font-awesome": "~4.3.0",
-    "hawtio-template-cache": "*",
-    "graphlib": "~1.0.1"
+    "hawtio-template-cache": "*"
   },
   "devDependencies": {
     "bootstrap": "~3.3.1",
