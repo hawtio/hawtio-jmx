@@ -34,7 +34,8 @@
     "dotjem-angular-tree": "~0.1.4",
     "hawtio-ui": "~2.0.5",
     "font-awesome": "~4.3.0",
-    "hawtio-template-cache": "*"
+    "hawtio-template-cache": "*",
+    "graphlib": "~1.0.1"
   },
   "devDependencies": {
     "bootstrap": "~3.3.1",
