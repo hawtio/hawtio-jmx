@@ -8,6 +8,7 @@ module JVM {
   _module.controller("JVM.DiscoveryController", ["$scope", "localStorage", "jolokia", ($scope, localStorage, jolokia) => {
 
     $scope.discovering = true;
+    $scope.agents = <any> undefined;
 
     $scope.$watch('agents', (newValue, oldValue) => {
       if (newValue !== oldValue) {
@@ -80,28 +81,24 @@ module JVM {
       return false;
     };
 
-    function render(response) {
+    $scope.render = (response) => {
       $scope.discovering = false;
-      if (!response.value) {
-        Core.$apply($scope);
-        return;
+      if (response) {
+        var responseJson = angular.toJson(response, true);
+        log.debug("responseJson: ", responseJson);
+        if ($scope.responseJson !== responseJson) {
+          $scope.responseJson = responseJson;
+          $scope.agents = response;
+          log.debug("agents: ", $scope.agents);
+        }
       }
-
-      var responseJson = angular.toJson(response.value.sortBy((agent) => agent['agent_id']), true);
-      if ($scope.responseJson !== responseJson) {
-        $scope.responseJson = responseJson;
-        log.debug("agents: ", $scope.agents);
-        $scope.agents = response.value;
-        Core.$apply($scope);
-      }
+      Core.$apply($scope);
     }
 
     $scope.fetch = () => {
       $scope.discovering = true;
-      Core.$apply($scope);
-
-      // use 30 sec timeout
-      jolokia.execute('jolokia:type=Discovery', 'lookupAgentsWithTimeout(int)', 30 * 1000, Core.onSuccess(render));
+      // use 10 sec timeout
+      jolokia.execute('jolokia:type=Discovery', 'lookupAgentsWithTimeout(int)', 10 * 1000, Core.onSuccess($scope.render));
     };
 
     $scope.fetch();
