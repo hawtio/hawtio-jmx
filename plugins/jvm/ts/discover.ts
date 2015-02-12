@@ -26,12 +26,10 @@ module JVM {
         return;
       }
       var options:Core.ConnectToServerOptions = Core.createConnectOptions();
-
       var urlObject = Core.parseUrl(agent.url);
       angular.extend(options, urlObject);
       options.userName = agent.username;
       options.password = agent.password;
-
       Core.connectToServer(localStorage, options);
     };
 
@@ -85,11 +83,9 @@ module JVM {
       $scope.discovering = false;
       if (response) {
         var responseJson = angular.toJson(response, true);
-        log.debug("responseJson: ", responseJson);
         if ($scope.responseJson !== responseJson) {
           $scope.responseJson = responseJson;
           $scope.agents = response;
-          log.debug("agents: ", $scope.agents);
         }
       }
       Core.$apply($scope);
