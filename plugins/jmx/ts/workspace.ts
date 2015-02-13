@@ -938,7 +938,6 @@ module Core {
     isFabricFolder() {
       return this.hasDomainAndProperties('io.fabric8');
     }
-
     isCamelContext() {
       return this.hasDomainAndProperties('org.apache.camel', {type: 'context'});
     }

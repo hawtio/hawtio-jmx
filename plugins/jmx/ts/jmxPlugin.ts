@@ -3,6 +3,7 @@
  * @main Jmx
  */
 /// <reference path="../../includes.ts"/>
+/// <reference path="../../jvm/ts/jvmHelpers.ts"/>
 /// <reference path="jmxHelpers.ts"/>
 /// <reference path="widgetRepository.ts"/>
 /// <reference path="workspace.ts"/>
@@ -102,7 +103,7 @@ module Jmx {
     } 
   }]);
 
-  _module.run(["HawtioNav", "$location", "workspace", "viewRegistry", "layoutTree", "jolokia", "helpRegistry", "pageTitle", "$templateCache", (nav:HawtioMainNav.Registry, $location: ng.ILocationService, workspace:Core.Workspace, viewRegistry, layoutTree, jolokia, helpRegistry, pageTitle, $templateCache) => {
+  _module.run(["HawtioNav", "$location", "workspace", "viewRegistry", "layoutTree", "jolokia", "helpRegistry", "pageTitle", "$templateCache", "WelcomePageRegistry", (nav:HawtioMainNav.Registry, $location: ng.ILocationService, workspace:Core.Workspace, viewRegistry, layoutTree, jolokia, helpRegistry, pageTitle, $templateCache, welcome) => {
     log.debug('loaded');
 
     viewRegistry['jmx'] = layoutTree;
@@ -121,11 +122,19 @@ module Jmx {
       }
       return Jmx.currentProcessId;
     });
+
+    var myUrl = '/jmx';
+    welcome.pages.push({
+      rank: 14,
+      isValid: () => Core.isRemoteConnection() || workspace.hasMBeans(),
+      href: () => myUrl
+    });
+
     var builder = nav.builder();
     var tab = builder.id('jmx')
                 .title( () => 'JMX' )
                 .isValid( () => workspace.hasMBeans() )
-                .href( () => '/jmx' )
+                .href( () => myUrl )
                 .isSelected( () => workspace.isTopTabActive('jmx') )
                 .build();
     tab.tabs = getNavItems(builder, workspace, $templateCache);

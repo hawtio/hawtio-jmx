@@ -11,9 +11,17 @@ module JVM {
 
   export var _module = angular.module(pluginName, []);
 
-  _module.config(["$routeProvider", ($routeProvider) => {
+  _module.config(["$provide", "$routeProvider", ($provide, $routeProvider) => {
+    /*
+    $provide.decorator('WelcomePageRegistry', ['$delegate', ($delegate) => {
+      return {
+
+      }
+    }]);
+    */
     $routeProvider
             .when('/jvm', { redirectTo: '/jvm/connect' })
+            .when('/jvm/welcome', { templateUrl: UrlHelpers.join(templatePath, 'welcome.html')})
             .when('/jvm/discover', {templateUrl: UrlHelpers.join(templatePath, 'discover.html')})
             .when('/jvm/connect', {templateUrl: UrlHelpers.join(templatePath, 'connect.html')})
             .when('/jvm/local', {templateUrl: UrlHelpers.join(templatePath, 'local.html')});

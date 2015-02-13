@@ -208,8 +208,13 @@ module JVM {
       };
 
       var jolokia = new Jolokia(jolokiaParams);
-      localStorage['url'] = jolokiaUrl;
       jolokia.stop();
+      localStorage['url'] = jolokiaUrl;
+      if ('updateRate' in localStorage) {
+        if (localStorage['updateRate'] > 0) {
+          jolokia.start(localStorage['updateRate']);
+        }
+      }
       return jolokia;
     } else {
       var answer = <DummyJolokia> {

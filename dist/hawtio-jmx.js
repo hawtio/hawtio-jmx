@@ -232,6 +232,320 @@ var Folder = (function (_super) {
 })(Core.Folder);
 ;
 
+/// <reference path="../../includes.ts"/>
+/// <reference path="folder.ts"/>
+/// <reference path="workspace.ts"/>
+/**
+ * @module Core
+ */
+var Core;
+(function (Core) {
+    // Add a few functions to the Core namespace
+    /**
+     * Returns the Folder object for the given domain name and type name or null if it can not be found
+     * @method getMBeanTypeFolder
+     * @for Core
+     * @static
+     * @param {Workspace} workspace
+     * @param {String} domain
+     * @param {String} typeName}
+     * @return {Folder}
+     */
+    function getMBeanTypeFolder(workspace, domain, typeName) {
+        if (workspace) {
+            var mbeanTypesToDomain = workspace.mbeanTypesToDomain || {};
+            var types = mbeanTypesToDomain[typeName] || {};
+            var answer = types[domain];
+            if (angular.isArray(answer) && answer.length) {
+                return answer[0];
+            }
+            return answer;
+        }
+        return null;
+    }
+    Core.getMBeanTypeFolder = getMBeanTypeFolder;
+    /**
+     * Returns the JMX objectName for the given jmx domain and type name
+     * @method getMBeanTypeObjectName
+     * @for Core
+     * @static
+     * @param {Workspace} workspace
+     * @param {String} domain
+     * @param {String} typeName
+     * @return {String}
+     */
+    function getMBeanTypeObjectName(workspace, domain, typeName) {
+        var folder = Core.getMBeanTypeFolder(workspace, domain, typeName);
+        return Core.pathGet(folder, ["objectName"]);
+    }
+    Core.getMBeanTypeObjectName = getMBeanTypeObjectName;
+    /**
+     * Creates a remote workspace given a remote jolokia for querying the JMX MBeans inside the jolokia
+     * @param remoteJolokia
+     * @param $location
+     * @param localStorage
+     * @return {Core.Workspace|Workspace}
+     */
+    function createRemoteWorkspace(remoteJolokia, $location, localStorage, $rootScope, $compile, $templateCache, userDetails, HawtioNav) {
+        if ($rootScope === void 0) { $rootScope = null; }
+        if ($compile === void 0) { $compile = null; }
+        if ($templateCache === void 0) { $templateCache = null; }
+        if (userDetails === void 0) { userDetails = null; }
+        if (HawtioNav === void 0) { HawtioNav = null; }
+        // lets create a child workspace object for the remote container
+        var jolokiaStatus = {
+            xhr: null
+        };
+        // disable reload notifications
+        var jmxTreeLazyLoadRegistry = Core.lazyLoaders;
+        var profileWorkspace = new Core.Workspace(remoteJolokia, jolokiaStatus, jmxTreeLazyLoadRegistry, $location, $compile, $templateCache, localStorage, $rootScope, userDetails, HawtioNav);
+        Core.log.info("Loading the profile using jolokia: " + remoteJolokia);
+        profileWorkspace.loadTree();
+        return profileWorkspace;
+    }
+    Core.createRemoteWorkspace = createRemoteWorkspace;
+})(Core || (Core = {}));
+/**
+ * @module Jmx
+ */
+var Jmx;
+(function (Jmx) {
+    Jmx.pluginName = 'hawtio-jmx';
+    Jmx.log = Logger.get(Jmx.pluginName);
+    Jmx.currentProcessId = '';
+    Jmx.templatePath = 'plugins/jmx/html';
+    function getNavItems(builder, workspace, $templateCache) {
+        var attributes = builder.id('jmx-attributes').title(function () { return '<i class="fa fa-list"></i> Attributes'; }).href(function () { return '/jmx/attributes' + workspace.hash(); }).isSelected(function () { return workspace.isLinkActive('jmx/attributes'); }).build();
+        var operations = builder.id('jmx-operations').title(function () { return '<i class="fa fa-leaf"></i> Operations'; }).href(function () { return ' /jmx/operations' + workspace.hash(); }).isSelected(function () { return workspace.isLinkActive('jmx/operations'); }).build();
+        var chart = builder.id('jmx-chart').title(function () { return '<i class="fa fa-bar-chart"></i> Charts'; }).href(function () { return ' /jmx/charts' + workspace.hash(); }).isSelected(function () { return workspace.isLinkActive('jmx/charts'); }).build();
+        var editChart = builder.id('jmx-edit-chart').title(function () { return '<i class="fa fa-cog"></i> Edit Chart'; }).href(function () { return ' /jmx/chartEdit' + workspace.hash(); }).isSelected(function () { return workspace.isLinkActive('jmx/chartEdit'); }).build();
+        editChart.show = function () { return workspace.isLinkActive('jmx/chart'); };
+        return [attributes, operations, chart, editChart];
+    }
+    Jmx.getNavItems = getNavItems;
+    var attributesToolBars = {};
+    function findLazyLoadingFunction(workspace, folder) {
+        var factories = workspace.jmxTreeLazyLoadRegistry[folder.domain];
+        var lazyFunction = null;
+        if (factories && factories.length) {
+            angular.forEach(factories, function (customLoader) {
+                if (!lazyFunction) {
+                    lazyFunction = customLoader(folder);
+                }
+            });
+        }
+        return lazyFunction;
+    }
+    Jmx.findLazyLoadingFunction = findLazyLoadingFunction;
+    function registerLazyLoadHandler(domain, lazyLoaderFactory) {
+        if (!Core.lazyLoaders) {
+            Core.lazyLoaders = {};
+        }
+        var array = Core.lazyLoaders[domain];
+        if (!array) {
+            array = [];
+            Core.lazyLoaders[domain] = array;
+        }
+        array.push(lazyLoaderFactory);
+    }
+    Jmx.registerLazyLoadHandler = registerLazyLoadHandler;
+    function unregisterLazyLoadHandler(domain, lazyLoaderFactory) {
+        if (Core.lazyLoaders) {
+            var array = Core.lazyLoaders[domain];
+            if (array) {
+                array.remove(lazyLoaderFactory);
+            }
+        }
+    }
+    Jmx.unregisterLazyLoadHandler = unregisterLazyLoadHandler;
+    /**
+     * Registers a toolbar template for the given plugin name, jmxDomain.
+     * @method addAttributeToolBar
+     * @for Jmx
+     * @param {String} pluginName used so that we can later on remove this function when the plugin is removed
+     * @param {String} jmxDomain the JMX domain to avoid having to evaluate too many functions on each selection
+     * @param {Function} fn the function used to decide which attributes tool bar should be used for the given select
+     */
+    function addAttributeToolBar(pluginName, jmxDomain, fn) {
+        var array = attributesToolBars[jmxDomain];
+        if (!array) {
+            array = [];
+            attributesToolBars[jmxDomain] = array;
+        }
+        array.push(fn);
+    }
+    Jmx.addAttributeToolBar = addAttributeToolBar;
+    /**
+     * Try find a custom toolbar HTML template for the given selection or returns the default value
+     * @method getAttributeToolbar
+     * @for Jmx
+     * @param {Core.NodeSelection} node
+     * @param {String} defaultValue
+     */
+    function getAttributeToolBar(node, defaultValue) {
+        if (!defaultValue) {
+            defaultValue = UrlHelpers.join(Jmx.templatePath, 'attributeToolBar.html');
+        }
+        var answer = null;
+        var jmxDomain = (node) ? node.domain : null;
+        if (jmxDomain) {
+            var array = attributesToolBars[jmxDomain];
+            if (array) {
+                for (var idx in array) {
+                    var fn = array[idx];
+                    answer = fn(node);
+                    if (answer)
+                        break;
+                }
+            }
+        }
+        return (answer) ? answer : defaultValue;
+    }
+    Jmx.getAttributeToolBar = getAttributeToolBar;
+    function updateTreeSelectionFromURL($location, treeElement, activateIfNoneSelected) {
+        if (activateIfNoneSelected === void 0) { activateIfNoneSelected = false; }
+        updateTreeSelectionFromURLAndAutoSelect($location, treeElement, null, activateIfNoneSelected);
+    }
+    Jmx.updateTreeSelectionFromURL = updateTreeSelectionFromURL;
+    function updateTreeSelectionFromURLAndAutoSelect($location, treeElement, autoSelect, activateIfNoneSelected) {
+        if (activateIfNoneSelected === void 0) { activateIfNoneSelected = false; }
+        var dtree = treeElement.dynatree("getTree");
+        if (dtree) {
+            var node = null;
+            var key = $location.search()['nid'];
+            if (key) {
+                try {
+                    node = dtree.activateKey(key);
+                }
+                catch (e) {
+                }
+            }
+            if (node) {
+                node.expand(true);
+            }
+            else {
+                if (!treeElement.dynatree("getActiveNode")) {
+                    // lets expand the first node
+                    var root = treeElement.dynatree("getRoot");
+                    var children = root ? root.getChildren() : null;
+                    if (children && children.length) {
+                        var first = children[0];
+                        first.expand(true);
+                        // invoke any auto select function, and use its result as new first, if any returned
+                        if (autoSelect) {
+                            var result = autoSelect(first);
+                            if (result) {
+                                first = result;
+                            }
+                        }
+                        if (activateIfNoneSelected) {
+                            first.expand();
+                            first.activate();
+                        }
+                    }
+                    else {
+                    }
+                }
+            }
+        }
+    }
+    Jmx.updateTreeSelectionFromURLAndAutoSelect = updateTreeSelectionFromURLAndAutoSelect;
+    function getUniqueTypeNames(children) {
+        var typeNameMap = {};
+        angular.forEach(children, function (mbean) {
+            var typeName = mbean.typeName;
+            if (typeName) {
+                typeNameMap[typeName] = mbean;
+            }
+        });
+        // only query if all the typenames are the same
+        var typeNames = Object.keys(typeNameMap);
+        return typeNames;
+    }
+    Jmx.getUniqueTypeNames = getUniqueTypeNames;
+    function enableTree($scope, $location, workspace, treeElement, children, redraw, onActivateFn) {
+        if (redraw === void 0) { redraw = false; }
+        if (onActivateFn === void 0) { onActivateFn = null; }
+        //$scope.workspace = workspace;
+        if (treeElement.length) {
+            if (!onActivateFn) {
+                onActivateFn = function (node) {
+                    var data = node.data;
+                    //$scope.select(data);
+                    workspace.updateSelectionNode(data);
+                    Core.$apply($scope);
+                };
+            }
+            workspace.treeElement = treeElement;
+            treeElement.dynatree({
+                /*
+                 * The event handler called when a different node in the tree is selected
+                 */
+                onActivate: onActivateFn,
+                onLazyRead: function (treeNode) {
+                    var folder = treeNode.data;
+                    var plugin = null;
+                    if (folder) {
+                        plugin = Jmx.findLazyLoadingFunction(workspace, folder);
+                    }
+                    if (plugin) {
+                        console.log("Lazy loading folder " + folder.title);
+                        var oldChildren = folder.childen;
+                        plugin(workspace, folder, function () {
+                            treeNode.setLazyNodeStatus(DTNodeStatus_Ok);
+                            var newChildren = folder.children;
+                            if (newChildren !== oldChildren) {
+                                treeNode.removeChildren();
+                                angular.forEach(newChildren, function (newChild) {
+                                    treeNode.addChild(newChild);
+                                });
+                            }
+                        });
+                    }
+                    else {
+                        treeNode.setLazyNodeStatus(DTNodeStatus_Ok);
+                    }
+                },
+                onClick: function (node, event) {
+                    if (event["metaKey"]) {
+                        event.preventDefault();
+                        var url = $location.absUrl();
+                        if (node && node.data) {
+                            var key = node.data["key"];
+                            if (key) {
+                                var hash = $location.search();
+                                hash["nid"] = key;
+                                // TODO this could maybe be a generic helper function?
+                                // lets trim after the ?
+                                var idx = url.indexOf('?');
+                                if (idx <= 0) {
+                                    url += "?";
+                                }
+                                else {
+                                    url = url.substring(0, idx + 1);
+                                }
+                                url += $.param(hash);
+                            }
+                        }
+                        window.open(url, '_blank');
+                        window.focus();
+                        return false;
+                    }
+                    return true;
+                },
+                persist: false,
+                debugLevel: 0,
+                //children: $scope.workspace.tree.children
+                children: children
+            });
+            if (redraw) {
+                workspace.redrawTree();
+            }
+        }
+    }
+    Jmx.enableTree = enableTree;
+})(Jmx || (Jmx = {}));
+
 /**
  * @module Core
  */
@@ -1180,319 +1494,212 @@ var Workspace = (function (_super) {
 })(Core.Workspace);
 ;
 
-/// <reference path="../../includes.ts"/>
-/// <reference path="folder.ts"/>
-/// <reference path="workspace.ts"/>
 /**
- * @module Core
+ * @module JVM
  */
+/// <reference path="../../includes.ts"/>
+/// <reference path="../../jmx/ts/workspace.ts"/>
+var JVM;
+(function (JVM) {
+    JVM.rootPath = 'plugins/jvm';
+    JVM.templatePath = UrlHelpers.join(JVM.rootPath, '/html');
+    JVM.pluginName = 'hawtio-jvm';
+    JVM.log = Logger.get(JVM.pluginName);
+    JVM.connectControllerKey = "jvmConnectSettings";
+    JVM.connectionSettingsKey = Core.connectionSettingsKey;
+    JVM.logoPath = 'img/icons/jvm/';
+    JVM.logoRegistry = {
+        'jetty': JVM.logoPath + 'jetty-logo-80x22.png',
+        'tomcat': JVM.logoPath + 'tomcat-logo.gif',
+        'generic': JVM.logoPath + 'java-logo.svg'
+    };
+    /**
+     * Adds common properties and functions to the scope
+     * @method configureScope
+     * @for Jvm
+     * @param {*} $scope
+     * @param {ng.ILocationService} $location
+     * @param {Core.Workspace} workspace
+     */
+    function configureScope($scope, $location, workspace) {
+        $scope.isActive = function (href) {
+            var tidy = Core.trimLeading(href, "#");
+            var loc = $location.path();
+            return loc === tidy;
+        };
+        $scope.isValid = function (link) {
+            return link && link.isValid(workspace);
+        };
+        $scope.hasLocalMBean = function () {
+            return JVM.hasLocalMBean(workspace);
+        };
+    }
+    JVM.configureScope = configureScope;
+    function hasLocalMBean(workspace) {
+        return workspace.treeContainsDomainAndProperties('hawtio', { type: 'JVMList' });
+    }
+    JVM.hasLocalMBean = hasLocalMBean;
+    function hasDiscoveryMBean(workspace) {
+        return workspace.treeContainsDomainAndProperties('jolokia', { type: 'Discovery' });
+    }
+    JVM.hasDiscoveryMBean = hasDiscoveryMBean;
+})(JVM || (JVM = {}));
 var Core;
 (function (Core) {
-    // Add a few functions to the Core namespace
     /**
-     * Returns the Folder object for the given domain name and type name or null if it can not be found
-     * @method getMBeanTypeFolder
+     * Creates a jolokia object for connecting to the container with the given remote jolokia URL,
+     * username and password
+     * @method createJolokia
      * @for Core
      * @static
-     * @param {Workspace} workspace
-     * @param {String} domain
-     * @param {String} typeName}
-     * @return {Folder}
+     * @param {String} url
+     * @param {String} username
+     * @param {String} password
+     * @return {Object}
      */
-    function getMBeanTypeFolder(workspace, domain, typeName) {
-        if (workspace) {
-            var mbeanTypesToDomain = workspace.mbeanTypesToDomain || {};
-            var types = mbeanTypesToDomain[typeName] || {};
-            var answer = types[domain];
-            if (angular.isArray(answer) && answer.length) {
-                return answer[0];
-            }
-            return answer;
-        }
-        return null;
-    }
-    Core.getMBeanTypeFolder = getMBeanTypeFolder;
-    /**
-     * Returns the JMX objectName for the given jmx domain and type name
-     * @method getMBeanTypeObjectName
-     * @for Core
-     * @static
-     * @param {Workspace} workspace
-     * @param {String} domain
-     * @param {String} typeName
-     * @return {String}
-     */
-    function getMBeanTypeObjectName(workspace, domain, typeName) {
-        var folder = Core.getMBeanTypeFolder(workspace, domain, typeName);
-        return Core.pathGet(folder, ["objectName"]);
-    }
-    Core.getMBeanTypeObjectName = getMBeanTypeObjectName;
-    /**
-     * Creates a remote workspace given a remote jolokia for querying the JMX MBeans inside the jolokia
-     * @param remoteJolokia
-     * @param $location
-     * @param localStorage
-     * @return {Core.Workspace|Workspace}
-     */
-    function createRemoteWorkspace(remoteJolokia, $location, localStorage, $rootScope, $compile, $templateCache, userDetails, HawtioNav) {
-        if ($rootScope === void 0) { $rootScope = null; }
-        if ($compile === void 0) { $compile = null; }
-        if ($templateCache === void 0) { $templateCache = null; }
-        if (userDetails === void 0) { userDetails = null; }
-        if (HawtioNav === void 0) { HawtioNav = null; }
-        // lets create a child workspace object for the remote container
-        var jolokiaStatus = {
-            xhr: null
+    function createJolokia(url, username, password) {
+        var jolokiaParams = {
+            url: url,
+            username: username,
+            password: password,
+            canonicalNaming: false,
+            ignoreErrors: true,
+            mimeType: 'application/json'
         };
-        // disable reload notifications
-        var jmxTreeLazyLoadRegistry = Core.lazyLoaders;
-        var profileWorkspace = new Core.Workspace(remoteJolokia, jolokiaStatus, jmxTreeLazyLoadRegistry, $location, $compile, $templateCache, localStorage, $rootScope, userDetails, HawtioNav);
-        Core.log.info("Loading the profile using jolokia: " + remoteJolokia);
-        profileWorkspace.loadTree();
-        return profileWorkspace;
+        return new Jolokia(jolokiaParams);
     }
-    Core.createRemoteWorkspace = createRemoteWorkspace;
-})(Core || (Core = {}));
-/**
- * @module Jmx
- */
-var Jmx;
-(function (Jmx) {
-    Jmx.pluginName = 'hawtio-jmx';
-    Jmx.log = Logger.get(Jmx.pluginName);
-    Jmx.currentProcessId = '';
-    Jmx.templatePath = 'plugins/jmx/html';
-    function getNavItems(builder, workspace, $templateCache) {
-        var attributes = builder.id('jmx-attributes').title(function () { return '<i class="fa fa-list"></i> Attributes'; }).href(function () { return '/jmx/attributes' + workspace.hash(); }).isSelected(function () { return workspace.isLinkActive('jmx/attributes'); }).build();
-        var operations = builder.id('jmx-operations').title(function () { return '<i class="fa fa-leaf"></i> Operations'; }).href(function () { return ' /jmx/operations' + workspace.hash(); }).isSelected(function () { return workspace.isLinkActive('jmx/operations'); }).build();
-        var chart = builder.id('jmx-chart').title(function () { return '<i class="fa fa-bar-chart"></i> Charts'; }).href(function () { return ' /jmx/charts' + workspace.hash(); }).isSelected(function () { return workspace.isLinkActive('jmx/charts'); }).build();
-        var editChart = builder.id('jmx-edit-chart').title(function () { return '<i class="fa fa-cog"></i> Edit Chart'; }).href(function () { return ' /jmx/chartEdit' + workspace.hash(); }).isSelected(function () { return workspace.isLinkActive('jmx/chartEdit'); }).build();
-        editChart.show = function () { return workspace.isLinkActive('jmx/chart'); };
-        return [attributes, operations, chart, editChart];
-    }
-    Jmx.getNavItems = getNavItems;
-    var attributesToolBars = {};
-    function findLazyLoadingFunction(workspace, folder) {
-        var factories = workspace.jmxTreeLazyLoadRegistry[folder.domain];
-        var lazyFunction = null;
-        if (factories && factories.length) {
-            angular.forEach(factories, function (customLoader) {
-                if (!lazyFunction) {
-                    lazyFunction = customLoader(folder);
-                }
-            });
+    Core.createJolokia = createJolokia;
+    function getRecentConnections(localStorage) {
+        if (Core.isBlank(localStorage['recentConnections'])) {
+            Core.clearConnections();
         }
-        return lazyFunction;
+        return angular.fromJson(localStorage['recentConnections']);
     }
-    Jmx.findLazyLoadingFunction = findLazyLoadingFunction;
-    function registerLazyLoadHandler(domain, lazyLoaderFactory) {
-        if (!Core.lazyLoaders) {
-            Core.lazyLoaders = {};
-        }
-        var array = Core.lazyLoaders[domain];
-        if (!array) {
-            array = [];
-            Core.lazyLoaders[domain] = array;
-        }
-        array.push(lazyLoaderFactory);
+    Core.getRecentConnections = getRecentConnections;
+    function addRecentConnection(localStorage, name) {
+        var recent = getRecentConnections(localStorage);
+        recent = recent.add(name).unique().first(5);
+        localStorage['recentConnections'] = angular.toJson(recent);
     }
-    Jmx.registerLazyLoadHandler = registerLazyLoadHandler;
-    function unregisterLazyLoadHandler(domain, lazyLoaderFactory) {
-        if (Core.lazyLoaders) {
-            var array = Core.lazyLoaders[domain];
-            if (array) {
-                array.remove(lazyLoaderFactory);
-            }
-        }
+    Core.addRecentConnection = addRecentConnection;
+    function removeRecentConnection(localStorage, name) {
+        var recent = getRecentConnections(localStorage);
+        recent = recent.exclude(function (n) {
+            return n === name;
+        });
+        localStorage['recentConnections'] = angular.toJson(recent);
     }
-    Jmx.unregisterLazyLoadHandler = unregisterLazyLoadHandler;
+    Core.removeRecentConnection = removeRecentConnection;
+    function clearConnections() {
+        localStorage['recentConnections'] = '[]';
+    }
+    Core.clearConnections = clearConnections;
+    function isRemoteConnection() {
+        return ('con' in new URI().query(true));
+    }
+    Core.isRemoteConnection = isRemoteConnection;
+    function saveConnection(options) {
+        var connectionMap = Core.loadConnectionMap();
+        // use a copy so we can leave the original one alone
+        var clone = angular.extend({}, options);
+        delete clone.userName;
+        delete clone.password;
+        connectionMap[options.name] = clone;
+        Core.saveConnectionMap(connectionMap);
+    }
+    Core.saveConnection = saveConnection;
+    function connectToServer(localStorage, options) {
+        Core.log.debug("Connecting with options: ", StringHelpers.toString(options));
+        addRecentConnection(localStorage, options.name);
+        if (!('userName' in options)) {
+            var userDetails = HawtioCore.injector.get('userDetails');
+            options.userName = userDetails.username;
+            options.password = userDetails.password;
+        }
+        saveConnection(options);
+        var $window = HawtioCore.injector.get('$window');
+        var url = (options.view || '/') + '?con=' + options.name;
+        url = url.replace(/\?/g, "&");
+        url = url.replace(/&/, "?");
+        var newWindow = $window.open(url);
+        newWindow['con'] = options.name;
+        newWindow['userDetails'] = {
+            username: options.userName,
+            password: options.password,
+            loginDetails: {}
+        };
+    }
+    Core.connectToServer = connectToServer;
     /**
-     * Registers a toolbar template for the given plugin name, jmxDomain.
-     * @method addAttributeToolBar
-     * @for Jmx
-     * @param {String} pluginName used so that we can later on remove this function when the plugin is removed
-     * @param {String} jmxDomain the JMX domain to avoid having to evaluate too many functions on each selection
-     * @param {Function} fn the function used to decide which attributes tool bar should be used for the given select
+     * Loads all of the available connections from local storage
+     * @returns {Core.ConnectionMap}
      */
-    function addAttributeToolBar(pluginName, jmxDomain, fn) {
-        var array = attributesToolBars[jmxDomain];
-        if (!array) {
-            array = [];
-            attributesToolBars[jmxDomain] = array;
-        }
-        array.push(fn);
-    }
-    Jmx.addAttributeToolBar = addAttributeToolBar;
-    /**
-     * Try find a custom toolbar HTML template for the given selection or returns the default value
-     * @method getAttributeToolbar
-     * @for Jmx
-     * @param {Core.NodeSelection} node
-     * @param {String} defaultValue
-     */
-    function getAttributeToolBar(node, defaultValue) {
-        if (!defaultValue) {
-            defaultValue = UrlHelpers.join(Jmx.templatePath, 'attributeToolBar.html');
-        }
-        var answer = null;
-        var jmxDomain = (node) ? node.domain : null;
-        if (jmxDomain) {
-            var array = attributesToolBars[jmxDomain];
-            if (array) {
-                for (var idx in array) {
-                    var fn = array[idx];
-                    answer = fn(node);
-                    if (answer)
-                        break;
-                }
-            }
-        }
-        return (answer) ? answer : defaultValue;
-    }
-    Jmx.getAttributeToolBar = getAttributeToolBar;
-    function updateTreeSelectionFromURL($location, treeElement, activateIfNoneSelected) {
-        if (activateIfNoneSelected === void 0) { activateIfNoneSelected = false; }
-        updateTreeSelectionFromURLAndAutoSelect($location, treeElement, null, activateIfNoneSelected);
-    }
-    Jmx.updateTreeSelectionFromURL = updateTreeSelectionFromURL;
-    function updateTreeSelectionFromURLAndAutoSelect($location, treeElement, autoSelect, activateIfNoneSelected) {
-        if (activateIfNoneSelected === void 0) { activateIfNoneSelected = false; }
-        var dtree = treeElement.dynatree("getTree");
-        if (dtree) {
-            var node = null;
-            var key = $location.search()['nid'];
-            if (key) {
-                try {
-                    node = dtree.activateKey(key);
-                }
-                catch (e) {
-                }
-            }
-            if (node) {
-                node.expand(true);
+    function loadConnectionMap() {
+        var localStorage = Core.getLocalStorage();
+        try {
+            var answer = angular.fromJson(localStorage[Core.connectionSettingsKey]);
+            if (!answer) {
+                return {};
             }
             else {
-                if (!treeElement.dynatree("getActiveNode")) {
-                    // lets expand the first node
-                    var root = treeElement.dynatree("getRoot");
-                    var children = root ? root.getChildren() : null;
-                    if (children && children.length) {
-                        var first = children[0];
-                        first.expand(true);
-                        // invoke any auto select function, and use its result as new first, if any returned
-                        if (autoSelect) {
-                            var result = autoSelect(first);
-                            if (result) {
-                                first = result;
-                            }
-                        }
-                        if (activateIfNoneSelected) {
-                            first.expand();
-                            first.activate();
-                        }
-                    }
-                    else {
-                    }
-                }
+                return answer;
             }
         }
-    }
-    Jmx.updateTreeSelectionFromURLAndAutoSelect = updateTreeSelectionFromURLAndAutoSelect;
-    function getUniqueTypeNames(children) {
-        var typeNameMap = {};
-        angular.forEach(children, function (mbean) {
-            var typeName = mbean.typeName;
-            if (typeName) {
-                typeNameMap[typeName] = mbean;
-            }
-        });
-        // only query if all the typenames are the same
-        var typeNames = Object.keys(typeNameMap);
-        return typeNames;
-    }
-    Jmx.getUniqueTypeNames = getUniqueTypeNames;
-    function enableTree($scope, $location, workspace, treeElement, children, redraw, onActivateFn) {
-        if (redraw === void 0) { redraw = false; }
-        if (onActivateFn === void 0) { onActivateFn = null; }
-        //$scope.workspace = workspace;
-        if (treeElement.length) {
-            if (!onActivateFn) {
-                onActivateFn = function (node) {
-                    var data = node.data;
-                    //$scope.select(data);
-                    workspace.updateSelectionNode(data);
-                    Core.$apply($scope);
-                };
-            }
-            workspace.treeElement = treeElement;
-            treeElement.dynatree({
-                /*
-                 * The event handler called when a different node in the tree is selected
-                 */
-                onActivate: onActivateFn,
-                onLazyRead: function (treeNode) {
-                    var folder = treeNode.data;
-                    var plugin = null;
-                    if (folder) {
-                        plugin = Jmx.findLazyLoadingFunction(workspace, folder);
-                    }
-                    if (plugin) {
-                        console.log("Lazy loading folder " + folder.title);
-                        var oldChildren = folder.childen;
-                        plugin(workspace, folder, function () {
-                            treeNode.setLazyNodeStatus(DTNodeStatus_Ok);
-                            var newChildren = folder.children;
-                            if (newChildren !== oldChildren) {
-                                treeNode.removeChildren();
-                                angular.forEach(newChildren, function (newChild) {
-                                    treeNode.addChild(newChild);
-                                });
-                            }
-                        });
-                    }
-                    else {
-                        treeNode.setLazyNodeStatus(DTNodeStatus_Ok);
-                    }
-                },
-                onClick: function (node, event) {
-                    if (event["metaKey"]) {
-                        event.preventDefault();
-                        var url = $location.absUrl();
-                        if (node && node.data) {
-                            var key = node.data["key"];
-                            if (key) {
-                                var hash = $location.search();
-                                hash["nid"] = key;
-                                // TODO this could maybe be a generic helper function?
-                                // lets trim after the ?
-                                var idx = url.indexOf('?');
-                                if (idx <= 0) {
-                                    url += "?";
-                                }
-                                else {
-                                    url = url.substring(0, idx + 1);
-                                }
-                                url += $.param(hash);
-                            }
-                        }
-                        window.open(url, '_blank');
-                        window.focus();
-                        return false;
-                    }
-                    return true;
-                },
-                persist: false,
-                debugLevel: 0,
-                //children: $scope.workspace.tree.children
-                children: children
-            });
-            if (redraw) {
-                workspace.redrawTree();
-            }
+        catch (e) {
+            // corrupt config
+            delete localStorage[Core.connectionSettingsKey];
+            return {};
         }
     }
-    Jmx.enableTree = enableTree;
-})(Jmx || (Jmx = {}));
+    Core.loadConnectionMap = loadConnectionMap;
+    /**
+     * Saves the connection map to local storage
+     * @param map
+     */
+    function saveConnectionMap(map) {
+        Logger.get("Core").debug("Saving connection map: ", StringHelpers.toString(map));
+        localStorage[Core.connectionSettingsKey] = angular.toJson(map);
+    }
+    Core.saveConnectionMap = saveConnectionMap;
+    function getConnectionNameParameter() {
+        return new URI().search(true)['con'];
+    }
+    Core.getConnectionNameParameter = getConnectionNameParameter;
+    /**
+     * Returns the connection options for the given connection name from localStorage
+     */
+    function getConnectOptions(name, localStorage) {
+        if (localStorage === void 0) { localStorage = Core.getLocalStorage(); }
+        if (!name) {
+            return null;
+        }
+        return Core.loadConnectionMap()[name];
+    }
+    Core.getConnectOptions = getConnectOptions;
+    /**
+     * Creates the Jolokia URL string for the given connection options
+     */
+    function createServerConnectionUrl(options) {
+        Logger.get("Core").debug("Connect to server, options: ", StringHelpers.toString(options));
+        var answer = null;
+        if (options.jolokiaUrl) {
+            answer = options.jolokiaUrl;
+        }
+        if (answer === null) {
+            var uri = new URI();
+            uri.protocol(options.scheme || 'http').host(options.host || 'localhost').port((options.port || '80')).path(options.path);
+            if (options.useProxy) {
+                answer = UrlHelpers.join('proxy', uri.protocol(), uri.hostname(), uri.port(), uri.path());
+            }
+            else {
+                answer = uri.toString();
+            }
+        }
+        Logger.get(JVM.pluginName).debug("Using URL: ", answer);
+        return answer;
+    }
+    Core.createServerConnectionUrl = createServerConnectionUrl;
+})(Core || (Core = {}));
 
 /**
  * @module Jmx
@@ -1609,6 +1816,7 @@ var Jmx;
  * @main Jmx
  */
 /// <reference path="../../includes.ts"/>
+/// <reference path="../../jvm/ts/jvmHelpers.ts"/>
 /// <reference path="jmxHelpers.ts"/>
 /// <reference path="widgetRepository.ts"/>
 /// <reference path="workspace.ts"/>
@@ -1686,7 +1894,7 @@ var Jmx;
             return $location.path().startsWith('/jmx/chart');
         };
     }]);
-    Jmx._module.run(["HawtioNav", "$location", "workspace", "viewRegistry", "layoutTree", "jolokia", "helpRegistry", "pageTitle", "$templateCache", function (nav, $location, workspace, viewRegistry, layoutTree, jolokia, helpRegistry, pageTitle, $templateCache) {
+    Jmx._module.run(["HawtioNav", "$location", "workspace", "viewRegistry", "layoutTree", "jolokia", "helpRegistry", "pageTitle", "$templateCache", "WelcomePageRegistry", function (nav, $location, workspace, viewRegistry, layoutTree, jolokia, helpRegistry, pageTitle, $templateCache, welcome) {
         Jmx.log.debug('loaded');
         viewRegistry['jmx'] = layoutTree;
         helpRegistry.addUserDoc('jmx', 'app/jmx/doc/help.md');
@@ -1703,8 +1911,14 @@ var Jmx;
             }
             return Jmx.currentProcessId;
         });
+        var myUrl = '/jmx';
+        welcome.pages.push({
+            rank: 14,
+            isValid: function () { return Core.isRemoteConnection() || workspace.hasMBeans(); },
+            href: function () { return myUrl; }
+        });
         var builder = nav.builder();
-        var tab = builder.id('jmx').title(function () { return 'JMX'; }).isValid(function () { return workspace.hasMBeans(); }).href(function () { return '/jmx'; }).isSelected(function () { return workspace.isTopTabActive('jmx'); }).build();
+        var tab = builder.id('jmx').title(function () { return 'JMX'; }).isValid(function () { return workspace.hasMBeans(); }).href(function () { return myUrl; }).isSelected(function () { return workspace.isTopTabActive('jmx'); }).build();
         tab.tabs = Jmx.getNavItems(builder, workspace, $templateCache);
         nav.add(tab);
     }]);
@@ -3977,209 +4191,6 @@ var Jmx;
 
 /**
  * @module JVM
- */
-/// <reference path="../../includes.ts"/>
-/// <reference path="../../jmx/ts/workspace.ts"/>
-var JVM;
-(function (JVM) {
-    JVM.rootPath = 'plugins/jvm';
-    JVM.templatePath = UrlHelpers.join(JVM.rootPath, '/html');
-    JVM.pluginName = 'hawtio-jvm';
-    JVM.log = Logger.get(JVM.pluginName);
-    JVM.connectControllerKey = "jvmConnectSettings";
-    JVM.connectionSettingsKey = Core.connectionSettingsKey;
-    JVM.logoPath = 'img/icons/jvm/';
-    JVM.logoRegistry = {
-        'jetty': JVM.logoPath + 'jetty-logo-80x22.png',
-        'tomcat': JVM.logoPath + 'tomcat-logo.gif',
-        'generic': JVM.logoPath + 'java-logo.svg'
-    };
-    /**
-     * Adds common properties and functions to the scope
-     * @method configureScope
-     * @for Jvm
-     * @param {*} $scope
-     * @param {ng.ILocationService} $location
-     * @param {Core.Workspace} workspace
-     */
-    function configureScope($scope, $location, workspace) {
-        $scope.isActive = function (href) {
-            var tidy = Core.trimLeading(href, "#");
-            var loc = $location.path();
-            return loc === tidy;
-        };
-        $scope.isValid = function (link) {
-            return link && link.isValid(workspace);
-        };
-        $scope.hasLocalMBean = function () {
-            return JVM.hasLocalMBean(workspace);
-        };
-    }
-    JVM.configureScope = configureScope;
-    function hasLocalMBean(workspace) {
-        return workspace.treeContainsDomainAndProperties('hawtio', { type: 'JVMList' });
-    }
-    JVM.hasLocalMBean = hasLocalMBean;
-    function hasDiscoveryMBean(workspace) {
-        return workspace.treeContainsDomainAndProperties('jolokia', { type: 'Discovery' });
-    }
-    JVM.hasDiscoveryMBean = hasDiscoveryMBean;
-})(JVM || (JVM = {}));
-var Core;
-(function (Core) {
-    /**
-     * Creates a jolokia object for connecting to the container with the given remote jolokia URL,
-     * username and password
-     * @method createJolokia
-     * @for Core
-     * @static
-     * @param {String} url
-     * @param {String} username
-     * @param {String} password
-     * @return {Object}
-     */
-    function createJolokia(url, username, password) {
-        var jolokiaParams = {
-            url: url,
-            username: username,
-            password: password,
-            canonicalNaming: false,
-            ignoreErrors: true,
-            mimeType: 'application/json'
-        };
-        return new Jolokia(jolokiaParams);
-    }
-    Core.createJolokia = createJolokia;
-    function getRecentConnections(localStorage) {
-        if (Core.isBlank(localStorage['recentConnections'])) {
-            Core.clearConnections();
-        }
-        return angular.fromJson(localStorage['recentConnections']);
-    }
-    Core.getRecentConnections = getRecentConnections;
-    function addRecentConnection(localStorage, name) {
-        var recent = getRecentConnections(localStorage);
-        recent = recent.add(name).unique().first(5);
-        localStorage['recentConnections'] = angular.toJson(recent);
-    }
-    Core.addRecentConnection = addRecentConnection;
-    function removeRecentConnection(localStorage, name) {
-        var recent = getRecentConnections(localStorage);
-        recent = recent.exclude(function (n) {
-            return n === name;
-        });
-        localStorage['recentConnections'] = angular.toJson(recent);
-    }
-    Core.removeRecentConnection = removeRecentConnection;
-    function clearConnections() {
-        localStorage['recentConnections'] = '[]';
-    }
-    Core.clearConnections = clearConnections;
-    function saveConnection(options) {
-        var connectionMap = Core.loadConnectionMap();
-        // use a copy so we can leave the original one alone
-        var clone = angular.extend({}, options);
-        delete clone.userName;
-        delete clone.password;
-        connectionMap[options.name] = clone;
-        Core.saveConnectionMap(connectionMap);
-    }
-    Core.saveConnection = saveConnection;
-    function connectToServer(localStorage, options) {
-        Core.log.debug("Connecting with options: ", StringHelpers.toString(options));
-        addRecentConnection(localStorage, options.name);
-        if (!('userName' in options)) {
-            var userDetails = HawtioCore.injector.get('userDetails');
-            options.userName = userDetails.username;
-            options.password = userDetails.password;
-        }
-        saveConnection(options);
-        var $window = HawtioCore.injector.get('$window');
-        var url = (options.view || '#/welcome') + '?con=' + options.name;
-        url = url.replace(/\?/g, "&");
-        url = url.replace(/&/, "?");
-        var newWindow = $window.open(url);
-        newWindow['con'] = options.name;
-        newWindow['userDetails'] = {
-            username: options.userName,
-            password: options.password,
-            loginDetails: {}
-        };
-    }
-    Core.connectToServer = connectToServer;
-    /**
-     * Loads all of the available connections from local storage
-     * @returns {Core.ConnectionMap}
-     */
-    function loadConnectionMap() {
-        var localStorage = Core.getLocalStorage();
-        try {
-            var answer = angular.fromJson(localStorage[Core.connectionSettingsKey]);
-            if (!answer) {
-                return {};
-            }
-            else {
-                return answer;
-            }
-        }
-        catch (e) {
-            // corrupt config
-            delete localStorage[Core.connectionSettingsKey];
-            return {};
-        }
-    }
-    Core.loadConnectionMap = loadConnectionMap;
-    /**
-     * Saves the connection map to local storage
-     * @param map
-     */
-    function saveConnectionMap(map) {
-        Logger.get("Core").debug("Saving connection map: ", StringHelpers.toString(map));
-        localStorage[Core.connectionSettingsKey] = angular.toJson(map);
-    }
-    Core.saveConnectionMap = saveConnectionMap;
-    function getConnectionNameParameter() {
-        return new URI().search(true)['con'];
-    }
-    Core.getConnectionNameParameter = getConnectionNameParameter;
-    /**
-     * Returns the connection options for the given connection name from localStorage
-     */
-    function getConnectOptions(name, localStorage) {
-        if (localStorage === void 0) { localStorage = Core.getLocalStorage(); }
-        if (!name) {
-            return null;
-        }
-        return Core.loadConnectionMap()[name];
-    }
-    Core.getConnectOptions = getConnectOptions;
-    /**
-     * Creates the Jolokia URL string for the given connection options
-     */
-    function createServerConnectionUrl(options) {
-        Logger.get("Core").debug("Connect to server, options: ", StringHelpers.toString(options));
-        var answer = null;
-        if (options.jolokiaUrl) {
-            answer = options.jolokiaUrl;
-        }
-        if (answer === null) {
-            var uri = new URI();
-            uri.protocol(options.scheme || 'http').host(options.host || 'localhost').port((options.port || '80')).path(options.path);
-            if (options.useProxy) {
-                answer = UrlHelpers.join('proxy', uri.protocol(), uri.hostname(), uri.port(), uri.path());
-            }
-            else {
-                answer = uri.toString();
-            }
-        }
-        Logger.get(JVM.pluginName).debug("Using URL: ", answer);
-        return answer;
-    }
-    Core.createServerConnectionUrl = createServerConnectionUrl;
-})(Core || (Core = {}));
-
-/**
- * @module JVM
  * @main JVM
  */
 /// <reference path="jvmHelpers.ts"/>
@@ -4189,8 +4200,15 @@ Logger.get('$templateRequest').setLevel(Logger.WARN);
 var JVM;
 (function (JVM) {
     JVM._module = angular.module(JVM.pluginName, []);
-    JVM._module.config(["$routeProvider", function ($routeProvider) {
-        $routeProvider.when('/jvm', { redirectTo: '/jvm/connect' }).when('/jvm/discover', { templateUrl: UrlHelpers.join(JVM.templatePath, 'discover.html') }).when('/jvm/connect', { templateUrl: UrlHelpers.join(JVM.templatePath, 'connect.html') }).when('/jvm/local', { templateUrl: UrlHelpers.join(JVM.templatePath, 'local.html') });
+    JVM._module.config(["$provide", "$routeProvider", function ($provide, $routeProvider) {
+        /*
+        $provide.decorator('WelcomePageRegistry', ['$delegate', ($delegate) => {
+          return {
+    
+          }
+        }]);
+        */
+        $routeProvider.when('/jvm', { redirectTo: '/jvm/connect' }).when('/jvm/welcome', { templateUrl: UrlHelpers.join(JVM.templatePath, 'welcome.html') }).when('/jvm/discover', { templateUrl: UrlHelpers.join(JVM.templatePath, 'discover.html') }).when('/jvm/connect', { templateUrl: UrlHelpers.join(JVM.templatePath, 'connect.html') }).when('/jvm/local', { templateUrl: UrlHelpers.join(JVM.templatePath, 'local.html') });
     }]);
     JVM._module.constant('mbeanName', 'hawtio:type=JVMList');
     JVM._module.run(["HawtioNav", "$location", "workspace", "viewRegistry", "layoutFull", "helpRegistry", "preferencesRegistry", "ConnectOptions", "locationChangeStartTasks", function (nav, $location, workspace, viewRegistry, layoutFull, helpRegistry, preferencesRegistry, ConnectOptions, locationChangeStartTasks) {
@@ -4653,8 +4671,13 @@ var JVM;
                 Core.$apply($rootScope);
             };
             var jolokia = new Jolokia(jolokiaParams);
-            localStorage['url'] = jolokiaUrl;
             jolokia.stop();
+            localStorage['url'] = jolokiaUrl;
+            if ('updateRate' in localStorage) {
+                if (localStorage['updateRate'] > 0) {
+                    jolokia.start(localStorage['updateRate']);
+                }
+            }
             return jolokia;
         }
         else {

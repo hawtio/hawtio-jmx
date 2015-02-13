@@ -100,6 +100,10 @@ module Core {
     localStorage['recentConnections'] = '[]';
   }
 
+  export function isRemoteConnection() {
+    return ('con' in new URI().query(true));
+  }
+
   export function saveConnection(options: Core.ConnectOptions) {
     var connectionMap = Core.loadConnectionMap();
     // use a copy so we can leave the original one alone
@@ -120,7 +124,7 @@ module Core {
     }
     saveConnection(options);
     var $window:ng.IWindowService = HawtioCore.injector.get('$window');
-    var url = (options.view || '#/welcome') + '?con=' + options.name;
+    var url = (options.view || '/') + '?con=' + options.name;
     url = url.replace(/\?/g, "&");
     url = url.replace(/&/, "?");
     var newWindow = $window.open(url);

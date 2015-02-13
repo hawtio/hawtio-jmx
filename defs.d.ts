@@ -1,7 +1,8 @@
 /// <reference path="d.ts/includes.d.ts"/>
 /// <reference path="d.ts/jmx/ts/folder.d.ts"/>
-/// <reference path="d.ts/jmx/ts/workspace.d.ts"/>
 /// <reference path="d.ts/jmx/ts/jmxHelpers.d.ts"/>
+/// <reference path="d.ts/jmx/ts/workspace.d.ts"/>
+/// <reference path="d.ts/jvm/ts/jvmHelpers.d.ts"/>
 /// <reference path="d.ts/jmx/ts/widgetRepository.d.ts"/>
 /// <reference path="d.ts/jmx/ts/jmxPlugin.d.ts"/>
 /// <reference path="d.ts/jmx/ts/areaChart.d.ts"/>
@@ -16,7 +17,6 @@
 /// <reference path="d.ts/jmx/ts/navbar.d.ts"/>
 /// <reference path="d.ts/jmx/ts/operations.d.ts"/>
 /// <reference path="d.ts/jmx/ts/view.d.ts"/>
-/// <reference path="d.ts/jvm/ts/jvmHelpers.d.ts"/>
 /// <reference path="d.ts/jvm/ts/jvmPlugin.d.ts"/>
 /// <reference path="d.ts/jvm/ts/connect.d.ts"/>
 /// <reference path="d.ts/jvm/ts/discover.d.ts"/>

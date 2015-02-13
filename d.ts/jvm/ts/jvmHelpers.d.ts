@@ -45,6 +45,7 @@ declare module Core {
     function addRecentConnection(localStorage: any, name: any): void;
     function removeRecentConnection(localStorage: any, name: any): void;
     function clearConnections(): void;
+    function isRemoteConnection(): boolean;
     function saveConnection(options: Core.ConnectOptions): void;
     function connectToServer(localStorage: any, options: Core.ConnectToServerOptions): void;
     /**

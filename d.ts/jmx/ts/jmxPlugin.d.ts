@@ -1,4 +1,5 @@
 /// <reference path="../../includes.d.ts" />
+/// <reference path="../../jvm/ts/jvmHelpers.d.ts" />
 /// <reference path="jmxHelpers.d.ts" />
 /// <reference path="widgetRepository.d.ts" />
 /// <reference path="workspace.d.ts" />
