@@ -55,6 +55,7 @@ module JVM {
   });
 
   export interface DummyJolokia extends Jolokia.IJolokia {
+    isDummy: boolean;
     running:boolean;
   }
 
@@ -218,6 +219,7 @@ module JVM {
       return jolokia;
     } else {
       var answer = <DummyJolokia> {
+        isDummy: true,
         running: false,
         request: (req:any, opts?:Jolokia.IParams) => null,
         register: (req:any, opts?:Jolokia.IParams) => <number>null,

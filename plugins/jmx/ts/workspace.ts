@@ -40,6 +40,7 @@ module Core {
     public treeWatchRegisterHandle = null;
     public treeWatcherCounter = null;
     public treeElement = null;
+    private treeFetched = false;
     // mapData allows to store arbitrary data on the workspace
     public mapData = {};
 
@@ -107,12 +108,30 @@ module Core {
     }
 
     public loadTree() {
-      var flags = {ignoreErrors: true, maxDepth: 7};
       var workspace = this;
+      if (this.jolokia['isDummy']) {
+        setTimeout(() => {
+          workspace.treeFetched = true;
+          workspace.populateTree({
+            value: {}
+          });
+        }, 10);
+        return;
+      }
+      var flags = {
+        ignoreErrors: true, 
+        maxDepth: 7,
+        error: (response) => {
+          workspace.treeFetched = true;
+          log.debug("Error fetching JMX tree: ", response);
+        }
+      };
+      log.debug("jolokia: ", this.jolokia);
       this.jolokia.request({ 'type': 'list' }, Core.onSuccess((response) => {
         if (response.value) {
           this.jolokiaStatus.xhr = null;
         }
+        workspace.treeFetched = true;
         workspace.populateTree(response);  
       }, flags));
     }
@@ -133,12 +152,15 @@ module Core {
     public addNamedTreePostProcessor(name:string, processor:(tree:any) => void) {
       this.treePostProcessors[name] = processor;
       var tree = this.tree;
-      if (tree) {
+      if (this.treeFetched && tree) {
         // the tree is loaded already so lets process it now :)
         processor(tree);
       }
       return name;
+    }
 
+    public removeNamedTreePostProcessor(name:string) {
+      delete this.treePostProcessors[name];
     }
 
     public maybeMonitorPlugins() {

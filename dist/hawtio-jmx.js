@@ -590,6 +590,7 @@ var Core;
             this.treeWatchRegisterHandle = null;
             this.treeWatcherCounter = null;
             this.treeElement = null;
+            this.treeFetched = false;
             // mapData allows to store arbitrary data on the workspace
             this.mapData = {};
             // set defaults
@@ -639,12 +640,30 @@ var Core;
         };
         Workspace.prototype.loadTree = function () {
             var _this = this;
-            var flags = { ignoreErrors: true, maxDepth: 7 };
             var workspace = this;
+            if (this.jolokia['isDummy']) {
+                setTimeout(function () {
+                    workspace.treeFetched = true;
+                    workspace.populateTree({
+                        value: {}
+                    });
+                }, 10);
+                return;
+            }
+            var flags = {
+                ignoreErrors: true,
+                maxDepth: 7,
+                error: function (response) {
+                    workspace.treeFetched = true;
+                    log.debug("Error fetching JMX tree: ", response);
+                }
+            };
+            log.debug("jolokia: ", this.jolokia);
             this.jolokia.request({ 'type': 'list' }, Core.onSuccess(function (response) {
                 if (response.value) {
                     _this.jolokiaStatus.xhr = null;
                 }
+                workspace.treeFetched = true;
                 workspace.populateTree(response);
             }, flags));
         };
@@ -662,11 +681,14 @@ var Core;
         Workspace.prototype.addNamedTreePostProcessor = function (name, processor) {
             this.treePostProcessors[name] = processor;
             var tree = this.tree;
-            if (tree) {
+            if (this.treeFetched && tree) {
                 // the tree is loaded already so lets process it now :)
                 processor(tree);
             }
             return name;
+        };
+        Workspace.prototype.removeNamedTreePostProcessor = function (name) {
+            delete this.treePostProcessors[name];
         };
         Workspace.prototype.maybeMonitorPlugins = function () {
             if (this.treeContainsDomainAndProperties("hawtio", { type: "Registry" })) {
@@ -1912,13 +1934,29 @@ var Jmx;
             return Jmx.currentProcessId;
         });
         var myUrl = '/jmx';
+        /*
         welcome.pages.push({
-            rank: 14,
-            isValid: function () { return Core.isRemoteConnection() || workspace.hasMBeans(); },
-            href: function () { return myUrl; }
+          rank: 14,
+          isValid: () => Core.isRemoteConnection() || workspace.hasMBeans(),
+          href: () => myUrl
         });
+        */
         var builder = nav.builder();
-        var tab = builder.id('jmx').title(function () { return 'JMX'; }).isValid(function () { return workspace.hasMBeans(); }).href(function () { return myUrl; }).isSelected(function () { return workspace.isTopTabActive('jmx'); }).build();
+        var tab = builder.id('jmx').title(function () { return 'JMX'; }).defaultPage({
+            rank: 10,
+            isValid: function (yes, no) {
+                var name = 'JmxDefaultPage';
+                workspace.addNamedTreePostProcessor('JmxDefaultPage', function (tree) {
+                    workspace.removeNamedTreePostProcessor(name);
+                    if (workspace.hasMBeans()) {
+                        yes();
+                    }
+                    else {
+                        no();
+                    }
+                });
+            }
+        }).isValid(function () { return workspace.hasMBeans(); }).href(function () { return myUrl; }).isSelected(function () { return workspace.isTopTabActive('jmx'); }).build();
         tab.tabs = Jmx.getNavItems(builder, workspace, $templateCache);
         nav.add(tab);
     }]);
@@ -4682,6 +4720,7 @@ var JVM;
         }
         else {
             var answer = {
+                isDummy: true,
                 running: false,
                 request: function (req, opts) { return null; },
                 register: function (req, opts) { return null; },

@@ -45,6 +45,7 @@ declare module Core {
         treeWatchRegisterHandle: any;
         treeWatcherCounter: any;
         treeElement: any;
+        private treeFetched;
         mapData: {};
         constructor(jolokia: any, jolokiaStatus: any, jmxTreeLazyLoadRegistry: any, $location: any, $compile: ng.ICompileService, $templateCache: ng.ITemplateCacheService, localStorage: WindowLocalStorage, $rootScope: any, userDetails: any, HawtioNav: HawtioMainNav.Registry);
         /**
@@ -65,6 +66,7 @@ declare module Core {
          */
         addTreePostProcessor(processor: (tree: any) => void): string;
         addNamedTreePostProcessor(name: string, processor: (tree: any) => void): string;
+        removeNamedTreePostProcessor(name: string): void;
         maybeMonitorPlugins(): void;
         maybeUpdatePlugins(response: any): void;
         maybeReloadTree(response: any): void;

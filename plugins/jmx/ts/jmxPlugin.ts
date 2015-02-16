@@ -124,15 +124,31 @@ module Jmx {
     });
 
     var myUrl = '/jmx';
+    /*
     welcome.pages.push({
       rank: 14,
       isValid: () => Core.isRemoteConnection() || workspace.hasMBeans(),
       href: () => myUrl
     });
+    */
 
     var builder = nav.builder();
     var tab = builder.id('jmx')
                 .title( () => 'JMX' )
+                .defaultPage({
+                  rank: 10,
+                  isValid: (yes, no) => {
+                    var name = 'JmxDefaultPage';
+                    workspace.addNamedTreePostProcessor('JmxDefaultPage', (tree) => {
+                      workspace.removeNamedTreePostProcessor(name);
+                      if (workspace.hasMBeans()) {
+                        yes();
+                      } else {
+                        no();
+                      }
+                    });
+                  }
+                })
                 .isValid( () => workspace.hasMBeans() )
                 .href( () => myUrl )
                 .isSelected( () => workspace.isTopTabActive('jmx') )

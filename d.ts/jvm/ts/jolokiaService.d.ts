@@ -5,6 +5,7 @@
  */
 declare module JVM {
     interface DummyJolokia extends Jolokia.IJolokia {
+        isDummy: boolean;
         running: boolean;
     }
     var DEFAULT_MAX_DEPTH: number;
