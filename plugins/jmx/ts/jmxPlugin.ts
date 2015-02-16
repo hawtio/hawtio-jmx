@@ -103,7 +103,7 @@ module Jmx {
     } 
   }]);
 
-  _module.run(["HawtioNav", "$location", "workspace", "viewRegistry", "layoutTree", "jolokia", "helpRegistry", "pageTitle", "$templateCache", "WelcomePageRegistry", (nav:HawtioMainNav.Registry, $location: ng.ILocationService, workspace:Core.Workspace, viewRegistry, layoutTree, jolokia, helpRegistry, pageTitle, $templateCache, welcome) => {
+  _module.run(["HawtioNav", "$location", "workspace", "viewRegistry", "layoutTree", "jolokia", "helpRegistry", "pageTitle", "$templateCache", (nav:HawtioMainNav.Registry, $location: ng.ILocationService, workspace:Core.Workspace, viewRegistry, layoutTree, jolokia, helpRegistry, pageTitle, $templateCache) => {
     log.debug('loaded');
 
     viewRegistry['jmx'] = layoutTree;
@@ -124,14 +124,6 @@ module Jmx {
     });
 
     var myUrl = '/jmx';
-    /*
-    welcome.pages.push({
-      rank: 14,
-      isValid: () => Core.isRemoteConnection() || workspace.hasMBeans(),
-      href: () => myUrl
-    });
-    */
-
     var builder = nav.builder();
     var tab = builder.id('jmx')
                 .title( () => 'JMX' )
@@ -139,7 +131,7 @@ module Jmx {
                   rank: 10,
                   isValid: (yes, no) => {
                     var name = 'JmxDefaultPage';
-                    workspace.addNamedTreePostProcessor('JmxDefaultPage', (tree) => {
+                    workspace.addNamedTreePostProcessor(name, (tree) => {
                       workspace.removeNamedTreePostProcessor(name);
                       if (workspace.hasMBeans()) {
                         yes();
