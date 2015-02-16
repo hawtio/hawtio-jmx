@@ -31,7 +31,6 @@
     "hawtio-core-navigation": "~2.0.0",
     "hawtio-utilities": "~2.0.0",
     "hawtio-forms": "~2.0.0",
-    "dotjem-angular-tree": "~0.1.4",
     "hawtio-ui": "~2.0.5",
     "font-awesome": "~4.3.0",
     "hawtio-template-cache": "*"
