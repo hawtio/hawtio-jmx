@@ -81,22 +81,18 @@ module Jmx {
     var attributes = builder.id('jmx-attributes')
                        .title( () => '<i class="fa fa-list"></i> Attributes' )
                        .href( () => '/jmx/attributes' + workspace.hash() )
-                       .isSelected( () => workspace.isLinkActive('jmx/attributes') )
                        .build();
     var operations = builder.id('jmx-operations')
                       .title( () => '<i class="fa fa-leaf"></i> Operations' )
                       .href( () => ' /jmx/operations' + workspace.hash() )
-                      .isSelected( () => workspace.isLinkActive('jmx/operations') )
                       .build();
     var chart = builder.id('jmx-chart')
                       .title( () => '<i class="fa fa-bar-chart"></i> Charts' )
                       .href( () => ' /jmx/charts' + workspace.hash() )
-                      .isSelected( () => workspace.isLinkActive('jmx/charts') )
                       .build();
     var editChart = builder.id('jmx-edit-chart')
                       .title( () => '<i class="fa fa-cog"></i> Edit Chart' )
                       .href( () => ' /jmx/chartEdit' + workspace.hash() )
-                      .isSelected( () => workspace.isLinkActive('jmx/chartEdit') )
                       .build();
     editChart.show = () => workspace.isLinkActive('jmx/chart');
     return [attributes, operations, chart, editChart];

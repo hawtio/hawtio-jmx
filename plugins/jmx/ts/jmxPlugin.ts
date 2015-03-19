@@ -106,7 +106,7 @@ module Jmx {
   _module.run(["HawtioNav", "$location", "workspace", "viewRegistry", "layoutTree", "jolokia", "helpRegistry", "pageTitle", "$templateCache", (nav:HawtioMainNav.Registry, $location: ng.ILocationService, workspace:Core.Workspace, viewRegistry, layoutTree, jolokia, helpRegistry, pageTitle, $templateCache) => {
     log.debug('loaded');
 
-    viewRegistry['jmx'] = layoutTree;
+    viewRegistry['{ "main-tab": "jmx" }'] = layoutTree;
     helpRegistry.addUserDoc('jmx', 'app/jmx/doc/help.md');
 
     pageTitle.addTitleElement(():string => {
@@ -123,7 +123,7 @@ module Jmx {
       return Jmx.currentProcessId;
     });
 
-    var myUrl = '/jmx';
+    var myUrl = '/jmx/attributes';
     var builder = nav.builder();
     var tab = builder.id('jmx')
                 .title( () => 'JMX' )
@@ -143,7 +143,6 @@ module Jmx {
                 })
                 .isValid( () => workspace.hasMBeans() )
                 .href( () => myUrl )
-                .isSelected( () => workspace.isTopTabActive('jmx') )
                 .build();
     tab.tabs = getNavItems(builder, workspace, $templateCache);
     nav.add(tab);
