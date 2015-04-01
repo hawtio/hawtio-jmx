@@ -84,18 +84,53 @@ module Jmx {
                        .build();
     var operations = builder.id('jmx-operations')
                       .title( () => '<i class="fa fa-leaf"></i> Operations' )
-                      .href( () => ' /jmx/operations' + workspace.hash() )
+                      .href( () => '/jmx/operations' + workspace.hash() )
                       .build();
     var chart = builder.id('jmx-chart')
                       .title( () => '<i class="fa fa-bar-chart"></i> Charts' )
-                      .href( () => ' /jmx/charts' + workspace.hash() )
+                      .href( () => '/jmx/charts' + workspace.hash() )
                       .build();
     var editChart = builder.id('jmx-edit-chart')
                       .title( () => '<i class="fa fa-cog"></i> Edit Chart' )
-                      .href( () => ' /jmx/chartEdit' + workspace.hash() )
+                      .href( () => '/jmx/chartEdit' + workspace.hash() )
                       .build();
+
+    var addToDashboard = builder.id('jmx-add-dashboard')
+                      .title( () => '<i class="fa fa-share"></i>' )
+                      .attributes({
+                        'class': 'pull-right'
+                      })
+                      .show( () => {
+                        if (!HawtioCore.injector) {
+                          return true;
+                        }
+                        var dash = HawtioCore.injector.get('HawtioDashboard');
+                        return dash && dash.hasDashboard;
+                      })
+                      .click( () => {
+                        if (!HawtioCore.injector) {
+                          return;
+                        }
+                        var dash = HawtioCore.injector.get('HawtioDashboard');
+                        if (dash) {
+                          var width = 2;
+                          var height = 2;
+                          var title = workspace.getSelectedMBeanName();
+                          var $location = workspace.$location;
+                          if ($location.path().has('/jmx/charts')) {
+                            width = 4;
+                            height = 3;
+                          }
+                          var url = dash.getAddLink(title, width, height);
+                          workspace.$location.url(url.toString());
+                          Core.$apply(workspace.$rootScope);
+                        }
+                      })
+                      .href( () => '/dashboard/add' )
+                      .build();
+
     editChart.show = () => workspace.isLinkActive('jmx/chart');
-    return [attributes, operations, chart, editChart];
+    return [attributes, operations, chart, editChart, addToDashboard];
   }
 
   var attributesToolBars = {};

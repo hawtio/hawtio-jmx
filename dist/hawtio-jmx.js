@@ -316,11 +316,38 @@ var Jmx;
     Jmx.templatePath = 'plugins/jmx/html';
     function getNavItems(builder, workspace, $templateCache) {
         var attributes = builder.id('jmx-attributes').title(function () { return '<i class="fa fa-list"></i> Attributes'; }).href(function () { return '/jmx/attributes' + workspace.hash(); }).build();
-        var operations = builder.id('jmx-operations').title(function () { return '<i class="fa fa-leaf"></i> Operations'; }).href(function () { return ' /jmx/operations' + workspace.hash(); }).build();
-        var chart = builder.id('jmx-chart').title(function () { return '<i class="fa fa-bar-chart"></i> Charts'; }).href(function () { return ' /jmx/charts' + workspace.hash(); }).build();
-        var editChart = builder.id('jmx-edit-chart').title(function () { return '<i class="fa fa-cog"></i> Edit Chart'; }).href(function () { return ' /jmx/chartEdit' + workspace.hash(); }).build();
+        var operations = builder.id('jmx-operations').title(function () { return '<i class="fa fa-leaf"></i> Operations'; }).href(function () { return '/jmx/operations' + workspace.hash(); }).build();
+        var chart = builder.id('jmx-chart').title(function () { return '<i class="fa fa-bar-chart"></i> Charts'; }).href(function () { return '/jmx/charts' + workspace.hash(); }).build();
+        var editChart = builder.id('jmx-edit-chart').title(function () { return '<i class="fa fa-cog"></i> Edit Chart'; }).href(function () { return '/jmx/chartEdit' + workspace.hash(); }).build();
+        var addToDashboard = builder.id('jmx-add-dashboard').title(function () { return '<i class="fa fa-share"></i>'; }).attributes({
+            'class': 'pull-right'
+        }).show(function () {
+            if (!HawtioCore.injector) {
+                return true;
+            }
+            var dash = HawtioCore.injector.get('HawtioDashboard');
+            return dash && dash.hasDashboard;
+        }).click(function () {
+            if (!HawtioCore.injector) {
+                return;
+            }
+            var dash = HawtioCore.injector.get('HawtioDashboard');
+            if (dash) {
+                var width = 2;
+                var height = 2;
+                var title = workspace.getSelectedMBeanName();
+                var $location = workspace.$location;
+                if ($location.path().has('/jmx/charts')) {
+                    width = 4;
+                    height = 3;
+                }
+                var url = dash.getAddLink(title, width, height);
+                workspace.$location.url(url.toString());
+                Core.$apply(workspace.$rootScope);
+            }
+        }).href(function () { return '/dashboard/add'; }).build();
         editChart.show = function () { return workspace.isLinkActive('jmx/chart'); };
-        return [attributes, operations, chart, editChart];
+        return [attributes, operations, chart, editChart, addToDashboard];
     }
     Jmx.getNavItems = getNavItems;
     var attributesToolBars = {};
