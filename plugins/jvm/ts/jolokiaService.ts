@@ -134,7 +134,12 @@ module JVM {
     return answer;
   }]);
 
-  _module.factory('jolokia',["$location", "localStorage", "jolokiaStatus", "$rootScope", "userDetails", "jolokiaParams", "jolokiaUrl", "ConnectionName", "ConnectOptions", ($location:ng.ILocationService, localStorage, jolokiaStatus, $rootScope, userDetails:Core.UserDetails, jolokiaParams, jolokiaUrl, connectionName, connectionOptions):Jolokia.IJolokia => {
+  _module.factory('jolokia',["$location", "localStorage", "jolokiaStatus", "$rootScope", "userDetails", "jolokiaParams", "jolokiaUrl", "ConnectionName", "ConnectOptions", "HawtioDashboard", ($location:ng.ILocationService, localStorage, jolokiaStatus, $rootScope, userDetails:Core.UserDetails, jolokiaParams, jolokiaUrl, connectionName, connectionOptions, dash):Jolokia.IJolokia => {
+
+    if (dash.inDashboard && windowJolokia) {
+      return windowJolokia;
+    }
+
     if (jolokiaUrl) {
       // pass basic auth credentials down to jolokia if set
       var username:String = null;
@@ -216,6 +221,7 @@ module JVM {
           jolokia.start(localStorage['updateRate']);
         }
       }
+      windowJolokia = jolokia;
       return jolokia;
     } else {
       var answer = <DummyJolokia> {
@@ -239,6 +245,7 @@ module JVM {
         jobs: () => []
 
       };
+      windowJolokia = answer;
       // empty jolokia that returns nothing
       return answer;          
     }

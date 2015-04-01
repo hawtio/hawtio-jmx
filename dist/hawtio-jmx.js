@@ -4226,11 +4226,9 @@ var Jmx;
  * @main JVM
  */
 /// <reference path="jvmHelpers.ts"/>
-// TODO move this out of here and enable per-logger settings easily in the UI
-Logger.get('$templateCache').setLevel(Logger.WARN);
-Logger.get('$templateRequest').setLevel(Logger.WARN);
 var JVM;
 (function (JVM) {
+    JVM.windowJolokia = undefined;
     JVM._module = angular.module(JVM.pluginName, []);
     JVM._module.config(["$provide", "$routeProvider", function ($provide, $routeProvider) {
         /*
@@ -4655,7 +4653,10 @@ var JVM;
         answer['url'] = jolokiaUrl;
         return answer;
     }]);
-    JVM._module.factory('jolokia', ["$location", "localStorage", "jolokiaStatus", "$rootScope", "userDetails", "jolokiaParams", "jolokiaUrl", "ConnectionName", "ConnectOptions", function ($location, localStorage, jolokiaStatus, $rootScope, userDetails, jolokiaParams, jolokiaUrl, connectionName, connectionOptions) {
+    JVM._module.factory('jolokia', ["$location", "localStorage", "jolokiaStatus", "$rootScope", "userDetails", "jolokiaParams", "jolokiaUrl", "ConnectionName", "ConnectOptions", "HawtioDashboard", function ($location, localStorage, jolokiaStatus, $rootScope, userDetails, jolokiaParams, jolokiaUrl, connectionName, connectionOptions, dash) {
+        if (dash.inDashboard && JVM.windowJolokia) {
+            return JVM.windowJolokia;
+        }
         if (jolokiaUrl) {
             // pass basic auth credentials down to jolokia if set
             var username = null;
@@ -4710,6 +4711,7 @@ var JVM;
                     jolokia.start(localStorage['updateRate']);
                 }
             }
+            JVM.windowJolokia = jolokia;
             return jolokia;
         }
         else {
@@ -4740,6 +4742,7 @@ var JVM;
                 isRunning: function () { return answer.running; },
                 jobs: function () { return []; }
             };
+            JVM.windowJolokia = answer;
             // empty jolokia that returns nothing
             return answer;
         }

@@ -3,11 +3,10 @@
  * @main JVM
  */
 /// <reference path="jvmHelpers.ts"/>
-// TODO move this out of here and enable per-logger settings easily in the UI
-Logger.get('$templateCache').setLevel(Logger.WARN);
-Logger.get('$templateRequest').setLevel(Logger.WARN);
 
 module JVM {
+
+  export var windowJolokia:Jolokia.IJolokia = undefined;
 
   export var _module = angular.module(pluginName, []);
 
