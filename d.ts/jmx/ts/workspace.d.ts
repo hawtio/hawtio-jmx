@@ -116,6 +116,7 @@ declare module Core {
          * @return {String}
          */
         getSelectedMBeanName(): string;
+        getSelectedMBean(): NodeSelection;
         /**
          * Returns true if the path is valid for the current selection
          * @method validSelection

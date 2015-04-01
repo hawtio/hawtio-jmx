@@ -1073,6 +1073,22 @@ var Core;
             }
             return null;
         };
+        Workspace.prototype.getSelectedMBean = function () {
+            if (this.selection) {
+                return this.selection;
+            }
+            var nid = this.$location.search()['nid'];
+            if (nid && this.tree) {
+                var answer = this.tree.findDescendant(function (node) {
+                    return nid === node.id;
+                });
+                if (!this.selection) {
+                    this.selection = answer;
+                }
+                return answer;
+            }
+            return null;
+        };
         /**
          * Returns true if the path is valid for the current selection
          * @method validSelection
@@ -2960,7 +2976,7 @@ var Jmx;
                 return "metrics";
             }
         };
-        var doRender = Core.throttled(render, 200);
+        var doRender = _.debounce(render, 200, { trailing: true });
         $scope.deregRouteChange = $scope.$on("$routeChangeSuccess", function (event, current, previous) {
             // lets do this asynchronously to avoid Error: $digest already in progress
             doRender();
@@ -2972,7 +2988,7 @@ var Jmx;
         });
         doRender();
         function render() {
-            var node = workspace.selection;
+            var node = workspace.selection || workspace.getSelectedMBean();
             if (node == null) {
                 return;
             }

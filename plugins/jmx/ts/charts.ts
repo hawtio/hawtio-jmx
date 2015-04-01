@@ -53,7 +53,7 @@ module Jmx {
       }
     };
 
-    var doRender:()=>any = Core.throttled(render, 200);
+    var doRender:()=>any = _.debounce(render, 200, { trailing: true} );
 
     $scope.deregRouteChange = $scope.$on("$routeChangeSuccess", function (event, current, previous) {
       // lets do this asynchronously to avoid Error: $digest already in progress
@@ -69,7 +69,7 @@ module Jmx {
 
     function render() {
 
-      var node = workspace.selection;
+      var node = workspace.selection || workspace.getSelectedMBean();
       if (node == null) {
         return;
       }

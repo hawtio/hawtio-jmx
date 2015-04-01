@@ -534,6 +534,23 @@ module Core {
       return null;
     }
 
+    public getSelectedMBean():NodeSelection {
+      if (this.selection) {
+        return this.selection;
+      }
+      var nid = this.$location.search()['nid'];
+      if (nid && this.tree) {
+        var answer = this.tree.findDescendant((node) => {
+          return nid === node.id;
+        });
+        if (!this.selection) {
+          this.selection = answer;
+        }
+        return answer;
+      }
+      return null;
+    }
+
     /**
      * Returns true if the path is valid for the current selection
      * @method validSelection
