@@ -77,25 +77,25 @@ module Jmx {
   export var currentProcessId = '';
   export var templatePath = 'plugins/jmx/html';
 
-  export function getNavItems(builder, workspace, $templateCache):Array<HawtioMainNav.NavItem> {
-    var attributes = builder.id('jmx-attributes')
+  export function getNavItems(builder, workspace, $templateCache, prefix:string = 'jmx'):Array<HawtioMainNav.NavItem> {
+    var attributes = builder.id(prefix + '-attributes')
                        .title( () => '<i class="fa fa-list"></i> Attributes' )
                        .href( () => '/jmx/attributes' + workspace.hash() )
                        .build();
-    var operations = builder.id('jmx-operations')
+    var operations = builder.id(prefix + '-operations')
                       .title( () => '<i class="fa fa-leaf"></i> Operations' )
                       .href( () => '/jmx/operations' + workspace.hash() )
                       .build();
-    var chart = builder.id('jmx-chart')
+    var chart = builder.id(prefix + '-chart')
                       .title( () => '<i class="fa fa-bar-chart"></i> Charts' )
                       .href( () => '/jmx/charts' + workspace.hash() )
                       .build();
-    var editChart = builder.id('jmx-edit-chart')
+    var editChart = builder.id(prefix + '-edit-chart')
                       .title( () => '<i class="fa fa-cog"></i> Edit Chart' )
                       .href( () => '/jmx/chartEdit' + workspace.hash() )
                       .build();
 
-    var addToDashboard = builder.id('jmx-add-dashboard')
+    var addToDashboard = builder.id(prefix + '-add-dashboard')
                       .title( () => '<i class="fa fa-share"></i>' )
                       .attributes({
                         'class': 'pull-right'
