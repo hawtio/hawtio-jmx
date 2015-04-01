@@ -192,8 +192,8 @@ module Jmx {
       }
     });
 
-    var fetch = <() => void>Core.throttled(() => {
-      var node = workspace.selection;
+    var fetch = <() => void>_.debounce(() => {
+      var node = workspace.selection || workspace.getSelectedMBean();
       if (!node) {
         return;
       }
@@ -207,7 +207,7 @@ module Jmx {
         type: 'list',
         path:  Core.escapeMBeanPath($scope.objectName)
       }, Core.onSuccess(render));
-    }, 500);
+    }, 100, { trailing: true });
 
     function getArgs(args) {
       return "(" + args.map(function(arg) {return arg.type}).join() + ")";
@@ -254,7 +254,7 @@ module Jmx {
     };
 
     $scope.$watch('workspace.selection', (newValue, oldValue) => {
-      if (!workspace.selection || workspace.moveIfViewInvalid()) {
+      if (workspace.moveIfViewInvalid()) {
         return;
       }
       fetch();

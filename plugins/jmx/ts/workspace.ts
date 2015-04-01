@@ -538,6 +538,7 @@ module Core {
       if (this.selection) {
         return this.selection;
       }
+      log.debug("Location: ", this.$location);
       var nid = this.$location.search()['nid'];
       if (nid && this.tree) {
         var answer = this.tree.findDescendant((node) => {

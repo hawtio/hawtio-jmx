@@ -121,19 +121,10 @@ module Jmx {
 
     $scope.$on("$routeChangeSuccess", function (event, current, previous) {
       // lets do this asynchronously to avoid Error: $digest already in progress
-
-      // clear selection if we clicked the jmx nav bar button
-      // otherwise we may show data from Camel/ActiveMQ or other plugins that
-      // reuse the JMX plugin for showing tables (#884)
-      var currentUrl = $location.url();
-      if (currentUrl.endsWith("/jmx/attributes")) {
-        log.debug("Reset selection in JMX plugin");
-        workspace.selection = null;
-        $scope.lastKey = null;
-      }
       $scope.nid = $location.search()['nid'];
-      //log.debug("nid: ", $scope.nid);
-      doUpdateTableContents();
+      setTimeout(() => {
+        doUpdateTableContents();
+      }, 10);
     });
 
     $scope.$watch('workspace.selection', function () {
@@ -141,17 +132,12 @@ module Jmx {
         Core.unregister(jolokia, $scope);
         return;
       }
-      doUpdateTableContents();
-      /*
       setTimeout(() => {
-        $scope.gridData = [];
-        Core.$apply($scope);
-        setTimeout(() => {
-          updateTableContents();
-        }, 10);
+        doUpdateTableContents();
       }, 10);
-      */
     });
+
+    doUpdateTableContents();
 
     $scope.hasWidget = (row) => {
       return true;
@@ -407,7 +393,7 @@ module Jmx {
       $scope.mbeanIndex = null;
       var mbean = workspace.getSelectedMBeanName();
       var request = <any>null;
-      var node = workspace.selection;
+      var node = workspace.getSelectedMBean();
       if (node === null || angular.isUndefined(node) || node.key !== $scope.lastKey) {
         // cache attributes info, so we know if the attribute is read-only or read-write, and also the attribute description
         $scope.attributesInfoCache = null;

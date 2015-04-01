@@ -125,8 +125,9 @@ module Jmx {
                           workspace.$location.url(url.toString());
                           Core.$apply(workspace.$rootScope);
                         }
+                        return false;
                       })
-                      .href( () => '/dashboard/add' )
+                      .href( () => '' )
                       .build();
 
     editChart.show = () => workspace.isLinkActive('jmx/chart');

@@ -39,7 +39,7 @@ module JVM {
       if (!ConnectOptions || !ConnectOptions.name || !newUrl) {
         return;
       }
-      var newQuery:any = $location.search();
+      var newQuery:any = new URI().query(true);
       if (!newQuery.con) {
         log.debug("Lost connection parameter (", ConnectOptions.name, ") from query params: ", newQuery, " resetting");
         newQuery['con'] = ConnectOptions.name;

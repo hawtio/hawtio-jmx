@@ -346,7 +346,8 @@ var Jmx;
                 workspace.$location.url(url.toString());
                 Core.$apply(workspace.$rootScope);
             }
-        }).href(function () { return '/dashboard/add'; }).build();
+            return false;
+        }).href(function () { return ''; }).build();
         editChart.show = function () { return workspace.isLinkActive('jmx/chart'); };
         return [attributes, operations, chart, editChart, addToDashboard];
     }
@@ -1078,6 +1079,7 @@ var Core;
             if (this.selection) {
                 return this.selection;
             }
+            log.debug("Location: ", this.$location);
             var nid = this.$location.search()['nid'];
             if (nid && this.tree) {
                 var answer = this.tree.findDescendant(function (node) {
@@ -2211,35 +2213,21 @@ var Jmx;
         var doUpdateTableContents = _.debounce(updateTableContents, 100, { trailing: true });
         $scope.$on("$routeChangeSuccess", function (event, current, previous) {
             // lets do this asynchronously to avoid Error: $digest already in progress
-            // clear selection if we clicked the jmx nav bar button
-            // otherwise we may show data from Camel/ActiveMQ or other plugins that
-            // reuse the JMX plugin for showing tables (#884)
-            var currentUrl = $location.url();
-            if (currentUrl.endsWith("/jmx/attributes")) {
-                Jmx.log.debug("Reset selection in JMX plugin");
-                workspace.selection = null;
-                $scope.lastKey = null;
-            }
             $scope.nid = $location.search()['nid'];
-            //log.debug("nid: ", $scope.nid);
-            doUpdateTableContents();
+            setTimeout(function () {
+                doUpdateTableContents();
+            }, 10);
         });
         $scope.$watch('workspace.selection', function () {
             if (workspace.moveIfViewInvalid()) {
                 Core.unregister(jolokia, $scope);
                 return;
             }
-            doUpdateTableContents();
-            /*
-            setTimeout(() => {
-              $scope.gridData = [];
-              Core.$apply($scope);
-              setTimeout(() => {
-                updateTableContents();
-              }, 10);
+            setTimeout(function () {
+                doUpdateTableContents();
             }, 10);
-            */
         });
+        doUpdateTableContents();
         $scope.hasWidget = function (row) {
             return true;
         };
@@ -2463,7 +2451,7 @@ var Jmx;
             $scope.mbeanIndex = null;
             var mbean = workspace.getSelectedMBeanName();
             var request = null;
-            var node = workspace.selection;
+            var node = workspace.getSelectedMBean();
             if (node === null || angular.isUndefined(node) || node.key !== $scope.lastKey) {
                 // cache attributes info, so we know if the attribute is read-only or read-write, and also the attribute description
                 $scope.attributesInfoCache = null;
@@ -4089,8 +4077,8 @@ var Jmx;
                 }
             }
         });
-        var fetch = Core.throttled(function () {
-            var node = workspace.selection;
+        var fetch = _.debounce(function () {
+            var node = workspace.selection || workspace.getSelectedMBean();
             if (!node) {
                 return;
             }
@@ -4102,7 +4090,7 @@ var Jmx;
                 type: 'list',
                 path: Core.escapeMBeanPath($scope.objectName)
             }, Core.onSuccess(render));
-        }, 500);
+        }, 100, { trailing: true });
         function getArgs(args) {
             return "(" + args.map(function (arg) {
                 return arg.type;
@@ -4145,7 +4133,7 @@ var Jmx;
             }
         };
         $scope.$watch('workspace.selection', function (newValue, oldValue) {
-            if (!workspace.selection || workspace.moveIfViewInvalid()) {
+            if (workspace.moveIfViewInvalid()) {
                 return;
             }
             fetch();
@@ -4301,7 +4289,7 @@ var JVM;
             if (!ConnectOptions || !ConnectOptions.name || !newUrl) {
                 return;
             }
-            var newQuery = $location.search();
+            var newQuery = new URI().query(true);
             if (!newQuery.con) {
                 JVM.log.debug("Lost connection parameter (", ConnectOptions.name, ") from query params: ", newQuery, " resetting");
                 newQuery['con'] = ConnectOptions.name;
