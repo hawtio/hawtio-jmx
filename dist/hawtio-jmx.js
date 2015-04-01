@@ -2131,7 +2131,7 @@ var Jmx;
             cellTemplate: '<div class="ngCellText"><a href="{{row.entity.folderHref(row)}}"><i class="{{row.entity.folderIconClass(row)}}"></i> {{row.getProperty("title")}}</a></div>'
         }
     ];
-    Jmx.AttributesController = Jmx._module.controller("Jmx.AttributesController", ["$scope", "$element", "$location", "workspace", "jolokia", "jmxWidgets", "jmxWidgetTypes", "$templateCache", "localStorage", "$browser", function ($scope, $element, $location, workspace, jolokia, jmxWidgets, jmxWidgetTypes, $templateCache, localStorage, $browser) {
+    Jmx.AttributesController = Jmx._module.controller("Jmx.AttributesController", ["$scope", "$element", "$location", "workspace", "jolokia", "jmxWidgets", "jmxWidgetTypes", "$templateCache", "localStorage", "$browser", "HawtioDashboard", function ($scope, $element, $location, workspace, jolokia, jmxWidgets, jmxWidgetTypes, $templateCache, localStorage, $browser, dash) {
         $scope.searchText = '';
         $scope.nid = 'empty';
         $scope.selectedItems = [];
@@ -2141,6 +2141,7 @@ var Jmx;
         $scope.attributeSchema = {};
         $scope.gridData = [];
         $scope.attributes = "";
+        $scope.inDashboard = dash.inDashboard;
         $scope.$watch('gridData.length', function (newValue, oldValue) {
             if (newValue !== oldValue) {
                 if (newValue > 0) {
@@ -2206,6 +2207,7 @@ var Jmx;
                 $scope.selectedItems = newValue;
             }
         }, true);
+        var doUpdateTableContents = _.debounce(updateTableContents, 100, { trailing: true });
         $scope.$on("$routeChangeSuccess", function (event, current, previous) {
             // lets do this asynchronously to avoid Error: $digest already in progress
             // clear selection if we clicked the jmx nav bar button
@@ -2218,21 +2220,24 @@ var Jmx;
                 $scope.lastKey = null;
             }
             $scope.nid = $location.search()['nid'];
-            Jmx.log.debug("nid: ", $scope.nid);
-            setTimeout(updateTableContents, 50);
+            //log.debug("nid: ", $scope.nid);
+            doUpdateTableContents();
         });
         $scope.$watch('workspace.selection', function () {
             if (workspace.moveIfViewInvalid()) {
                 Core.unregister(jolokia, $scope);
                 return;
             }
-            setTimeout(function () {
-                $scope.gridData = [];
-                Core.$apply($scope);
-                setTimeout(function () {
-                    updateTableContents();
-                }, 10);
+            doUpdateTableContents();
+            /*
+            setTimeout(() => {
+              $scope.gridData = [];
+              Core.$apply($scope);
+              setTimeout(() => {
+                updateTableContents();
+              }, 10);
             }, 10);
+            */
         });
         $scope.hasWidget = function (row) {
             return true;
@@ -5227,7 +5232,7 @@ var Threads;
 })(Threads || (Threads = {}));
 
 angular.module("hawtio-jmx-templates", []).run(["$templateCache", function($templateCache) {$templateCache.put("plugins/jmx/html/areaChart.html","<div ng-controller=\"Jmx.AreaChartController\">\n  <script type=\"text/ng-template\" id=\"areaChart\">\n    <fs-area bind=\"data\" duration=\"250\" interpolate=\"false\" point-radius=\"5\" width=\"width\" height=\"height\" label=\"\"></fs-area>\n  </script>\n  <div compile=\"template\"></div>\n</div>\n");
-$templateCache.put("plugins/jmx/html/attributeToolBar.html","<div class=\"pull-right\">\n  <hawtio-filter ng-model=\"gridOptions.filterOptions.filterText\" placeholder=\"Filter...\" save-as=\"{{nid}}-filter-text\"></hawtio-filter>\n</div>\n");
+$templateCache.put("plugins/jmx/html/attributeToolBar.html","<div class=\"pull-right\" ng-hide=\"inDashboard\">\n  <hawtio-filter ng-model=\"gridOptions.filterOptions.filterText\" placeholder=\"Filter...\" save-as=\"{{nid}}-filter-text\"></hawtio-filter>\n</div>\n");
 $templateCache.put("plugins/jmx/html/attributes.html","<script type=\"text/ng-template\" id=\"gridTemplate\">\n  <table id=\"attributesGrid\"\n         class=\"table table-condensed table-striped\"\n         hawtio-simple-table=\"gridOptions\">\n  </table>\n</script>\n\n<div ng-controller=\"Jmx.AttributesController\">\n  <div ng-include src=\"toolBarTemplate()\"></div>\n\n  <div class=\"attributes-wrapper gridStyle\">\n    <div compile=\"attributes\"></div>\n  </div>\n\n  <!-- modal dialog to show/edit the attribute -->\n  <div hawtio-confirm-dialog=\"showAttributeDialog\"\n       ok-button-text=\"Update\" show-ok-button=\"{{entity.rw ? \'true\' : \'false\'}}\" on-ok=\"onUpdateAttribute()\" on-cancel=\"onCancelAttribute()\"\n       cancel-button-text=\"Close\"\n       title=\"Attribute: {{entity.key}}\">\n    <div class=\"dialog-body\">\n\n      <!-- have a form for view and another for edit -->\n      <div simple-form ng-hide=\"!entity.rw\" name=\"attributeEditor\" mode=\"edit\" entity=\'entity\' data=\'attributeSchemaEdit\'></div>\n      <button ng-hide=\"!entity.rw\" class=\"pull-right btn\" zero-clipboard data-clipboard-text=\"{{entity.attrValueEdit}}\" title=\"Copy value to clipboard\">\n        <i class=\"fa fa-copy\"></i>\n      </button>\n\n      <div simple-form ng-hide=\"entity.rw\" name=\"attributeViewer\" mode=\"view\" entity=\'entity\' data=\'attributeSchemaView\'></div>\n      <button ng-hide=\"entity.rw\" class=\"pull-right btn\" zero-clipboard data-clipboard-text=\"{{entity.attrValueView}}\" title=\"Copy value to clipboard\">\n        <i class=\"fa fa-copy\"></i>\n      </button>\n    </div>\n  </div>\n\n</div>\n");
 $templateCache.put("plugins/jmx/html/chartEdit.html","<div ng-controller=\"Jmx.ChartEditController\">\n  <form>\n    <fieldset>\n      <div class=\"control-group\" ng-show=\"canViewChart()\">\n        <input type=\"submit\" class=\"btn\" value=\"View Chart\" ng-click=\"viewChart()\"\n               ng-disabled=\"!selectedAttributes.length && !selectedMBeans.length\"/>\n      </div>\n      <div class=\"control-group\">\n        <table class=\"table\">\n          <thead>\n          <tr>\n            <th ng-show=\"showAttributes()\">Attributes</th>\n            <th ng-show=\"showElements()\">Elements</th>\n          </tr>\n          </thead>\n          <tbody>\n          <tr>\n            <td ng-show=\"showAttributes()\">\n              <select id=\"attributes\" size=\"20\" multiple ng-multiple=\"true\" ng-model=\"selectedAttributes\"\n                      ng-options=\"name | humanize for (name, value) in metrics\"></select>\n            </td>\n            <td ng-show=\"showElements()\">\n              <select id=\"mbeans\" size=\"20\" multiple ng-multiple=\"true\" ng-model=\"selectedMBeans\"\n                      ng-options=\"name for (name, value) in mbeans\"></select>\n            </td>\n          </tr>\n          </tbody>\n        </table>\n\n        <div class=\"alert\" ng-show=\"!canViewChart()\">\n          <button type=\"button\" class=\"close\" data-dismiss=\"alert\">×</button>\n          <strong>No numeric metrics available!</strong> Try select another item to chart on.\n        </div>\n      </div>\n    </fieldset>\n  </form>\n</div>\n");
 $templateCache.put("plugins/jmx/html/charts.html","<div ng-controller=\"Jmx.ChartController\" ng-switch=\"errorMessage()\">\n  <div ng-switch-when=\"metrics\">No valid metrics to show for this mbean.</div>\n  <div ng-switch-when=\"updateRate\">Charts aren\'t available when the update rate is set to \"No refreshes\", go to the <a ng-href=\"#/preferences{{hash}}\">Preferences</a> panel and set a refresh rate to enable charts</div>\n  <div id=\"charts\"></div>\n</div>\n\n");

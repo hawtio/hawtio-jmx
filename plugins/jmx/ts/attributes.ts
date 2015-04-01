@@ -26,7 +26,7 @@ module Jmx {
     }
   ];
 
-  export var AttributesController = _module.controller("Jmx.AttributesController", ["$scope", "$element", "$location", "workspace", "jolokia", "jmxWidgets", "jmxWidgetTypes", "$templateCache", "localStorage", "$browser", ($scope,
+  export var AttributesController = _module.controller("Jmx.AttributesController", ["$scope", "$element", "$location", "workspace", "jolokia", "jmxWidgets", "jmxWidgetTypes", "$templateCache", "localStorage", "$browser", "HawtioDashboard", ($scope,
                                        $element,
                                        $location,
                                        workspace:Workspace,
@@ -35,7 +35,7 @@ module Jmx {
                                        jmxWidgetTypes,
                                        $templateCache,
                                        localStorage,
-                                        $browser) => {
+                                        $browser, dash) => {
     $scope.searchText = '';
     $scope.nid = 'empty';
     $scope.selectedItems = [];
@@ -46,7 +46,8 @@ module Jmx {
     $scope.entity = {};
     $scope.attributeSchema = {};
     $scope.gridData = [];
-    $scope.attributes = ""
+    $scope.attributes = "";
+    $scope.inDashboard = dash.inDashboard;
 
     $scope.$watch('gridData.length', (newValue, oldValue) => {
       if (newValue !== oldValue) {
@@ -116,6 +117,8 @@ module Jmx {
       }
     }, true);
 
+    var doUpdateTableContents = _.debounce(updateTableContents, 100, { trailing: true });
+
     $scope.$on("$routeChangeSuccess", function (event, current, previous) {
       // lets do this asynchronously to avoid Error: $digest already in progress
 
@@ -129,9 +132,8 @@ module Jmx {
         $scope.lastKey = null;
       }
       $scope.nid = $location.search()['nid'];
-      log.debug("nid: ", $scope.nid);
-
-      setTimeout(updateTableContents, 50);
+      //log.debug("nid: ", $scope.nid);
+      doUpdateTableContents();
     });
 
     $scope.$watch('workspace.selection', function () {
@@ -139,6 +141,8 @@ module Jmx {
         Core.unregister(jolokia, $scope);
         return;
       }
+      doUpdateTableContents();
+      /*
       setTimeout(() => {
         $scope.gridData = [];
         Core.$apply($scope);
@@ -146,6 +150,7 @@ module Jmx {
           updateTableContents();
         }, 10);
       }, 10);
+      */
     });
 
     $scope.hasWidget = (row) => {
