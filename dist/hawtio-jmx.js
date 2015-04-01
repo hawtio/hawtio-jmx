@@ -1748,7 +1748,7 @@ var Jmx;
     Jmx.jmxWidgetTypes = [
         {
             type: "donut",
-            icon: "fa fa-smile",
+            icon: "fa fa-pie-chart",
             route: "/jmx/widget/donut",
             size_x: 2,
             size_y: 2,
@@ -1954,6 +1954,7 @@ var Jmx;
         nav.add(tab);
     }]);
     hawtioPluginLoader.addModule(Jmx.pluginName);
+    hawtioPluginLoader.addModule('dangle');
 })(Jmx || (Jmx = {}));
 
 /**

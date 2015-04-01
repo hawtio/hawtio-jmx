@@ -150,5 +150,6 @@ module Jmx {
   }]);
 
   hawtioPluginLoader.addModule(pluginName);
+  hawtioPluginLoader.addModule('dangle');
 
 }
