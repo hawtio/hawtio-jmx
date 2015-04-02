@@ -28,24 +28,27 @@ module JVM {
 
   _module.constant('mbeanName', 'hawtio:type=JVMList');
 
-  _module.run(["HawtioNav", "$location", "workspace", "viewRegistry", "layoutFull", "helpRegistry", "preferencesRegistry", "ConnectOptions", "locationChangeStartTasks", (nav:HawtioMainNav.Registry, $location, workspace:Workspace, viewRegistry, layoutFull, helpRegistry, preferencesRegistry, ConnectOptions:Core.ConnectOptions, locationChangeStartTasks) => {
-    // ensure that if the connection parameter is present, that we keep it
-    locationChangeStartTasks.addTask('ConParam', ($event:ng.IAngularEvent, newUrl:string, oldUrl:string) => {
-      // we can't execute until the app is initialized...
-      if (!HawtioCore.injector) {
-        return;
-      }
-      //log.debug("ConParam task firing, newUrl: ", newUrl, " oldUrl: ", oldUrl, " ConnectOptions: ", ConnectOptions);
-      if (!ConnectOptions || !ConnectOptions.name || !newUrl) {
-        return;
-      }
-      var newQuery:any = new URI().query(true);
-      if (!newQuery.con) {
-        log.debug("Lost connection parameter (", ConnectOptions.name, ") from query params: ", newQuery, " resetting");
-        newQuery['con'] = ConnectOptions.name;
-        $location.search(newQuery);
-      }
-    });
+  _module.run(["HawtioNav", "$location", "workspace", "viewRegistry", "layoutFull", "helpRegistry", "preferencesRegistry", "ConnectOptions", "locationChangeStartTasks", "HawtioDashboard", (nav:HawtioMainNav.Registry, $location, workspace:Workspace, viewRegistry, layoutFull, helpRegistry, preferencesRegistry, ConnectOptions:Core.ConnectOptions, locationChangeStartTasks, dash) => {
+
+    if (!dash.inDashboard) {
+      // ensure that if the connection parameter is present, that we keep it
+      locationChangeStartTasks.addTask('ConParam', ($event:ng.IAngularEvent, newUrl:string, oldUrl:string) => {
+        // we can't execute until the app is initialized...
+        if (!HawtioCore.injector) {
+          return;
+        }
+        //log.debug("ConParam task firing, newUrl: ", newUrl, " oldUrl: ", oldUrl, " ConnectOptions: ", ConnectOptions);
+        if (!ConnectOptions || !ConnectOptions.name || !newUrl) {
+          return;
+        }
+        var newQuery:any = new URI(newUrl).query(true);
+        if (!newQuery.con) {
+          //log.debug("Lost connection parameter (", ConnectOptions.name, ") from query params: ", newQuery, " resetting");
+          newQuery['con'] = ConnectOptions.name;
+          $location.search(newQuery);
+        }
+      });
+    }
     var builder = nav.builder();
     var remote = builder.id('jvm-remote')
                   .href( () => '/jvm/connect' )

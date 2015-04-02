@@ -4278,24 +4278,26 @@ var JVM;
         $routeProvider.when('/jvm', { redirectTo: '/jvm/connect' }).when('/jvm/welcome', { templateUrl: UrlHelpers.join(JVM.templatePath, 'welcome.html') }).when('/jvm/discover', { templateUrl: UrlHelpers.join(JVM.templatePath, 'discover.html') }).when('/jvm/connect', { templateUrl: UrlHelpers.join(JVM.templatePath, 'connect.html') }).when('/jvm/local', { templateUrl: UrlHelpers.join(JVM.templatePath, 'local.html') });
     }]);
     JVM._module.constant('mbeanName', 'hawtio:type=JVMList');
-    JVM._module.run(["HawtioNav", "$location", "workspace", "viewRegistry", "layoutFull", "helpRegistry", "preferencesRegistry", "ConnectOptions", "locationChangeStartTasks", function (nav, $location, workspace, viewRegistry, layoutFull, helpRegistry, preferencesRegistry, ConnectOptions, locationChangeStartTasks) {
-        // ensure that if the connection parameter is present, that we keep it
-        locationChangeStartTasks.addTask('ConParam', function ($event, newUrl, oldUrl) {
-            // we can't execute until the app is initialized...
-            if (!HawtioCore.injector) {
-                return;
-            }
-            //log.debug("ConParam task firing, newUrl: ", newUrl, " oldUrl: ", oldUrl, " ConnectOptions: ", ConnectOptions);
-            if (!ConnectOptions || !ConnectOptions.name || !newUrl) {
-                return;
-            }
-            var newQuery = new URI().query(true);
-            if (!newQuery.con) {
-                JVM.log.debug("Lost connection parameter (", ConnectOptions.name, ") from query params: ", newQuery, " resetting");
-                newQuery['con'] = ConnectOptions.name;
-                $location.search(newQuery);
-            }
-        });
+    JVM._module.run(["HawtioNav", "$location", "workspace", "viewRegistry", "layoutFull", "helpRegistry", "preferencesRegistry", "ConnectOptions", "locationChangeStartTasks", "HawtioDashboard", function (nav, $location, workspace, viewRegistry, layoutFull, helpRegistry, preferencesRegistry, ConnectOptions, locationChangeStartTasks, dash) {
+        if (!dash.inDashboard) {
+            // ensure that if the connection parameter is present, that we keep it
+            locationChangeStartTasks.addTask('ConParam', function ($event, newUrl, oldUrl) {
+                // we can't execute until the app is initialized...
+                if (!HawtioCore.injector) {
+                    return;
+                }
+                //log.debug("ConParam task firing, newUrl: ", newUrl, " oldUrl: ", oldUrl, " ConnectOptions: ", ConnectOptions);
+                if (!ConnectOptions || !ConnectOptions.name || !newUrl) {
+                    return;
+                }
+                var newQuery = new URI(newUrl).query(true);
+                if (!newQuery.con) {
+                    //log.debug("Lost connection parameter (", ConnectOptions.name, ") from query params: ", newQuery, " resetting");
+                    newQuery['con'] = ConnectOptions.name;
+                    $location.search(newQuery);
+                }
+            });
+        }
         var builder = nav.builder();
         var remote = builder.id('jvm-remote').href(function () { return '/jvm/connect'; }).title(function () { return 'Remote'; }).build();
         var local = builder.id('jvm-local').href(function () { return '/jvm/local'; }).title(function () { return 'Local'; }).show(function () { return JVM.hasLocalMBean(workspace); }).build();
