@@ -475,11 +475,11 @@ module Jmx {
         }
         $scope.gridData = node.children;
         addHandlerFunctions($scope.gridData);
+        Core.$apply($scope);
       }
       if (node) {
         $scope.lastKey = node.key;
       }
-      Core.$apply($scope);
     }
 
     function render(response) {
@@ -561,7 +561,7 @@ module Jmx {
             $scope.selectedItems.splice(0, $scope.selectedItems.length);
             $scope.selectedItems.push.apply($scope.selectedItems, newSelections);
             //console.log("Would have selected " + JSON.stringify($scope.selectedItems));
-            Core.$apply($scope);
+            // Core.$apply($scope);
           }
           // if the last row, then fire an event
         } else {
@@ -614,8 +614,8 @@ module Jmx {
         }
         $scope.gridData = data;
         addHandlerFunctions($scope.gridData);
-        Core.$apply($scope);
       }
+      Core.$apply($scope);
     }
 
     function addHandlerFunctions(data) {
