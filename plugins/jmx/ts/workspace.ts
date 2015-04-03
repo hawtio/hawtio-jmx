@@ -717,16 +717,17 @@ module Core {
       if (node) {
         key = node['key'];
       }
-      var $location = this.$location;
-      var q = $location.search();
       if (key) {
-        q['nid'] = key
+        var $location = this.$location;
+        var q = $location.search();
+        q['nid'] = key;
+        $location.search(q);
       }
-      $location.search(q);
 
       // if we have updated the selection (rather than just loaded a page)
       // lets use the previous preferred view - otherwise we may be loading
       // a page from a bookmark so lets not change the view :)
+      /*
       if (originalSelection) {
         key = this.selectionViewConfigKey();
         if (key) {
@@ -735,7 +736,7 @@ module Core {
             this.$location.path(defaultPath);
           }
         }
-      }
+      }*/
     }
 
     /**

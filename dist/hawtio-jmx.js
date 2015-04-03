@@ -1252,24 +1252,25 @@ var Core;
             if (node) {
                 key = node['key'];
             }
-            var $location = this.$location;
-            var q = $location.search();
             if (key) {
+                var $location = this.$location;
+                var q = $location.search();
                 q['nid'] = key;
+                $location.search(q);
             }
-            $location.search(q);
             // if we have updated the selection (rather than just loaded a page)
             // lets use the previous preferred view - otherwise we may be loading
             // a page from a bookmark so lets not change the view :)
+            /*
             if (originalSelection) {
-                key = this.selectionViewConfigKey();
-                if (key) {
-                    var defaultPath = this.getLocalStorage(key);
-                    if (defaultPath) {
-                        this.$location.path(defaultPath);
-                    }
+              key = this.selectionViewConfigKey();
+              if (key) {
+                var defaultPath = this.getLocalStorage(key);
+                if (defaultPath) {
+                  this.$location.path(defaultPath);
                 }
-            }
+              }
+            }*/
         };
         /**
          * Redraws the tree widget
