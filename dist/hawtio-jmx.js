@@ -2868,11 +2868,21 @@ var Jmx;
                     if (name && mbean) {
                         mbeanCounter++;
                         $scope.mbeans[name] = name;
-                        // we need to escape the mbean path for list
-                        var listKey = Core.escapeMBeanPath(mbean);
-                        //var listKey = encodeMBeanPath(mbean);
-                        jolokia.list(listKey, Core.onSuccess(function (meta) {
-                            var attributes = meta.attr;
+                        // use same logic as the JMX attributes page which works better than jolokia.list which has problems with
+                        // mbeans with special characters such as ? and query parameters such as Camel endpoint mbeans
+                        var asQuery = function (node) {
+                            var path = Core.escapeMBeanPath(node);
+                            var query = {
+                                type: "list",
+                                path: path,
+                                ignoreErrors: true
+                            };
+                            return query;
+                        };
+                        var infoQuery = asQuery(mbean);
+                        // must use post, so see further below where we pass in {method: "post"}
+                        jolokia.request(infoQuery, Core.onSuccess(function (meta) {
+                            var attributes = meta.value.attr;
                             if (attributes) {
                                 for (var key in attributes) {
                                     var value = attributes[key];
@@ -2925,7 +2935,9 @@ var Jmx;
                                     Core.$apply($scope);
                                 }
                             }
-                        }));
+                            // update the website
+                            Core.$apply($scope);
+                        }, { method: "post" }));
                     }
                 });
             }
@@ -2940,6 +2952,7 @@ var Jmx;
 var Jmx;
 (function (Jmx) {
     Jmx._module.controller("Jmx.ChartController", ["$scope", "$element", "$location", "workspace", "localStorage", "jolokiaUrl", "jolokiaParams", function ($scope, $element, $location, workspace, localStorage, jolokiaUrl, jolokiaParams) {
+        var log = Logger.get("JMX");
         $scope.metrics = [];
         $scope.updateRate = 1000; //parseInt(localStorage['updateRate']);
         $scope.context = null;
@@ -3028,12 +3041,23 @@ var Jmx;
             if (mbean) {
                 // TODO make generic as we can cache them; they rarely ever change
                 // lets get the attributes for this mbean
-                // we need to escape the mbean path for list
-                var listKey = Core.encodeMBeanPath(mbean);
-                //console.log("Looking up mbeankey: " + listKey);
-                var meta = $scope.jolokia.list(listKey);
+                // use same logic as the JMX attributes page which works better than jolokia.list which has problems with
+                // mbeans with special charachters such as ? and query parameters such as Camel endpoint mbeans
+                var asQuery = function (node) {
+                    // we need to escape the mbean path for list
+                    var path = Core.escapeMBeanPath(node);
+                    var query = {
+                        type: "list",
+                        path: path,
+                        ignoreErrors: true
+                    };
+                    return query;
+                };
+                var infoQuery = asQuery(mbean);
+                var meta = $scope.jolokia.request(infoQuery, { method: "post" });
                 if (meta) {
-                    var attributes = meta.attr;
+                    Core.defaultJolokiaErrorHandler(meta, {});
+                    var attributes = meta.value ? meta.value.attr : null;
                     if (attributes) {
                         var foundNames = [];
                         for (var key in attributes) {
@@ -3147,7 +3171,7 @@ var Jmx;
                         d3Selection.selectAll(".value").style("right", i === null ? null : context.size() - i + "px");
                     }
                     catch (error) {
-                        Jmx.log.info("error: ", error);
+                        log.info("error: ", error);
                     }
                 });
                 $scope.metrics.forEach(function (metric) {

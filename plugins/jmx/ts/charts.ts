@@ -5,6 +5,7 @@
 module Jmx {
   _module.controller("Jmx.ChartController", ["$scope", "$element", "$location", "workspace", "localStorage", "jolokiaUrl", "jolokiaParams", ($scope, $element, $location, workspace:Workspace, localStorage, jolokiaUrl, jolokiaParams) => {
 
+    var log:Logging.Logger = Logger.get("JMX");
 
     $scope.metrics = [];
     $scope.updateRate = 1000; //parseInt(localStorage['updateRate']);
@@ -116,12 +117,24 @@ module Jmx {
         // TODO make generic as we can cache them; they rarely ever change
         // lets get the attributes for this mbean
 
-        // we need to escape the mbean path for list
-        var listKey = Core.encodeMBeanPath(mbean);
-        //console.log("Looking up mbeankey: " + listKey);
-        var meta = $scope.jolokia.list(listKey);
+        // use same logic as the JMX attributes page which works better than jolokia.list which has problems with
+        // mbeans with special charachters such as ? and query parameters such as Camel endpoint mbeans
+        var asQuery = (node) => {
+          // we need to escape the mbean path for list
+          var path = Core.escapeMBeanPath(node);
+          var query = {
+            type: "list",
+            path: path,
+            ignoreErrors: true
+          };
+          return query;
+        };
+        var infoQuery = asQuery(mbean);
+
+        var meta = $scope.jolokia.request(infoQuery, {method: "post"});
         if (meta) {
-          var attributes = meta.attr;
+          Core.defaultJolokiaErrorHandler(meta, {});
+          var attributes = meta.value ? meta.value.attr : null;
           if (attributes) {
             var foundNames = [];
             for (var key in attributes) {
