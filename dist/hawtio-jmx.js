@@ -801,6 +801,7 @@ var Core;
                 var domainClass = Core.escapeDots(domainName);
                 var domain = domains[domainName];
                 for (var mbeanName in domain) {
+                    log.debug("JMX tree mbean name: " + mbeanName);
                     var entries = {};
                     var folder = this.folderGetOrElse(tree, domainName);
                     //if (!folder) continue;
@@ -816,7 +817,17 @@ var Core;
                     var typeName = null;
                     var serviceName = null;
                     items.forEach(function (item) {
-                        var kv = item.split('=');
+                        // do not use split('=') as it splits wrong when there is a space in the mbean name
+                        // var kv = item.split('=');
+                        var pos = item.indexOf('=');
+                        var kv = [];
+                        if (pos > 0) {
+                            kv[0] = item.substr(0, pos);
+                            kv[1] = item.substr(pos + 1);
+                        }
+                        else {
+                            kv[0] = item;
+                        }
                         var key = kv[0];
                         var value = kv[1] || key;
                         entries[key] = value;
