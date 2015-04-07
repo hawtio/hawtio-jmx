@@ -1551,6 +1551,12 @@ var Core;
         Workspace.prototype.isRoute = function () {
             return this.hasDomainAndProperties('org.apache.camel', { type: 'routes' });
         };
+        Workspace.prototype.isComponentsFolder = function () {
+            return this.selectionHasDomainAndLastFolderName('org.apache.camel', 'components');
+        };
+        Workspace.prototype.isComponent = function () {
+            return this.hasDomainAndProperties('org.apache.camel', { type: 'components' });
+        };
         Workspace.prototype.isOsgiFolder = function () {
             return this.hasDomainAndProperties('osgi.core');
         };

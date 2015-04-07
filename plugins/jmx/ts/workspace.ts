@@ -1007,6 +1007,12 @@ module Core {
     isRoute() {
       return this.hasDomainAndProperties('org.apache.camel', {type: 'routes'});
     }
+    isComponentsFolder() {
+      return this.selectionHasDomainAndLastFolderName('org.apache.camel', 'components');
+    }
+    isComponent() {
+      return this.hasDomainAndProperties('org.apache.camel', {type: 'components'});
+    }
 
     isOsgiFolder() {
       return this.hasDomainAndProperties('osgi.core');
