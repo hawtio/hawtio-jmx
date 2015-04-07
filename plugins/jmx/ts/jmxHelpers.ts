@@ -206,8 +206,10 @@ module Jmx {
       if (array) {
         for (var idx in array) {
           var fn = array[idx];
-          answer = fn(node);
-          if (answer) break;
+          if (fn) {
+            answer = fn(node);
+            if (answer) break;
+          }
         }
       }
     }
