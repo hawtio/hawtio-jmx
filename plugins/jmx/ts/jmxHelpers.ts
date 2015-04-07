@@ -204,8 +204,8 @@ module Jmx {
     if (jmxDomain) {
       var array = attributesToolBars[jmxDomain];
       if (array) {
-        for (var idx in array) {
-          var fn = array[idx];
+        for (var i = 0; i < array.length; i++) {
+          var fn = array[i];
           if (fn) {
             answer = fn(node);
             if (answer) break;
