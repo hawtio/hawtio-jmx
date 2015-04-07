@@ -156,6 +156,9 @@ span.org-apache-camel-endpoints span.dynatree-icon:before {
 span.org-apache-camel-endpoints-folder span.dynatree-icon:before {
     content: url("../img/icons/camel/endpoint_folder.png");
 }
+span.org-apache-camel-components-folder span.dynatree-icon:before {
+    content: url("../img/icons/camel/component_folder.png");
+}
 span.org-apache-camel-routes span.dynatree-icon:before {
     content: url("../img/icons/camel/camel_route.png");
 }
