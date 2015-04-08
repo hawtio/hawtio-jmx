@@ -546,6 +546,14 @@ module Jmx {
                 defaultDefs.push(e);
               })
 
+              // remove all non visible
+              defaultDefs = defaultDefs.remove(value => {
+                if (angular.isDefined(value.visible) && value.visible != null) {
+                  return !value.visible;
+                }
+                return false;
+              });
+
               $scope.gridOptions.columnDefs = defaultDefs;
               $scope.gridOptions.enableRowClickSelection = true;
             }
