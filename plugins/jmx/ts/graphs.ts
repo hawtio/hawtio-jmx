@@ -85,6 +85,7 @@ module Core {
               .data(nodes)
               .enter().append("g")
               .attr("class", "node")
+              .attr("fixed", true)
               .call(force.drag);
 
       node.append("image")
@@ -154,7 +155,7 @@ module Core {
   }
 
   // TODO Export as a service
-  export function dagreLayoutGraph(nodes, links, width, height, svgElement) {
+  export function dagreLayoutGraph(nodes, links, width, height, svgElement, allowDrag = false) {
     var nodePadding = 10;
     var transitions = [];
     var states = Core.createGraphStates(nodes, links, transitions);
@@ -351,39 +352,42 @@ module Core {
       }
     }
 
-    // Drag handlers
-    var nodeDrag = d3.behavior.drag()
-      // Set the right origin (based on the Dagre layout or the current position)
-            .origin(function (d) {
-              return d.pos ? {x: d.pos.x, y: d.pos.y} : {x: d.dagre.x, y: d.dagre.y};
-            })
-            .on('drag', function (d, i) {
-              var prevX = d.dagre.x,
-                      prevY = d.dagre.y;
+    // configure dragging if enabled
+    if (allowDrag) {
+      // Drag handlers
+      var nodeDrag = d3.behavior.drag()
+        // Set the right origin (based on the Dagre layout or the current position)
+        .origin(function (d) {
+          return d.pos ? {x: d.pos.x, y: d.pos.y} : {x: d.dagre.x, y: d.dagre.y};
+        })
+        .on('drag', function (d, i) {
+          var prevX = d.dagre.x,
+            prevY = d.dagre.y;
 
-              // The node must be inside the SVG area
-              d.dagre.x = Math.max(d.width / 2, Math.min(svgBBox.width - d.width / 2, d3.event.x));
-              d.dagre.y = Math.max(d.height / 2, Math.min(svgBBox.height - d.height / 2, d3.event.y));
-              d3.select(this).attr('transform', 'translate(' + d.dagre.x + ',' + d.dagre.y + ')');
+          // The node must be inside the SVG area
+          d.dagre.x = Math.max(d.width / 2, Math.min(svgBBox.width - d.width / 2, d3.event.x));
+          d.dagre.y = Math.max(d.height / 2, Math.min(svgBBox.height - d.height / 2, d3.event.y));
+          d3.select(this).attr('transform', 'translate(' + d.dagre.x + ',' + d.dagre.y + ')');
 
-              var dx = d.dagre.x - prevX,
-                      dy = d.dagre.y - prevY;
+          var dx = d.dagre.x - prevX,
+            dy = d.dagre.y - prevY;
 
-              // Edges position (inside SVG area)
-              d.edges.forEach(function (e) {
-                translateEdge(e, dx, dy);
-                d3.select('#' + e.dagre.id).attr('d', spline(e));
-              });
-            });
+          // Edges position (inside SVG area)
+          d.edges.forEach(function (e) {
+            translateEdge(e, dx, dy);
+            d3.select('#' + e.dagre.id).attr('d', spline(e));
+          });
+        });
 
-    var edgeDrag = d3.behavior.drag()
-            .on('drag', function (d, i) {
-              translateEdge(d, d3.event.dx, d3.event.dy);
-              d3.select(this).attr('d', spline(d));
-            });
+      var edgeDrag = d3.behavior.drag()
+        .on('drag', function (d, i) {
+          translateEdge(d, d3.event.dx, d3.event.dy);
+          d3.select(this).attr('d', spline(d));
+        });
 
-    nodes.call(nodeDrag);
-    edges.call(edgeDrag);
+      nodes.call(nodeDrag);
+      edges.call(edgeDrag);
+    }
 
     return states;
   }
