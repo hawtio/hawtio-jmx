@@ -3377,7 +3377,7 @@ var Core;
             link.attr("class", "link from");
             // end marker
             link.attr("marker-end", "url(#from)");
-            var node = svg.selectAll(".node").data(nodes).enter().append("g").attr("class", "node").attr("fixed", true).call(force.drag);
+            var node = svg.selectAll(".node").data(nodes).enter().append("g").attr("class", "node").call(force.drag);
             node.append("image").attr("xlink:href", function (d) {
                 return d.imageUrl;
             }).attr("x", -15).attr("y", -15).attr("width", 30).attr("height", 30);

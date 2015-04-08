@@ -85,7 +85,6 @@ module Core {
               .data(nodes)
               .enter().append("g")
               .attr("class", "node")
-              .attr("fixed", true)
               .call(force.drag);
 
       node.append("image")
