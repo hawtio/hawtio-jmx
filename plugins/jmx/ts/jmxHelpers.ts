@@ -80,23 +80,28 @@ module Jmx {
   export function getNavItems(builder, workspace, $templateCache, prefix:string = 'jmx'):Array<HawtioMainNav.NavItem> {
     var attributes = builder.id(prefix + '-attributes')
                        .title( () => '<i class="fa fa-list"></i> Attributes' )
+                       .tooltip( () => 'List the attributes on the MBean')
                        .href( () => '/jmx/attributes' + workspace.hash() )
                        .build();
     var operations = builder.id(prefix + '-operations')
                       .title( () => '<i class="fa fa-leaf"></i> Operations' )
+                      .tooltip( () => 'List the operations on the MBean')
                       .href( () => '/jmx/operations' + workspace.hash() )
                       .build();
     var chart = builder.id(prefix + '-chart')
                       .title( () => '<i class="fa fa-bar-chart"></i> Charts' )
+                      .tooltip( () => 'Real time chart of the attributes from the MBean')
                       .href( () => '/jmx/charts' + workspace.hash() )
                       .build();
     var editChart = builder.id(prefix + '-edit-chart')
                       .title( () => '<i class="fa fa-cog"></i> Edit Chart' )
+                      .tooltip( () => 'Edit the chart to choose which attributes to show from the MBean')
                       .href( () => '/jmx/chartEdit' + workspace.hash() )
                       .build();
 
     var addToDashboard = builder.id(prefix + '-add-dashboard')
                       .title( () => '<i class="fa fa-share"></i>' )
+                      .tooltip( () => 'Add current view to dashboard')
                       .attributes({
                         'class': 'pull-right'
                       })

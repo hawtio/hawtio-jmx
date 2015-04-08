@@ -316,11 +316,11 @@ var Jmx;
     Jmx.templatePath = 'plugins/jmx/html';
     function getNavItems(builder, workspace, $templateCache, prefix) {
         if (prefix === void 0) { prefix = 'jmx'; }
-        var attributes = builder.id(prefix + '-attributes').title(function () { return '<i class="fa fa-list"></i> Attributes'; }).href(function () { return '/jmx/attributes' + workspace.hash(); }).build();
-        var operations = builder.id(prefix + '-operations').title(function () { return '<i class="fa fa-leaf"></i> Operations'; }).href(function () { return '/jmx/operations' + workspace.hash(); }).build();
-        var chart = builder.id(prefix + '-chart').title(function () { return '<i class="fa fa-bar-chart"></i> Charts'; }).href(function () { return '/jmx/charts' + workspace.hash(); }).build();
-        var editChart = builder.id(prefix + '-edit-chart').title(function () { return '<i class="fa fa-cog"></i> Edit Chart'; }).href(function () { return '/jmx/chartEdit' + workspace.hash(); }).build();
-        var addToDashboard = builder.id(prefix + '-add-dashboard').title(function () { return '<i class="fa fa-share"></i>'; }).attributes({
+        var attributes = builder.id(prefix + '-attributes').title(function () { return '<i class="fa fa-list"></i> Attributes'; }).tooltip(function () { return 'List the attributes on the MBean'; }).href(function () { return '/jmx/attributes' + workspace.hash(); }).build();
+        var operations = builder.id(prefix + '-operations').title(function () { return '<i class="fa fa-leaf"></i> Operations'; }).tooltip(function () { return 'List the operations on the MBean'; }).href(function () { return '/jmx/operations' + workspace.hash(); }).build();
+        var chart = builder.id(prefix + '-chart').title(function () { return '<i class="fa fa-bar-chart"></i> Charts'; }).tooltip(function () { return 'Real time chart of the attributes from the MBean'; }).href(function () { return '/jmx/charts' + workspace.hash(); }).build();
+        var editChart = builder.id(prefix + '-edit-chart').title(function () { return '<i class="fa fa-cog"></i> Edit Chart'; }).tooltip(function () { return 'Edit the chart to choose which attributes to show from the MBean'; }).href(function () { return '/jmx/chartEdit' + workspace.hash(); }).build();
+        var addToDashboard = builder.id(prefix + '-add-dashboard').title(function () { return '<i class="fa fa-share"></i>'; }).tooltip(function () { return 'Add current view to dashboard'; }).attributes({
             'class': 'pull-right'
         }).show(function () {
             if (!HawtioCore.injector) {
