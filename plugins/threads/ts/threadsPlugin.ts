@@ -34,6 +34,7 @@ module Threads {
                 .href(() => '/threads')
                 .isValid(() => workspace.treeContainsDomainAndProperties(jmxDomain, { type: mbeanType }))
                 .title(() => 'Threads')
+                .tooltip(() => 'View information about the threads in the JVM')
                 .isSelected(() => workspace.isTopTabActive("threads"))
                 .tabs(toolbar)
                 .build();

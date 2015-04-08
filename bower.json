@@ -29,7 +29,7 @@
   "dependencies": {
     "hawtio-core": "~2.0.0",
     "hawtio-template-cache": "~2.0.3",
-    "hawtio-core-navigation": "~2.0.0",
+    "hawtio-core-navigation": "~2.0.40",
     "hawtio-utilities": "~2.0.0",
     "hawtio-forms": "~2.0.0",
     "hawtio-ui": "~2.0.5",
