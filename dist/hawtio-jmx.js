@@ -3434,8 +3434,9 @@ var Core;
     }
     Core.createGraphStates = createGraphStates;
     // TODO Export as a service
-    function dagreLayoutGraph(nodes, links, width, height, svgElement, allowDrag) {
+    function dagreLayoutGraph(nodes, links, width, height, svgElement, allowDrag, onClick) {
         if (allowDrag === void 0) { allowDrag = false; }
+        if (onClick === void 0) { onClick = null; }
         var nodePadding = 10;
         var transitions = [];
         var states = Core.createGraphStates(nodes, links, transitions);
@@ -3512,6 +3513,9 @@ var Core;
         }).attr("height", function (d) {
             return d.height;
         });
+        if (onClick != null) {
+            rects.on("click", onClick);
+        }
         images.attr("x", function (d) {
             return -(d.bbox.width) / 2;
         });
