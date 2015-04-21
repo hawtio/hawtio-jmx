@@ -1,7 +1,9 @@
+/// <reference path="../../includes.ts"/>
+/// <reference path="jvmPlugin.ts"/>
+
 /**
  * @module JVM
  */
-/// <reference path="jvmPlugin.ts"/>
 module JVM {
 
   interface ScopeSettings {

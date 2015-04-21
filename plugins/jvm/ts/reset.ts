@@ -1,8 +1,10 @@
+/// <reference path="../../includes.ts"/>
+/// <reference path="./jvmPlugin.ts"/>
+
 /**
  * @module JVM
  */
-/// <reference path="./jvmPlugin.ts"/>
- module JVM {
+module JVM {
   _module.controller("JVM.ResetController", ["$scope", "localStorage", ($scope, localStorage) => {
     $scope.doClearConnectSettings = () => {
       var doReset = () => {
@@ -16,4 +18,4 @@
     };
 
   }]);
- }
+}

@@ -1,3 +1,4 @@
+/// <reference path="../../includes.d.ts" />
 /// <reference path="jvmPlugin.d.ts" />
 /**
  * @module JVM

@@ -1,8 +1,9 @@
+/// <reference path="../../includes.ts"/>
+/// <reference path="../../jmx/ts/workspace.ts"/>
+
 /**
  * @module JVM
  */
-/// <reference path="../../includes.ts"/>
-/// <reference path="../../jmx/ts/workspace.ts"/>
 module JVM {
 
   export var rootPath = 'plugins/jvm';

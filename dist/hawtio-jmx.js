@@ -1582,11 +1582,11 @@ var Workspace = (function (_super) {
 })(Core.Workspace);
 ;
 
+/// <reference path="../../includes.ts"/>
+/// <reference path="../../jmx/ts/workspace.ts"/>
 /**
  * @module JVM
  */
-/// <reference path="../../includes.ts"/>
-/// <reference path="../../jmx/ts/workspace.ts"/>
 var JVM;
 (function (JVM) {
     JVM.rootPath = 'plugins/jvm';
@@ -4320,11 +4320,12 @@ var Jmx;
     }]);
 })(Jmx || (Jmx = {}));
 
+/// <reference path="../../includes.ts"/>
+/// <reference path="jvmHelpers.ts"/>
 /**
  * @module JVM
  * @main JVM
  */
-/// <reference path="jvmHelpers.ts"/>
 var JVM;
 (function (JVM) {
     JVM.windowJolokia = undefined;
@@ -4366,16 +4367,17 @@ var JVM;
         var discover = builder.id('jvm-discover').href(function () { return '/jvm/discover'; }).title(function () { return 'Discover'; }).tooltip(function () { return 'To discover JVMs in the network that has Jolokia agent running'; }).show(function () { return JVM.hasDiscoveryMBean(workspace); }).build();
         var tab = builder.id('jvm').href(function () { return '/jvm'; }).title(function () { return 'Connect'; }).isValid(function () { return ConnectOptions == null || ConnectOptions.name == null; }).tabs(remote, local, discover).build();
         nav.add(tab);
-        helpRegistry.addUserDoc('jvm', 'app/jvm/doc/help.md');
-        preferencesRegistry.addTab("Connect", 'app/jvm/html/reset.html');
+        helpRegistry.addUserDoc('jvm', 'plugins/jvm/doc/help.md');
+        preferencesRegistry.addTab("Connect", 'plugins/jvm/html/reset.html');
     }]);
     hawtioPluginLoader.addModule(JVM.pluginName);
 })(JVM || (JVM = {}));
 
+/// <reference path="../../includes.ts"/>
+/// <reference path="jvmPlugin.ts"/>
 /**
  * @module JVM
  */
-/// <reference path="jvmPlugin.ts"/>
 var JVM;
 (function (JVM) {
     JVM.ConnectController = JVM._module.controller("JVM.ConnectController", ["$scope", "$location", "localStorage", "workspace", "$http", function ($scope, $location, localStorage, workspace, $http) {
@@ -4533,11 +4535,11 @@ var JVM;
     }]);
 })(JVM || (JVM = {}));
 
+/// <reference path="../../includes.ts"/>
+/// <reference path="jvmPlugin.ts"/>
 /**
  * @module JVM
  */
-/// <reference path="../../includes.ts"/>
-/// <reference path="jvmPlugin.ts"/>
 var JVM;
 (function (JVM) {
     JVM._module.controller("JVM.DiscoveryController", ["$scope", "localStorage", "jolokia", function ($scope, localStorage, jolokia) {
@@ -4625,11 +4627,11 @@ var JVM;
     }]);
 })(JVM || (JVM = {}));
 
+/// <reference path="../../includes.ts"/>
+/// <reference path="jvmPlugin.ts"/>
 /**
  * @module JVM
  */
-/// <reference path="../../includes.ts"/>
-/// <reference path="jvmPlugin.ts"/>
 var JVM;
 (function (JVM) {
     var urlCandidates = ['/hawtio/jolokia', '/jolokia', 'jolokia'];
@@ -4850,10 +4852,10 @@ var JVM;
     }]);
 })(JVM || (JVM = {}));
 
+/// <reference path="jvmPlugin.ts"/>
 /**
  * @module JVM
  */
-/// <reference path="jvmPlugin.ts"/>
 var JVM;
 (function (JVM) {
     JVM._module.controller("JVM.JVMsController", ["$scope", "$window", "$location", "localStorage", "workspace", "jolokia", "mbeanName", function ($scope, $window, $location, localStorage, workspace, jolokia, mbeanName) {
@@ -4935,10 +4937,11 @@ var JVM;
     }]);
 })(JVM || (JVM = {}));
 
+/// <reference path="../../includes.ts"/>
+/// <reference path="./jvmPlugin.ts"/>
 /**
  * @module JVM
  */
-/// <reference path="./jvmPlugin.ts"/>
 var JVM;
 (function (JVM) {
     JVM._module.controller("JVM.NavController", ["$scope", "$location", "workspace", function ($scope, $location, workspace) {
@@ -4946,10 +4949,11 @@ var JVM;
     }]);
 })(JVM || (JVM = {}));
 
+/// <reference path="../../includes.ts"/>
+/// <reference path="./jvmPlugin.ts"/>
 /**
  * @module JVM
  */
-/// <reference path="./jvmPlugin.ts"/>
 var JVM;
 (function (JVM) {
     JVM._module.controller("JVM.ResetController", ["$scope", "localStorage", function ($scope, localStorage) {

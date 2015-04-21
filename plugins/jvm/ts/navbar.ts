@@ -1,7 +1,9 @@
+/// <reference path="../../includes.ts"/>
+/// <reference path="./jvmPlugin.ts"/>
+
 /**
  * @module JVM
  */
-/// <reference path="./jvmPlugin.ts"/>
 module JVM {
 
   _module.controller("JVM.NavController", ["$scope", "$location", "workspace", ($scope, $location, workspace) => {

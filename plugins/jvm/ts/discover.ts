@@ -1,8 +1,9 @@
+/// <reference path="../../includes.ts"/>
+/// <reference path="jvmPlugin.ts"/>
+
 /**
  * @module JVM
  */
-/// <reference path="../../includes.ts"/>
-/// <reference path="jvmPlugin.ts"/>
 module JVM {
 
   _module.controller("JVM.DiscoveryController", ["$scope", "localStorage", "jolokia", ($scope, localStorage, jolokia) => {

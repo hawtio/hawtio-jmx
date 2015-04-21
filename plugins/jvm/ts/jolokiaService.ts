@@ -1,8 +1,9 @@
+/// <reference path="../../includes.ts"/>
+/// <reference path="jvmPlugin.ts"/>
+
 /**
  * @module JVM
  */
-/// <reference path="../../includes.ts"/>
-/// <reference path="jvmPlugin.ts"/>
 module JVM {
 
   var urlCandidates = ['/hawtio/jolokia', '/jolokia', 'jolokia'];

@@ -1,7 +1,8 @@
+/// <reference path="jvmPlugin.ts"/>
+
 /**
  * @module JVM
  */
-/// <reference path="jvmPlugin.ts"/>
 module JVM {
 
   _module.controller("JVM.JVMsController", ["$scope", "$window", "$location", "localStorage", "workspace", "jolokia", "mbeanName", ($scope, $window, $location, localStorage:WindowLocalStorage, workspace, jolokia, mbeanName) => {

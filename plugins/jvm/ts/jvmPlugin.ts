@@ -1,9 +1,10 @@
+/// <reference path="../../includes.ts"/>
+/// <reference path="jvmHelpers.ts"/>
+
 /**
  * @module JVM
  * @main JVM
  */
-/// <reference path="jvmHelpers.ts"/>
-
 module JVM {
 
   export var windowJolokia:Jolokia.IJolokia = undefined;
@@ -74,8 +75,8 @@ module JVM {
                   .tabs(remote, local, discover)
                   .build();
     nav.add(tab);
-    helpRegistry.addUserDoc('jvm', 'app/jvm/doc/help.md');
-    preferencesRegistry.addTab("Connect", 'app/jvm/html/reset.html');
+    helpRegistry.addUserDoc('jvm', 'plugins/jvm/doc/help.md');
+    preferencesRegistry.addTab("Connect", 'plugins/jvm/html/reset.html');
   }]);
 
   hawtioPluginLoader.addModule(pluginName);
