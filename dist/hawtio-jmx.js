@@ -4638,7 +4638,35 @@ var JVM;
     var discoveredUrl = null;
     hawtioPluginLoader.registerPreBootstrapTask(function (next) {
         var uri = new URI();
-        var connectionName = uri.query(true)['con'];
+        var query = uri.query(true);
+        JVM.log.debug("query: ", query);
+        var jolokiaUrl = query['jolokiaUrl'];
+        if (jolokiaUrl) {
+            delete query['sub-tab'];
+            delete query['main-tab'];
+            jolokiaUrl = jolokiaUrl.unescapeURL();
+            var jolokiaURI = new URI(jolokiaUrl);
+            var name = query['title'] || 'Unknown Connection';
+            var options = Core.createConnectOptions({
+                name: name,
+                scheme: jolokiaURI.protocol(),
+                host: jolokiaURI.hostname(),
+                port: Core.parseIntValue(jolokiaURI.port()),
+                path: Core.trimLeading(jolokiaURI.pathname(), '/'),
+                useProxy: false
+            });
+            _.merge(options, jolokiaURI.query(true));
+            _.assign(options, query);
+            JVM.log.debug("options: ", options);
+            var connectionMap = Core.loadConnectionMap();
+            connectionMap[name] = options;
+            Core.saveConnectionMap(connectionMap);
+            uri.query({
+                con: name
+            });
+            window.location.href = uri.toString();
+        }
+        var connectionName = query['con'];
         if (connectionName) {
             JVM.log.debug("Not discovering jolokia");
             // a connection name is set, no need to discover a jolokia instance
