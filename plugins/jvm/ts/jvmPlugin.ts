@@ -77,6 +77,7 @@ module JVM {
     nav.add(tab);
     helpRegistry.addUserDoc('jvm', 'plugins/jvm/doc/help.md');
     preferencesRegistry.addTab("Connect", 'plugins/jvm/html/reset.html');
+    preferencesRegistry.addTab("Jolokia", "plugins/jvm/html/jolokiaPreferences.html");
   }]);
 
   hawtioPluginLoader.addModule(pluginName);
