@@ -21,12 +21,14 @@ module JVM {
       jolokiaUrl = jolokiaUrl.unescapeURL();
       var jolokiaURI = new URI(jolokiaUrl);
       var name = query['title'] || 'Unknown Connection';
+      var token = query['token'];
       var options = Core.createConnectOptions({
         name: name,
         scheme: jolokiaURI.protocol(),
         host: jolokiaURI.hostname(),
         port: Core.parseIntValue(jolokiaURI.port()),
         path: Core.trimLeading(jolokiaURI.pathname(), '/'),
+        token: token,
         useProxy: false
       });
       _.merge(options, jolokiaURI.query(true));
@@ -193,41 +195,22 @@ module JVM {
         if (angular.isArray(password)) password = password[0];
       }
 
-      if (username && password) {
+      if (username && password && !connectionOptions.token) {
         userDetails.username = username;
         userDetails.password = password;
-
+        log.debug("Setting authorization header to username/password");
         $.ajaxSetup({
           beforeSend: (xhr) => {
             xhr.setRequestHeader('Authorization', Core.getBasicAuthHeader(<string>username, <string>password));
           }
         });
-
-        /*
-        var loginUrl = jolokiaUrl.replace("jolokia", "auth/login/");
-        $.ajax(loginUrl, {
-          type: "POST",
-          success: (response) => {
-            if (response['credentials'] || response['principals']) {
-              userDetails.loginDetails = {
-                'credentials': response['credentials'],
-                'principals': response['principals']
-              };
-            } else {
-              var doc = Core.pathGet(response, ['children', 0, 'innerHTML']);
-                // hmm, maybe we got an XML document, let's log it just in case...
-                if (doc) {
-                  Core.log.debug("Response is a document (ignoring this): ", doc);
-                }
-            }
-            Core.executePostLoginTasks();
-          },
-          error: (xhr, textStatus, error) => {
-            // silently ignore, we could be using the proxy
-            Core.executePostLoginTasks();
+      } else if (connectionOptions.token) {
+        log.debug("Setting authorization header to token");
+        $.ajaxSetup({
+          beforeSend: (xhr) => {
+            xhr.setRequestHeader('Authorization', 'Bearer ' + connectionOptions.token);
           }
         });
-        */
       }
       jolokiaParams['ajaxError'] = (xhr, textStatus, error) => {
         if (xhr.status === 401 || xhr.status === 403) {
