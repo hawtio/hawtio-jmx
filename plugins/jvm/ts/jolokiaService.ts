@@ -42,7 +42,7 @@ module JVM {
       uri.hash("").query({
         con: name
       });
-      window.location.href = uri.toString();
+      window.location.replace(uri.toString());
     }
 
     var connectionName = query['con'];
