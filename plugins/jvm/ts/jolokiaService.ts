@@ -21,23 +21,25 @@ module JVM {
       jolokiaUrl = jolokiaUrl.unescapeURL();
       var jolokiaURI = new URI(jolokiaUrl);
       var name = query['title'] || 'Unknown Connection';
-      var token = query['token'];
+      var token = query['token'] || Core.trimLeading(uri.hash(), '#');
       var options = Core.createConnectOptions({
         name: name,
         scheme: jolokiaURI.protocol(),
         host: jolokiaURI.hostname(),
         port: Core.parseIntValue(jolokiaURI.port()),
         path: Core.trimLeading(jolokiaURI.pathname(), '/'),
-        token: token,
         useProxy: false
       });
+      if (!Core.isBlank(token)) {
+        options['token'] = token;
+      }
       _.merge(options, jolokiaURI.query(true));
       _.assign(options, query);
       log.debug("options: ", options);
       var connectionMap = Core.loadConnectionMap();
       connectionMap[name] = options;
       Core.saveConnectionMap(connectionMap);
-      uri.query({
+      uri.hash("").query({
         con: name
       });
       window.location.href = uri.toString();
