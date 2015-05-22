@@ -144,7 +144,7 @@ span.org-apache-camel-context-folder span.dynatree-icon:before {
     background-size: 18px 18px;
     background-position: center;
     background-repeat: no-repeat;
-    content: "";
+    content: "" !important;
 }
 
 span.org-apache-camel-context span.dynatree-icon:before {
@@ -200,7 +200,7 @@ span.org-apache-activemq-Broker span.dynatree-icon:before {
     background-size: 18px 18px;
     background-position: center;
     background-repeat: no-repeat;
-    content: "";
+    content: "" !important;
 }
 
 span.org-apache-activemq a.dynatree-title {
