@@ -25,11 +25,7 @@ module Jmx {
       properties: {}
       //description: $scope.objectName + "::" + $scope.item.name
     };
-    var uri:any = new URI(jolokiaUrl);
-    uri.segment('exec')
-      .segment(workspace.getSelectedMBeanName())
-      .segment($scope.item.name);
-    $scope.jolokiaUrl = uri.toString();
+    $scope.jolokiaUrl = getUrlForThing(jolokiaUrl, 'exec', workspace.getSelectedMBeanName(), $scope.item.name);
 
     $scope.item.args.forEach((arg) => {
       var property:any = {

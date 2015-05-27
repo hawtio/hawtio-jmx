@@ -77,6 +77,14 @@ module Jmx {
   export var currentProcessId = '';
   export var templatePath = 'plugins/jmx/html';
 
+  export function getUrlForThing(jolokiaUrl, action, mbean, name) {
+    var uri:any = new URI(jolokiaUrl);
+    uri.segment(action)
+      .segment(mbean)
+      .segment(name);
+    return uri.toString();
+  }
+
   export function getNavItems(builder, workspace, $templateCache, prefix:string = 'jmx'):Array<HawtioMainNav.NavItem> {
     var attributes = builder.id(prefix + '-attributes')
                        .title( () => '<i class="fa fa-list"></i> Attributes' )

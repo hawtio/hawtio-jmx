@@ -26,11 +26,12 @@ module Jmx {
     }
   ];
 
-  export var AttributesController = _module.controller("Jmx.AttributesController", ["$scope", "$element", "$location", "workspace", "jolokia", "jmxWidgets", "jmxWidgetTypes", "$templateCache", "localStorage", "$browser", "HawtioDashboard", ($scope,
+  export var AttributesController = _module.controller("Jmx.AttributesController", ["$scope", "$element", "$location", "workspace", "jolokia", "jolokiaUrl", "jmxWidgets", "jmxWidgetTypes", "$templateCache", "localStorage", "$browser", "HawtioDashboard", ($scope,
                                        $element,
                                        $location,
                                        workspace:Workspace,
                                        jolokia,
+                                       jolokiaUrl,
                                        jmxWidgets,
                                        jmxWidgetTypes,
                                        $templateCache,
@@ -60,30 +61,31 @@ module Jmx {
     });
 
     var attributeSchemaBasic = {
+      style: HawtioForms.FormStyle.STANDARD,
+      mode: HawtioForms.FormMode.VIEW,
+      hideLegend: true,
       properties: {
         'key': {
-          description: 'Key',
+          label: 'Key',
           tooltip: 'Attribute key',
-          type: 'string',
-          readOnly: 'true'
+          type: 'static'
         },
-        'description': {
-          description: 'Description',
-          tooltip: 'Attribute description',
-          type: 'string',
-          formTemplate: "<textarea class='input-xlarge' rows='2' readonly='true'></textarea>"
+        'attrDesc': {
+          label: 'Description',
+          type: 'static'
         },
         'type': {
-          description: 'Type',
+          label: 'Type',
           tooltip: 'Attribute type',
-          type: 'string',
-          readOnly: 'true'
+          type: 'static'
         },
         'jolokia': {
-          description: 'Jolokia URL',
+          label: 'Jolokia URL',
           tooltip: 'Jolokia REST URL',
           type: 'string',
-          readOnly: 'true'
+          'input-attributes': {
+            readonly: true
+          }
         }
       }
     };
@@ -149,7 +151,7 @@ module Jmx {
     }
 
     $scope.onUpdateAttribute = () => {
-      var value = $scope.entity["attrValueEdit"];
+      var value = $scope.entity["value"];
       var key = $scope.entity["key"];
 
       // clear entity
@@ -172,83 +174,15 @@ module Jmx {
       if (!row.summary) {
         return;
       }
-      // create entity and populate it with data from the selected row
-      $scope.entity = {};
-      $scope.entity["key"] = row.key;
-      $scope.entity["description"] = row.attrDesc;
-      $scope.entity["type"] = row.type;
-
-      var url = $location.protocol() + "://" + $location.host() + ":" + $location.port() + $browser.baseHref();
-      $scope.entity["jolokia"] = url + localStorage["url"] + "/read/" + workspace.getSelectedMBeanName() + "/" + $scope.entity["key"] ;
-      $scope.entity["rw"] = row.rw;
+      $scope.entity = _.cloneDeep(row);
+      $scope.entity["jolokia"] = getUrlForThing(jolokiaUrl, "read", workspace.getSelectedMBeanName(), $scope.entity["key"]);
       var type = asJsonSchemaType(row.type, row.key);
       var readOnly = !row.rw;
 
-      // calculate a textare with X number of rows that usually fit the value to display
-      var len = row.summary.length;
-      var rows = (len / 40) + 1;
-      if (rows > 10) {
-        // cap at most 10 rows to not make the dialog too large
-        rows = 10;
+      var schema:any = $scope.attributeSchema = _.cloneDeep(attributeSchemaBasic);
+      schema.properties.value = {
+        formTemplate: '<div class="form-group"><label class="control-label">Value</label><div hawtio-editor={{model}}></div></div>'
       }
-
-      if (readOnly) {
-        // if the value is empty its a &nbsp; as we need this for the table to allow us to click on the empty row
-        if (row.summary === '&nbsp;') {
-          $scope.entity["attrValueView"] = '';
-        } else {
-          $scope.entity["attrValueView"] = row.summary;
-        }
-
-        // clone from the basic schema to the new schema we create on-the-fly
-        // this is needed as the dialog have problems if reusing the schema, and changing the schema afterwards
-        // so its safer to create a new schema according to our needs
-        $scope.attributeSchemaView = {};
-        for (var i in attributeSchemaBasic) {
-          $scope.attributeSchemaView[i] = attributeSchemaBasic[i];
-        }
-
-        // and add the new attrValue which is dynamic computed
-        $scope.attributeSchemaView.properties.attrValueView = {
-          description: 'Value',
-          label: "Value",
-          tooltip: 'Attribute value',
-          type: 'string',
-          formTemplate: "<textarea class='input-xlarge' rows='" + rows + "' readonly='true'></textarea>"
-        }
-        // just to be safe, then delete not needed part of the schema
-        if ($scope.attributeSchemaView) {
-          delete $scope.attributeSchemaView.properties.attrValueEdit;
-        }
-      } else {
-        // if the value is empty its a &nbsp; as we need this for the table to allow us to click on the empty row
-        if (row.summary === '&nbsp;') {
-          $scope.entity["attrValueEdit"] = '';
-        } else {
-          $scope.entity["attrValueEdit"] = row.summary;
-        }
-
-        // clone from the basic schema to the new schema we create on-the-fly
-        // this is needed as the dialog have problems if reusing the schema, and changing the schema afterwards
-        // so its safer to create a new schema according to our needs
-        $scope.attributeSchemaEdit = {};
-        for (var i in attributeSchemaBasic) {
-          $scope.attributeSchemaEdit[i] = attributeSchemaBasic[i];
-        }
-        // and add the new attrValue which is dynamic computed
-        $scope.attributeSchemaEdit.properties.attrValueEdit = {
-          description: 'Value',
-          label: "Value",
-          tooltip: 'Attribute value',
-          type: 'string',
-          formTemplate: "<textarea class='input-xlarge' rows='" + rows + "'></textarea>"
-        }
-        // just to be safe, then delete not needed part of the schema
-        if ($scope.attributeSchemaEdit) {
-          delete $scope.attributeSchemaEdit.properties.attrValueView;
-        }
-      }
-
       $scope.showAttributeDialog = true;
     }
 
