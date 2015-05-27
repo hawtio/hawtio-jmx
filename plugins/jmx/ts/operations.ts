@@ -1,13 +1,14 @@
+/// <reference path="jmxPlugin.ts"/>
 /**
 * @module Jmx
 */
-/// <reference path="jmxPlugin.ts"/>
 module Jmx {
 
   // IOperationControllerScope
-  _module.controller("Jmx.OperationController", ["$scope", "workspace", "jolokia", "$timeout", "$location", "localStorage", "$browser", ($scope,
+  _module.controller("Jmx.OperationController", ["$scope", "workspace", "jolokia", "jolokiaUrl", "$timeout", "$location", "localStorage", "$browser", ($scope,
                                       workspace:Workspace,
                                       jolokia,
+                                      jolokiaUrl:string,
                                       $timeout,
                                       $location,
                                       localStorage,
@@ -20,44 +21,41 @@ module Jmx {
     $scope.mode = "text";
     $scope.entity = {};
     $scope.formConfig = {
-      properties: {},
-      description: $scope.objectName + "::" + $scope.item.name
+      hideLegend: true,
+      properties: {}
+      //description: $scope.objectName + "::" + $scope.item.name
     };
-
-    var url = $location.protocol() + "://" + $location.host() + ":" + $location.port() + $browser.baseHref();
-    $scope.jolokiaUrl = url + localStorage["url"] + "/exec/" + workspace.getSelectedMBeanName() + "/" + $scope.item.name;
+    var uri:any = new URI(jolokiaUrl);
+    uri.segment('exec')
+      .segment(workspace.getSelectedMBeanName())
+      .segment($scope.item.name);
+    $scope.jolokiaUrl = uri.toString();
 
     $scope.item.args.forEach((arg) => {
-      $scope.formConfig.properties[arg.name] = {
+      var property:any = {
         type: arg.type,
         tooltip: arg.desc,
-        help: "Type: " + arg.type
+        description: "Type: " + arg.type
       }
+      if (arg.type.toLowerCase() === 'java.util.list' ||
+          arg.type.toLowerCase() === '[j') {
+        property.type = 'array';
+        property.items = { type: 'string' };
+      }
+      if (arg.type.toLowerCase() === 'java.util.map') {
+        property.type = 'map';
+        property.items = {
+          key: { type: 'string' },
+          value: { type: 'string' }
+        }
+      }
+      $scope.formConfig.properties[arg.name] = property;
     });
+    log.debug("Form config: ", $scope.formConfig);
 
     $timeout(() => {
       $("html, body").animate({ scrollTop: 0 }, "medium");
     }, 250);
-
-    var sanitize = (args) => {
-      if (args) {
-        args.forEach( function (arg) {
-          switch (arg.type) {
-            case "int":
-            case "long":
-              arg.formType = "number";
-              break;
-            default:
-              arg.formType = "text";
-          }
-        });
-      }
-
-      return args;
-    };
-
-    $scope.args = sanitize($scope.item.args);
-
 
     $scope.dump = (data) => {
       console.log(data);
@@ -95,8 +93,9 @@ module Jmx {
       Core.$apply($scope);
     };
 
-    $scope.onSubmit = (json, form) => {
-      log.debug("onSubmit: json:", json, " form: ", form);
+    $scope.onSubmit = () => {
+      var json = $scope.entity;
+      log.debug("onSubmit: json:", json);
       log.debug("$scope.item.args: ", $scope.item.args);
       angular.forEach(json, (value, key) => {
         $scope.item.args.find((arg) => {
@@ -157,6 +156,7 @@ module Jmx {
                                        rbacACLMBean:ng.IPromise<string>,
                                        $templateCache) => {
 
+    $scope.fetched = false;
     $scope.operations = {};
     $scope.objectName = '';
     $scope.methodFilter = '';
@@ -293,6 +293,7 @@ module Jmx {
     }
 
     function render(response) {
+      $scope.fetched = true;
       var ops = response.value.op;
       var answer = {};
 

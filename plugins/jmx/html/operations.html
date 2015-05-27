@@ -1,109 +1,131 @@
-<div  id="threadForm" ng-controller="Jmx.OperationsController">
-
-  <div class="row" ng-show="isOperationsEmpty()">
-    The selected MBean has no JMX operations.
-  </div>
-
-  <div class="row" ng-hide="isOperationsEmpty() || showInvoke">
-    <div class="pull-right">
-      <hawtio-filter ng-model="methodFilter" placeholder="Filter..." save-as="{{objectName}}-text-filter"></hawtio-filter>
-    </div>
-  </div>
   <script type="text/ng-template" id="operationTemplate">
     <div>
       <div ng-controller="Jmx.OperationController">
-
         <div ng-show="operationResult!=''">
           <div class="row">
+            <h3 ng-bind="item.name"></h3>
+            <div hawtio-editor="operationResult" mode="mode"></div>
+            <p></p>
             <div class="control-group pull-right">
               <div class="controls">
+                <button class="btn cancel"
+                        title="Back to operation list"
+                        ng-click="close()">
+                        <i class="fa fa-list"></i>
+                </button>
                 <button class="btn"
                         zero-clipboard
                         data-clipboard-text="{{operationResult}}"
                         title="Copy value to clipboard">
                   <i class="fa fa-copy"></i>
                 </button>
-                <button class="btn cancel"
-                        ng-click="close()">
-                  <i class="fa fa-remove"></i> Close
-                </button>
                 <button class="btn"
+                        title="Back to operation"
                         ng-click="ok()">
-                  <i class="fa fa-ok"></i> Back
+                  <i class="fa fa-check"></i> Invoke Again
                 </button>
               </div>
             </div>
-          </div>
-          <div class="row">
-            <div hawtio-editor="operationResult" mode="mode"></div>
           </div>
         </div>
         <div ng-show="operationResult==''">
           <div class="row">
-            <div class="control-group pull-right">
-              <div class="controls">
-                <button class="btn"
-                        ng-click="reset()"
-                        ng-show="args">
-                  <i class="fa fa-undo"></i> Reset
-                </button>
-                <button class="btn cancel"
-                        ng-click="close()">
-                  <i class="fa fa-remove"></i> Close
-                </button>
-                <button class="btn btn-success execute"
-                        hawtio-submit="entryForm">
-                <i class="{{executeIcon}}"></i> Execute
-                </button>
+            <h3 ng-bind="item.name"></h3>
+            <div ng-hide="item.args.length">
+              This JMX operation requires no arguments.  Click the 'Execute' button to invoke the operation.
+            </div>
+            <div ng-show="item.args.length">
+              This JMX operation requires some parameters.  Fill in the fields below as necessary and click the 'Execute' button to invoke the operation.
+            </div>
+            <p></p>
+            <div ng-show="item.args.length" hawtio-form-2="formConfig"
+              entity="entity"
+              name="entryForm"></div>
+            <div class="row">
+              <div class="control-group pull-right">
+                <div class="controls">
+                  <button class="btn cancel"
+                    title="Back to list"
+                    ng-click="close()">
+                    <i class="fa fa-list"></i>
+                  </button>
+                  <button class="btn"
+                    title="Clear form"
+                    ng-click="reset()"
+                    ng-show="item.args.length">
+                    <i class="fa fa-undo"></i>
+                  </button>
+                  <button class="btn btn-success execute"
+                    ng-click="onSubmit()">
+                    <i class="{{executeIcon}}"></i> Execute
+                  </button>
+                </div>
               </div>
             </div>
-            <div simple-form data="formConfig"
-                 entity="entity"
-                 name="entryForm"></div>
           </div>
         </div>
         <div class="row">
-          <i><label for="jolokiaUrl">Jolokia REST Url:</label></i>
-          <div class="pull-right">
-            <input type="text" name="jolokiaUrl" id="jolokiaUrl" value="{{jolokiaUrl}}" style="width: 60em;" readonly/>
-              <span style="vertical-align: super;">
-                <button class="btn"
-                zero-clipboard
-                data-clipboard-text="{{jolokiaUrl}}"
-                title="Copy Jolokia REST Url to clipboard">
-                <i class="fa fa-copy"></i>
-                </button>
-              </span>
+          <div class="expandable closed">
+            <div class="title">
+              <i class="expandable-indicator"></i> Jolokia REST URL
+            </div>
+            <div class="expandable-body well">
+              <div class="input-group">
+                <span class="input-group-addon" zero-clipboard
+                    data-clipboard-text="{{jolokiaUrl}}"
+                    title="Copy Jolokia REST Url to clipboard">
+                    <i class="fa fa-copy"></i>
+                </span>
+                <input class="form-control" type="text" name="jolokiaUrl" id="jolokiaUrl" value="{{jolokiaUrl}}" readonly>
+              </div>
+            </div>
           </div>
         </div>
       </div>
     </div>
   </script>
 
-  <div ng-show="showInvoke">
-    <div compile="template"></div>
-  </div>
+<div id="threadForm" ng-controller="Jmx.OperationsController">
+  <div ng-show="fetched">
+    <h2 ng-bind="objectName"></h2>
+    <div class="row" ng-hide="isOperationsEmpty() || showInvoke">
+      This MBean supports the following JMX operations.  Click an item in the list to invoke that operation.
+    </div>
+    <div class="row" ng-show="isOperationsEmpty()">
+      This MBean has no JMX operations.
+    </div>
+    <hr>
+    <div class="row" ng-hide="isOperationsEmpty() || showInvoke">
+      <div class="pull-right">
+        <hawtio-filter ng-model="methodFilter" placeholder="Filter..." save-as="{{objectName}}-text-filter"></hawtio-filter>
+      </div>
+    </div>
 
-  <ul ng-hide="showInvoke" class="zebra-list" ng-hide="isOperationsEmpty()">
-    <li class="operation-row"
-        ng-repeat="operation in operations"
-        ng-show="doFilter(operation)"
-        ng-click="invokeOp(operation)"
-        ng-class="getClass(operation)"
-        title="Click to invoke {{operation.name}}"
-        data-placement="bottom">
-      <i class="fa fa-cog"
-         ng-class="getClass(operation)"></i>
-      <span>{{operation.name}}</span>
-      <span class="operation-actions">
-        <button class="btn"
-                zero-clipboard
-                data-clipboard-text="{{operation.name}}"
-                title="Copy method name to clipboard">
-          <i class="fa fa-copy"></i>
-        </button>
-      </span>
-    </li>
-  </ul>
+    <div ng-show="showInvoke">
+      <div compile="template"></div>
+    </div>
+
+    <ul ng-hide="showInvoke" class="zebra-list" ng-hide="isOperationsEmpty()">
+      <li class="operation-row"
+          ng-repeat="operation in operations"
+          ng-show="doFilter(operation)"
+          ng-click="invokeOp(operation)"
+          ng-class="getClass(operation)"
+          title="Click to invoke {{operation.name}}"
+          data-placement="bottom">
+        <i class="fa fa-cog"
+           ng-class="getClass(operation)"></i>
+        <span>{{operation.name}}</span>
+        <span class="operation-actions">
+          <button class="btn"
+                  zero-clipboard
+                  data-clipboard-text="{{operation.name}}"
+                  title="Copy method name to clipboard">
+            <i class="fa fa-copy"></i>
+          </button>
+        </span>
+      </li>
+    </ul>
+  </div>
 
 </div>

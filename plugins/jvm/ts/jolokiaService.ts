@@ -136,10 +136,25 @@ module JVM {
 
   // the jolokia URL we're connected to, could probably be a constant
   _module.factory('jolokiaUrl', ['ConnectOptions', (ConnectOptions) => {
+    var answer = undefined;
     if (!ConnectOptions || !ConnectOptions.name) {
-      return discoveredUrl;
+      answer = discoveredUrl;
+    } else {
+      answer = Core.createServerConnectionUrl(ConnectOptions);
     }
-    return Core.createServerConnectionUrl(ConnectOptions);
+    // build full URL
+    var windowURI = new URI();
+    var jolokiaURI = new URI(answer);
+    if (!jolokiaURI.protocol()) {
+      jolokiaURI.protocol(windowURI.protocol());
+    }
+    if (!jolokiaURI.hostname()) {
+      jolokiaURI.host(windowURI.hostname());
+    }
+    if (!jolokiaURI.port()) {
+      jolokiaURI.port(windowURI.port());
+    }
+    return jolokiaURI.toString();
   }]);
 
   // holds the status returned from the last jolokia call (?)

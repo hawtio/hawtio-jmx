@@ -60,12 +60,6 @@ module Jmx {
 
   _module.constant('layoutTree', 'plugins/jmx/html/layoutTree.html');
 
-  // the jolokia URL we're connected to, could probably be a constant
-  _module.factory('jolokiaUrl', () => {
-    // TODO
-    return '/jolokia';
-  });
-
   // holds the status returned from the last jolokia call (?)
   _module.factory('jolokiaStatus', () => {
     return {
