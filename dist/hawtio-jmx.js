@@ -4674,10 +4674,10 @@ var JVM;
                 if (jqXHR.status === 200) {
                     try {
                         var resp = angular.fromJson(data);
-                        JVM.log.debug("Got response: ", resp);
+                        //log.debug("Got response: ", resp);
                         if ('value' in resp && 'agent' in resp.value) {
                             discoveredUrl = url;
-                            JVM.log.debug("Using URL: ", url);
+                            JVM.log.debug("Found jolokia agent at: ", url, " version: ", resp.value.agent);
                             next();
                         }
                         else {
@@ -4691,7 +4691,7 @@ var JVM;
                 else if (jqXHR.status === 401 || jqXHR.status === 403) {
                     // I guess this could be it...
                     discoveredUrl = url;
-                    JVM.log.debug("Using URL: ", url);
+                    JVM.log.debug("Using URL: ", url, " assuming it could be an agent but got return code: ", jqXHR.status);
                     next();
                 }
                 else {
@@ -4714,39 +4714,47 @@ var JVM;
                 answer = window['con'];
                 JVM.log.debug("Using connection name from window: ", answer);
             }
-            if ('con' in search) {
+            else if ('con' in search) {
                 answer = search['con'];
                 JVM.log.debug("Using connection name from URL: ", answer);
             }
-            if (Core.isBlank(answer)) {
+            else {
                 JVM.log.debug("No connection name found, using direct connection to JVM");
             }
             return answer;
         };
     }]);
     JVM._module.service('ConnectOptions', ['ConnectionName', function (ConnectionName) {
-        if (!Core.isBlank(ConnectionName())) {
-            var answer = Core.getConnectOptions(ConnectionName());
-            try {
-                if (window.opener && "passUserDetails" in window.opener) {
-                    answer.userName = window.opener["passUserDetails"].username;
-                    answer.password = window.opener["passUserDetails"].password;
-                }
-            }
-            catch (securityException) {
-            }
-            return answer;
+        var name = ConnectionName();
+        if (Core.isBlank(name)) {
+            // this will fail any if (ConnectOptions) check
+            return false;
         }
-        return null;
+        var answer = Core.getConnectOptions(name);
+        try {
+            if (window.opener && "passUserDetails" in window.opener) {
+                answer.userName = window.opener["passUserDetails"].username;
+                answer.password = window.opener["passUserDetails"].password;
+            }
+        }
+        catch (securityException) {
+        }
+        return answer;
     }]);
-    // the jolokia URL we're connected to, could probably be a constant
+    // the jolokia URL we're connected to
     JVM._module.factory('jolokiaUrl', ['ConnectOptions', function (ConnectOptions) {
         var answer = undefined;
         if (!ConnectOptions || !ConnectOptions.name) {
+            JVM.log.debug("Using discovered URL");
             answer = discoveredUrl;
         }
         else {
             answer = Core.createServerConnectionUrl(ConnectOptions);
+            JVM.log.debug("Using configured URL");
+        }
+        if (!answer) {
+            // this will force a dummy jolokia instance
+            return false;
         }
         // build full URL
         var windowURI = new URI();
@@ -4760,7 +4768,9 @@ var JVM;
         if (!jolokiaURI.port()) {
             jolokiaURI.port(windowURI.port());
         }
-        return jolokiaURI.toString();
+        answer = jolokiaURI.toString();
+        JVM.log.debug("Complete jolokia URL: ", answer);
+        return answer;
     }]);
     // holds the status returned from the last jolokia call (?)
     JVM._module.factory('jolokiaStatus', function () {
@@ -4787,7 +4797,7 @@ var JVM;
         answer['url'] = jolokiaUrl;
         return answer;
     }]);
-    JVM._module.factory('jolokia', ["$location", "localStorage", "jolokiaStatus", "$rootScope", "userDetails", "jolokiaParams", "jolokiaUrl", "ConnectionName", "ConnectOptions", "HawtioDashboard", function ($location, localStorage, jolokiaStatus, $rootScope, userDetails, jolokiaParams, jolokiaUrl, connectionName, connectionOptions, dash) {
+    JVM._module.factory('jolokia', ["$location", "localStorage", "jolokiaStatus", "$rootScope", "userDetails", "jolokiaParams", "jolokiaUrl", "ConnectOptions", "HawtioDashboard", function ($location, localStorage, jolokiaStatus, $rootScope, userDetails, jolokiaParams, jolokiaUrl, connectionOptions, dash) {
         if (dash.inDashboard && JVM.windowJolokia) {
             return JVM.windowJolokia;
         }
@@ -4795,7 +4805,7 @@ var JVM;
             // pass basic auth credentials down to jolokia if set
             var username = null;
             var password = null;
-            if (connectionOptions && connectionOptions.userName && connectionOptions.password) {
+            if (connectionOptions.userName && connectionOptions.password) {
                 username = connectionOptions.userName;
                 password = connectionOptions.password;
             }
@@ -4831,6 +4841,9 @@ var JVM;
                     }
                 });
             }
+            else {
+                JVM.log.debug("Not setting any authorization header");
+            }
             jolokiaParams['ajaxError'] = function (xhr, textStatus, error) {
                 if (xhr.status === 401 || xhr.status === 403) {
                     userDetails.username = null;
@@ -4848,7 +4861,8 @@ var JVM;
             };
             var jolokia = new Jolokia(jolokiaParams);
             jolokia.stop();
-            localStorage['url'] = jolokiaUrl;
+            // TODO this should really go away, need to track down any remaining spots where this is used
+            //localStorage['url'] = jolokiaUrl;
             if ('updateRate' in localStorage) {
                 if (localStorage['updateRate'] > 0) {
                     jolokia.start(localStorage['updateRate']);
