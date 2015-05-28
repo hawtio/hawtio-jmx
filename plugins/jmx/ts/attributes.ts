@@ -174,12 +174,14 @@ module Jmx {
       if (!row.summary) {
         return;
       }
-      $scope.entity = _.cloneDeep(row);
-      $scope.entity["jolokia"] = getUrlForThing(jolokiaUrl, "read", workspace.getSelectedMBeanName(), $scope.entity["key"]);
-      var type = asJsonSchemaType(row.type, row.key);
-      var readOnly = !row.rw;
-
+      var entity:any = $scope.entity = _.cloneDeep(row);
       var schema:any = $scope.attributeSchema = _.cloneDeep(attributeSchemaBasic);
+      if (entity.key === "ObjectName") {
+        // ObjectName is calculated locally
+        delete schema.properties.jolokia;  
+      } else {
+        entity.jolokia = getUrlForThing(jolokiaUrl, "read", workspace.getSelectedMBeanName(), entity.key);
+      }
       schema.properties.value = {
         formTemplate: '<div class="form-group"><label class="control-label">Value</label><div hawtio-editor={{model}}></div></div>'
       }
