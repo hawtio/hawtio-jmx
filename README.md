@@ -27,3 +27,21 @@ Then to run the web application:
 #### Install the bower package
 
 `bower install --save hawtio-jmx`
+
+
+#### To test with hawtio v1.x
+
+When developing on hawtio-jmx you can run a JVM with the Java based hawtio 1.x web module. This allows the JMX plugin to have MBeans to work with.
+
+If you do not have hawtio 1.x on your computer then you can clone it
+
+    git clone git@github.com:hawtio/hawtio.git
+
+To do so in another shell:
+
+    cd hawtio
+    cd hawtio-web
+    mvn install
+    mvn exec:java -DstartLR=false
+
+Then when you run `gulp` then the hawtio-jmx web console will automatic detect the running JVM with hawtio 1.x and you have some MBeans to work with.
