@@ -597,7 +597,7 @@ var __extends = this.__extends || function (d, b) {
 /// <reference path="folder.ts"/>
 var Core;
 (function (Core) {
-    var log = Logger.get("Core");
+    var log = Logger.get("workspace");
     /**
      * @class Workspace
      */
@@ -809,7 +809,7 @@ var Core;
                 var domainClass = Core.escapeDots(domainName);
                 var domain = domains[domainName];
                 for (var mbeanName in domain) {
-                    log.debug("JMX tree mbean name: " + mbeanName);
+                    // log.debug("JMX tree mbean name: " + mbeanName);
                     var entries = {};
                     var folder = this.folderGetOrElse(tree, domainName);
                     //if (!folder) continue;
@@ -1794,774 +1794,6 @@ var Core;
     }
     Core.createServerConnectionUrl = createServerConnectionUrl;
 })(Core || (Core = {}));
-
-/// <reference path="../../includes.ts"/>
-/// <reference path="jvmHelpers.ts"/>
-/**
- * @module JVM
- * @main JVM
- */
-var JVM;
-(function (JVM) {
-    JVM.windowJolokia = undefined;
-    JVM._module = angular.module(JVM.pluginName, []);
-    JVM._module.config(["$provide", "$routeProvider", function ($provide, $routeProvider) {
-        /*
-        $provide.decorator('WelcomePageRegistry', ['$delegate', ($delegate) => {
-          return {
-    
-          }
-        }]);
-        */
-        $routeProvider.when('/jvm', { redirectTo: '/jvm/connect' }).when('/jvm/welcome', { templateUrl: UrlHelpers.join(JVM.templatePath, 'welcome.html') }).when('/jvm/discover', { templateUrl: UrlHelpers.join(JVM.templatePath, 'discover.html') }).when('/jvm/connect', { templateUrl: UrlHelpers.join(JVM.templatePath, 'connect.html') }).when('/jvm/local', { templateUrl: UrlHelpers.join(JVM.templatePath, 'local.html') });
-    }]);
-    JVM._module.constant('mbeanName', 'hawtio:type=JVMList');
-    JVM._module.run(["HawtioNav", "$location", "workspace", "viewRegistry", "layoutFull", "helpRegistry", "preferencesRegistry", "ConnectOptions", "locationChangeStartTasks", "HawtioDashboard", function (nav, $location, workspace, viewRegistry, layoutFull, helpRegistry, preferencesRegistry, ConnectOptions, locationChangeStartTasks, dash) {
-        if (!dash.inDashboard) {
-            // ensure that if the connection parameter is present, that we keep it
-            locationChangeStartTasks.addTask('ConParam', function ($event, newUrl, oldUrl) {
-                // we can't execute until the app is initialized...
-                if (!HawtioCore.injector) {
-                    return;
-                }
-                //log.debug("ConParam task firing, newUrl: ", newUrl, " oldUrl: ", oldUrl, " ConnectOptions: ", ConnectOptions);
-                if (!ConnectOptions || !ConnectOptions.name || !newUrl) {
-                    return;
-                }
-                var newQuery = new URI(newUrl).query(true);
-                if (!newQuery.con) {
-                    //log.debug("Lost connection parameter (", ConnectOptions.name, ") from query params: ", newQuery, " resetting");
-                    newQuery['con'] = ConnectOptions.name;
-                    $location.search(newQuery);
-                }
-            });
-        }
-        var builder = nav.builder();
-        var remote = builder.id('jvm-remote').href(function () { return '/jvm/connect'; }).title(function () { return 'Remote'; }).tooltip(function () { return 'To connect to a remote JVM'; }).build();
-        var local = builder.id('jvm-local').href(function () { return '/jvm/local'; }).title(function () { return 'Local'; }).tooltip(function () { return 'To connect to a locale JVM'; }).show(function () { return JVM.hasLocalMBean(workspace); }).build();
-        var discover = builder.id('jvm-discover').href(function () { return '/jvm/discover'; }).title(function () { return 'Discover'; }).tooltip(function () { return 'To discover JVMs in the network that has Jolokia agent running'; }).show(function () { return JVM.hasDiscoveryMBean(workspace); }).build();
-        var tab = builder.id('jvm').href(function () { return '/jvm'; }).title(function () { return 'Connect'; }).isValid(function () { return ConnectOptions == null || ConnectOptions.name == null; }).tabs(remote, local, discover).build();
-        nav.add(tab);
-        helpRegistry.addUserDoc('jvm', 'plugins/jvm/doc/help.md');
-        preferencesRegistry.addTab("Connect", 'plugins/jvm/html/reset.html');
-        preferencesRegistry.addTab("Jolokia", "plugins/jvm/html/jolokiaPreferences.html");
-    }]);
-    hawtioPluginLoader.addModule(JVM.pluginName);
-})(JVM || (JVM = {}));
-
-/// <reference path="../../includes.ts"/>
-/// <reference path="jvmPlugin.ts"/>
-/**
- * @module JVM
- */
-var JVM;
-(function (JVM) {
-    JVM.ConnectController = JVM._module.controller("JVM.ConnectController", ["$scope", "$location", "localStorage", "workspace", "$http", function ($scope, $location, localStorage, workspace, $http) {
-        JVM.configureScope($scope, $location, workspace);
-        function newConfig() {
-            return Core.createConnectOptions({
-                scheme: 'http',
-                host: 'localhost',
-                path: 'jolokia',
-                port: 8181,
-                userName: '',
-                password: '',
-                useProxy: !$scope.disableProxy
-            });
-        }
-        ;
-        $scope.forms = {};
-        $http.get('proxy').then(function (resp) {
-            if (resp.status === 200 && Core.isBlank(resp.data)) {
-                $scope.disableProxy = false;
-            }
-            else {
-                $scope.disableProxy = true;
-            }
-        });
-        var hasMBeans = false;
-        workspace.addNamedTreePostProcessor('ConnectTab', function (tree) {
-            hasMBeans = workspace && workspace.tree && workspace.tree.children && workspace.tree.children.length > 0;
-            $scope.disableProxy = !hasMBeans || Core.isChromeApp();
-            Core.$apply($scope);
-        });
-        $scope.lastConnection = '';
-        // load settings like current tab, last used connection
-        if (JVM.connectControllerKey in localStorage) {
-            try {
-                $scope.lastConnection = angular.fromJson(localStorage[JVM.connectControllerKey]);
-            }
-            catch (e) {
-                // corrupt config
-                $scope.lastConnection = '';
-                delete localStorage[JVM.connectControllerKey];
-            }
-        }
-        // load connection settings
-        $scope.connectionConfigs = Core.loadConnectionMap();
-        if (!Core.isBlank($scope.lastConnection)) {
-            $scope.currentConfig = $scope.connectionConfigs[$scope.lastConnection];
-        }
-        else {
-            $scope.currentConfig = newConfig();
-        }
-        /*
-        log.debug("Controller settings: ", $scope.settings);
-        log.debug("Current config: ", $scope.currentConfig);
-        log.debug("All connection settings: ", $scope.connectionConfigs);
-        */
-        $scope.formConfig = {
-            properties: {
-                name: {
-                    type: "java.lang.String",
-                    tooltip: "Name for this connection",
-                    required: true,
-                    "input-attributes": {
-                        "placeholder": "Unnamed..."
-                    }
-                },
-                scheme: {
-                    type: "java.lang.String",
-                    tooltip: "HTTP or HTTPS",
-                    enum: ["http", "https"],
-                    required: true
-                },
-                host: {
-                    type: "java.lang.String",
-                    tooltip: "Target host to connect to",
-                    required: true
-                },
-                port: {
-                    type: "java.lang.Integer",
-                    tooltip: "The HTTP port used to connect to the server",
-                    "input-attributes": {
-                        "min": "0"
-                    },
-                    required: true
-                },
-                path: {
-                    type: "java.lang.String",
-                    tooltip: "The URL path used to connect to Jolokia on the remote server"
-                },
-                userName: {
-                    type: "java.lang.String",
-                    tooltip: "The user name to be used when connecting to Jolokia"
-                },
-                password: {
-                    type: "password",
-                    tooltip: "The password to be used when connecting to Jolokia"
-                },
-                useProxy: {
-                    type: "java.lang.Boolean",
-                    tooltip: "Whether or not we should use a proxy. See more information in the panel to the left.",
-                    "control-attributes": {
-                        "ng-hide": "disableProxy"
-                    }
-                }
-            }
-        };
-        $scope.newConnection = function () {
-            $scope.lastConnection = '';
-        };
-        $scope.deleteConnection = function () {
-            delete $scope.connectionConfigs[$scope.lastConnection];
-            Core.saveConnectionMap($scope.connectionConfigs);
-            var keys = _.keys($scope.connectionConfigs);
-            if (keys.length === 0) {
-                $scope.lastConnection = '';
-            }
-            else {
-                $scope.lastConnection = keys[0];
-            }
-        };
-        $scope.$watch('lastConnection', function (newValue, oldValue) {
-            JVM.log.debug("lastConnection: ", newValue);
-            if (newValue !== oldValue) {
-                if (Core.isBlank(newValue)) {
-                    $scope.currentConfig = newConfig();
-                }
-                else {
-                    $scope.currentConfig = $scope.connectionConfigs[newValue];
-                }
-                localStorage[JVM.connectControllerKey] = angular.toJson(newValue);
-            }
-        }, true);
-        $scope.save = function () {
-            $scope.gotoServer($scope.currentConfig, null, true);
-        };
-        $scope.gotoServer = function (connectOptions, form, saveOnly) {
-            if (!connectOptions) {
-                connectOptions = Core.getConnectOptions($scope.lastConnection);
-            }
-            var name = connectOptions.name;
-            $scope.connectionConfigs[name] = connectOptions;
-            $scope.lastConnection = name;
-            if (saveOnly === true) {
-                Core.saveConnectionMap($scope.connectionConfigs);
-                $scope.connectionConfigs = Core.loadConnectionMap();
-                angular.extend($scope.currentConfig, $scope.connectionConfigs[$scope.lastConnection]);
-                Core.$apply($scope);
-                return;
-            }
-            Core.connectToServer(localStorage, connectOptions);
-            $scope.connectionConfigs = Core.loadConnectionMap();
-            angular.extend($scope.currentConfig, $scope.connectionConfigs[$scope.lastConnection]);
-            Core.$apply($scope);
-        };
-    }]);
-})(JVM || (JVM = {}));
-
-/// <reference path="../../includes.ts"/>
-/// <reference path="jvmPlugin.ts"/>
-/**
- * @module JVM
- */
-var JVM;
-(function (JVM) {
-    JVM._module.controller("JVM.DiscoveryController", ["$scope", "localStorage", "jolokia", function ($scope, localStorage, jolokia) {
-        $scope.discovering = true;
-        $scope.agents = undefined;
-        $scope.$watch('agents', function (newValue, oldValue) {
-            if (newValue !== oldValue) {
-                $scope.selectedAgent = $scope.agents.find(function (a) { return a['selected']; });
-            }
-        }, true);
-        $scope.closePopover = function ($event) {
-            $($event.currentTarget).parents('.popover').prev().popover('hide');
-        };
-        function doConnect(agent) {
-            if (!agent.url) {
-                Core.notification('warning', 'No URL available to connect to agent');
-                return;
-            }
-            var options = Core.createConnectOptions();
-            options.name = agent.agent_description;
-            var urlObject = Core.parseUrl(agent.url);
-            angular.extend(options, urlObject);
-            options.userName = agent.username;
-            options.password = agent.password;
-            Core.connectToServer(localStorage, options);
-        }
-        ;
-        $scope.connectWithCredentials = function ($event, agent) {
-            $scope.closePopover($event);
-            doConnect(agent);
-        };
-        $scope.gotoServer = function ($event, agent) {
-            if (agent.secured) {
-                $($event.currentTarget).popover('show');
-            }
-            else {
-                doConnect(agent);
-            }
-        };
-        $scope.getElementId = function (agent) {
-            return agent.agent_id.dasherize().replace(/\./g, "-");
-        };
-        $scope.getLogo = function (agent) {
-            if (agent.server_product) {
-                return JVM.logoRegistry[agent.server_product];
-            }
-            return JVM.logoRegistry['generic'];
-        };
-        $scope.filterMatches = function (agent) {
-            if (Core.isBlank($scope.filter)) {
-                return true;
-            }
-            else {
-                return angular.toJson(agent).toLowerCase().has($scope.filter.toLowerCase());
-            }
-        };
-        $scope.getAgentIdClass = function (agent) {
-            if ($scope.hasName(agent)) {
-                return "";
-            }
-            return "strong";
-        };
-        $scope.hasName = function (agent) {
-            if (agent.server_vendor && agent.server_product && agent.server_version) {
-                return true;
-            }
-            return false;
-        };
-        $scope.render = function (response) {
-            $scope.discovering = false;
-            if (response) {
-                var responseJson = angular.toJson(response, true);
-                if ($scope.responseJson !== responseJson) {
-                    $scope.responseJson = responseJson;
-                    $scope.agents = response;
-                }
-            }
-            Core.$apply($scope);
-        };
-        $scope.fetch = function () {
-            $scope.discovering = true;
-            // use 10 sec timeout
-            jolokia.execute('jolokia:type=Discovery', 'lookupAgentsWithTimeout(int)', 10 * 1000, Core.onSuccess($scope.render));
-        };
-        $scope.fetch();
-    }]);
-})(JVM || (JVM = {}));
-
-/// <reference path="../../includes.ts"/>
-/// <reference path="./jvmPlugin.ts"/>
-var JVM;
-(function (JVM) {
-    JVM._module.controller("JVM.JolokiaPreferences", ["$scope", "localStorage", "jolokiaParams", "$window", function ($scope, localStorage, jolokiaParams, $window) {
-        var config = {
-            properties: {
-                maxDepth: {
-                    type: 'number',
-                    description: 'The number of levels jolokia will marshal an object to json on the server side before returning'
-                },
-                maxCollectionSize: {
-                    type: 'number',
-                    description: 'The maximum number of elements in an array that jolokia will marshal in a response'
-                }
-            }
-        };
-        $scope.entity = $scope;
-        $scope.config = config;
-        Core.initPreferenceScope($scope, localStorage, {
-            'maxDepth': {
-                'value': JVM.DEFAULT_MAX_DEPTH,
-                'converter': parseInt,
-                'formatter': parseInt,
-                'post': function (newValue) {
-                    jolokiaParams.maxDepth = newValue;
-                    localStorage['jolokiaParams'] = angular.toJson(jolokiaParams);
-                }
-            },
-            'maxCollectionSize': {
-                'value': JVM.DEFAULT_MAX_COLLECTION_SIZE,
-                'converter': parseInt,
-                'formatter': parseInt,
-                'post': function (newValue) {
-                    jolokiaParams.maxCollectionSize = newValue;
-                    localStorage['jolokiaParams'] = angular.toJson(jolokiaParams);
-                }
-            }
-        });
-        $scope.reboot = function () {
-            $window.location.reload();
-        };
-    }]);
-})(JVM || (JVM = {}));
-
-/// <reference path="../../includes.ts"/>
-/// <reference path="jvmPlugin.ts"/>
-/**
- * @module JVM
- */
-var JVM;
-(function (JVM) {
-    var urlCandidates = ['/hawtio/jolokia', '/jolokia', 'jolokia'];
-    var discoveredUrl = null;
-    hawtioPluginLoader.registerPreBootstrapTask(function (next) {
-        var uri = new URI();
-        var query = uri.query(true);
-        JVM.log.debug("query: ", query);
-        var jolokiaUrl = query['jolokiaUrl'];
-        if (jolokiaUrl) {
-            delete query['sub-tab'];
-            delete query['main-tab'];
-            jolokiaUrl = jolokiaUrl.unescapeURL();
-            var jolokiaURI = new URI(jolokiaUrl);
-            var name = query['title'] || 'Unknown Connection';
-            var token = query['token'] || Core.trimLeading(uri.hash(), '#');
-            var options = Core.createConnectOptions({
-                name: name,
-                scheme: jolokiaURI.protocol(),
-                host: jolokiaURI.hostname(),
-                port: Core.parseIntValue(jolokiaURI.port()),
-                path: Core.trimLeading(jolokiaURI.pathname(), '/'),
-                useProxy: false
-            });
-            if (!Core.isBlank(token)) {
-                options['token'] = token;
-            }
-            _.merge(options, jolokiaURI.query(true));
-            _.assign(options, query);
-            JVM.log.debug("options: ", options);
-            var connectionMap = Core.loadConnectionMap();
-            connectionMap[name] = options;
-            Core.saveConnectionMap(connectionMap);
-            uri.hash("").query({
-                con: name
-            });
-            window.location.replace(uri.toString());
-        }
-        var connectionName = query['con'];
-        if (connectionName) {
-            JVM.log.debug("Not discovering jolokia");
-            // a connection name is set, no need to discover a jolokia instance
-            next();
-            return;
-        }
-        function maybeCheckNext(candidates) {
-            if (candidates.length === 0) {
-                next();
-            }
-            else {
-                checkNext(candidates.pop());
-            }
-        }
-        function checkNext(url) {
-            JVM.log.debug("trying URL: ", url);
-            $.ajax(url).always(function (data, statusText, jqXHR) {
-                if (jqXHR.status === 200) {
-                    try {
-                        var resp = angular.fromJson(data);
-                        //log.debug("Got response: ", resp);
-                        if ('value' in resp && 'agent' in resp.value) {
-                            discoveredUrl = url;
-                            JVM.log.debug("Found jolokia agent at: ", url, " version: ", resp.value.agent);
-                            next();
-                        }
-                        else {
-                            maybeCheckNext(urlCandidates);
-                        }
-                    }
-                    catch (e) {
-                        maybeCheckNext(urlCandidates);
-                    }
-                }
-                else if (jqXHR.status === 401 || jqXHR.status === 403) {
-                    // I guess this could be it...
-                    discoveredUrl = url;
-                    JVM.log.debug("Using URL: ", url, " assuming it could be an agent but got return code: ", jqXHR.status);
-                    next();
-                }
-                else {
-                    maybeCheckNext(urlCandidates);
-                }
-            });
-        }
-        checkNext(urlCandidates.pop());
-    });
-    JVM._module.service('ConnectionName', ['$location', function ($location) {
-        var answer = null;
-        return function (reset) {
-            if (reset === void 0) { reset = false; }
-            if (!Core.isBlank(answer) && !reset) {
-                return answer;
-            }
-            answer = '';
-            var search = $location.search();
-            if ('con' in window) {
-                answer = window['con'];
-                JVM.log.debug("Using connection name from window: ", answer);
-            }
-            else if ('con' in search) {
-                answer = search['con'];
-                JVM.log.debug("Using connection name from URL: ", answer);
-            }
-            else {
-                JVM.log.debug("No connection name found, using direct connection to JVM");
-            }
-            return answer;
-        };
-    }]);
-    JVM._module.service('ConnectOptions', ['ConnectionName', function (ConnectionName) {
-        var name = ConnectionName();
-        if (Core.isBlank(name)) {
-            // this will fail any if (ConnectOptions) check
-            return false;
-        }
-        var answer = Core.getConnectOptions(name);
-        try {
-            if (window.opener && "passUserDetails" in window.opener) {
-                answer.userName = window.opener["passUserDetails"].username;
-                answer.password = window.opener["passUserDetails"].password;
-            }
-        }
-        catch (securityException) {
-        }
-        return answer;
-    }]);
-    // the jolokia URL we're connected to
-    JVM._module.factory('jolokiaUrl', ['ConnectOptions', function (ConnectOptions) {
-        var answer = undefined;
-        if (!ConnectOptions || !ConnectOptions.name) {
-            JVM.log.debug("Using discovered URL");
-            answer = discoveredUrl;
-        }
-        else {
-            answer = Core.createServerConnectionUrl(ConnectOptions);
-            JVM.log.debug("Using configured URL");
-        }
-        if (!answer) {
-            // this will force a dummy jolokia instance
-            return false;
-        }
-        // build full URL
-        var windowURI = new URI();
-        var jolokiaURI = new URI(answer);
-        if (!jolokiaURI.protocol()) {
-            jolokiaURI.protocol(windowURI.protocol());
-        }
-        if (!jolokiaURI.hostname()) {
-            jolokiaURI.host(windowURI.hostname());
-        }
-        if (!jolokiaURI.port()) {
-            jolokiaURI.port(windowURI.port());
-        }
-        answer = jolokiaURI.toString();
-        JVM.log.debug("Complete jolokia URL: ", answer);
-        return answer;
-    }]);
-    // holds the status returned from the last jolokia call (?)
-    JVM._module.factory('jolokiaStatus', function () {
-        return {
-            xhr: null
-        };
-    });
-    JVM.DEFAULT_MAX_DEPTH = 7;
-    JVM.DEFAULT_MAX_COLLECTION_SIZE = 500;
-    JVM._module.factory('jolokiaParams', ["jolokiaUrl", "localStorage", function (jolokiaUrl, localStorage) {
-        var answer = {
-            canonicalNaming: false,
-            ignoreErrors: true,
-            mimeType: 'application/json',
-            maxDepth: JVM.DEFAULT_MAX_DEPTH,
-            maxCollectionSize: JVM.DEFAULT_MAX_COLLECTION_SIZE
-        };
-        if ('jolokiaParams' in localStorage) {
-            answer = angular.fromJson(localStorage['jolokiaParams']);
-        }
-        else {
-            localStorage['jolokiaParams'] = angular.toJson(answer);
-        }
-        answer['url'] = jolokiaUrl;
-        return answer;
-    }]);
-    JVM._module.factory('jolokia', ["$location", "localStorage", "jolokiaStatus", "$rootScope", "userDetails", "jolokiaParams", "jolokiaUrl", "ConnectOptions", "HawtioDashboard", function ($location, localStorage, jolokiaStatus, $rootScope, userDetails, jolokiaParams, jolokiaUrl, connectionOptions, dash) {
-        if (dash.inDashboard && JVM.windowJolokia) {
-            return JVM.windowJolokia;
-        }
-        if (jolokiaUrl) {
-            // pass basic auth credentials down to jolokia if set
-            var username = null;
-            var password = null;
-            if (connectionOptions.userName && connectionOptions.password) {
-                username = connectionOptions.userName;
-                password = connectionOptions.password;
-            }
-            else if (angular.isDefined(userDetails) && angular.isDefined(userDetails.username) && angular.isDefined(userDetails.password)) {
-                username = userDetails.username;
-                password = userDetails.password;
-            }
-            else {
-                // lets see if they are passed in via request parameter...
-                var search = $location.search();
-                username = search["_user"];
-                password = search["_pwd"];
-                if (angular.isArray(username))
-                    username = username[0];
-                if (angular.isArray(password))
-                    password = password[0];
-            }
-            if (username && password && !connectionOptions.token) {
-                userDetails.username = username;
-                userDetails.password = password;
-                JVM.log.debug("Setting authorization header to username/password");
-                $.ajaxSetup({
-                    beforeSend: function (xhr) {
-                        xhr.setRequestHeader('Authorization', Core.getBasicAuthHeader(username, password));
-                    }
-                });
-            }
-            else if (connectionOptions.token) {
-                JVM.log.debug("Setting authorization header to token");
-                $.ajaxSetup({
-                    beforeSend: function (xhr) {
-                        xhr.setRequestHeader('Authorization', 'Bearer ' + connectionOptions.token);
-                    }
-                });
-            }
-            else {
-                JVM.log.debug("Not setting any authorization header");
-            }
-            jolokiaParams['ajaxError'] = function (xhr, textStatus, error) {
-                if (xhr.status === 401 || xhr.status === 403) {
-                    userDetails.username = null;
-                    userDetails.password = null;
-                    delete userDetails.loginDetails;
-                    delete window.opener["passUserDetails"];
-                }
-                else {
-                    jolokiaStatus.xhr = xhr;
-                    if (!xhr.responseText && error) {
-                        xhr.responseText = error.stack;
-                    }
-                }
-                Core.$apply($rootScope);
-            };
-            var jolokia = new Jolokia(jolokiaParams);
-            jolokia.stop();
-            // TODO this should really go away, need to track down any remaining spots where this is used
-            //localStorage['url'] = jolokiaUrl;
-            if ('updateRate' in localStorage) {
-                if (localStorage['updateRate'] > 0) {
-                    jolokia.start(localStorage['updateRate']);
-                }
-            }
-            JVM.windowJolokia = jolokia;
-            return jolokia;
-        }
-        else {
-            var answer = {
-                isDummy: true,
-                running: false,
-                request: function (req, opts) { return null; },
-                register: function (req, opts) { return null; },
-                list: function (path, opts) { return null; },
-                search: function (mBeanPatter, opts) { return null; },
-                getAttribute: function (mbean, attribute, path, opts) { return null; },
-                setAttribute: function (mbean, attribute, value, path, opts) {
-                },
-                version: function (opts) { return null; },
-                execute: function (mbean, operation) {
-                    var args = [];
-                    for (var _i = 2; _i < arguments.length; _i++) {
-                        args[_i - 2] = arguments[_i];
-                    }
-                    return null;
-                },
-                start: function (period) {
-                    answer.running = true;
-                },
-                stop: function () {
-                    answer.running = false;
-                },
-                isRunning: function () { return answer.running; },
-                jobs: function () { return []; }
-            };
-            JVM.windowJolokia = answer;
-            // empty jolokia that returns nothing
-            return answer;
-        }
-    }]);
-})(JVM || (JVM = {}));
-
-/// <reference path="jvmPlugin.ts"/>
-/**
- * @module JVM
- */
-var JVM;
-(function (JVM) {
-    JVM._module.controller("JVM.JVMsController", ["$scope", "$window", "$location", "localStorage", "workspace", "jolokia", "mbeanName", function ($scope, $window, $location, localStorage, workspace, jolokia, mbeanName) {
-        JVM.configureScope($scope, $location, workspace);
-        $scope.data = [];
-        $scope.deploying = false;
-        $scope.status = '';
-        $scope.initDone = false;
-        $scope.filter = '';
-        $scope.filterMatches = function (jvm) {
-            if (Core.isBlank($scope.filter)) {
-                return true;
-            }
-            else {
-                return jvm.alias.toLowerCase().has($scope.filter.toLowerCase());
-            }
-        };
-        $scope.fetch = function () {
-            jolokia.request({
-                type: 'exec',
-                mbean: mbeanName,
-                operation: 'listLocalJVMs()',
-                arguments: []
-            }, {
-                success: render,
-                error: function (response) {
-                    $scope.data = [];
-                    $scope.initDone = true;
-                    $scope.status = 'Could not discover local JVM processes: ' + response.error;
-                    Core.$apply($scope);
-                }
-            });
-        };
-        $scope.stopAgent = function (pid) {
-            jolokia.request({
-                type: 'exec',
-                mbean: mbeanName,
-                operation: 'stopAgent(java.lang.String)',
-                arguments: [pid]
-            }, Core.onSuccess(function () {
-                $scope.fetch();
-            }));
-        };
-        $scope.startAgent = function (pid) {
-            jolokia.request({
-                type: 'exec',
-                mbean: mbeanName,
-                operation: 'startAgent(java.lang.String)',
-                arguments: [pid]
-            }, Core.onSuccess(function () {
-                $scope.fetch();
-            }));
-        };
-        $scope.connectTo = function (url, scheme, host, port, path) {
-            // we only need the port and path from the url, as we got the rest
-            var options = {};
-            options["scheme"] = scheme;
-            options["host"] = host;
-            options["port"] = port;
-            options["path"] = path;
-            // add empty username as we dont need login
-            options["userName"] = "";
-            options["password"] = "";
-            var con = Core.createConnectToServerOptions(options);
-            con.name = "local";
-            JVM.log.debug("Connecting to local JVM agent: " + url);
-            Core.connectToServer(localStorage, con);
-            Core.$apply($scope);
-        };
-        function render(response) {
-            $scope.initDone = true;
-            $scope.data = response.value;
-            if ($scope.data.length === 0) {
-                $scope.status = 'Could not discover local JVM processes';
-            }
-            Core.$apply($scope);
-        }
-        $scope.fetch();
-    }]);
-})(JVM || (JVM = {}));
-
-/// <reference path="../../includes.ts"/>
-/// <reference path="./jvmPlugin.ts"/>
-/**
- * @module JVM
- */
-var JVM;
-(function (JVM) {
-    JVM._module.controller("JVM.NavController", ["$scope", "$location", "workspace", function ($scope, $location, workspace) {
-        JVM.configureScope($scope, $location, workspace);
-    }]);
-})(JVM || (JVM = {}));
-
-/// <reference path="../../includes.ts"/>
-/// <reference path="./jvmPlugin.ts"/>
-/**
- * @module JVM
- */
-var JVM;
-(function (JVM) {
-    JVM._module.controller("JVM.ResetController", ["$scope", "localStorage", function ($scope, localStorage) {
-        $scope.doClearConnectSettings = function () {
-            var doReset = function () {
-                delete localStorage[JVM.connectControllerKey];
-                delete localStorage[JVM.connectionSettingsKey];
-                setTimeout(function () {
-                    window.location.reload();
-                }, 10);
-            };
-            doReset();
-        };
-    }]);
-})(JVM || (JVM = {}));
 
 /**
  * @module Jmx
@@ -5027,6 +4259,774 @@ var Jmx;
         }
     }]);
 })(Jmx || (Jmx = {}));
+
+/// <reference path="../../includes.ts"/>
+/// <reference path="jvmHelpers.ts"/>
+/**
+ * @module JVM
+ * @main JVM
+ */
+var JVM;
+(function (JVM) {
+    JVM.windowJolokia = undefined;
+    JVM._module = angular.module(JVM.pluginName, []);
+    JVM._module.config(["$provide", "$routeProvider", function ($provide, $routeProvider) {
+        /*
+        $provide.decorator('WelcomePageRegistry', ['$delegate', ($delegate) => {
+          return {
+    
+          }
+        }]);
+        */
+        $routeProvider.when('/jvm', { redirectTo: '/jvm/connect' }).when('/jvm/welcome', { templateUrl: UrlHelpers.join(JVM.templatePath, 'welcome.html') }).when('/jvm/discover', { templateUrl: UrlHelpers.join(JVM.templatePath, 'discover.html') }).when('/jvm/connect', { templateUrl: UrlHelpers.join(JVM.templatePath, 'connect.html') }).when('/jvm/local', { templateUrl: UrlHelpers.join(JVM.templatePath, 'local.html') });
+    }]);
+    JVM._module.constant('mbeanName', 'hawtio:type=JVMList');
+    JVM._module.run(["HawtioNav", "$location", "workspace", "viewRegistry", "layoutFull", "helpRegistry", "preferencesRegistry", "ConnectOptions", "locationChangeStartTasks", "HawtioDashboard", function (nav, $location, workspace, viewRegistry, layoutFull, helpRegistry, preferencesRegistry, ConnectOptions, locationChangeStartTasks, dash) {
+        if (!dash.inDashboard) {
+            // ensure that if the connection parameter is present, that we keep it
+            locationChangeStartTasks.addTask('ConParam', function ($event, newUrl, oldUrl) {
+                // we can't execute until the app is initialized...
+                if (!HawtioCore.injector) {
+                    return;
+                }
+                //log.debug("ConParam task firing, newUrl: ", newUrl, " oldUrl: ", oldUrl, " ConnectOptions: ", ConnectOptions);
+                if (!ConnectOptions || !ConnectOptions.name || !newUrl) {
+                    return;
+                }
+                var newQuery = new URI(newUrl).query(true);
+                if (!newQuery.con) {
+                    //log.debug("Lost connection parameter (", ConnectOptions.name, ") from query params: ", newQuery, " resetting");
+                    newQuery['con'] = ConnectOptions.name;
+                    $location.search(newQuery);
+                }
+            });
+        }
+        var builder = nav.builder();
+        var remote = builder.id('jvm-remote').href(function () { return '/jvm/connect'; }).title(function () { return 'Remote'; }).tooltip(function () { return 'To connect to a remote JVM'; }).build();
+        var local = builder.id('jvm-local').href(function () { return '/jvm/local'; }).title(function () { return 'Local'; }).tooltip(function () { return 'To connect to a locale JVM'; }).show(function () { return JVM.hasLocalMBean(workspace); }).build();
+        var discover = builder.id('jvm-discover').href(function () { return '/jvm/discover'; }).title(function () { return 'Discover'; }).tooltip(function () { return 'To discover JVMs in the network that has Jolokia agent running'; }).show(function () { return JVM.hasDiscoveryMBean(workspace); }).build();
+        var tab = builder.id('jvm').href(function () { return '/jvm'; }).title(function () { return 'Connect'; }).isValid(function () { return ConnectOptions == null || ConnectOptions.name == null; }).tabs(remote, local, discover).build();
+        nav.add(tab);
+        helpRegistry.addUserDoc('jvm', 'plugins/jvm/doc/help.md');
+        preferencesRegistry.addTab("Connect", 'plugins/jvm/html/reset.html');
+        preferencesRegistry.addTab("Jolokia", "plugins/jvm/html/jolokiaPreferences.html");
+    }]);
+    hawtioPluginLoader.addModule(JVM.pluginName);
+})(JVM || (JVM = {}));
+
+/// <reference path="../../includes.ts"/>
+/// <reference path="jvmPlugin.ts"/>
+/**
+ * @module JVM
+ */
+var JVM;
+(function (JVM) {
+    JVM.ConnectController = JVM._module.controller("JVM.ConnectController", ["$scope", "$location", "localStorage", "workspace", "$http", function ($scope, $location, localStorage, workspace, $http) {
+        JVM.configureScope($scope, $location, workspace);
+        function newConfig() {
+            return Core.createConnectOptions({
+                scheme: 'http',
+                host: 'localhost',
+                path: 'jolokia',
+                port: 8181,
+                userName: '',
+                password: '',
+                useProxy: !$scope.disableProxy
+            });
+        }
+        ;
+        $scope.forms = {};
+        $http.get('proxy').then(function (resp) {
+            if (resp.status === 200 && Core.isBlank(resp.data)) {
+                $scope.disableProxy = false;
+            }
+            else {
+                $scope.disableProxy = true;
+            }
+        });
+        var hasMBeans = false;
+        workspace.addNamedTreePostProcessor('ConnectTab', function (tree) {
+            hasMBeans = workspace && workspace.tree && workspace.tree.children && workspace.tree.children.length > 0;
+            $scope.disableProxy = !hasMBeans || Core.isChromeApp();
+            Core.$apply($scope);
+        });
+        $scope.lastConnection = '';
+        // load settings like current tab, last used connection
+        if (JVM.connectControllerKey in localStorage) {
+            try {
+                $scope.lastConnection = angular.fromJson(localStorage[JVM.connectControllerKey]);
+            }
+            catch (e) {
+                // corrupt config
+                $scope.lastConnection = '';
+                delete localStorage[JVM.connectControllerKey];
+            }
+        }
+        // load connection settings
+        $scope.connectionConfigs = Core.loadConnectionMap();
+        if (!Core.isBlank($scope.lastConnection)) {
+            $scope.currentConfig = $scope.connectionConfigs[$scope.lastConnection];
+        }
+        else {
+            $scope.currentConfig = newConfig();
+        }
+        /*
+        log.debug("Controller settings: ", $scope.settings);
+        log.debug("Current config: ", $scope.currentConfig);
+        log.debug("All connection settings: ", $scope.connectionConfigs);
+        */
+        $scope.formConfig = {
+            properties: {
+                name: {
+                    type: "java.lang.String",
+                    tooltip: "Name for this connection",
+                    required: true,
+                    "input-attributes": {
+                        "placeholder": "Unnamed..."
+                    }
+                },
+                scheme: {
+                    type: "java.lang.String",
+                    tooltip: "HTTP or HTTPS",
+                    enum: ["http", "https"],
+                    required: true
+                },
+                host: {
+                    type: "java.lang.String",
+                    tooltip: "Target host to connect to",
+                    required: true
+                },
+                port: {
+                    type: "java.lang.Integer",
+                    tooltip: "The HTTP port used to connect to the server",
+                    "input-attributes": {
+                        "min": "0"
+                    },
+                    required: true
+                },
+                path: {
+                    type: "java.lang.String",
+                    tooltip: "The URL path used to connect to Jolokia on the remote server"
+                },
+                userName: {
+                    type: "java.lang.String",
+                    tooltip: "The user name to be used when connecting to Jolokia"
+                },
+                password: {
+                    type: "password",
+                    tooltip: "The password to be used when connecting to Jolokia"
+                },
+                useProxy: {
+                    type: "java.lang.Boolean",
+                    tooltip: "Whether or not we should use a proxy. See more information in the panel to the left.",
+                    "control-attributes": {
+                        "ng-hide": "disableProxy"
+                    }
+                }
+            }
+        };
+        $scope.newConnection = function () {
+            $scope.lastConnection = '';
+        };
+        $scope.deleteConnection = function () {
+            delete $scope.connectionConfigs[$scope.lastConnection];
+            Core.saveConnectionMap($scope.connectionConfigs);
+            var keys = _.keys($scope.connectionConfigs);
+            if (keys.length === 0) {
+                $scope.lastConnection = '';
+            }
+            else {
+                $scope.lastConnection = keys[0];
+            }
+        };
+        $scope.$watch('lastConnection', function (newValue, oldValue) {
+            JVM.log.debug("lastConnection: ", newValue);
+            if (newValue !== oldValue) {
+                if (Core.isBlank(newValue)) {
+                    $scope.currentConfig = newConfig();
+                }
+                else {
+                    $scope.currentConfig = $scope.connectionConfigs[newValue];
+                }
+                localStorage[JVM.connectControllerKey] = angular.toJson(newValue);
+            }
+        }, true);
+        $scope.save = function () {
+            $scope.gotoServer($scope.currentConfig, null, true);
+        };
+        $scope.gotoServer = function (connectOptions, form, saveOnly) {
+            if (!connectOptions) {
+                connectOptions = Core.getConnectOptions($scope.lastConnection);
+            }
+            var name = connectOptions.name;
+            $scope.connectionConfigs[name] = connectOptions;
+            $scope.lastConnection = name;
+            if (saveOnly === true) {
+                Core.saveConnectionMap($scope.connectionConfigs);
+                $scope.connectionConfigs = Core.loadConnectionMap();
+                angular.extend($scope.currentConfig, $scope.connectionConfigs[$scope.lastConnection]);
+                Core.$apply($scope);
+                return;
+            }
+            Core.connectToServer(localStorage, connectOptions);
+            $scope.connectionConfigs = Core.loadConnectionMap();
+            angular.extend($scope.currentConfig, $scope.connectionConfigs[$scope.lastConnection]);
+            Core.$apply($scope);
+        };
+    }]);
+})(JVM || (JVM = {}));
+
+/// <reference path="../../includes.ts"/>
+/// <reference path="jvmPlugin.ts"/>
+/**
+ * @module JVM
+ */
+var JVM;
+(function (JVM) {
+    JVM._module.controller("JVM.DiscoveryController", ["$scope", "localStorage", "jolokia", function ($scope, localStorage, jolokia) {
+        $scope.discovering = true;
+        $scope.agents = undefined;
+        $scope.$watch('agents', function (newValue, oldValue) {
+            if (newValue !== oldValue) {
+                $scope.selectedAgent = $scope.agents.find(function (a) { return a['selected']; });
+            }
+        }, true);
+        $scope.closePopover = function ($event) {
+            $($event.currentTarget).parents('.popover').prev().popover('hide');
+        };
+        function doConnect(agent) {
+            if (!agent.url) {
+                Core.notification('warning', 'No URL available to connect to agent');
+                return;
+            }
+            var options = Core.createConnectOptions();
+            options.name = agent.agent_description;
+            var urlObject = Core.parseUrl(agent.url);
+            angular.extend(options, urlObject);
+            options.userName = agent.username;
+            options.password = agent.password;
+            Core.connectToServer(localStorage, options);
+        }
+        ;
+        $scope.connectWithCredentials = function ($event, agent) {
+            $scope.closePopover($event);
+            doConnect(agent);
+        };
+        $scope.gotoServer = function ($event, agent) {
+            if (agent.secured) {
+                $($event.currentTarget).popover('show');
+            }
+            else {
+                doConnect(agent);
+            }
+        };
+        $scope.getElementId = function (agent) {
+            return agent.agent_id.dasherize().replace(/\./g, "-");
+        };
+        $scope.getLogo = function (agent) {
+            if (agent.server_product) {
+                return JVM.logoRegistry[agent.server_product];
+            }
+            return JVM.logoRegistry['generic'];
+        };
+        $scope.filterMatches = function (agent) {
+            if (Core.isBlank($scope.filter)) {
+                return true;
+            }
+            else {
+                return angular.toJson(agent).toLowerCase().has($scope.filter.toLowerCase());
+            }
+        };
+        $scope.getAgentIdClass = function (agent) {
+            if ($scope.hasName(agent)) {
+                return "";
+            }
+            return "strong";
+        };
+        $scope.hasName = function (agent) {
+            if (agent.server_vendor && agent.server_product && agent.server_version) {
+                return true;
+            }
+            return false;
+        };
+        $scope.render = function (response) {
+            $scope.discovering = false;
+            if (response) {
+                var responseJson = angular.toJson(response, true);
+                if ($scope.responseJson !== responseJson) {
+                    $scope.responseJson = responseJson;
+                    $scope.agents = response;
+                }
+            }
+            Core.$apply($scope);
+        };
+        $scope.fetch = function () {
+            $scope.discovering = true;
+            // use 10 sec timeout
+            jolokia.execute('jolokia:type=Discovery', 'lookupAgentsWithTimeout(int)', 10 * 1000, Core.onSuccess($scope.render));
+        };
+        $scope.fetch();
+    }]);
+})(JVM || (JVM = {}));
+
+/// <reference path="../../includes.ts"/>
+/// <reference path="./jvmPlugin.ts"/>
+var JVM;
+(function (JVM) {
+    JVM._module.controller("JVM.JolokiaPreferences", ["$scope", "localStorage", "jolokiaParams", "$window", function ($scope, localStorage, jolokiaParams, $window) {
+        var config = {
+            properties: {
+                maxDepth: {
+                    type: 'number',
+                    description: 'The number of levels jolokia will marshal an object to json on the server side before returning'
+                },
+                maxCollectionSize: {
+                    type: 'number',
+                    description: 'The maximum number of elements in an array that jolokia will marshal in a response'
+                }
+            }
+        };
+        $scope.entity = $scope;
+        $scope.config = config;
+        Core.initPreferenceScope($scope, localStorage, {
+            'maxDepth': {
+                'value': JVM.DEFAULT_MAX_DEPTH,
+                'converter': parseInt,
+                'formatter': parseInt,
+                'post': function (newValue) {
+                    jolokiaParams.maxDepth = newValue;
+                    localStorage['jolokiaParams'] = angular.toJson(jolokiaParams);
+                }
+            },
+            'maxCollectionSize': {
+                'value': JVM.DEFAULT_MAX_COLLECTION_SIZE,
+                'converter': parseInt,
+                'formatter': parseInt,
+                'post': function (newValue) {
+                    jolokiaParams.maxCollectionSize = newValue;
+                    localStorage['jolokiaParams'] = angular.toJson(jolokiaParams);
+                }
+            }
+        });
+        $scope.reboot = function () {
+            $window.location.reload();
+        };
+    }]);
+})(JVM || (JVM = {}));
+
+/// <reference path="../../includes.ts"/>
+/// <reference path="jvmPlugin.ts"/>
+/**
+ * @module JVM
+ */
+var JVM;
+(function (JVM) {
+    var urlCandidates = ['/hawtio/jolokia', '/jolokia', 'jolokia'];
+    var discoveredUrl = null;
+    hawtioPluginLoader.registerPreBootstrapTask(function (next) {
+        var uri = new URI();
+        var query = uri.query(true);
+        JVM.log.debug("query: ", query);
+        var jolokiaUrl = query['jolokiaUrl'];
+        if (jolokiaUrl) {
+            delete query['sub-tab'];
+            delete query['main-tab'];
+            jolokiaUrl = jolokiaUrl.unescapeURL();
+            var jolokiaURI = new URI(jolokiaUrl);
+            var name = query['title'] || 'Unknown Connection';
+            var token = query['token'] || Core.trimLeading(uri.hash(), '#');
+            var options = Core.createConnectOptions({
+                name: name,
+                scheme: jolokiaURI.protocol(),
+                host: jolokiaURI.hostname(),
+                port: Core.parseIntValue(jolokiaURI.port()),
+                path: Core.trimLeading(jolokiaURI.pathname(), '/'),
+                useProxy: false
+            });
+            if (!Core.isBlank(token)) {
+                options['token'] = token;
+            }
+            _.merge(options, jolokiaURI.query(true));
+            _.assign(options, query);
+            JVM.log.debug("options: ", options);
+            var connectionMap = Core.loadConnectionMap();
+            connectionMap[name] = options;
+            Core.saveConnectionMap(connectionMap);
+            uri.hash("").query({
+                con: name
+            });
+            window.location.replace(uri.toString());
+        }
+        var connectionName = query['con'];
+        if (connectionName) {
+            JVM.log.debug("Not discovering jolokia");
+            // a connection name is set, no need to discover a jolokia instance
+            next();
+            return;
+        }
+        function maybeCheckNext(candidates) {
+            if (candidates.length === 0) {
+                next();
+            }
+            else {
+                checkNext(candidates.pop());
+            }
+        }
+        function checkNext(url) {
+            JVM.log.debug("trying URL: ", url);
+            $.ajax(url).always(function (data, statusText, jqXHR) {
+                if (jqXHR.status === 200) {
+                    try {
+                        var resp = angular.fromJson(data);
+                        //log.debug("Got response: ", resp);
+                        if ('value' in resp && 'agent' in resp.value) {
+                            discoveredUrl = url;
+                            JVM.log.debug("Found jolokia agent at: ", url, " version: ", resp.value.agent);
+                            next();
+                        }
+                        else {
+                            maybeCheckNext(urlCandidates);
+                        }
+                    }
+                    catch (e) {
+                        maybeCheckNext(urlCandidates);
+                    }
+                }
+                else if (jqXHR.status === 401 || jqXHR.status === 403) {
+                    // I guess this could be it...
+                    discoveredUrl = url;
+                    JVM.log.debug("Using URL: ", url, " assuming it could be an agent but got return code: ", jqXHR.status);
+                    next();
+                }
+                else {
+                    maybeCheckNext(urlCandidates);
+                }
+            });
+        }
+        checkNext(urlCandidates.pop());
+    });
+    JVM._module.service('ConnectionName', ['$location', function ($location) {
+        var answer = null;
+        return function (reset) {
+            if (reset === void 0) { reset = false; }
+            if (!Core.isBlank(answer) && !reset) {
+                return answer;
+            }
+            answer = '';
+            var search = $location.search();
+            if ('con' in window) {
+                answer = window['con'];
+                JVM.log.debug("Using connection name from window: ", answer);
+            }
+            else if ('con' in search) {
+                answer = search['con'];
+                JVM.log.debug("Using connection name from URL: ", answer);
+            }
+            else {
+                JVM.log.debug("No connection name found, using direct connection to JVM");
+            }
+            return answer;
+        };
+    }]);
+    JVM._module.service('ConnectOptions', ['ConnectionName', function (ConnectionName) {
+        var name = ConnectionName();
+        if (Core.isBlank(name)) {
+            // this will fail any if (ConnectOptions) check
+            return false;
+        }
+        var answer = Core.getConnectOptions(name);
+        try {
+            if (window.opener && "passUserDetails" in window.opener) {
+                answer.userName = window.opener["passUserDetails"].username;
+                answer.password = window.opener["passUserDetails"].password;
+            }
+        }
+        catch (securityException) {
+        }
+        return answer;
+    }]);
+    // the jolokia URL we're connected to
+    JVM._module.factory('jolokiaUrl', ['ConnectOptions', function (ConnectOptions) {
+        var answer = undefined;
+        if (!ConnectOptions || !ConnectOptions.name) {
+            JVM.log.debug("Using discovered URL");
+            answer = discoveredUrl;
+        }
+        else {
+            answer = Core.createServerConnectionUrl(ConnectOptions);
+            JVM.log.debug("Using configured URL");
+        }
+        if (!answer) {
+            // this will force a dummy jolokia instance
+            return false;
+        }
+        // build full URL
+        var windowURI = new URI();
+        var jolokiaURI = new URI(answer);
+        if (!jolokiaURI.protocol()) {
+            jolokiaURI.protocol(windowURI.protocol());
+        }
+        if (!jolokiaURI.hostname()) {
+            jolokiaURI.host(windowURI.hostname());
+        }
+        if (!jolokiaURI.port()) {
+            jolokiaURI.port(windowURI.port());
+        }
+        answer = jolokiaURI.toString();
+        JVM.log.debug("Complete jolokia URL: ", answer);
+        return answer;
+    }]);
+    // holds the status returned from the last jolokia call (?)
+    JVM._module.factory('jolokiaStatus', function () {
+        return {
+            xhr: null
+        };
+    });
+    JVM.DEFAULT_MAX_DEPTH = 7;
+    JVM.DEFAULT_MAX_COLLECTION_SIZE = 500;
+    JVM._module.factory('jolokiaParams', ["jolokiaUrl", "localStorage", function (jolokiaUrl, localStorage) {
+        var answer = {
+            canonicalNaming: false,
+            ignoreErrors: true,
+            mimeType: 'application/json',
+            maxDepth: JVM.DEFAULT_MAX_DEPTH,
+            maxCollectionSize: JVM.DEFAULT_MAX_COLLECTION_SIZE
+        };
+        if ('jolokiaParams' in localStorage) {
+            answer = angular.fromJson(localStorage['jolokiaParams']);
+        }
+        else {
+            localStorage['jolokiaParams'] = angular.toJson(answer);
+        }
+        answer['url'] = jolokiaUrl;
+        return answer;
+    }]);
+    JVM._module.factory('jolokia', ["$location", "localStorage", "jolokiaStatus", "$rootScope", "userDetails", "jolokiaParams", "jolokiaUrl", "ConnectOptions", "HawtioDashboard", function ($location, localStorage, jolokiaStatus, $rootScope, userDetails, jolokiaParams, jolokiaUrl, connectionOptions, dash) {
+        if (dash.inDashboard && JVM.windowJolokia) {
+            return JVM.windowJolokia;
+        }
+        if (jolokiaUrl) {
+            // pass basic auth credentials down to jolokia if set
+            var username = null;
+            var password = null;
+            if (connectionOptions.userName && connectionOptions.password) {
+                username = connectionOptions.userName;
+                password = connectionOptions.password;
+            }
+            else if (angular.isDefined(userDetails) && angular.isDefined(userDetails.username) && angular.isDefined(userDetails.password)) {
+                username = userDetails.username;
+                password = userDetails.password;
+            }
+            else {
+                // lets see if they are passed in via request parameter...
+                var search = $location.search();
+                username = search["_user"];
+                password = search["_pwd"];
+                if (angular.isArray(username))
+                    username = username[0];
+                if (angular.isArray(password))
+                    password = password[0];
+            }
+            if (username && password && !connectionOptions.token) {
+                userDetails.username = username;
+                userDetails.password = password;
+                JVM.log.debug("Setting authorization header to username/password");
+                $.ajaxSetup({
+                    beforeSend: function (xhr) {
+                        xhr.setRequestHeader('Authorization', Core.getBasicAuthHeader(username, password));
+                    }
+                });
+            }
+            else if (connectionOptions.token) {
+                JVM.log.debug("Setting authorization header to token");
+                $.ajaxSetup({
+                    beforeSend: function (xhr) {
+                        xhr.setRequestHeader('Authorization', 'Bearer ' + connectionOptions.token);
+                    }
+                });
+            }
+            else {
+                JVM.log.debug("Not setting any authorization header");
+            }
+            jolokiaParams['ajaxError'] = function (xhr, textStatus, error) {
+                if (xhr.status === 401 || xhr.status === 403) {
+                    userDetails.username = null;
+                    userDetails.password = null;
+                    delete userDetails.loginDetails;
+                    delete window.opener["passUserDetails"];
+                }
+                else {
+                    jolokiaStatus.xhr = xhr;
+                    if (!xhr.responseText && error) {
+                        xhr.responseText = error.stack;
+                    }
+                }
+                Core.$apply($rootScope);
+            };
+            var jolokia = new Jolokia(jolokiaParams);
+            jolokia.stop();
+            // TODO this should really go away, need to track down any remaining spots where this is used
+            //localStorage['url'] = jolokiaUrl;
+            if ('updateRate' in localStorage) {
+                if (localStorage['updateRate'] > 0) {
+                    jolokia.start(localStorage['updateRate']);
+                }
+            }
+            JVM.windowJolokia = jolokia;
+            return jolokia;
+        }
+        else {
+            var answer = {
+                isDummy: true,
+                running: false,
+                request: function (req, opts) { return null; },
+                register: function (req, opts) { return null; },
+                list: function (path, opts) { return null; },
+                search: function (mBeanPatter, opts) { return null; },
+                getAttribute: function (mbean, attribute, path, opts) { return null; },
+                setAttribute: function (mbean, attribute, value, path, opts) {
+                },
+                version: function (opts) { return null; },
+                execute: function (mbean, operation) {
+                    var args = [];
+                    for (var _i = 2; _i < arguments.length; _i++) {
+                        args[_i - 2] = arguments[_i];
+                    }
+                    return null;
+                },
+                start: function (period) {
+                    answer.running = true;
+                },
+                stop: function () {
+                    answer.running = false;
+                },
+                isRunning: function () { return answer.running; },
+                jobs: function () { return []; }
+            };
+            JVM.windowJolokia = answer;
+            // empty jolokia that returns nothing
+            return answer;
+        }
+    }]);
+})(JVM || (JVM = {}));
+
+/// <reference path="jvmPlugin.ts"/>
+/**
+ * @module JVM
+ */
+var JVM;
+(function (JVM) {
+    JVM._module.controller("JVM.JVMsController", ["$scope", "$window", "$location", "localStorage", "workspace", "jolokia", "mbeanName", function ($scope, $window, $location, localStorage, workspace, jolokia, mbeanName) {
+        JVM.configureScope($scope, $location, workspace);
+        $scope.data = [];
+        $scope.deploying = false;
+        $scope.status = '';
+        $scope.initDone = false;
+        $scope.filter = '';
+        $scope.filterMatches = function (jvm) {
+            if (Core.isBlank($scope.filter)) {
+                return true;
+            }
+            else {
+                return jvm.alias.toLowerCase().has($scope.filter.toLowerCase());
+            }
+        };
+        $scope.fetch = function () {
+            jolokia.request({
+                type: 'exec',
+                mbean: mbeanName,
+                operation: 'listLocalJVMs()',
+                arguments: []
+            }, {
+                success: render,
+                error: function (response) {
+                    $scope.data = [];
+                    $scope.initDone = true;
+                    $scope.status = 'Could not discover local JVM processes: ' + response.error;
+                    Core.$apply($scope);
+                }
+            });
+        };
+        $scope.stopAgent = function (pid) {
+            jolokia.request({
+                type: 'exec',
+                mbean: mbeanName,
+                operation: 'stopAgent(java.lang.String)',
+                arguments: [pid]
+            }, Core.onSuccess(function () {
+                $scope.fetch();
+            }));
+        };
+        $scope.startAgent = function (pid) {
+            jolokia.request({
+                type: 'exec',
+                mbean: mbeanName,
+                operation: 'startAgent(java.lang.String)',
+                arguments: [pid]
+            }, Core.onSuccess(function () {
+                $scope.fetch();
+            }));
+        };
+        $scope.connectTo = function (url, scheme, host, port, path) {
+            // we only need the port and path from the url, as we got the rest
+            var options = {};
+            options["scheme"] = scheme;
+            options["host"] = host;
+            options["port"] = port;
+            options["path"] = path;
+            // add empty username as we dont need login
+            options["userName"] = "";
+            options["password"] = "";
+            var con = Core.createConnectToServerOptions(options);
+            con.name = "local";
+            JVM.log.debug("Connecting to local JVM agent: " + url);
+            Core.connectToServer(localStorage, con);
+            Core.$apply($scope);
+        };
+        function render(response) {
+            $scope.initDone = true;
+            $scope.data = response.value;
+            if ($scope.data.length === 0) {
+                $scope.status = 'Could not discover local JVM processes';
+            }
+            Core.$apply($scope);
+        }
+        $scope.fetch();
+    }]);
+})(JVM || (JVM = {}));
+
+/// <reference path="../../includes.ts"/>
+/// <reference path="./jvmPlugin.ts"/>
+/**
+ * @module JVM
+ */
+var JVM;
+(function (JVM) {
+    JVM._module.controller("JVM.NavController", ["$scope", "$location", "workspace", function ($scope, $location, workspace) {
+        JVM.configureScope($scope, $location, workspace);
+    }]);
+})(JVM || (JVM = {}));
+
+/// <reference path="../../includes.ts"/>
+/// <reference path="./jvmPlugin.ts"/>
+/**
+ * @module JVM
+ */
+var JVM;
+(function (JVM) {
+    JVM._module.controller("JVM.ResetController", ["$scope", "localStorage", function ($scope, localStorage) {
+        $scope.doClearConnectSettings = function () {
+            var doReset = function () {
+                delete localStorage[JVM.connectControllerKey];
+                delete localStorage[JVM.connectionSettingsKey];
+                setTimeout(function () {
+                    window.location.reload();
+                }, 10);
+            };
+            doReset();
+        };
+    }]);
+})(JVM || (JVM = {}));
 
 /// <reference path="../../includes.ts" />
 /// <reference path="../../jmx/ts/workspace.ts" />

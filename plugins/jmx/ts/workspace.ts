@@ -20,7 +20,7 @@ module Core {
   }
 
 
-  var log:Logging.Logger = Logger.get("Core");
+  var log:Logging.Logger = Logger.get("workspace");
   /**
    * @class Workspace
    */
@@ -249,7 +249,7 @@ module Core {
         var domainClass = escapeDots(domainName);
         var domain = <Core.JMXDomain> domains[domainName];
         for (var mbeanName in domain) {
-          log.debug("JMX tree mbean name: " + mbeanName);
+          // log.debug("JMX tree mbean name: " + mbeanName);
           var entries = {};
           var folder = this.folderGetOrElse(tree, domainName);
           //if (!folder) continue;
