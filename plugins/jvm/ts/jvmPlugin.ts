@@ -29,7 +29,12 @@ module JVM {
 
   _module.constant('mbeanName', 'hawtio:type=JVMList');
 
-  _module.run(["HawtioNav", "$location", "workspace", "viewRegistry", "layoutFull", "helpRegistry", "preferencesRegistry", "ConnectOptions", "locationChangeStartTasks", "HawtioDashboard", (nav:HawtioMainNav.Registry, $location, workspace:Workspace, viewRegistry, layoutFull, helpRegistry, preferencesRegistry, ConnectOptions:Core.ConnectOptions, locationChangeStartTasks, dash) => {
+  _module.run(["HawtioNav", "$location", "workspace", "viewRegistry", "layoutFull", "helpRegistry", "preferencesRegistry", "ConnectOptions", "locationChangeStartTasks", "HawtioDashboard", "HawtioExtension", "$templateCache", "$compile", (nav:HawtioMainNav.Registry, $location, workspace:Workspace, viewRegistry, layoutFull, helpRegistry, preferencesRegistry, ConnectOptions:Core.ConnectOptions, locationChangeStartTasks, dash, extensions, $templateCache, $compile) => {
+
+    extensions.add('hawtio-header', ($scope) => {
+      var template = $templateCache.get(UrlHelpers.join(templatePath, 'navbarHeaderExtension.html'));
+      return $compile(template)($scope);
+    });
 
     if (!dash.inDashboard) {
       // ensure that if the connection parameter is present, that we keep it

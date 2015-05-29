@@ -20,6 +20,7 @@
 /// <reference path="d.ts/jvm/ts/jvmPlugin.d.ts"/>
 /// <reference path="d.ts/jvm/ts/connect.d.ts"/>
 /// <reference path="d.ts/jvm/ts/discover.d.ts"/>
+/// <reference path="d.ts/jvm/ts/header.d.ts"/>
 /// <reference path="d.ts/jvm/ts/jolokiaPreferences.d.ts"/>
 /// <reference path="d.ts/jvm/ts/jolokiaService.d.ts"/>
 /// <reference path="d.ts/jvm/ts/local.d.ts"/>
