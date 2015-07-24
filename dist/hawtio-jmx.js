@@ -4964,7 +4964,7 @@ var JVM;
             // build full URL
             var windowURI = new URI();
             var jolokiaURI = undefined;
-            if (_.startsWith(answer, '/')) {
+            if (_.startsWith(answer, '/') || _.startsWith(answer, 'http')) {
                 jolokiaURI = new URI(answer);
             }
             else {
