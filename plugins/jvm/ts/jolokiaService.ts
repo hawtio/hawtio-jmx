@@ -135,7 +135,7 @@ module JVM {
   }]);
 
   // the jolokia URL we're connected to
-  _module.factory('jolokiaUrl', ['ConnectOptions', (ConnectOptions) => {
+  _module.factory('jolokiaUrl', ['ConnectOptions', 'documentBase', (ConnectOptions, documentBase) => {
     var answer = undefined;
     if (!ConnectOptions || !ConnectOptions.name) {
       log.debug("Using discovered URL");
@@ -150,7 +150,12 @@ module JVM {
     }
     // build full URL
     var windowURI = new URI();
-    var jolokiaURI = new URI(answer);
+    var jolokiaURI = undefined;
+    if (_.startsWith(answer, '/')) {
+      jolokiaURI = new URI(answer);
+    } else {
+      jolokiaURI = new URI(UrlHelpers.join(documentBase, answer));
+    }
     if (!jolokiaURI.protocol()) {
       jolokiaURI.protocol(windowURI.protocol());
     }
