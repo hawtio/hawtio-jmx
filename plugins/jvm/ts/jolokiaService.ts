@@ -225,20 +225,27 @@ module JVM {
         if (angular.isArray(password)) password = password[0];
       }
 
+      // Also set an X-Authorization header as well
+      var headers = ['Authorization', 'X-Authorization'];
+
       if (username && password && !connectionOptions.token) {
         userDetails.username = username;
         userDetails.password = password;
         log.debug("Setting authorization header to username/password");
         $.ajaxSetup({
           beforeSend: (xhr) => {
-            xhr.setRequestHeader('Authorization', Core.getBasicAuthHeader(<string>username, <string>password));
+            headers.forEach((header) => {
+              xhr.setRequestHeader(header, Core.getBasicAuthHeader(<string>username, <string>password));
+            });
           }
         });
       } else if (connectionOptions.token) {
         log.debug("Setting authorization header to token");
         $.ajaxSetup({
           beforeSend: (xhr) => {
-            xhr.setRequestHeader('Authorization', 'Bearer ' + connectionOptions.token);
+            headers.forEach((header) => {
+              xhr.setRequestHeader(header, 'Bearer ' + connectionOptions.token);
+            });
           }
         });
       } else {
