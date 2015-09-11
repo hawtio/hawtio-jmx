@@ -197,7 +197,7 @@ module JVM {
     return answer;
   }]);
 
-  _module.factory('jolokia',["$location", "localStorage", "jolokiaStatus", "$rootScope", "userDetails", "jolokiaParams", "jolokiaUrl", "ConnectOptions", "HawtioDashboard", ($location:ng.ILocationService, localStorage, jolokiaStatus, $rootScope, userDetails:Core.UserDetails, jolokiaParams, jolokiaUrl, connectionOptions, dash):Jolokia.IJolokia => {
+  _module.factory('jolokia',["$location", "localStorage", "jolokiaStatus", "$rootScope", "userDetails", "jolokiaParams", "jolokiaUrl", "ConnectOptions", "HawtioDashboard", "$modal", ($location:ng.ILocationService, localStorage, jolokiaStatus, $rootScope, userDetails:Core.UserDetails, jolokiaParams, jolokiaUrl, connectionOptions, dash, $modal):Jolokia.IJolokia => {
 
     if (dash.inDashboard && windowJolokia) {
       return windowJolokia;
@@ -251,6 +251,7 @@ module JVM {
       } else {
         log.debug("Not setting any authorization header");
       }
+      var modal = null;
       jolokiaParams['ajaxError'] = (xhr, textStatus, error) => {
         if (xhr.status === 401 || xhr.status === 403) {
           userDetails.username = null;
@@ -263,7 +264,27 @@ module JVM {
             xhr.responseText = error.stack;
           }
         }
-        Core.$apply($rootScope);
+        if (!modal) {
+          modal = $modal.open({
+            templateUrl: UrlHelpers.join(templatePath, 'jolokiaError.html'),
+            controller: ['$scope', '$modalInstance', 'ConnectOptions', 'jolokia', ($scope, instance, ConnectOptions, jolokia) => {
+              jolokia.stop();
+              $scope.responseText = xhr.responseText;
+              $scope.ConnectOptions = ConnectOptions;
+              $scope.retry = () => {
+                modal = null;
+                instance.close();
+                jolokia.start();
+              }
+              $scope.goBack = () => {
+                if (ConnectOptions.returnTo) {
+                  window.location.href = ConnectOptions.returnTo;
+                }
+              }
+            }]
+          });
+          Core.$apply($rootScope);
+        }
       };
 
       var jolokia = new Jolokia(jolokiaParams);
