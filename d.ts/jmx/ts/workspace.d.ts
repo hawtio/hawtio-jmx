@@ -184,6 +184,8 @@ declare module Core {
         isRoute(): boolean;
         isComponentsFolder(): boolean;
         isComponent(): boolean;
+        isDataformatsFolder(): boolean;
+        isDataformat(): boolean;
         isOsgiFolder(): boolean;
         isKarafFolder(): boolean;
         isOsgiCompendiumFolder(): boolean;

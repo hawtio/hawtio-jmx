@@ -1013,6 +1013,12 @@ module Core {
     isComponent() {
       return this.hasDomainAndProperties('org.apache.camel', {type: 'components'});
     }
+    isDataformatsFolder() {
+      return this.selectionHasDomainAndLastFolderName('org.apache.camel', 'dataformats');
+    }
+    isDataformat() {
+      return this.hasDomainAndProperties('org.apache.camel', {type: 'dataformats'});
+    }
 
     isOsgiFolder() {
       return this.hasDomainAndProperties('osgi.core');
