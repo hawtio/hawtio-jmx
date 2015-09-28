@@ -225,8 +225,8 @@ module JVM {
         if (angular.isArray(password)) password = password[0];
       }
 
-      // Also set an X-Authorization header as well
-      var headers = ['Authorization', 'X-Authorization'];
+      // Just set Authorization for now...
+      var headers = ['Authorization'];
 
       if (username && password && !connectionOptions.token) {
         userDetails.username = username;
