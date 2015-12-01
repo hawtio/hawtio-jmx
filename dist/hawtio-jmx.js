@@ -2209,6 +2209,7 @@ var Jmx;
             $scope.selectedItems = [];
             $scope.lastKey = null;
             $scope.attributesInfoCache = {};
+            $scope.workspace = workspace;
             $scope.entity = {};
             $scope.attributeSchema = {};
             $scope.gridData = [];

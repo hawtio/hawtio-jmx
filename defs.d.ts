@@ -1,3 +1,4 @@
+/// <reference path="d.ts/includes.d.ts"/>
 /// <reference path="d.ts/jmx/ts/folder.d.ts"/>
 /// <reference path="d.ts/jmx/ts/jmxHelpers.d.ts"/>
 /// <reference path="d.ts/jmx/ts/workspace.d.ts"/>
