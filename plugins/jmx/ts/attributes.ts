@@ -324,8 +324,12 @@ module Jmx {
     function updateTableContents() {
       // lets clear any previous queries just in case!
       Core.unregister(jolokia, $scope);
+      if (!$scope.gridData) {
+        $scope.gridData = [];
+      } else {
+        $scope.gridData.length = 0;
+      }
 
-      $scope.gridData = [];
       $scope.mbeanIndex = null;
       var mbean = workspace.getSelectedMBeanName();
       var request = <any>null;
@@ -505,9 +509,8 @@ module Jmx {
             $scope.selectedItems.splice(0, $scope.selectedItems.length);
             $scope.selectedItems.push.apply($scope.selectedItems, newSelections);
             //console.log("Would have selected " + JSON.stringify($scope.selectedItems));
-            // Core.$apply($scope);
+            Core.$apply($scope);
           }
-          // if the last row, then fire an event
         } else {
           console.log("No mbean name in request " + JSON.stringify(response.request));
         }
@@ -558,8 +561,8 @@ module Jmx {
         }
         $scope.gridData = data;
         addHandlerFunctions($scope.gridData);
+        Core.$apply($scope);
       }
-      Core.$apply($scope);
     }
 
     function addHandlerFunctions(data) {

@@ -23,6 +23,14 @@ declare module Jmx {
         type: string;
         title: string;
         mbean: string;
+        attribute: string;
+        total: string;
+        terms: string;
+        remaining: string;
+    } | {
+        type: string;
+        title: string;
+        mbean: string;
         total: string;
         terms: string;
         remaining: string;

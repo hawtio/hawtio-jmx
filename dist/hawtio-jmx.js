@@ -4,8 +4,7 @@
 var __extends = (this && this.__extends) || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
-    __.prototype = b.prototype;
-    d.prototype = new __();
+    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
 /// <reference path="../../includes.ts"/>
 /**
@@ -614,8 +613,7 @@ var Jmx;
 var __extends = (this && this.__extends) || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
-    __.prototype = b.prototype;
-    d.prototype = new __();
+    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
 /// <reference path="../../includes.ts"/>
 /// <reference path="jmxHelpers.ts"/>
@@ -2458,7 +2456,12 @@ var Jmx;
             function updateTableContents() {
                 // lets clear any previous queries just in case!
                 Core.unregister(jolokia, $scope);
-                $scope.gridData = [];
+                if (!$scope.gridData) {
+                    $scope.gridData = [];
+                }
+                else {
+                    $scope.gridData.length = 0;
+                }
                 $scope.mbeanIndex = null;
                 var mbean = workspace.getSelectedMBeanName();
                 var request = null;
@@ -2627,6 +2630,8 @@ var Jmx;
                             var newSelections = $scope.selectedIndices.map(function (idx) { return $scope.gridData[idx]; }).filter(function (row) { return row; });
                             $scope.selectedItems.splice(0, $scope.selectedItems.length);
                             $scope.selectedItems.push.apply($scope.selectedItems, newSelections);
+                            //console.log("Would have selected " + JSON.stringify($scope.selectedItems));
+                            Core.$apply($scope);
                         }
                     }
                     else {
@@ -2679,8 +2684,8 @@ var Jmx;
                     }
                     $scope.gridData = data;
                     addHandlerFunctions($scope.gridData);
+                    Core.$apply($scope);
                 }
-                Core.$apply($scope);
             }
             function addHandlerFunctions(data) {
                 data.forEach(function (item) {
