@@ -14,6 +14,7 @@ var pkg = require('./package.json');
 var config = {
   main: '.',
   ts: ['plugins/**/*.ts'],
+  less: ['plugins/**/*.less'],
   templates: ['plugins/**/*.html'],
   templateModule: pkg.name + '-templates',
   dist: './dist/',
@@ -55,7 +56,7 @@ gulp.task('tsc', ['clean-defs'], function() {
   var tsResult = gulp.src(config.ts)
     .pipe(plugins.typescript(config.tsProject))
     .on('error', plugins.notify.onError({
-      message: '#{ error.message }',
+      message: '%<= error.message %>',
       title: 'Typescript compilation error'
     }));
 
@@ -73,6 +74,19 @@ gulp.task('tsc', ['clean-defs'], function() {
           fs.appendFileSync('defs.d.ts', '/// <reference path="' + relative + '"/>\n');
           return buf;
         }));
+});
+
+gulp.task('less', function () {
+  return gulp.src(config.less)
+    .pipe(plugins.less({
+      paths: [ path.join(__dirname, 'less', 'includes') ]
+    }))
+    .on('error', plugins.notify.onError({
+      message: '<%= error.message %>',
+      title: 'less file compilation error'
+    }))
+    .pipe(plugins.concat(config.css))
+    .pipe(gulp.dest('./dist'));
 });
 
 gulp.task('template', ['tsc'], function() {
@@ -98,7 +112,13 @@ gulp.task('clean', ['concat'], function() {
     .pipe(plugins.clean());
 });
 
-gulp.task('watch', ['build'], function() {
+gulp.task('watch-less', function() {
+  plugins.watch(config.less, function() {
+    gulp.start('less');
+  });
+});
+
+gulp.task('watch', ['build', 'watch-less'], function() {
   plugins.watch(['libs/**/*.js', 'libs/**/*.css', 'index.html', config.dist + '/' + config.js, config.dist + '/' + config.css], function() {
     gulp.start('reload');
   });
@@ -192,7 +212,7 @@ gulp.task('embed-images', ['concat'], function() {
   .pipe(gulp.dest(config.dist));
 });
 
-gulp.task('build', ['bower', 'path-adjust', 'tsc', 'template', 'concat', 'clean']);
+gulp.task('build', ['bower', 'path-adjust', 'tsc', 'less', 'template', 'concat', 'clean']);
 
 gulp.task('default', ['connect']);
 
