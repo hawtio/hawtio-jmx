@@ -1,28 +1,22 @@
 
-.tree-header {
-  position: relative;
-  height: 26px;
-}
-
 /* jmx operation page stuff */
 .operation-row {
   position: relative;
   /* height: 30px; */
   vertical-align: middle;
-}
+  &.can-invoke {
+    cursor: pointer;
+  }
 
-.operation-row.can-invoke {
-  cursor: pointer;
-}
+  &.cant-invoke {
+    cursor: not-allowed;
+  }
 
-.operation-row.cant-invoke {
-  cursor: not-allowed;
-}
-
-.operation-row > * {
-  display: inline-block;
-  height: 100%;
-  line-height: 30px;
+  & > * {
+    display: inline-block;
+    height: 100%;
+    line-height: 30px;
+  }
 }
 
 .operation-actions {
@@ -49,13 +43,13 @@ fs-donut svg g text.units {
 #tree-ctrl {
   position: relative;
   top: -3px;
-}
 
-#tree-ctrl > li > a {
-  display: block;
-  padding-left: 5px;
-  padding-right: 5px;
-  /* padding: 5px; */
+  & > li > a {
+    display: block;
+    padding-left: 5px;
+    padding-right: 5px;
+    /* padding: 5px; */
+  }
 }
 
 .dynatree-container, 
@@ -78,54 +72,56 @@ fs-donut svg g text.units {
   font: 10px sans-serif;
   pointer-events: none;
   z-index: 2;
-}
-.axis.text {
-  -webkit-transition: fill-opacity 250ms linear;
-}
-.axis path {
-  display: none;
-}
-.axis line {
-  stroke: #000;
-  shape-rendering: crispEdges;
-}
-.axis.top {
-  position: relative;
-  top: 0;
-  padding: 0;
-}
-.axis.bottom {
-  position: absolute;
-  bottom: 0px;
-  padding: 0;
+
+  &.text {
+    -webkit-transition: fill-opacity 250ms linear;
+  }
+  &.top {
+    position: relative;
+    top: 0;
+    padding: 0;
+  }
+  &.bottom {
+    position: absolute;
+    bottom: 0px;
+    padding: 0;
+  }
+  path {
+    display: none;
+  }
+  line {
+    stroke: #000;
+    shape-rendering: crispEdges;
+  }
 }
 .horizon {
   overflow: hidden;
   position: relative;
+  .title,
+  .value {
+    bottom: 0;
+    line-height: 30px;
+    margin: 0 6px;
+    position: absolute;
+    white-space: nowrap;
+  }
+  .title {
+    left: 0;
+  }
+  .value {
+    right: 0;
+  }
+  canvas {
+    display: block;
+  }
+  &:last-child {
+    border-bottom: none;
+  }
+  & + .horizon {
+    border-top: none;
+  }
 }
-.horizon:last-child {
-  border-bottom: none;
-}
-.horizon + .horizon {
-  border-top: none;
-}
-.horizon canvas {
-  display: block;
-}
-.horizon .title,
-.horizon .value {
-  bottom: 0;
-  line-height: 30px;
-  margin: 0 6px;
-  position: absolute;
-  white-space: nowrap;
-}
-.horizon .title {
-  left: 0;
-}
-.horizon .value {
-  right: 0;
-}
+
 .line {
   opacity: .2;
   z-index: 2;
@@ -182,19 +178,63 @@ strong.new,
   font-size: 10px;
   padding: 4px;
   margin: 5px;
-}
 
-.monitor-indicator.button {
-  cursor: pointer;
-}
+  &.button {
+    cursor: pointer;
+  }
 
-.monitor-indicator.true {
-  background: #1cd11d;
-  box-shadow: inset 0px 1px 0px 0px rgba(250, 250, 250, 0.5), 0px 0px 4px 1px rgba(34, 203, 1, 0.49);
-}
+  &.true {
+    background: #1cd11d;
+    box-shadow: inset 0px 1px 0px 0px rgba(250, 250, 250, 0.5), 0px 0px 4px 1px rgba(34, 203, 1, 0.49);
+  }
 
-.monitor-indicator.false {
-  background: #737373;
-  box-shadow: inset 0px 1px 0px 0px rgba(250, 250, 250, 0.5);
+  &.false {
+    background: #737373;
+    box-shadow: inset 0px 1px 0px 0px rgba(250, 250, 250, 0.5);
+  }
 }
 /* end threads page */
+
+.tree-header {
+  position: relative;
+  height: 26px;
+  & > .left,
+  & > .right {
+    position: absolute;
+    top: 3px;
+    bottom: 6px;
+    vertical-align: middle;
+    line-height: 10px;
+  }
+
+  & > .left {
+    left: 0;
+  }
+
+  & > .right {
+    right: 10px;
+  }
+}
+
+.jmx-attributes-wrapper {
+  width: 100%;
+  overflow: auto;
+}
+
+.jmx-attributes-toolbar {
+  .row {
+    margin-top: 1em;
+    margin-bottom: 1em;
+  }
+
+  .search-query {
+    margin-top: 0;
+    margin-bottom: 0;
+  }
+
+  .pull-right .inline-block .search-query {
+    margin-top: 1em;
+    margin-bottom: 1em;
+  }
+}
+
