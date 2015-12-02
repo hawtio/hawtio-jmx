@@ -7,6 +7,17 @@ module JVM {
 
     var config = {
       properties: {
+        updateRate: {
+          type: 'number',
+          description: 'The period between polls to jolokia to fetch JMX data',
+          enum: {
+            'Off': 0,
+            '5 Seconds': '5000',
+            '10 Seconds': '10000',
+            '30 Seconds': '30000',
+            '60 seconds': '60000'
+          }
+        },
         maxDepth: {
           type: 'number',
           description: 'The number of levels jolokia will marshal an object to json on the server side before returning'
@@ -22,6 +33,12 @@ module JVM {
     $scope.config = config;
 
     Core.initPreferenceScope($scope, localStorage, {
+      'updateRate': {
+        'value': 5000,
+        'post': (newValue) => {
+          $scope.$emit('UpdateRate', newValue);
+        }
+      },
       'maxDepth': {
         'value': DEFAULT_MAX_DEPTH,
         'converter': parseInt,
