@@ -3,6 +3,7 @@ var gulp = require('gulp'),
     eventStream = require('event-stream'),
     gulpLoadPlugins = require('gulp-load-plugins'),
     fs = require('fs'),
+    del  = require('del'),
     path = require('path'),
     s = require('underscore.string'),
     hawtio = require('hawtio-node-backend');
@@ -41,8 +42,7 @@ gulp.task('path-adjust', function() {
 });
 
 gulp.task('clean-defs', function() {
-  return gulp.src('defs.d.ts', { read: false })
-    .pipe(plugins.clean());
+  return del('defs.d.ts');
 });
 
 gulp.task('tsc', ['clean-defs'], function() {
@@ -101,8 +101,7 @@ gulp.task('concat', ['template'], function() {
 });
 
 gulp.task('clean', ['concat'], function() {
-  return gulp.src(['templates.js', 'compiled.js'], { read: false })
-    .pipe(plugins.clean());
+  return del(['templates.js', 'compiled.js']);
 });
 
 gulp.task('watch-less', function() {
