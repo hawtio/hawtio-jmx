@@ -45,3 +45,12 @@ To do so in another shell:
     mvn exec:java -DstartLR=false
 
 Then when you run `gulp` then the hawtio-jmx web console will automatic detect the running JVM with hawtio 1.x and you have some MBeans to work with.
+
+#### Output build to a different directory
+
+When developing this plugin in a dependent console you can change the output directory where the compiled .js and .css go.  Just use the 'out' flag to set a different output directory, for example:
+
+`gulp watch --out=../fabric8-console/libs/hawtio-jmx/dist/`
+
+Whenever the build completes the compiled .js file will be put into the target directory.  Don't forget to first do a `gulp build` without this flag before committing changes!
+
