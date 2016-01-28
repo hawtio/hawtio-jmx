@@ -98,7 +98,7 @@ module Jmx {
       canSelectRows: false,
       enableRowSelection: false,
       enableRowClickSelection: false,
-      keepLastSelected: false,
+      keepLastSelected: true,
       multiSelect: true,
       showColumnMenu: true,
       displaySelectionCheckbox: false,
@@ -372,11 +372,18 @@ module Jmx {
         if (node === null || angular.isUndefined(node) || node.key !== $scope.lastKey) {
           $scope.gridOptions.columnDefs = propertiesColumnDefs;
           $scope.gridOptions.enableRowClickSelection = false;
+          $scope.gridOptions.enableRowSelection = false;
+          $scope.gridOptions.displaySelectionCheckbox = false;
+          $scope.gridOptions.canSelectRows = false;
         }
       } else if (node) {
         if (node.key !== $scope.lastKey) {
           $scope.gridOptions.columnDefs = [];
           $scope.gridOptions.enableRowClickSelection = true;
+          $scope.gridOptions.enableRowClickSelection = true;
+          $scope.gridOptions.enableRowSelection = true;
+          $scope.gridOptions.displaySelectionCheckbox = true;
+          $scope.gridOptions.canSelectRows = true;
         }
         // lets query each child's details
         var children = node.children;

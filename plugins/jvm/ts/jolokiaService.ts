@@ -43,6 +43,8 @@ module JVM {
         con: name
       });
       window.location.replace(uri.toString());
+      // don't allow bootstrap to continue
+      return;
     }
 
     var connectionName = query['con'];
