@@ -9,116 +9,114 @@ module JVM {
   var urlCandidates = ['/hawtio/jolokia', '/jolokia', 'jolokia'];
   var discoveredUrl = null;
 
-  hawtioPluginLoader.registerPreBootstrapTask((next) => {
-    var uri = new URI();
-    var query = uri.query(true);
-    log.debug("query: ", query);
+  hawtioPluginLoader.registerPreBootstrapTask({
+    name: 'JvmParseLocation',
+    task: (next) => {
+      var uri = new URI();
+      var query = uri.query(true);
+      log.debug("query: ", query);
 
-    var jolokiaUrl = query['jolokiaUrl'];
-    if (jolokiaUrl) {
-      delete query['sub-tab'];
-      delete query['main-tab'];
-      jolokiaUrl = jolokiaUrl.unescapeURL();
-      var jolokiaURI = new URI(jolokiaUrl);
-      var name = query['title'] || 'Unknown Connection';
-      var token = query['token'] || Core.trimLeading(uri.hash(), '#');
-      var options = Core.createConnectOptions({
+      var jolokiaUrl = query['jolokiaUrl'];
+      if (jolokiaUrl) {
+        delete query['sub-tab'];
+        delete query['main-tab'];
+        jolokiaUrl = jolokiaUrl.unescapeURL();
+        var jolokiaURI = new URI(jolokiaUrl);
+        var name = query['title'] || 'Unknown Connection';
+        var token = query['token'] || Core.trimLeading(uri.hash(), '#');
+        var options = Core.createConnectOptions({
         name: name,
         scheme: jolokiaURI.protocol(),
         host: jolokiaURI.hostname(),
         port: Core.parseIntValue(jolokiaURI.port()),
         path: Core.trimLeading(jolokiaURI.pathname(), '/'),
         useProxy: false
-      });
-      if (!Core.isBlank(token)) {
-        options['token'] = token;
+        });
+        if (!Core.isBlank(token)) {
+          options['token'] = token;
+        }
+        _.merge(options, jolokiaURI.query(true));
+        _.assign(options, query);
+        log.debug("options: ", options);
+        var connectionMap = Core.loadConnectionMap();
+        connectionMap[name] = options;
+        Core.saveConnectionMap(connectionMap);
+        uri.hash("").query({
+          con: name
+        });
+        window.location.replace(uri.toString());
+        // don't allow bootstrap to continue
+        return;
       }
-      _.merge(options, jolokiaURI.query(true));
-      _.assign(options, query);
-      log.debug("options: ", options);
-      var connectionMap = Core.loadConnectionMap();
-      connectionMap[name] = options;
-      Core.saveConnectionMap(connectionMap);
-      uri.hash("").query({
-        con: name
-      });
-      window.location.replace(uri.toString());
-      // don't allow bootstrap to continue
-      return;
-    }
 
-    var connectionName = query['con'];
-    if (connectionName) {
-      log.debug("Not discovering jolokia");
-      // a connection name is set, no need to discover a jolokia instance
-      next();
-      return;
-    }
-    function maybeCheckNext(candidates) {
-      if (candidates.length === 0) {
+      var connectionName = query['con'];
+      if (connectionName) {
+        log.debug("Not discovering jolokia");
+        // a connection name is set, no need to discover a jolokia instance
         next();
-      } else {
-        checkNext(candidates.pop());
+        return;
       }
-    }
-    function checkNext(url) {
-      log.debug("trying URL: ", url);
-      $.ajax(url).always((data, statusText, jqXHR) => {
-        if (jqXHR.status === 200) {
-          try {
-            var resp = angular.fromJson(data);
-            //log.debug("Got response: ", resp);
-            if ('value' in resp && 'agent' in resp.value) {
-              discoveredUrl = url;
-              log.debug("Found jolokia agent at: ", url, " version: ", resp.value.agent);
-              next();
-            } else {
-              maybeCheckNext(urlCandidates);
-            }
-          } catch (e) {
-            maybeCheckNext(urlCandidates);
-          }
-        } else if (jqXHR.status === 401 || jqXHR.status === 403) {
-          // I guess this could be it...
-          discoveredUrl = url;
-          log.debug("Using URL: ", url, " assuming it could be an agent but got return code: ", jqXHR.status);
+      function maybeCheckNext(candidates) {
+        if (candidates.length === 0) {
           next();
         } else {
-          maybeCheckNext(urlCandidates);
+          checkNext(candidates.pop());
         }
-      });
+      }
+      function checkNext(url) {
+        log.debug("trying URL: ", url);
+        $.ajax(url).always((data, statusText, jqXHR) => {
+          if (jqXHR.status === 200) {
+            try {
+              var resp = angular.fromJson(data);
+              //log.debug("Got response: ", resp);
+              if ('value' in resp && 'agent' in resp.value) {
+                discoveredUrl = url;
+                log.debug("Found jolokia agent at: ", url, " version: ", resp.value.agent);
+                next();
+              } else {
+                maybeCheckNext(urlCandidates);
+              }
+            } catch (e) {
+              maybeCheckNext(urlCandidates);
+            }
+          } else if (jqXHR.status === 401 || jqXHR.status === 403) {
+            // I guess this could be it...
+            discoveredUrl = url;
+            log.debug("Using URL: ", url, " assuming it could be an agent but got return code: ", jqXHR.status);
+            next();
+          } else {
+            maybeCheckNext(urlCandidates);
+          }
+        });
+      }
+      checkNext(urlCandidates.pop());
     }
-    checkNext(urlCandidates.pop());
   });
 
-  export interface DummyJolokia extends Jolokia.IJolokia {
-    isDummy: boolean;
-    running:boolean;
+
+  export var ConnectionName:string = null;
+
+  export function getConnectionName(reset = false) {
+    if (!Core.isBlank(ConnectionName) && !reset) {
+      return ConnectionName;
+    } 
+    ConnectionName = '';
+    var search = <any>new URI().search(true);
+    if ('con' in window) {
+      ConnectionName = <string> window['con'];
+      log.debug("Using connection name from window: ", ConnectionName);
+    } else if ('con' in search) {
+      ConnectionName = search['con'];
+      log.debug("Using connection name from URL: ", ConnectionName);
+    } else {
+      log.debug("No connection name found, using direct connection to JVM");
+    }
+    return ConnectionName;
   }
 
-  _module.service('ConnectionName', ['$location', ($location:ng.ILocationService) => {
-    var answer:string = null;
-    return (reset = false):string => {
-      if (!Core.isBlank(answer) && !reset) {
-        return answer;
-      } 
-      answer = '';
-      var search = $location.search();
-      if ('con' in window) {
-        answer = <string> window['con'];
-        log.debug("Using connection name from window: ", answer);
-      } else if ('con' in search) {
-        answer = search['con'];
-        log.debug("Using connection name from URL: ", answer);
-      } else {
-        log.debug("No connection name found, using direct connection to JVM");
-      }
-      return answer;
-    }
-  }]);
-
-  _module.service('ConnectOptions', ['ConnectionName', (ConnectionName):any => {
-    var name = ConnectionName();
+  export function getConnectionOptions():any {
+    var name = getConnectionName();
     if (Core.isBlank(name)) {
       // this will fail any if (ConnectOptions) check
       return false;
@@ -134,11 +132,12 @@ module JVM {
       // ignore
     }
     return answer;
-  }]);
+  }
 
-  // the jolokia URL we're connected to
-  _module.factory('jolokiaUrl', ['ConnectOptions', 'documentBase', (ConnectOptions, documentBase) => {
+  export function getJolokiaUrl() {
     var answer = undefined;
+    var ConnectOptions = getConnectionOptions();
+    var documentBase = HawtioCore.documentBase();
     if (!ConnectOptions || !ConnectOptions.name) {
       log.debug("Using discovered URL");
       answer = discoveredUrl;
@@ -170,6 +169,26 @@ module JVM {
     answer = jolokiaURI.toString();
     log.debug("Complete jolokia URL: ", answer);
     return answer;
+  }
+
+  export interface DummyJolokia extends Jolokia.IJolokia {
+    isDummy: boolean;
+    running:boolean;
+  }
+
+  _module.service('ConnectionName', [() => {
+    return (reset = false) => {
+      return getConnectionName(reset);
+    };
+  }]);
+
+  _module.service('ConnectOptions', [():any => {
+    return getConnectionOptions();
+  }]);
+
+  // the jolokia URL we're connected to
+  _module.factory('jolokiaUrl', [() => {
+    return getJolokiaUrl();
   }]);
 
   // holds the status returned from the last jolokia call (?)
@@ -199,6 +218,32 @@ module JVM {
     return answer;
   }]);
 
+  export function getBeforeSend() {
+    // Just set Authorization for now...
+    var headers = ['Authorization'];
+    var connectionOptions = getConnectionOptions();
+    if (connectionOptions.token) {
+      log.debug("Setting authorization header to token");
+      return (xhr) => {
+        headers.forEach((header) => {
+          xhr.setRequestHeader(header, 'Bearer ' + connectionOptions.token);
+        });
+      };
+    } else if (connectionOptions.username && connectionOptions.password) {
+        log.debug("Setting authorization header to username/password");
+        return (xhr) => {
+          headers.forEach((header) => {
+            xhr.setRequestHeader(header, Core.getBasicAuthHeader(<string>connectionOptions.username, <string>connectionOptions.password));
+          });
+        };
+    } else {
+        log.debug("Not setting any authorization header");
+        return (xhr) => {
+
+        };
+    }
+  }
+
   _module.factory('jolokia',["$location", "localStorage", "jolokiaStatus", "$rootScope", "userDetails", "jolokiaParams", "jolokiaUrl", "ConnectOptions", "HawtioDashboard", "$modal", ($location:ng.ILocationService, localStorage, jolokiaStatus, $rootScope, userDetails:Core.UserDetails, jolokiaParams, jolokiaUrl, connectionOptions, dash, $modal):Jolokia.IJolokia => {
 
     if (dash.inDashboard && windowJolokia) {
@@ -213,6 +258,8 @@ module JVM {
       if (connectionOptions.userName && connectionOptions.password) {
         username = connectionOptions.userName;
         password = connectionOptions.password;
+        userDetails.username = username;
+        userDetails.password = password;
       } else if (angular.isDefined(userDetails) &&
           angular.isDefined(userDetails.username) &&
           angular.isDefined(userDetails.password)) {
@@ -227,32 +274,10 @@ module JVM {
         if (angular.isArray(password)) password = password[0];
       }
 
-      // Just set Authorization for now...
-      var headers = ['Authorization'];
+      $.ajaxSetup({
+        beforeSend: getBeforeSend()
+      });
 
-      if (username && password && !connectionOptions.token) {
-        userDetails.username = username;
-        userDetails.password = password;
-        log.debug("Setting authorization header to username/password");
-        $.ajaxSetup({
-          beforeSend: (xhr) => {
-            headers.forEach((header) => {
-              xhr.setRequestHeader(header, Core.getBasicAuthHeader(<string>username, <string>password));
-            });
-          }
-        });
-      } else if (connectionOptions.token) {
-        log.debug("Setting authorization header to token");
-        $.ajaxSetup({
-          beforeSend: (xhr) => {
-            headers.forEach((header) => {
-              xhr.setRequestHeader(header, 'Bearer ' + connectionOptions.token);
-            });
-          }
-        });
-      } else {
-        log.debug("Not setting any authorization header");
-      }
       var modal = null;
       jolokiaParams['ajaxError'] = (xhr, textStatus, error) => {
         if (xhr.status === 401 || xhr.status === 403) {
@@ -289,7 +314,7 @@ module JVM {
         }
       };
 
-      var jolokia = new Jolokia(jolokiaParams);
+      var jolokia = <any> new Jolokia(jolokiaParams);
       jolokia.stop();
 
       // TODO this should really go away, need to track down any remaining spots where this is used

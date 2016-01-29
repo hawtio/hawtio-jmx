@@ -1,10 +1,12 @@
 /// <reference path="../../includes.d.ts" />
 /// <reference path="jmxHelpers.d.ts" />
 /// <reference path="folder.d.ts" />
+/// <reference path="../../jvm/ts/jolokiaService.d.ts" />
 /**
  * @module Core
  */
 declare module Core {
+    var tree: any;
     /**
      * @class NavMenuItem
      */

@@ -1,21 +1,9 @@
 /// <reference path="../../includes.d.ts" />
-/// <reference path="../../jmx/ts/workspace.d.ts" />
+/// <reference path="jvmGlobals.d.ts" />
 /**
  * @module JVM
  */
 declare module JVM {
-    var rootPath: string;
-    var templatePath: string;
-    var pluginName: string;
-    var log: Logging.Logger;
-    var connectControllerKey: string;
-    var connectionSettingsKey: string;
-    var logoPath: string;
-    var logoRegistry: {
-        'jetty': string;
-        'tomcat': string;
-        'generic': string;
-    };
     /**
      * Adds common properties and functions to the scope
      * @method configureScope

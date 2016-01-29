@@ -5,7 +5,51 @@
 /// <reference path="../../includes.ts"/>
 /// <reference path="jmxHelpers.ts"/>
 /// <reference path="folder.ts"/>
+/// <reference path="../../jvm/ts/jolokiaService.ts"/>
 module Core {
+
+  var log:Logging.Logger = Logger.get("workspace");
+  export var tree:any = null;
+
+  hawtioPluginLoader.registerPreBootstrapTask({
+    name: 'JmxLoadTree',
+    depends: ['JvmParseLocation'],
+    task: (next) => {
+      var jolokiaUrl = JVM.getJolokiaUrl();
+      if (!jolokiaUrl) {
+        log.debug("No jolokia URL set up, not fetching JMX tree");
+        next();
+        return;
+      }
+
+      var uri = new URI(jolokiaUrl);
+      uri.segment('list');
+      uri.search({
+        canonicalNaming: false,
+        maxDepth: 7,
+        maxCollectionSize: 50000,
+        maxObjects: 50000,
+        ignoreErrors: true
+      });
+
+      $.ajax(uri.toString(), {
+        async: true,
+        beforeSend: JVM.getBeforeSend(),
+        dataType: 'json',
+        cache: false,
+        success: (data) => {
+          Core.tree = data;
+          log.debug("Fetched JMX tree: ", tree);
+        },
+        error: (jqXHR, textStatus, errorThrown) => {
+          log.info("Failed to load JMX tree, status: ", textStatus, " error: ", errorThrown, " jqXHR: ", jqXHR);
+        },
+        complete: () => {
+          next();
+        }
+      });
+    }
+  });
 
   /**
    * @class NavMenuItem
@@ -20,7 +64,6 @@ module Core {
   }
 
 
-  var log:Logging.Logger = Logger.get("workspace");
   /**
    * @class Workspace
    */
@@ -118,22 +161,30 @@ module Core {
         }, 10);
         return;
       }
-      var flags = {
+      if (Core.tree) {
+        setTimeout(() => {
+          workspace.treeFetched = true;
+          workspace.populateTree(tree);
+          Core.tree = null;
+        }, 1);
+      } else {
+        var flags = {
         ignoreErrors: true, 
         maxDepth: 7,
         error: (response) => {
           workspace.treeFetched = true;
           log.debug("Error fetching JMX tree: ", response);
         }
-      };
-      log.debug("jolokia: ", this.jolokia);
-      this.jolokia.request({ 'type': 'list' }, Core.onSuccess((response) => {
-        if (response.value) {
-          this.jolokiaStatus.xhr = null;
-        }
-        workspace.treeFetched = true;
-        workspace.populateTree(response);  
-      }, flags));
+        };
+        log.debug("jolokia: ", this.jolokia);
+        this.jolokia.request({ 'type': 'list' }, Core.onSuccess((response) => {
+          if (response.value) {
+            this.jolokiaStatus.xhr = null;
+          }
+          workspace.treeFetched = true;
+          workspace.populateTree(response);  
+        }, flags));
+      }
     }
 
 
