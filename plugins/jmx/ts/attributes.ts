@@ -179,12 +179,12 @@ module Jmx {
       var schema:any = $scope.attributeSchema = _.cloneDeep(attributeSchemaBasic);
       if (entity.key === "ObjectName") {
         // ObjectName is calculated locally
-        delete schema.properties.jolokia;  
+        delete schema.properties.jolokia;
       } else {
         entity.jolokia = getUrlForThing(jolokiaUrl, "read", workspace.getSelectedMBeanName(), entity.key);
       }
       schema.properties.value = {
-        formTemplate: '<div class="form-group"><label class="control-label">Value</label><div hawtio-editor={{model}}></div></div>'
+        formTemplate: '<div class="form-group"><label class="control-label">Value</label><div hawtio-editor="entity.value"></div></div>'
       }
       $scope.showAttributeDialog = true;
     }
@@ -583,7 +583,7 @@ module Jmx {
           $scope.onViewAttribute(item);
         };
         item['folderIconClass'] = (row) => {
-          return $scope.folderIconClass(row);            
+          return $scope.folderIconClass(row);
         };
         item['folderHref'] = (row) => {
           return $scope.folderHref(row);
