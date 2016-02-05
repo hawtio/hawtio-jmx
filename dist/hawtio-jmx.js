@@ -589,6 +589,10 @@ var JVM;
             function checkNext(url) {
                 JVM.log.debug("trying URL: ", url);
                 $.ajax(url).always(function (data, statusText, jqXHR) {
+                    // for $.ajax().always(), the xhr is flipped on fail
+                    if (statusText !== 'success') {
+                        jqXHR = data;
+                    }
                     if (jqXHR.status === 200) {
                         try {
                             var resp = angular.fromJson(data);
