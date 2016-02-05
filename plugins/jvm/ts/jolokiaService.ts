@@ -66,6 +66,10 @@ module JVM {
       function checkNext(url) {
         log.debug("trying URL: ", url);
         $.ajax(url).always((data, statusText, jqXHR) => {
+          // for $.ajax().always(), the xhr is flipped on fail
+          if (statusText !== 'success') {
+            jqXHR = data;
+          }
           if (jqXHR.status === 200) {
             try {
               var resp = angular.fromJson(data);
@@ -100,7 +104,7 @@ module JVM {
   export function getConnectionName(reset = false) {
     if (!Core.isBlank(ConnectionName) && !reset) {
       return ConnectionName;
-    } 
+    }
     ConnectionName = '';
     var search = <any>new URI().search(true);
     if ('con' in window) {
@@ -351,7 +355,7 @@ module JVM {
       };
       windowJolokia = answer;
       // empty jolokia that returns nothing
-      return answer;          
+      return answer;
     }
   }]);
 
