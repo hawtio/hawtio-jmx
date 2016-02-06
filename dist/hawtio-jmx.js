@@ -808,7 +808,9 @@ var JVM;
                         userDetails.username = null;
                         userDetails.password = null;
                         delete userDetails.loginDetails;
-                        delete window.opener["passUserDetails"];
+                        if (window.opener && "passUserDetails" in window.opener) {
+                            delete window.opener["passUserDetails"];
+                        }
                     }
                     else {
                         jolokiaStatus.xhr = xhr;
