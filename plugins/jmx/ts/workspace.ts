@@ -26,9 +26,6 @@ module Core {
       uri.segment('list');
       uri.search({
         canonicalNaming: false,
-        maxDepth: 7,
-        maxCollectionSize: 50000,
-        maxObjects: 50000,
         ignoreErrors: true
       });
 
@@ -169,12 +166,11 @@ module Core {
         }, 1);
       } else {
         var flags = {
-        ignoreErrors: true, 
-        maxDepth: 7,
-        error: (response) => {
-          workspace.treeFetched = true;
-          log.debug("Error fetching JMX tree: ", response);
-        }
+          ignoreErrors: true, 
+          error: (response) => {
+            workspace.treeFetched = true;
+            log.debug("Error fetching JMX tree: ", response);
+          }
         };
         log.debug("jolokia: ", this.jolokia);
         this.jolokia.request({ 'type': 'list' }, Core.onSuccess((response) => {

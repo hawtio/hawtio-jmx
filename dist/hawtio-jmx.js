@@ -916,9 +916,6 @@ var Core;
             uri.segment('list');
             uri.search({
                 canonicalNaming: false,
-                maxDepth: 7,
-                maxCollectionSize: 50000,
-                maxObjects: 50000,
                 ignoreErrors: true
             });
             $.ajax(uri.toString(), {
@@ -1038,7 +1035,6 @@ var Core;
             else {
                 var flags = {
                     ignoreErrors: true,
-                    maxDepth: 7,
                     error: function (response) {
                         workspace.treeFetched = true;
                         log.debug("Error fetching JMX tree: ", response);
