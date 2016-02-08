@@ -803,7 +803,7 @@ var JVM;
                     beforeSend: getBeforeSend()
                 });
                 var modal = null;
-                jolokiaParams['ajaxError'] = function (xhr, textStatus, error) {
+                jolokiaParams['ajaxError'] = jolokiaParams['ajaxError'] ? jolokiaParams['ajaxError'] : function (xhr, textStatus, error) {
                     if (xhr.status === 401 || xhr.status === 403) {
                         userDetails.username = null;
                         userDetails.password = null;
