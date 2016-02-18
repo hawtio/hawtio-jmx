@@ -111,7 +111,7 @@ module Core {
       options.password = userDetails.password;
     }
     saveConnection(options);
-    var $window:ng.IWindowService = HawtioCore.injector.get('$window');
+    var $window:ng.IWindowService = HawtioCore.injector.get<ng.IWindowService>('$window');
     var url = (options.view || '/') + '?con=' + options.name;
     url = url.replace(/\?/g, "&");
     url = url.replace(/&/, "?");

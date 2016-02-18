@@ -27,7 +27,7 @@ module Threads {
     var builder = nav.builder();
     var toolbar = builder.id('threads-toolbar')
                     .href(() => '#')
-                    .template( () => $templateCache.get(UrlHelpers.join(templatePath, 'toolbar.html')) )
+                    .template( () => $templateCache.get<string>(UrlHelpers.join(templatePath, 'toolbar.html')) )
                     .build();
 
     var tab = builder.id('threads')

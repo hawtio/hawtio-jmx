@@ -40,7 +40,7 @@ module JVM {
 
     $scope.forms = {};
     $http.get('proxy').then((resp) => {
-      if (resp.status === 200 && Core.isBlank(resp.data)) {
+      if (resp.status === 200 && Core.isBlank(<string>resp.data)) {
         $scope.disableProxy = false;
       } else {
         $scope.disableProxy = true;
@@ -149,7 +149,7 @@ module JVM {
       }
     };
 
-    $scope.$watch('lastConnection', (newValue, oldValue) => {
+    $scope.$watch('lastConnection', (newValue:string, oldValue:string) => {
       log.debug("lastConnection: ", newValue);
       if (newValue !== oldValue) {
         if (Core.isBlank(newValue)) {

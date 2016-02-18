@@ -227,7 +227,7 @@ module Core {
       if (children) {
         this.children = children.sortBy("title");
         if (recursive) {
-          angular.forEach(children, (child) => child.sortChildren(recursive));
+          angular.forEach(children, (child:Folder) => child.sortChildren(recursive));
         }
       }
     }

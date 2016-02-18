@@ -462,7 +462,7 @@ module Core {
     private enableLazyLoading(folder: Folder) {
       var children = folder.children;
       if (children && children.length) {
-        angular.forEach(children, (child) => {
+        angular.forEach(children, (child:Folder) => {
           this.enableLazyLoading(child);
         })
       } else {

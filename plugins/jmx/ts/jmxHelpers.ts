@@ -117,14 +117,14 @@ module Jmx {
                         if (!HawtioCore.injector) {
                           return true;
                         }
-                        var dash = HawtioCore.injector.get('HawtioDashboard');
+                        var dash = HawtioCore.injector.get<any>('HawtioDashboard');
                         return dash && dash.hasDashboard;
                       })
                       .click( () => {
                         if (!HawtioCore.injector) {
                           return;
                         }
-                        var dash = HawtioCore.injector.get('HawtioDashboard');
+                        var dash = HawtioCore.injector.get<any>('HawtioDashboard');
                         if (dash) {
                           var width = 2;
                           var height = 2;
