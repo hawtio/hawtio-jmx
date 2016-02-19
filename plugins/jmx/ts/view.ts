@@ -19,7 +19,7 @@ module Jmx {
       var answer = undefined;
       _.forIn(viewRegistry, function (value, key) {
         if (!answer) {
-          if (key.startsWith("/") && key.endsWith("/")) {
+          if (_.startsWith(key, "/") && _.endsWith(key, "/")) {
             // assume its a regex
             var text = key.substring(1, key.length - 1);
             try {
@@ -52,7 +52,7 @@ module Jmx {
       if (!answer) {
         var path = $location.path();
         if (path) {
-          if (path.startsWith("/")) {
+          if (_.startsWith(path, "/")) {
             path = path.substring(1);
           }
           answer = searchRegistry(path);

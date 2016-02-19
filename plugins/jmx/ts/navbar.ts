@@ -61,7 +61,7 @@ module Jmx {
 
       var answer =  "#/dashboard/add?tab=dashboard&href=" + encodeURIComponent(href);
 
-      if ($location.url().has("/jmx/charts")) {
+      if ($location.url().indexOf("/jmx/charts") !== -1) {
         var size = {
           size_x: 4,
           size_y: 3

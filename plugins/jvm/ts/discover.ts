@@ -63,7 +63,9 @@ module JVM {
       if (Core.isBlank($scope.filter)) {
         return true;
       } else {
-        return angular.toJson(agent).toLowerCase().has($scope.filter.toLowerCase());
+        var needle = $scope.filter.toLowerCase();
+        var haystack = angular.toJson(agent).toLowerCase();
+        return haystack.indexOf(needle) !== 0;
       }
     };
 

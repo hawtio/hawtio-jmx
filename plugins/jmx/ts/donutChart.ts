@@ -136,7 +136,7 @@ module Jmx {
         $scope.template = $templateCache.get("donut");
       }
       // console.log("Data: ", $scope.data);
-      $scope.data = Object.clone($scope.data);
+      $scope.data = _.clone($scope.data);
       Core.$apply($scope);
     };
 

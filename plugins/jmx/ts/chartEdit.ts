@@ -135,12 +135,12 @@ module Jmx {
 
                   // default selections if there are none
                   if ($scope.selectedMBeans.length < 1) {
-                    $scope.selectedMBeans = Object.keys($scope.mbeans);
+                    $scope.selectedMBeans = _.keys($scope.mbeans);
                   }
                   if ($scope.selectedAttributes.length < 1) {
-                    var attrKeys = Object.keys($scope.metrics).sort();
+                    var attrKeys = _.keys($scope.metrics).sort();
                     if ($scope.selectedMBeans.length > 1) {
-                      $scope.selectedAttributes = [attrKeys.first()];
+                      $scope.selectedAttributes = [_.first(attrKeys)];
                     } else {
                       $scope.selectedAttributes = attrKeys;
                     }

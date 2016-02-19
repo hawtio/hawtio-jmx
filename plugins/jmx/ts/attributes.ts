@@ -552,7 +552,7 @@ module Jmx {
               }
             }
           });
-          if (!properties.any((p) => {
+          if (!_.any(properties, (p) => {
             return p['key'] === 'ObjectName';
           })) {
             var objectName = {
@@ -563,7 +563,7 @@ module Jmx {
             generateSummaryAndDetail(objectName.key, objectName);
             properties.push(objectName);
           }
-          properties = properties.sortBy("name");
+          properties = _.sortBy(properties, 'name');
           $scope.selectedItems = [data];
           data = properties;
         }

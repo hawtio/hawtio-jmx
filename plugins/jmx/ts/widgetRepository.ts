@@ -20,9 +20,7 @@ module Jmx {
   }
 
   export function getWidgetType(widget) {
-    return jmxWidgetTypes.find((type) => {
-      return type.type === widget.type;
-    });
+    return _.find(jmxWidgetTypes, (type) => type.type === widget.type);
   }
 
   export var jmxWidgetTypes = [

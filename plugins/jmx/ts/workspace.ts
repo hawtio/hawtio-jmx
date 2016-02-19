@@ -306,7 +306,7 @@ module Core {
           }
           var folderNames = [domainName];
           folder.folderNames = folderNames;
-          folderNames = folderNames.clone();
+          folderNames = _.clone(folderNames);
           var items = mbeanName.split(',');
           var paths = [];
           var typeName = null;
@@ -352,11 +352,11 @@ module Core {
               folder.key = rootId + separator + folderNames.join(separator);
             }
             this.keyToNodeMap[folder.key] = folder;
-            folder.folderNames = folderNames.clone();
+            folder.folderNames = _.clone(folderNames);
             //var classes = escapeDots(folder.key);
             var classes = "";
             var entries = folder.entries;
-            var entryKeys = Object.keys(entries).filter((n) => n.toLowerCase().indexOf("type") >= 0);
+            var entryKeys = _.filter(_.keys(entries), (n) => n.toLowerCase().indexOf("type") >= 0);
             if (entryKeys.length) {
               angular.forEach(entryKeys, (entryKey) => {
                 var entryValue = entries[entryKey];
@@ -365,7 +365,7 @@ module Core {
                 }
               });
             } else {
-              var kindName = folderNames.last();
+              var kindName = _.last(folderNames);
               /*if (folder.parent && folder.parent.title === typeName) {
                  kindName = typeName;
                  } else */
@@ -504,7 +504,7 @@ module Core {
       });
     }
 
-    private getStrippedPathName():String {
+    private getStrippedPathName() {
       var pathName = Core.trimLeading((this.$location.path() || '/'), "#");
       pathName = pathName.replace(/^\//, '');
       return pathName;
@@ -512,9 +512,7 @@ module Core {
 
     public linkContains(...words:String[]):boolean {
       var pathName = this.getStrippedPathName();
-      return words.all((word:string) => {
-        return pathName.has(word);
-      });
+      return _.every(words, (word:string) => pathName.indexOf(word) !== 0);
     }
 
     /**
@@ -538,7 +536,7 @@ module Core {
       if (!pathName.length) {
         return link === pathName;
       } else {
-        return pathName.startsWith(link);
+        return _.startsWith(pathName, link);
       }
     }
 
@@ -560,7 +558,7 @@ module Core {
       if (idx >= 0) {
         link = link.substring(0, idx);
       }
-      return pathName.startsWith(link);
+      return _.startsWith(pathName, link);
     }
 
 
@@ -672,9 +670,7 @@ module Core {
           // would be nice to eagerly remove the tree node too?
           var idx = parent.children.indexOf(selection);
           if (idx < 0) {
-            idx = parent.children.findIndex(n =>
-              n.key === selection.key
-            );
+            idx = _.findIndex(parent.children, n => n.key === selection.key);
           }
           if (idx >= 0) {
             parent.children.splice(idx, 1);
@@ -878,7 +874,7 @@ module Core {
                   return;
                 }
                 var op = null;
-                if (method.endsWith(')')) {
+                if (_.endsWith(method, ')')) {
                   op = opsByString[method];
                 } else {
                   op = ops[method];
@@ -992,7 +988,7 @@ module Core {
         if (objectName === node.domain) {
           var folders = node.folderNames;
           if (folders) {
-            var last = folders.last();
+            var last = _.last(folders);
             return (isName(last) || isName(node.title)) && node.isFolder() && !node.objectName;
           }
         }

@@ -225,7 +225,7 @@ module Core {
     public sortChildren(recursive: boolean)  {
       var children = this.children;
       if (children) {
-        this.children = children.sortBy("title");
+        this.children = _.sortBy(children, "title");
         if (recursive) {
           angular.forEach(children, (child:Folder) => child.sortChildren(recursive));
         }
@@ -270,7 +270,7 @@ module Core {
         if (oldParentChildren) {
           var idx = oldParentChildren.indexOf(this);
           if (idx < 0) {
-            oldParent.children = <NodeSelection[]>oldParent.children.remove((child) => child.key === this.key);
+            _.remove(oldParent.children, (child) => child.key === this.key);
           } else {
             oldParentChildren.splice(idx, 1);
           }
