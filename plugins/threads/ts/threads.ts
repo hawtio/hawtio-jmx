@@ -9,7 +9,7 @@ module Threads {
       $scope.support = support;
     });
     $scope.$on('ThreadControllerThreads', ($event, threads) => {
-      log.debug("got threads: ", threads);
+      // log.debug("got threads: ", threads);
       $scope.unfilteredThreads = threads;
       $scope.totals = {};
       threads.forEach((t) => {
@@ -41,13 +41,13 @@ module Threads {
 
     $scope.getMonitorName = (name) => {
       name = name.replace('Supported', '');
-      return name.titleize();
+      return _.startCase(name);
     };
 
 
   }]);
 
-  _module.controller("Threads.ThreadsController", ["$scope", "$rootScope", "$routeParams", "$templateCache", "jolokia", ($scope, $rootScope, $routeParams, $templateCache, jolokia) => {
+  _module.controller("Threads.ThreadsController", ["$scope", "$rootScope", "$routeParams", "$templateCache", "jolokia", "$element", ($scope, $rootScope, $routeParams, $templateCache, jolokia, $element) => {
 
     $scope.selectedRowJson = '';
 
@@ -288,7 +288,7 @@ module Threads {
     }
 
     function enabledContentionMonitoring(response) {
-      $scope.$on('$routeChangeStart', () => {
+      $element.on('$destroy', () => {
         jolokia.setAttribute(mbean, 'ThreadContentionMonitoringEnabled', false, Core.onSuccess(disabledContentionMonitoring));
       });
       log.info("Enabled contention monitoring");

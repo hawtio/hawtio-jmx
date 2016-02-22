@@ -64,7 +64,7 @@
               <p ng-hide="!hasName(agent)">
               <span class="strong"
                     ng-show="agent.server_vendor">
-                {{agent.server_vendor}} {{agent.server_product.titleize()}} {{agent.server_version}}
+                {{agent.server_vendor}} {{_.startCase(agent.server_product)}} {{agent.server_version}}
               </span>
               </p>
             <span ng-class="getAgentIdClass(agent)">
