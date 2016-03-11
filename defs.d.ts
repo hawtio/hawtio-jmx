@@ -20,6 +20,8 @@
 /// <reference path="d.ts/jmx/ts/navbar.d.ts"/>
 /// <reference path="d.ts/jmx/ts/operations.d.ts"/>
 /// <reference path="d.ts/jmx/ts/view.d.ts"/>
+/// <reference path="d.ts/threads/ts/threadsPlugin.d.ts"/>
+/// <reference path="d.ts/threads/ts/threads.d.ts"/>
 /// <reference path="d.ts/jvm/ts/connect.d.ts"/>
 /// <reference path="d.ts/jvm/ts/discover.d.ts"/>
 /// <reference path="d.ts/jvm/ts/header.d.ts"/>
@@ -27,5 +29,3 @@
 /// <reference path="d.ts/jvm/ts/local.d.ts"/>
 /// <reference path="d.ts/jvm/ts/navbar.d.ts"/>
 /// <reference path="d.ts/jvm/ts/reset.d.ts"/>
-/// <reference path="d.ts/threads/ts/threadsPlugin.d.ts"/>
-/// <reference path="d.ts/threads/ts/threads.d.ts"/>

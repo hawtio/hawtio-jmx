@@ -20,7 +20,7 @@ module JVM {
       if (jolokiaUrl) {
         delete query['sub-tab'];
         delete query['main-tab'];
-        jolokiaUrl = jolokiaUrl.unescapeURL();
+        jolokiaUrl = URI.decode(jolokiaUrl);
         var jolokiaURI = new URI(jolokiaUrl);
         var name = query['title'] || 'Unknown Connection';
         var token = query['token'] || Core.trimLeading(uri.hash(), '#');
