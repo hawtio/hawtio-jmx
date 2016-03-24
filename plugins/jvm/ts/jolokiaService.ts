@@ -9,9 +9,15 @@ module JVM {
   var urlCandidates = ['/hawtio/jolokia', '/jolokia', 'jolokia'];
   var discoveredUrl = null;
 
+  export var skipJolokia = false;
+
   hawtioPluginLoader.registerPreBootstrapTask({
     name: 'JvmParseLocation',
     task: (next) => {
+      if (skipJolokia) {
+        next();
+        return;
+      }
       var uri = new URI();
       var query = uri.query(true);
       log.debug("query: ", query);
@@ -139,6 +145,9 @@ module JVM {
   }
 
   export function getJolokiaUrl() {
+    if (skipJolokia) {
+      return false;
+    }
     var answer = undefined;
     var ConnectOptions = getConnectionOptions();
     var documentBase = HawtioCore.documentBase();

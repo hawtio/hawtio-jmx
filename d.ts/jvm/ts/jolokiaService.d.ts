@@ -4,6 +4,7 @@
  * @module JVM
  */
 declare module JVM {
+    var skipJolokia: boolean;
     var ConnectionName: string;
     function getConnectionName(reset?: boolean): string;
     function getConnectionOptions(): any;
