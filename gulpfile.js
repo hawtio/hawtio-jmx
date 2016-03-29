@@ -51,6 +51,7 @@ gulp.task('tsc', ['clean-defs'], function() {
   var tsResult = gulp.src(config.ts)
     .pipe(plugins.typescript(config.tsProject))
     .on('error', plugins.notify.onError({
+      onLast: true,
       message: '%<= error.message %>',
       title: 'Typescript compilation error'
     }));
@@ -76,6 +77,7 @@ gulp.task('less', function () {
       paths: [ path.join(__dirname, 'less', 'includes') ]
     }))
     .on('error', plugins.notify.onError({
+      onLast: true,
       message: '<%= error.message %>',
       title: 'less file compilation error'
     }))
