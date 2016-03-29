@@ -194,19 +194,19 @@ module Jmx {
       if (!mbean) {
         return '';
       }
-      var potentialCandidates = jmxWidgets.filter((widget) => {
+      var potentialCandidates = _.filter(jmxWidgets, (widget:any) => {
         return mbean === widget.mbean;
       });
 
-      if (potentialCandidates.isEmpty()) {
+      if (potentialCandidates.length === 0) {
         return '';
       }
 
-      potentialCandidates = potentialCandidates.filter((widget) => {
+      potentialCandidates = _.filter(potentialCandidates, (widget:any) => {
         return widget.attribute === row.key || widget.total === row.key;
       });
 
-      if (potentialCandidates.isEmpty()) {
+      if (potentialCandidates.length === 0) {
         return '';
       }
 
@@ -495,11 +495,11 @@ module Jmx {
               })
 
               // remove all non visible
-              defaultDefs = defaultDefs.remove(value => {
+              defaultDefs = _.filter(defaultDefs, (value:any) => {
                 if (angular.isDefined(value.visible) && value.visible != null) {
-                  return !value.visible;
+                  return value.visible;
                 }
-                return false;
+                return true;
               });
 
               $scope.gridOptions.columnDefs = defaultDefs;

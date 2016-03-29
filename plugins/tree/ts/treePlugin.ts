@@ -42,7 +42,7 @@ module Tree {
     }
     var title = tree['title'];
     if (title) {
-      tree['title'] = title.unescapeHTML(true).escapeHTML();
+      tree['title'] = _.escape(_.unescape(title));
     }
     if (tree.children) {
       Tree.sanitize(tree.children);

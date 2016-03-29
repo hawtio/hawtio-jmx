@@ -2838,16 +2838,16 @@ var Jmx;
                 if (!mbean) {
                     return '';
                 }
-                var potentialCandidates = jmxWidgets.filter(function (widget) {
+                var potentialCandidates = _.filter(jmxWidgets, function (widget) {
                     return mbean === widget.mbean;
                 });
-                if (potentialCandidates.isEmpty()) {
+                if (potentialCandidates.length === 0) {
                     return '';
                 }
-                potentialCandidates = potentialCandidates.filter(function (widget) {
+                potentialCandidates = _.filter(potentialCandidates, function (widget) {
                     return widget.attribute === row.key || widget.total === row.key;
                 });
-                if (potentialCandidates.isEmpty()) {
+                if (potentialCandidates.length === 0) {
                     return '';
                 }
                 row.addChartToDashboard = function (type) {
@@ -3114,11 +3114,11 @@ var Jmx;
                                     defaultDefs.push(e);
                                 });
                                 // remove all non visible
-                                defaultDefs = defaultDefs.remove(function (value) {
+                                defaultDefs = _.filter(defaultDefs, function (value) {
                                     if (angular.isDefined(value.visible) && value.visible != null) {
-                                        return !value.visible;
+                                        return value.visible;
                                     }
-                                    return false;
+                                    return true;
                                 });
                                 $scope.gridOptions.columnDefs = defaultDefs;
                                 $scope.gridOptions.enableRowClickSelection = true;
@@ -4257,7 +4257,7 @@ var Tree;
         }
         var title = tree['title'];
         if (title) {
-            tree['title'] = title.unescapeHTML(true).escapeHTML();
+            tree['title'] = _.escape(_.unescape(title));
         }
         if (tree.children) {
             Tree.sanitize(tree.children);
