@@ -52,7 +52,7 @@ gulp.task('tsc', ['clean-defs'], function() {
     .pipe(plugins.typescript(config.tsProject))
     .on('error', plugins.notify.onError({
       onLast: true,
-      message: '%<= error.message %>',
+      message: '<%= error.message %>',
       title: 'Typescript compilation error'
     }));
 
