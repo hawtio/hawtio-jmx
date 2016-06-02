@@ -6,10 +6,7 @@
   ],
   "main": [
     "dist/hawtio-jmx.css",
-    "dist/ui.dynatree.css",
-    "dist/dynatree-icons.css",
     "dist/dangle.js",
-    "dist/jquery.dynatree.js",
     "dist/dagre.js",
     "dist/jolokia.js",
     "dist/cubism.v1.js",
