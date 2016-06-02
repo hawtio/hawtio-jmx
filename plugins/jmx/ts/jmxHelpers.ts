@@ -1,5 +1,4 @@
 /// <reference path="../../includes.ts"/>
-/// <reference path="folder.ts"/>
 /// <reference path="workspace.ts"/>
 /**
  * @module Core

@@ -4,7 +4,6 @@
 
 /// <reference path="../../includes.ts"/>
 /// <reference path="jmxHelpers.ts"/>
-/// <reference path="folder.ts"/>
 /// <reference path="../../jvm/ts/jolokiaService.ts"/>
 module Core {
 

@@ -1,7 +1,6 @@
 /// <reference path="d.ts/includes.d.ts"/>
 /// <reference path="d.ts/jvm/ts/jvmGlobals.d.ts"/>
 /// <reference path="d.ts/jvm/ts/jvmHelpers.d.ts"/>
-/// <reference path="d.ts/jmx/ts/folder.d.ts"/>
 /// <reference path="d.ts/jvm/ts/jvmPlugin.d.ts"/>
 /// <reference path="d.ts/jvm/ts/jolokiaService.d.ts"/>
 /// <reference path="d.ts/jmx/ts/workspace.d.ts"/>
