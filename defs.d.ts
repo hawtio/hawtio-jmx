@@ -15,7 +15,6 @@
 /// <reference path="d.ts/jmx/ts/charts.d.ts"/>
 /// <reference path="d.ts/jmx/ts/donutChart.d.ts"/>
 /// <reference path="d.ts/jmx/ts/graphs.d.ts"/>
-/// <reference path="d.ts/tree/ts/treePlugin.d.ts"/>
 /// <reference path="d.ts/jmx/ts/mbeans.d.ts"/>
 /// <reference path="d.ts/jmx/ts/navbar.d.ts"/>
 /// <reference path="d.ts/jmx/ts/operations.d.ts"/>

@@ -1,5 +1,4 @@
 /// <reference path="jmxPlugin.ts"/>
-/// <reference path="../../tree/ts/treePlugin.ts"/>
 /**
  * @module Jmx
  */
