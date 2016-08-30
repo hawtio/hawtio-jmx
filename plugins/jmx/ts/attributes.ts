@@ -238,7 +238,7 @@ module Jmx {
       });
 
       // hmmm, we really should only have one result...
-      var widget = candidates.first();
+      var widget = _.first(candidates);
       var type = getWidgetType(widget);
 
       //console.log("widgetType: ", type, " widget: ", widget);
