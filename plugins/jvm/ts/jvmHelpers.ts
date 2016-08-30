@@ -74,13 +74,13 @@ module Core {
 
   export function addRecentConnection(localStorage, name) {
     var recent = getRecentConnections(localStorage);
-    recent = recent.add(name).unique().first(5);
+    recent = _.take(_.uniq(recent.push(name)), 5);
     localStorage['recentConnections'] = angular.toJson(recent);
   }
 
   export function removeRecentConnection(localStorage, name) {
     var recent = getRecentConnections(localStorage);
-    recent = recent.exclude((n) => { return n === name; });
+    recent = _.without(recent, name);
     localStorage['recentConnections'] = angular.toJson(recent);
   }
 

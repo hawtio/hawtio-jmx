@@ -88,13 +88,13 @@ var Core;
     Core.getRecentConnections = getRecentConnections;
     function addRecentConnection(localStorage, name) {
         var recent = getRecentConnections(localStorage);
-        recent = recent.add(name).unique().first(5);
+        recent = _.take(_.uniq(recent.push(name)), 5);
         localStorage['recentConnections'] = angular.toJson(recent);
     }
     Core.addRecentConnection = addRecentConnection;
     function removeRecentConnection(localStorage, name) {
         var recent = getRecentConnections(localStorage);
-        recent = recent.exclude(function (n) { return n === name; });
+        recent = _.without(recent, name);
         localStorage['recentConnections'] = angular.toJson(recent);
     }
     Core.removeRecentConnection = removeRecentConnection;
@@ -2640,7 +2640,7 @@ var Jmx;
                     return widget.type === widgetType;
                 });
                 // hmmm, we really should only have one result...
-                var widget = candidates.first();
+                var widget = _.first(candidates);
                 var type = Jmx.getWidgetType(widget);
                 //console.log("widgetType: ", type, " widget: ", widget);
                 $location.url(Jmx.createDashboardLink(type, widget));
@@ -5085,7 +5085,7 @@ var Threads;
                         $scope.selectedRowIndex = -1;
                     }
                     else {
-                        $scope.row = newValue.first();
+                        $scope.row = _.first(newValue);
                         $scope.threadSelected = true;
                         $scope.selectedRowIndex = Core.pathGet($scope, ['hawtioSimpleTable', 'threads', 'rows']).findIndex(function (t) { return t.entity['threadId'] === $scope.row['threadId']; });
                     }
@@ -5123,7 +5123,7 @@ var Threads;
                 var responseJson = angular.toJson(response.value, true);
                 if ($scope.getThreadInfoResponseJson !== responseJson) {
                     $scope.getThreadInfoResponseJson = responseJson;
-                    var threads = response.value.exclude(function (t) { return t === null; });
+                    var threads = _.without(response.value, null);
                     $scope.unfilteredThreads = threads;
                     threads = $scope.filterThreads($scope.stateFilter, threads);
                     $scope.threads = threads;
