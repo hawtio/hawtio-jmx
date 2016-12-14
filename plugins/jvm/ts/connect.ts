@@ -54,7 +54,7 @@ module JVM {
       $scope.disableProxy = !hasMBeans || Core.isChromeApp();
       Core.$apply($scope);
     });
-    
+
     $scope.lastConnection = '';
 
     // load settings like current tab, last used connection
@@ -174,7 +174,7 @@ module JVM {
     var autoconnect = $location.search();
     if (typeof autoconnect != 'undefined' && typeof autoconnect.name != 'undefined') {
       var conOpts = Core.createConnectOptions({
-        scheme  : 'http',
+        scheme  : autoconnect.scheme,
         host    : autoconnect.host,
         path    : autoconnect.path,
         port    : autoconnect.port,
