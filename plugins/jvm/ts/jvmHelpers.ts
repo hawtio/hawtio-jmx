@@ -115,7 +115,7 @@ module Core {
     var url = (options.view || '/') + '?con=' + options.name;
     url = url.replace(/\?/g, "&");
     url = url.replace(/&/, "?");
-    var newWindow = $window.open(url);
+    var newWindow = $window.open(url, 'wnd');
     newWindow['con'] = options.name;
     newWindow['userDetails'] = {
       username: options.userName,
@@ -184,11 +184,7 @@ module Core {
          .port(<string> (options.port || '80'))
          .path(<string> options.path);
 
-      if (options.useProxy) {
-        answer = UrlHelpers.join('proxy', uri.protocol(), uri.hostname(), uri.port(), uri.path());
-      } else {
-        answer = uri.toString();
-      }
+      answer = UrlHelpers.join('proxy', uri.protocol(), uri.hostname(), uri.port(), uri.path());
     }
     Logger.get(JVM.pluginName).debug("Using URL: ", answer);
     return answer;

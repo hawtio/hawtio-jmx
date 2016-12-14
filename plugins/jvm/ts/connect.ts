@@ -33,10 +33,9 @@ module JVM {
         path: 'jolokia',
         port: 8181,
         userName: '',
-        password: '',
-        useProxy: !$scope.disableProxy
+        password: ''
       })
-    };
+    }
 
     $scope.forms = {};
     $http.get('proxy').then((resp) => {
@@ -123,13 +122,6 @@ module JVM {
         password: <Forms.FormElement> {
           type: "password",
           tooltip: "The password to be used when connecting to Jolokia"
-        },
-        useProxy: <Forms.FormElement> {
-          type: "java.lang.Boolean",
-          tooltip: "Whether or not we should use a proxy. See more information in the panel to the left.",
-          "control-attributes": {
-            "ng-hide": "disableProxy"
-          }
         }
       }
     };
