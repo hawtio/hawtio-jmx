@@ -171,6 +171,8 @@ module JVM {
         Core.$apply($scope);
         return;
       }
+      // connect to root by default as we do not want to show welcome page
+      connectOptions.view = connectOptions.view || '#/';
       Core.connectToServer(localStorage, connectOptions);
       $scope.connectionConfigs = Core.loadConnectionMap();
       angular.extend($scope.currentConfig, $scope.connectionConfigs[$scope.lastConnection]);
