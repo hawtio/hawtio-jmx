@@ -132,6 +132,12 @@ module Jmx {
       }, 10);
     });
 
+    $scope.$on('jmxTreeUpdated', function () {
+      setTimeout(() => {
+        doUpdateTableContents();
+      }, 10);
+    });
+
     $scope.$watch('gridOptions.filterOptions.filterText', (newValue, oldValue) => {
       setTimeout(() => {
         doUpdateTableContents();
