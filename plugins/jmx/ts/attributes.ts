@@ -132,6 +132,12 @@ module Jmx {
       }, 10);
     });
 
+    $scope.$watch('gridOptions.filterOptions.filterText', (newValue, oldValue) => {
+      setTimeout(() => {
+        doUpdateTableContents();
+      }, 10);
+    });
+
     $scope.$watch('workspace.selection', function () {
       if (workspace.moveIfViewInvalid()) {
         Core.unregister(jolokia, $scope);
@@ -151,7 +157,7 @@ module Jmx {
     $scope.onCancelAttribute = () => {
       // clear entity
       $scope.entity = {};
-    }
+    };
 
     $scope.onUpdateAttribute = () => {
       var value = $scope.entity["value"];
@@ -187,9 +193,9 @@ module Jmx {
       }
       schema.properties.value = {
         formTemplate: '<div class="form-group"><label class="control-label">Value</label><div hawtio-editor="entity.value"></div></div>'
-      }
+      };
       $scope.showAttributeDialog = true;
-    }
+    };
 
     $scope.getDashboardWidgets = (row) => {
       var mbean = workspace.getSelectedMBeanName();
@@ -214,7 +220,7 @@ module Jmx {
 
       row.addChartToDashboard = (type) => {
         $scope.addChartToDashboard(row, type);
-      }
+      };
 
       var rc = [];
       potentialCandidates.forEach((widget) => {
@@ -391,7 +397,7 @@ module Jmx {
         var children = node.children;
         if (children) {
           var childNodes = children.map((child) => child.objectName);
-          var mbeans = childNodes.filter((mbean) => mbean !== undefined);
+          var mbeans = childNodes.filter((mbean) => FilterHelpers.search(mbean, $scope.gridOptions.filterOptions.filterText));
           if (mbeans) {
             var typeNames = Jmx.getUniqueTypeNames(children);
             if (typeNames.length <= 1) {
@@ -494,7 +500,7 @@ module Jmx {
               });
               extraDefs.forEach(e => {
                 defaultDefs.push(e);
-              })
+              });
 
               // remove all non visible
               defaultDefs = _.filter(defaultDefs, (value:any) => {
