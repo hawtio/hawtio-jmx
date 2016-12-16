@@ -127,21 +127,15 @@ module Jmx {
     $scope.$on("$routeChangeSuccess", function (event, current, previous) {
       // lets do this asynchronously to avoid Error: $digest already in progress
       $scope.nid = $location.search()['nid'];
-      setTimeout(() => {
-        doUpdateTableContents();
-      }, 10);
+      setTimeout(doUpdateTableContents, 10);
     });
 
     $scope.$on('jmxTreeUpdated', function () {
-      setTimeout(() => {
-        doUpdateTableContents();
-      }, 10);
+      setTimeout(doUpdateTableContents, 10);
     });
 
     $scope.$watch('gridOptions.filterOptions.filterText', (newValue, oldValue) => {
-      setTimeout(() => {
-        doUpdateTableContents();
-      }, 10);
+      setTimeout(doUpdateTableContents, 10);
     });
 
     $scope.$watch('workspace.selection', function () {
@@ -149,16 +143,12 @@ module Jmx {
         Core.unregister(jolokia, $scope);
         return;
       }
-      setTimeout(() => {
-        doUpdateTableContents();
-      }, 10);
+      setTimeout(doUpdateTableContents, 10);
     });
 
     doUpdateTableContents();
 
-    $scope.hasWidget = (row) => {
-      return true;
-    };
+    $scope.hasWidget = (row) => true;
 
     $scope.onCancelAttribute = () => {
       // clear entity
