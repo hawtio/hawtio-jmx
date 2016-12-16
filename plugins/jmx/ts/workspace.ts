@@ -70,6 +70,7 @@ module Core {
     public mbeanTypesToDomain = {};
     public mbeanServicesToDomain = {};
     public attributeColumnDefs = {};
+    public onClickRowHandlers = {};
     public treePostProcessors = {};
     public topLevelTabs:any = undefined 
     public subLevelTabs = [];

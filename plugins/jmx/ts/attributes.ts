@@ -470,6 +470,8 @@ module Jmx {
             if (!$scope.gridOptions.columnDefs.length) {
               // lets update the column definitions based on any configured defaults
               var key = workspace.selectionConfigKey();
+              $scope.gridOptions.gridKey = key;
+              $scope.gridOptions.onClickRowHandlers = workspace.onClickRowHandlers;
               var defaultDefs = workspace.attributeColumnDefs[key] || [];
               var defaultSize = defaultDefs.length;
               var map = {};
