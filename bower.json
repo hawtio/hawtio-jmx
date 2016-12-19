@@ -31,8 +31,7 @@
     "hawtio-ui": "~2.0.0"
   },
   "devDependencies": {
-    "bootstrap": "~3.3.6",
-    "patternfly": "~2.7.0",
+    "patternfly": "~3.15.0",
     "hawtio-core-dts": "~2.0.0",
     "angular-mocks": "~1.5.0",
     "hawtio-dashboard": "~2.0.0",

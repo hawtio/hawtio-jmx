@@ -37,6 +37,7 @@ declare module Core {
         mbeanTypesToDomain: {};
         mbeanServicesToDomain: {};
         attributeColumnDefs: {};
+        onClickRowHandlers: {};
         treePostProcessors: {};
         topLevelTabs: any;
         subLevelTabs: any[];
@@ -71,6 +72,7 @@ declare module Core {
         maybeMonitorPlugins(): void;
         maybeUpdatePlugins(response: any): void;
         maybeReloadTree(response: any): void;
+        private wrapInValue(response);
         folderGetOrElse(folder: any, value: any): any;
         populateTree(response: any): void;
         private enableLazyLoading(folder);
