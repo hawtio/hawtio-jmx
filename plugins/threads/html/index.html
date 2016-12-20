@@ -1,14 +1,69 @@
+<h1>Threads</h1>
+
+<div ng-controller="Threads.ToolbarController">
+  <script type="text/ng-template" id="threadStateTemplate">
+    <div class="thread-state-indicator"
+         title="{{row.entity.threadState | humanize}}"
+         ng-switch on="row.entity.threadState">
+      <i ng-switch-when="NEW"
+         class="lightgreen icon-bolt"></i>
+      <i ng-switch-when="RUNNABLE"
+         class="green icon-play-circle"></i>
+      <i ng-switch-when="BLOCKED"
+         class="red icon-stop"></i>
+      <i ng-switch-when="WAITING"
+         class="darkgray icon-pause"></i>
+      <i ng-switch-when="TIMED_WAITING"
+         class="orange icon-time"></i>
+      <i ng-switch-default="TERMINATED"
+         class="darkred icon-remove"></i>
+    </div>
+  </script>
+
+  <div class="row row-monitor">
+    <span ng-repeat="(name, value) in support track by $index" class="label"
+          ng-class="{'label-success': value, 'label-default': !value}"
+          ng-click="maybeToggleMonitor(name, value)">
+      {{getMonitorName(name)}}
+    </span>
+    <span class="add-to-dashboard" ng-hide="inDashboard">
+      <a ng-href="{{addToDashboardLink()}}" title="Add this view to a dashboard">
+        <i class="pficon-export"></i>
+      </a>
+    </span>
+</div>
+
 <div class="jmx-threads-page" ng-controller="Threads.ThreadsController">
 
-  <div>
-    <div class="pull-right">
-      <hawtio-filter ng-model="searchFilter" placeholder="Filter..." save-as="threads-text-filter"></hawtio-filter>
+  <div class="row toolbar-pf table-view-pf-toolbar">
+    <div class="col-sm-12">
+      <form class="toolbar-pf-actions">
+        <div class="form-group">
+          <label>
+            Filter by state:
+          </label>
+          <div class="btn-group">
+            <button type="button" class="btn btn-default" title="Show all"
+              ng-click="filterOn('NONE')" ng-class="selectedFilterClass('NONE')">All</button>
+            <button type="button" class="btn btn-default {{state.dasherize()}}" title="Filter by {{state}}"
+              ng-click="filterOn(state)" ng-class="selectedFilterClass(state)"
+              ng-repeat="(state, total) in totals track by $index">{{state | humanize}}</button>
+          </div>            
+        </div>
+        <div class="form-group">
+          <input type="text" ng-model="searchFilter" class="form-control" placeholder="Filter..." autocomplete="off">
+        </div>
+        <div class="form-group">
+          <strong>{{threads.length}}</strong> of <strong>{{unfilteredThreads.length}}</strong> threads
+        </div>
+      </form>
     </div>
+  </div>
 
-    <p></p>
-
-    <table class="table table-condensed table-striped"
+  <div class="row">
+    <table class="table table-condensed table-striped table-bordered dataTable threads-table"
            hawtio-simple-table="threadGridOptions"></table>
+  </div>
 
     <div ng-show="threadSelected" class="log-info-panel">
       <div class="log-info-panel-frame">

@@ -8,33 +8,6 @@ module Threads {
     $scope.$on('ThreadControllerSupport', ($event, support) => {
       $scope.support = support;
     });
-    $scope.$on('ThreadControllerThreads', ($event, threads) => {
-      // log.debug("got threads: ", threads);
-      $scope.unfilteredThreads = threads;
-      $scope.totals = {};
-      threads.forEach((t) => {
-        // calculate totals
-        var state = t.threadState;
-        if (!(state in $scope.totals)) {
-          $scope.totals[state] = 1;
-        } else {
-          $scope.totals[state]++
-        }
-      });
-      $scope.threads = threads;
-    });
-    $scope.stateFilter = 'NONE';
-    $scope.filterOn = (state) => {
-      $scope.stateFilter = state;
-      $rootScope.$broadcast('ThreadsToolbarState', state);
-    };
-    $scope.selectedFilterClass = (state) => {
-      if (state === $scope.stateFilter) {
-        return "active";
-      } else {
-        return "";
-      }
-    };
     $scope.getMonitorClass = (name, value) => {
       return value.toString();
     };
@@ -43,8 +16,6 @@ module Threads {
       name = name.replace('Supported', '');
       return _.startCase(name);
     };
-
-
   }]);
 
   _module.controller("Threads.ThreadsController", ["$scope", "$rootScope", "$routeParams", "$templateCache", "jolokia", "$element", ($scope, $rootScope, $routeParams, $templateCache, jolokia, $element) => {
@@ -66,6 +37,30 @@ module Threads {
     $scope.showRaw = {
       expanded: false
     };
+
+    $scope.selectedFilterClass = (state) => {
+      if (state === $scope.stateFilter) {
+        return "active";
+      } else {
+        return "";
+      }
+    };
+
+    $scope.$on('ThreadControllerThreads', ($event, threads) => {
+      // log.debug("got threads: ", threads);
+      $scope.unfilteredThreads = threads;
+      $scope.totals = {};
+      threads.forEach((t) => {
+        // calculate totals
+        var state = t.threadState;
+        if (!(state in $scope.totals)) {
+          $scope.totals[state] = 1;
+        } else {
+          $scope.totals[state]++
+        }
+      });
+      $scope.threads = threads;
+    });
 
     $scope.addToDashboardLink = () => {
       var href = "#/threads";
