@@ -46,22 +46,6 @@ module Threads {
       }
     };
 
-    $scope.$on('ThreadControllerThreads', ($event, threads) => {
-      // log.debug("got threads: ", threads);
-      $scope.unfilteredThreads = threads;
-      $scope.totals = {};
-      threads.forEach((t) => {
-        // calculate totals
-        var state = t.threadState;
-        if (!(state in $scope.totals)) {
-          $scope.totals[state] = 1;
-        } else {
-          $scope.totals[state]++
-        }
-      });
-      $scope.threads = threads;
-    });
-
     $scope.addToDashboardLink = () => {
       var href = "#/threads";
       var size = angular.toJson({
@@ -114,7 +98,8 @@ module Threads {
       columnDefs: [
         {
           field: 'threadId',
-          displayName: 'ID'
+          displayName: 'ID',
+          customSortField: (value) => Number(value.threadId)
         },
         {
           field: 'threadState',
@@ -128,23 +113,22 @@ module Threads {
         {
           field: 'waitedTime',
           displayName: 'Waited Time',
-          cellTemplate: '<div class="ngCellText" ng-show="row.entity.waitedTime > 0">{{row.entity.waitedTime | humanizeMs}}</div>'
+          cellTemplate: '<span ng-show="row.entity.waitedTime > 0">{{row.entity.waitedTime | humanizeMs}}</span>'
         },
         {
           field: 'blockedTime',
           displayName: 'Blocked Time',
-          cellTemplate: '<div class="ngCellText" ng-show="row.entity.blockedTime > 0">{{row.entity.blockedTime | humanizeMs}}</div>'
-
+          cellTemplate: '<span ng-show="row.entity.blockedTime > 0">{{row.entity.blockedTime | humanizeMs}}</span>'
         },
         {
           field: 'inNative',
           displayName: 'Native',
-          cellTemplate: '<div class="ngCellText"><span ng-show="row.entity.inNative" class="orange">(in native)</span></div>'
+          cellTemplate: '<span ng-show="row.entity.inNative" class="orange">(in native)</span>'
         },
         {
           field: 'suspended',
           displayName: 'Suspended',
-          cellTemplate: '<div class="ngCellText"><span ng-show="row.entity.suspended" class="red">(suspended)</span></div>'
+          cellTemplate: '<span ng-show="row.entity.suspended" class="red">(suspended)</span>'
         }
       ]
     };
@@ -196,18 +180,30 @@ module Threads {
         return t && t['threadId'] == selectedThread.entity['threadId'];
       });
     };
+
     function render(response) {
       var responseJson = angular.toJson(response.value, true);
       if ($scope.getThreadInfoResponseJson !== responseJson) {
         $scope.getThreadInfoResponseJson = responseJson;
-        var threads = _.without(response.value, null);
-        $scope.unfilteredThreads = threads;
-        threads = $scope.filterThreads($scope.stateFilter, threads);
-        $scope.threads = threads;
-        $rootScope.$broadcast('ThreadControllerThreads', threads);
+        $scope.unfilteredThreads = _.without(response.value, null);
+        calculateTotals($scope.unfilteredThreads);
+        $scope.threads = $scope.filterThreads($scope.stateFilter, $scope.unfilteredThreads);
         Core.$apply($scope);
       }
     }
+
+    function calculateTotals(threads) {
+      $scope.totals = {};
+      threads.forEach((t) => {
+        var state = t.threadState;
+        if (!(state in $scope.totals)) {
+          $scope.totals[state] = 1;
+        } else {
+          $scope.totals[state]++;
+        }
+      });
+    }
+
     $scope.init = () => {
 
       jolokia.request(

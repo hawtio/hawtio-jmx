@@ -127,17 +127,53 @@ fs-donut svg g text.units {
 .toolbar-pf .btn-group .btn {
   margin-left: 0 !important;
 }
+.threads-table tr th {
+  text-align: center;
+}
+.threads-table tr th:nth-child(1) {
+  width: 7%;
+}
+.threads-table tr th:nth-child(2) {
+  width: 7%;
+}
 .threads-table tr th:nth-child(3) {
-  width: 10%;
+  width: 40%;
 }
 .threads-table tr th:nth-child(4) {
-  width: 3%;
+  width: 13%;
 }
 .threads-table tr th:nth-child(5) {
-  width: 3%;
+  width: 13%;
+}
+.threads-table tr th:nth-child(6) {
+  width: 10%;
 }
 .threads-table tr th:nth-child(7) {
-  width: 3%;
+  width: 10%;
+}
+.threads-table tr td {
+  cursor: pointer;
+}
+.threads-table tr td:nth-child(1) {
+  text-align: right;
+}
+.threads-table tr td:nth-child(2) {
+  text-align: center;
+}
+.threads-table tr td:nth-child(3) {
+  text-align: left;
+}
+.threads-table tr td:nth-child(4) {
+  text-align: right;
+}
+.threads-table tr td:nth-child(5) {
+  text-align: right;
+}
+.threads-table tr td:nth-child(6) {
+  text-align: center;
+}
+.threads-table tr td:nth-child(7) {
+  text-align: center;
 }
 .row-monitor {
   text-align: right;
@@ -146,7 +182,7 @@ fs-donut svg g text.units {
 }
 .row-monitor .label {
   font-size: 10px;
-  margin: 5px;
+  margin-left: 10px;
   cursor: default;
 }
 .row-monitor .add-to-dashboard {
@@ -188,6 +224,7 @@ strong.new,
   width: 100%;
   height: 100%;
   padding-top: 5px;
+  font-size: 15px;
 }
 /* end threads page */
 .tree-header {

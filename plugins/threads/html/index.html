@@ -2,22 +2,22 @@
 
 <div ng-controller="Threads.ToolbarController">
   <script type="text/ng-template" id="threadStateTemplate">
-    <div class="thread-state-indicator"
+    <span class="thread-state-indicator"
          title="{{row.entity.threadState | humanize}}"
          ng-switch on="row.entity.threadState">
       <i ng-switch-when="NEW"
-         class="lightgreen icon-bolt"></i>
+         class="lightgreen fa fa-bolt"></i>
       <i ng-switch-when="RUNNABLE"
-         class="green icon-play-circle"></i>
+         class="green fa fa-play-circle"></i>
       <i ng-switch-when="BLOCKED"
-         class="red icon-stop"></i>
+         class="red fa fa-stop-circle"></i>
       <i ng-switch-when="WAITING"
-         class="darkgray icon-pause"></i>
+         class="darkgray fa fa-pause-circle"></i>
       <i ng-switch-when="TIMED_WAITING"
-         class="orange icon-time"></i>
+         class="orange fa fa-clock-o"></i>
       <i ng-switch-default="TERMINATED"
-         class="darkred icon-remove"></i>
-    </div>
+         class="darkred fa fa-times-circle"></i>
+    </span>
   </script>
 
   <div class="row row-monitor">
@@ -25,11 +25,6 @@
           ng-class="{'label-success': value, 'label-default': !value}"
           ng-click="maybeToggleMonitor(name, value)">
       {{getMonitorName(name)}}
-    </span>
-    <span class="add-to-dashboard" ng-hide="inDashboard">
-      <a ng-href="{{addToDashboardLink()}}" title="Add this view to a dashboard">
-        <i class="pficon-export"></i>
-      </a>
     </span>
 </div>
 
@@ -44,24 +39,25 @@
           </label>
           <div class="btn-group">
             <button type="button" class="btn btn-default" title="Show all"
-              ng-click="filterOn('NONE')" ng-class="selectedFilterClass('NONE')">All</button>
-            <button type="button" class="btn btn-default {{state.dasherize()}}" title="Filter by {{state}}"
-              ng-click="filterOn(state)" ng-class="selectedFilterClass(state)"
-              ng-repeat="(state, total) in totals track by $index">{{state | humanize}}</button>
+                    ng-click="filterOn('NONE')" ng-class="selectedFilterClass('NONE')">
+              All ({{unfilteredThreads.length}}</span>)
+            </button>
+            <button type="button" class="btn btn-default" title="Filter by {{state | humanize}}"
+                    ng-click="filterOn(state)" ng-class="selectedFilterClass(state)"
+                    ng-repeat="(state, total) in totals track by $index">
+              {{state | humanize}} ({{total}})
+            </button>
           </div>            
         </div>
         <div class="form-group">
           <input type="text" ng-model="searchFilter" class="form-control" placeholder="Filter..." autocomplete="off">
-        </div>
-        <div class="form-group">
-          <strong>{{threads.length}}</strong> of <strong>{{unfilteredThreads.length}}</strong> threads
         </div>
       </form>
     </div>
   </div>
 
   <div class="row">
-    <table class="table table-condensed table-striped table-bordered dataTable threads-table"
+    <table class="table table-condensed table-striped table-bordered table-hover dataTable threads-table"
            hawtio-simple-table="threadGridOptions"></table>
   </div>
 
