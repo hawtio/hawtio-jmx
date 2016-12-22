@@ -30,30 +30,28 @@
 
 <div class="jmx-threads-page" ng-controller="Threads.ThreadsController">
 
-  <div class="row toolbar-pf table-view-pf-toolbar">
-    <div class="col-sm-12">
-      <form class="toolbar-pf-actions">
-        <div class="form-group">
-          <label>
-            Filter by state:
-          </label>
-          <div class="btn-group">
-            <button type="button" class="btn btn-default" title="Show all"
-                    ng-click="filterOn('NONE')" ng-class="selectedFilterClass('NONE')">
-              All ({{unfilteredThreads.length}}</span>)
-            </button>
-            <button type="button" class="btn btn-default" title="Filter by {{state | humanize}}"
-                    ng-click="filterOn(state)" ng-class="selectedFilterClass(state)"
-                    ng-repeat="(state, total) in totals track by $index">
-              {{state | humanize}} ({{total}})
-            </button>
-          </div>            
-        </div>
-        <div class="form-group">
-          <input type="text" ng-model="searchFilter" class="form-control" placeholder="Filter..." autocomplete="off">
-        </div>
-      </form>
-    </div>
+  <div class="row toolbar-pf">
+    <form class="toolbar-pf-actions">
+      <div class="form-group">
+        <label>
+          Filter by state:
+        </label>
+        <div class="btn-group">
+          <button type="button" class="btn btn-default" title="Show all"
+                  ng-click="filterOn('NONE')" ng-class="selectedFilterClass('NONE')">
+            All ({{unfilteredThreads.length}}</span>)
+          </button>
+          <button type="button" class="btn btn-default" title="Filter by {{state | humanize}}"
+                  ng-click="filterOn(state)" ng-class="selectedFilterClass(state)"
+                  ng-repeat="(state, total) in totals track by $index">
+            {{state | humanize}} ({{total}})
+          </button>
+        </div>            
+      </div>
+      <div class="form-group">
+        <input type="text" ng-model="searchFilter" class="form-control" placeholder="Filter..." autocomplete="off">
+      </div>
+    </form>
   </div>
 
   <div class="row">
