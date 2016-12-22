@@ -1,58 +1,29 @@
 <div ng-controller="JVM.DiscoveryController">
 
-  <div class="row">
+  <h1>Discover</h1>
 
-    <div class="pull-right">
-      <button class="btn" ng-click="fetch()" title="Refresh"><i class="fa fa-refresh"></i></button>
-    </div>
-    <div class="pull-right">
-      <input class="search-query" type="text" ng-model="filter" placeholder="Filter...">
-    </div>
-
-    <script type="text/ng-template" id="authPrompt">
-      <div class="auth-form">
-        <form name="authForm">
-          <input type="text"
-                 class="input-sm"
-                 placeholder="Username..."
-                 ng-model="agent.username"
-                 required>
-          <input type="password"
-                 class="input-sm"
-                 placeholder="Password..."
-                 ng-model="agent.password"
-                 required>
-          <button ng-disabled="!authForm.$valid"
-                  ng-click="connectWithCredentials($event, agent)"
-                  class="btn btn-success">
-            <i class="fa fa-share"></i> Connect
-          </button>
-          <button class="btn" ng-click="closePopover($event)"><i class="fa fa-remove"></i></button>
-        </form>
+  <div class="row toolbar-pf">
+    <form class="toolbar-pf-actions">
+      <div class="form-group">
+        <input type="text" class="form-control" ng-model="filter" placeholder="Filter..." autocomplete="off">
       </div>
-    </script>
-
+      <div class="form-group">
+        <button class="btn btn-default" ng-click="fetch()" title="Refresh"><i class="fa fa-refresh"></i> Refresh</button>
+      </div>
+    </form>
   </div>
 
-  <div class="row">
+  <div class="row main-content">
 
     <div ng-show="discovering">
-      <p></p>
-
-      <div class="alert alert-info">
-        <i class="fa fa-spinner icon-spin"></i> Please wait, discovering agents ...
-      </div>
+      <p><span class="spinner spinner-xs spinner-inline"></span> Please wait, discovering agents ...</p>
     </div>
 
-    <div ng-hide="discovering">
-      <div ng-hide="agents">
-        <p></p>
-
-        <div class="alert alert-warning">
-          No agents discovered.
-        </div>
+    <div ng-show="!discovering">
+      <div ng-show="agents.length === 0">
+        No agents discovered.
       </div>
-      <div ng-show="agents">
+      <div ng-show="agents.length > 0">
         <ul class="discovery zebra-list">
           <li ng-repeat="agent in agents track by $index" ng-show="filterMatches(agent)">
 
@@ -99,4 +70,28 @@
       </div>
     </div>
   </div>
+
+  <script type="text/ng-template" id="authPrompt">
+    <div class="auth-form">
+      <form name="authForm">
+        <input type="text"
+                class="input-sm"
+                placeholder="Username..."
+                ng-model="agent.username"
+                required>
+        <input type="password"
+                class="input-sm"
+                placeholder="Password..."
+                ng-model="agent.password"
+                required>
+        <button ng-disabled="!authForm.$valid"
+                ng-click="connectWithCredentials($event, agent)"
+                class="btn btn-success">
+          <i class="fa fa-share"></i> Connect
+        </button>
+        <button class="btn" ng-click="closePopover($event)"><i class="fa fa-remove"></i></button>
+      </form>
+    </div>
+  </script>
+
 </div>
