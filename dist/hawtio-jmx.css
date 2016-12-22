@@ -127,8 +127,11 @@ fs-donut svg g text.units {
 .toolbar-pf .btn-group .btn {
   margin-left: 0 !important;
 }
-.threads-table tr th {
-  text-align: center;
+.table-bordered-rows tr {
+  border: 1px solid #d1d1d1;
+}
+.threads-table tr td {
+  cursor: pointer;
 }
 .threads-table tr th:nth-child(1) {
   width: 7%;
@@ -150,30 +153,6 @@ fs-donut svg g text.units {
 }
 .threads-table tr th:nth-child(7) {
   width: 10%;
-}
-.threads-table tr td {
-  cursor: pointer;
-}
-.threads-table tr td:nth-child(1) {
-  text-align: right;
-}
-.threads-table tr td:nth-child(2) {
-  text-align: center;
-}
-.threads-table tr td:nth-child(3) {
-  text-align: left;
-}
-.threads-table tr td:nth-child(4) {
-  text-align: right;
-}
-.threads-table tr td:nth-child(5) {
-  text-align: right;
-}
-.threads-table tr td:nth-child(6) {
-  text-align: center;
-}
-.threads-table tr td:nth-child(7) {
-  text-align: center;
 }
 .row-monitor {
   text-align: right;
