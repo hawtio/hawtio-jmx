@@ -1,9 +1,120 @@
-<div ng-controller="JVM.ConnectController">
+<div ng-controller="JVM.ConnectController" class="jvm-remote">
 
   <h1>Remote</h1>
 
   <div class="row">
-    <div class="col-md-6">
+    <div class="col-md-7">
+      <div class="row toolbar-pf">
+        <form class="toolbar-pf-actions">
+          <div class="form-group">
+            <button class="btn btn-default" ng-click="newConnection()">
+              Add connection
+            </button>
+          </div>
+        </form>
+      </div>
+      <div class="list-group list-view-pf list-view-pf-view">
+        <div class="list-group-item list-view-pf-stacked" 
+             ng-class="{'list-view-pf-expand-active': connection.expanded}"
+             ng-repeat="connection in connections track by $index">
+          <div class="list-group-item-header" title="{{connection.expanded ? '' : 'Click to edit'}}"
+               ng-click="connection.expanded = !connection.expanded">
+            <div class="list-view-pf-expand">
+              <span class="fa fa-angle-right" ng-class="{'fa-angle-down': connection.expanded}"></span>
+            </div>
+            <div class="list-view-pf-actions">
+              <button class="btn btn-default" title="" ng-click="connect(connection); $event.stopPropagation();">
+                Connect
+              </button>
+              <div class="dropdown pull-right dropdown-kebab-pf" ng-class="{'open': connection.showSecondaryActions}">
+                <button type="button" id="dropdown-{{$index}}" class="btn btn-link dropdown-toggle" title=""
+                        data-toggle="dropdown" aria-haspopup="true" aria-expanded="{{connection.showSecondaryActions}}" 
+                        ng-click="toggleSecondaryActions(connection); $event.stopPropagation();"
+                        ng-blur="hideSecondaryActions(connection)">
+                  <span class="fa fa-ellipsis-v"></span>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-right" aria-labelledby="dropdown-{{$index}}">
+                  <li><a href="#" ng-click="deleteConnection(connection); $event.preventDefault(); $event.stopPropagation();">Remove</a></li>
+                </ul>
+              </div>
+            </div>
+            <div class="list-view-pf-main-info">
+              <div class="list-view-pf-body">
+                <div class="list-view-pf-description">
+                  <div class="list-group-item-heading">
+                    {{connection.name}}
+                  </div>
+                  <div class="list-group-item-text" ng-show="connection.scheme && connection.host &&
+                      connection.port && connection.path">
+                    {{connection.scheme}}://{{connection.host}}:{{connection.port}}/{{connection.path}}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="list-group-item-container" ng-if="connection.expanded">
+            <div class="close" ng-click="connection.expanded = false">
+              <span class="pficon pficon-close"></span>
+            </div>
+            <form name="connectForm" class="form-horizontal" ng-model-options="{ updateOn: 'change' }">
+              <div class="form-group">
+                <label class="col-sm-3 control-label" for="name-{{$index}}">Name</label>
+                <div class="col-sm-8">
+                  <input type="text" class="form-control" id="name-{{$index}}" name="name" required
+                         ng-model="connection.name" ng-change="saveConnections()">
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="col-sm-3 control-label" for="scheme-{{$index}}">Schemekey</label>
+                <div class="col-sm-8">
+                  <select class="form-control" id="scheme-{{$index}}" name="scheme" required
+                          ng-model="connection.scheme" ng-change="saveConnections()">
+                    <option>http</option>
+                    <option>https</option>
+                  </select>
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="col-sm-3 control-label" for="host-{{$index}}">Host</label>
+                <div class="col-sm-8">
+                  <input type="text" class="form-control" id="host-{{$index}}" name="host" required
+                         ng-model="connection.host"  ng-change="saveConnections()">
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="col-sm-3 control-label" for="port-{{$index}}">Port</label>
+                <div class="col-sm-8">
+                  <input type="number" class="form-control" id="port-{{$index}}" name="port" required
+                         ng-model="connection.port" ng-change="saveConnections()">
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="col-sm-3 control-label" for="path-{{$index}}">Path</label>
+                <div class="col-sm-8">
+                  <input type="text" class="form-control" id="path-{{$index}}" name="path"
+                         ng-model="connection.path" ng-change="saveConnections()">
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="col-sm-3 control-label" for="username-{{$index}}">User name</label>
+                <div class="col-sm-8">
+                  <input type="text" class="form-control" id="username-{{$index}}" name="username"
+                         ng-model="connection.userName" ng-change="saveConnections()">
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="col-sm-3 control-label" for="password-{{$index}}">Password</label>
+                <div class="col-sm-8">
+                  <input type="text" class="form-control" id="password-{{$index}}" name="password"
+                         ng-model="connection.password" ng-change="saveConnections()">
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-5">
       <div class="panel panel-default">
         <div class="panel-heading">
           <h3 class="panel-title">Instructions</h3>
@@ -11,8 +122,8 @@
         <div class="panel-body">
           <p>
             This page allows you to connect to remote processes which <strong>already have a
-            <a href="http://jolokia.org/" target="_blank">jolokia agent</a> running inside them</strong>.
-            You will need to know the host name, port and path of the jolokia agent to be able to connect.
+            <a href="http://jolokia.org/" target="_blank">jolokia agent</a> running inside them</strong>. You will need to
+            know the host name, port and path of the jolokia agent to be able to connect.
           </p>
           <p>
             If the process you wish to connect to does not have a jolokia agent inside, please refer to the
@@ -21,72 +132,24 @@
           </p>
           <p>
             If you are using <a href="http://fabric8.io/" target="_blank">Fabric8</a>,
-            <a href="http://www.jboss.org/products/fuse" target="_blank">JBoss Fuse</a>,
-            or <a href="http://activemq.apache.org" target="_blank">Apache ActiveMQ</a>;
-            then a jolokia agent is included by default (use context path of jolokia agent, usually
-            <code>jolokia</code>). Or you can always just deploy hawtio inside the process
-            (which includes the jolokia agent, use Jolokia servlet mapping inside hawtio context path,
-            usually <code>hawtio/jolokia</code>).
+            <a href="http://www.jboss.org/products/fuse" target="_blank">JBoss Fuse</a>, or <a href="http://activemq.apache.org"
+              target="_blank">Apache ActiveMQ</a>; then a jolokia agent is included by default (use context path of jolokia
+            agent, usually
+            <code>jolokia</code>). Or you can always just deploy hawtio inside the process (which includes the jolokia agent,
+            use Jolokia servlet mapping inside hawtio context path, usually <code>hawtio/jolokia</code>).
           </p>
           <p ng-show="hasLocalMBean()">
-            Use the <strong><a href="#/jvm/local">Local Tab</a></strong> to connect to processes locally on this machine (which will install a jolokia agent automatically if required).
+            Use the <strong><a href="#/jvm/local">Local Tab</a></strong> to connect to processes locally on this machine
+            (which will install a jolokia agent automatically if required).
           </p>
           <p ng-show="!hasLocalMBean()">
             The <strong>Local Tab</strong> is not currently enabled because either the server side
             <strong>hawtio-local-jvm-mbean plugin</strong> is not installed or this JVM cannot find the
-            <strong>com.sun.tools.attach.VirtualMachine</strong> API usually found in the <strong>tool.jar</strong>.
-            Please see the <a href="http://hawt.io/faq/index.html" target="_blank">FAQ entry</a> for more details.
+            <strong>com.sun.tools.attach.VirtualMachine</strong> API usually found in the <strong>tool.jar</strong>. Please
+            see the <a href="http://hawt.io/faq/index.html" target="_blank">FAQ entry</a> for more details.
           </p>
         </div>
       </div>
     </div>
-
-    <div class="col-md-6">
-      <h3>Saved Connections</h3>
-      <form class="form-horizontal no-bottom-margin">
-        <fieldset>
-          <div class="control-group">
-            <label class="control-label">Connections: </label>
-            <div class="controls">
-              <select ng-model="lastConnection"
-                      ng-options="value.name as key for (key, value) in connectionConfigs">
-                <option value=""
-                        ng-hide="lastConnection">New connection...</option>
-              </select>
-              <button class="btn btn-success"
-                      title="Connect to this server"
-                      ng-disabled="!lastConnection"
-                      ng-click="gotoServer()"><i class="fa fa-share"></i></button>
-              <button class="btn btn-danger"
-                      title="Delete this connection"
-                      ng-disabled="!lastConnection"
-                      ng-click="deleteConnection()"><i class="fa fa-remove"></i></button>
-              <button class="btn btn-primary"
-                      title="Create a new connection"
-                      ng-disabled="!lastConnection"
-                      ng-click="newConnection()"><i class="fa fa-plus"></i></button>
-            </div>
-          </div>
-        </fieldset>
-      </form>
-
-      <h3>Connection Settings</h3>
-
-      <div simple-form name="connectForm" data="formConfig" entity="currentConfig" onSubmit="gotoServer()"></div>
-
-      <div>
-        <button class="btn btn-primary"
-                ng-disabled="!forms.connectForm.$valid"
-                hawtio-submit="connectForm"
-                title="Saves the connection and opens a new browser window connecting to the given JVM process via its Jolokia servlet URL">Connect to remote server</button>
-        <button class="btn btn-default"
-                title="Save this configuration but don't open a new tab"
-                ng-disabled="!forms.connectForm.$valid"
-                ng-click="save()">Save</button>
-      </div>
-
-    </div>
-
   </div>
-
 </div>

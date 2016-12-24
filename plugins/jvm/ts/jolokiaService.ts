@@ -44,9 +44,9 @@ module JVM {
         _.merge(options, jolokiaURI.query(true));
         _.assign(options, query);
         log.debug("options: ", options);
-        var connectionMap = Core.loadConnectionMap();
-        connectionMap[name] = options;
-        Core.saveConnectionMap(connectionMap);
+        var connections = Core.loadConnections();
+        connections.push(options);
+        Core.saveConnections(connections);
         uri.hash("").query({
           con: name
         });

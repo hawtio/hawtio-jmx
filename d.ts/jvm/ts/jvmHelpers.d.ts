@@ -34,18 +34,17 @@ declare module Core {
     function removeRecentConnection(localStorage: any, name: any): void;
     function clearConnections(): void;
     function isRemoteConnection(): boolean;
-    function saveConnection(options: Core.ConnectOptions): void;
     function connectToServer(localStorage: any, options: Core.ConnectToServerOptions): void;
     /**
      * Loads all of the available connections from local storage
      * @returns {Core.ConnectionMap}
      */
-    function loadConnectionMap(): Core.ConnectionMap;
+    function loadConnections(): Core.ConnectOptions[];
     /**
      * Saves the connection map to local storage
      * @param map
      */
-    function saveConnectionMap(map: Core.ConnectionMap): void;
+    function saveConnections(connections: Core.ConnectOptions[]): void;
     function getConnectionNameParameter(): any;
     /**
      * Returns the connection options for the given connection name from localStorage

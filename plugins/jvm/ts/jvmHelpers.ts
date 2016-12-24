@@ -92,34 +92,24 @@ module Core {
     return ('con' in new URI().query(true));
   }
 
-  export function saveConnection(options: Core.ConnectOptions) {
-    var connectionMap = Core.loadConnectionMap();
-    // use a copy so we can leave the original one alone
-    var clone = angular.extend({}, options);
-    delete clone.userName;
-    delete clone.password;
-    connectionMap[<string>options.name] = clone;
-    Core.saveConnectionMap(connectionMap);
-  }
-
   export function connectToServer(localStorage, options:Core.ConnectToServerOptions) {
     log.debug("Connecting with options: ", StringHelpers.toString(options));
-    addRecentConnection(localStorage, options.name);
-    if (!('userName' in options)) {
+    var clone = angular.extend({}, options);
+    addRecentConnection(localStorage, clone.name);
+    if (!('userName' in clone)) {
       var userDetails = <Core.UserDetails> HawtioCore.injector.get('userDetails');
-      options.userName = userDetails.username;
-      options.password = userDetails.password;
+      clone.userName = userDetails.username;
+      clone.password = userDetails.password;
     }
-    saveConnection(options);
     var $window:ng.IWindowService = HawtioCore.injector.get<ng.IWindowService>('$window');
-    var url = (options.view || '/') + '?con=' + options.name;
+    var url = (clone.view || '/') + '?con=' + clone.name;
     url = url.replace(/\?/g, "&");
     url = url.replace(/&/, "?");
     var newWindow = $window.open(url, 'wnd');
-    newWindow['con'] = options.name;
+    newWindow['con'] = clone.name;
     newWindow['userDetails'] = {
-      username: options.userName,
-      password: options.password,
+      username: clone.userName,
+      password: clone.password,
       loginDetails: {}
     };
   }
@@ -129,19 +119,25 @@ module Core {
    * Loads all of the available connections from local storage
    * @returns {Core.ConnectionMap}
    */
-  export function loadConnectionMap():Core.ConnectionMap {
+  export function loadConnections(): Core.ConnectOptions[] {
     var localStorage = Core.getLocalStorage();
     try {
-      var answer = <Core.ConnectionMap> angular.fromJson(localStorage[Core.connectionSettingsKey]);
-      if (!answer) {
-        return <Core.ConnectionMap> {};
+      var connections = <Core.ConnectOptions[]> angular.fromJson(localStorage[Core.connectionSettingsKey]);
+      if (!connections) {
+        // nothing found on local storage
+        return <Core.ConnectOptions[]> [];
+      } else if (!_.isArray(connections)) {
+        // found the legacy connections map
+        delete localStorage[Core.connectionSettingsKey];
+        return <Core.ConnectOptions[]> [];
       } else {
-        return answer;
+        // found a valid connections array
+        return connections;
       }
     } catch (e) {
       // corrupt config
       delete localStorage[Core.connectionSettingsKey];
-      return <Core.ConnectionMap> {};
+      return <Core.ConnectOptions[]> [];
     }
   }
 
@@ -149,14 +145,14 @@ module Core {
    * Saves the connection map to local storage
    * @param map
    */
-  export function saveConnectionMap(map:Core.ConnectionMap) {
-    Logger.get("Core").debug("Saving connection map: ", StringHelpers.toString(map));
-    localStorage[Core.connectionSettingsKey] = angular.toJson(map);
+  export function saveConnections(connections: Core.ConnectOptions[]) {
+    Logger.get("Core").debug("Saving connection array: ", StringHelpers.toString(connections));
+    localStorage[Core.connectionSettingsKey] = angular.toJson(connections);
   }
 
   export function getConnectionNameParameter() {
     return new URI().search(true)['con'];
-  }
+}
 
   /**
    * Returns the connection options for the given connection name from localStorage
@@ -165,7 +161,8 @@ module Core {
     if (!name) {
       return null;
     }
-    return Core.loadConnectionMap()[name];
+    let connections = loadConnections();
+    return _.find(connections, connection => connection.name === name);
   }
 
   /**
