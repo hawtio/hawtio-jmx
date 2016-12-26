@@ -113,22 +113,22 @@ module Threads {
         {
           field: 'waitedTime',
           displayName: 'Waited Time',
-          cellTemplate: '<span ng-show="row.entity.waitedTime > 0">{{row.entity.waitedTime | humanizeMs}}</span>'
+          cellTemplate: '<div ng-show="row.entity.waitedTime > 0">{{row.entity.waitedTime | humanizeMs}}</div>'
         },
         {
           field: 'blockedTime',
           displayName: 'Blocked Time',
-          cellTemplate: '<span ng-show="row.entity.blockedTime > 0">{{row.entity.blockedTime | humanizeMs}}</span>'
+          cellTemplate: '<div ng-show="row.entity.blockedTime > 0">{{row.entity.blockedTime | humanizeMs}}</div>'
         },
         {
           field: 'inNative',
           displayName: 'Native',
-          cellTemplate: '<span ng-show="row.entity.inNative" class="orange">(in native)</span>'
+          cellTemplate: '<div ng-show="row.entity.inNative" class="orange">(in native)</div>'
         },
         {
           field: 'suspended',
           displayName: 'Suspended',
-          cellTemplate: '<span ng-show="row.entity.suspended" class="red">(suspended)</span>'
+          cellTemplate: '<div ng-show="row.entity.suspended" class="red">(suspended)</div>'
         }
       ]
     };

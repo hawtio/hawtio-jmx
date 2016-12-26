@@ -28,7 +28,7 @@
     </span>
 </div>
 
-<div class="jmx-threads-page" ng-controller="Threads.ThreadsController">
+<div class="threads-page" ng-controller="Threads.ThreadsController">
 
   <div class="row toolbar-pf">
     <form class="toolbar-pf-actions">
@@ -39,12 +39,12 @@
         <div class="btn-group">
           <button type="button" class="btn btn-default" title="Show all"
                   ng-click="filterOn('NONE')" ng-class="selectedFilterClass('NONE')">
-            All ({{unfilteredThreads.length}}</span>)
+            All<span class="badge">{{unfilteredThreads.length}}</span>
           </button>
           <button type="button" class="btn btn-default" title="Filter by {{state | humanize}}"
                   ng-click="filterOn(state)" ng-class="selectedFilterClass(state)"
                   ng-repeat="(state, total) in totals track by $index">
-            {{state | humanize}} ({{total}})
+            {{state | humanize}}<span class="badge">{{total}}</span>
           </button>
         </div>            
       </div>
