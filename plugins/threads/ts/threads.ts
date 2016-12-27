@@ -18,20 +18,17 @@ module Threads {
     };
   }]);
 
-  _module.controller("Threads.ThreadsController", ["$scope", "$rootScope", "$routeParams", "$templateCache", "jolokia", "$element", ($scope, $rootScope, $routeParams, $templateCache, jolokia, $element) => {
+  _module.controller("Threads.ThreadsController", ["$scope", "$rootScope", "$routeParams", "$templateCache", "jolokia", "$element", "$modal", ($scope, $rootScope, $routeParams, $templateCache, jolokia, $element, $modal) => {
 
+    let modalInstance = null;
     $scope.selectedRowJson = '';
-
     $scope.lastThreadJson = '';
     $scope.getThreadInfoResponseJson = '';
     $scope.threads = [];
     $scope.totals = {};
     $scope.support = {};
-
     $scope.row = {};
-    $scope.threadSelected = false;
     $scope.selectedRowIndex = -1;
-
     $scope.stateFilter = 'NONE';
 
     $scope.showRaw = {
@@ -137,12 +134,11 @@ module Threads {
       if (newValue !== oldValue) {
         if (newValue.length === 0) {
           $scope.row = {};
-          $scope.threadSelected = false;
           $scope.selectedRowIndex = -1;
         } else {
           $scope.row = _.first(newValue);
-          $scope.threadSelected = true;
           $scope.selectedRowIndex = Core.pathGet($scope, ['hawtioSimpleTable', 'threads', 'rows']).findIndex((t) => { return t.entity['threadId'] === $scope.row['threadId']});
+          openModal();
         }
         $scope.selectedRowJson = angular.toJson($scope.row, true);
       }
@@ -182,13 +178,15 @@ module Threads {
     };
 
     function render(response) {
-      var responseJson = angular.toJson(response.value, true);
-      if ($scope.getThreadInfoResponseJson !== responseJson) {
-        $scope.getThreadInfoResponseJson = responseJson;
-        $scope.unfilteredThreads = _.without(response.value, null);
-        calculateTotals($scope.unfilteredThreads);
-        $scope.threads = $scope.filterThreads($scope.stateFilter, $scope.unfilteredThreads);
-        Core.$apply($scope);
+      if ($scope.threads.length === 0) {
+        var responseJson = angular.toJson(response.value, true);
+        if ($scope.getThreadInfoResponseJson !== responseJson) {
+          $scope.getThreadInfoResponseJson = responseJson;
+          $scope.unfilteredThreads = _.without(response.value, null);
+          calculateTotals($scope.unfilteredThreads);
+          $scope.threads = $scope.filterThreads($scope.stateFilter, $scope.unfilteredThreads);
+          Core.$apply($scope);
+        }
       }
     }
 
@@ -295,6 +293,18 @@ module Threads {
       }
       Core.$apply($scope);
     };
+
+    function openModal() {
+      if (!modalInstance) {
+        modalInstance = $modal.open({
+          templateUrl: 'threadModalContent.html',
+          scope: $scope
+        });
+        modalInstance.result.finally(function() {
+          modalInstance = null;
+        });
+      }
+    }
 
     initFunc();
 

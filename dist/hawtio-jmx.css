@@ -30,6 +30,9 @@ h1 {
   text-overflow: ellipsis;
   overflow: hidden;
 }
+.threads-page dd {
+  overflow-wrap: break-word;
+}
 /* jmx operation page stuff */
 .operation-row {
   position: relative;
