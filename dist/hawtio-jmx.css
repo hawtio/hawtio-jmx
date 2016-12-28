@@ -5,6 +5,12 @@ h1 {
 .main-content {
   margin-top: 20px;
 }
+.modal-header .pagination-container {
+  line-height: 0.8;
+}
+.modal-header .pagination {
+  margin: 0;
+}
 /* JVM REMOTE */
 .jvm-remote .list-group-item-container .form-horizontal {
   margin: 10px 0;
