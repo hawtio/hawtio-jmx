@@ -302,6 +302,7 @@ module Threads {
         });
         modalInstance.result.finally(function() {
           modalInstance = null;
+          $scope.deselect();
         });
       }
     }
