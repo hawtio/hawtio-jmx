@@ -32,12 +32,32 @@ h1 {
   border: inherit;
   font-weight: inherit;
 }
-.threads-page .threads-table td div {
-  text-overflow: ellipsis;
-  overflow: hidden;
-}
 .threads-page dd {
   overflow-wrap: break-word;
+}
+.threads-page .table tr th:nth-child(1) {
+  width: 7%;
+}
+.threads-page .table tr th:nth-child(2) {
+  width: 5%;
+}
+.threads-page .table tr th:nth-child(3) {
+  width: 42%;
+}
+.threads-page .table tr th:nth-child(4) {
+  width: 13%;
+}
+.threads-page .table tr th:nth-child(5) {
+  width: 13%;
+}
+.threads-page .table tr th:nth-child(6) {
+  width: 10%;
+}
+.threads-page .table tr th:nth-child(7) {
+  width: 10%;
+}
+.threads-page .table tr td {
+  cursor: pointer;
 }
 /* jmx operation page stuff */
 .operation-row {
@@ -167,33 +187,6 @@ fs-donut svg g text.units {
 }
 .toolbar-pf .btn-group .btn {
   margin-left: 0 !important;
-}
-.table-bordered-rows tr {
-  border: 1px solid #d1d1d1;
-}
-.threads-table tr td {
-  cursor: pointer;
-}
-.threads-table tr th:nth-child(1) {
-  width: 7%;
-}
-.threads-table tr th:nth-child(2) {
-  width: 7%;
-}
-.threads-table tr th:nth-child(3) {
-  width: 40%;
-}
-.threads-table tr th:nth-child(4) {
-  width: 13%;
-}
-.threads-table tr th:nth-child(5) {
-  width: 13%;
-}
-.threads-table tr th:nth-child(6) {
-  width: 10%;
-}
-.threads-table tr th:nth-child(7) {
-  width: 10%;
 }
 .row-monitor {
   text-align: right;
