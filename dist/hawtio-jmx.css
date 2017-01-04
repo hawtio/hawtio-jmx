@@ -1,4 +1,10 @@
 /* GLOBAL */
+html {
+  height: 100%;
+}
+body {
+  height: 100%;
+}
 h1 {
   margin-bottom: 20px;
 }
@@ -270,4 +276,8 @@ strong.new,
 .jmx-attributes-toolbar .pull-right .inline-block .search-query {
   margin-top: 1em;
   margin-bottom: 1em;
+}
+
+.layout-tree .ui-splitbar {
+  background: #eee;
 }

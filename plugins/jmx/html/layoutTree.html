@@ -1,30 +1,26 @@
-<script type="text/ng-template" id="header">
-  <div class="tree-header" ng-controller="Jmx.TreeHeaderController">
-    <div class="left">
+<div ui-layout="{flow : 'column', dividerSize: 5, disableToggle: true}"
+     class="layout-tree">
+
+  <div ui-layout-container size="300px" min-size="200px" max-size="50%">
+    <div class="tree-header" ng-controller="Jmx.TreeHeaderController">
+      <div class="left">
+      </div>
+      <div class="right">
+        <i class="fa fa-chevron-down clickable"
+           title="Expand all nodes"
+           ng-click="expandAll()"></i>
+        <i class="fa fa-chevron-up clickable"
+           title="Unexpand all nodes"
+           ng-click="contractAll()"></i>
+      </div>
     </div>
-    <div class="right">
-      <i class="fa fa-chevron-down clickable"
-         title="Expand all nodes"
-         ng-click="expandAll()"></i>
-      <i class="fa fa-chevron-up clickable"
-         title="Unexpand all nodes"
-         ng-click="contractAll()"></i>
+    <div id="tree-container" ng-controller="Jmx.MBeansController">
+      <div id="jmxtree"></div>
     </div>
   </div>
-</script>
 
-<hawtio-pane position="left" width="300" header="header">
-  <div id="tree-container"
-       ng-controller="Jmx.MBeansController">
-    <div id="jmxtree"></div>
+  <div ui-layout-container>
+    <div id="properties" ng-view></div>
   </div>
-</hawtio-pane>
 
-<div class="row-fluid">
-  <!--
-  <ng-include src="'plugins/jmx/html/subLevelTabs.html'"></ng-include>
-  -->
-  <div id="properties" ng-view></div>
 </div>
-
-
