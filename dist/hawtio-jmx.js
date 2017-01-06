@@ -3182,6 +3182,7 @@ var Jmx;
                 else {
                     search["el"] = $scope.selectedMBeans;
                 }
+                search['sub-tab'] = 'jmx-chart';
                 $location.search(search);
                 $location.path("jmx/charts");
             };
