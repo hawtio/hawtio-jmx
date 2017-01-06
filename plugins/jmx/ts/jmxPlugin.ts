@@ -40,7 +40,24 @@ module Jmx {
       return answer;
   }]);
 
-  _module.controller("Jmx.MBeanTreeController", ['$scope', 'workspace', ($scope, workspace) => {
+   _module.controller("Jmx.TabController", ["$scope", "$route", "$location", "layoutTree", "layoutFull", "viewRegistry", "workspace", ($scope, $route, $location:ng.ILocationService, layoutTree, layoutFull, viewRegistry, workspace:Core.Workspace) => {
+
+     $scope.isTabActive = path => {
+       const tab = workspace.$location.search()['sub-tab'];
+       if (angular.isString(tab)) {
+         return tab.startsWith(path);
+       }
+       return false;
+     };
+
+     $scope.goto = (path:string, tab:string) => {
+       const query = workspace.$location.search();
+       query['sub-tab'] = tab;
+       $location.url(path + '?' + Core.hashToString(query));
+     }
+   }]);
+
+    _module.controller("Jmx.MBeanTreeController", ['$scope', 'workspace', ($scope, workspace) => {
     $scope.node = {};
     workspace.addNamedTreePostProcessor('MBeanTree', (tree:Core.Folder) => {
       angular.copy(tree, $scope.node);
