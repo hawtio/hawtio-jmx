@@ -172,19 +172,6 @@ fs-donut svg g text.units {
   z-index: 2;
 }
 /* threads page */
-.toolbar-pf .form-group {
-  height: 27px;
-  line-height: 27px;
-}
-.toolbar-pf .form-group:first-child {
-  padding-left: 0;
-}
-.toolbar-pf .form-group label {
-  margin-right: 1em;
-}
-.toolbar-pf .btn-group .btn {
-  margin-left: 0 !important;
-}
 .row-monitor {
   text-align: right;
   line-height: 2em;
@@ -192,7 +179,7 @@ fs-donut svg g text.units {
 }
 .row-monitor .label {
   font-size: 10px;
-  margin-left: 10px;
+  margin-left: 5px;
   cursor: default;
 }
 .row-monitor .add-to-dashboard {
