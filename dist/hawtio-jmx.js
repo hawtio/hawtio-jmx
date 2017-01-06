@@ -2248,9 +2248,10 @@ var Jmx;
                 return false;
             };
             $scope.goto = function (path, tab) {
-                var query = workspace.$location.search();
-                query['sub-tab'] = tab;
-                $location.url(path + '?' + Core.hashToString(query));
+                var search = workspace.$location.search();
+                search['sub-tab'] = tab;
+                $location.url(path);
+                $location.search(search);
             };
         }]);
     Jmx._module.controller("Jmx.MBeanTreeController", ['$scope', 'workspace', function ($scope, workspace) {

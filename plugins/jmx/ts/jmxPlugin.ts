@@ -51,9 +51,10 @@ module Jmx {
      };
 
      $scope.goto = (path:string, tab:string) => {
-       const query = workspace.$location.search();
-       query['sub-tab'] = tab;
-       $location.url(path + '?' + Core.hashToString(query));
+       const search = workspace.$location.search();
+       search['sub-tab'] = tab;
+       $location.url(path);
+       $location.search(search);
      }
    }]);
 
