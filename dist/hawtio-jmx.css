@@ -265,6 +265,32 @@ strong.new,
   margin-bottom: 1em;
 }
 
-.layout-tree .ui-splitbar {
-  background: #eee;
+#jmx-box {
+  display: flex;
+  flex-flow: column;
+  height: 100%;
+  align-items: stretch;
+}
+#jmx-box .header {
+  flex: 0 0 auto;
+}
+#jmx-box .main {
+  flex: 1 1 auto;
+  display: flex;
+  flex-flow: row;
+  align-items: stretch;
+  width: 100%;
+  border-top: 2px solid #eee;
+}
+#jmx-box #tree-container {
+  border-right: 2px solid #eee;
+  width: 300px;
+  max-width: 50%;
+  resize: horizontal;
+  overflow: scroll;
+  flex: 0 0 auto;
+}
+#jmx-box #properties {
+  overflow: scroll;
+  flex: 1 1 auto;
 }

@@ -1,25 +1,23 @@
-<div ui-layout="{flow : 'column', dividerSize: 5, disableToggle: true}"
-     class="layout-tree">
+<div id="jmx-box">
+  <div class="header">
 
-  <div ui-layout-container size="300px" min-size="200px" max-size="50%">
-    <div class="tree-header" ng-controller="Jmx.TreeHeaderController">
-      <div class="left">
-      </div>
-      <div class="right">
-        <i class="fa fa-chevron-down clickable"
-           title="Expand all nodes"
-           ng-click="expandAll()"></i>
-        <i class="fa fa-chevron-up clickable"
-           title="Unexpand all nodes"
-           ng-click="contractAll()"></i>
-      </div>
+    <div class="pull-left" ng-controller="Jmx.TreeHeaderController">
+      <i class="fa fa-chevron-down clickable"
+         title="Expand all nodes"
+         ng-click="expandAll()"></i>
+      <i class="fa fa-chevron-up clickable"
+         title="Unexpand all nodes"
+         ng-click="contractAll()"></i>
     </div>
+
+  </div>
+
+  <div class="main">
+
     <div id="tree-container" ng-controller="Jmx.MBeansController">
       <div id="jmxtree"></div>
     </div>
-  </div>
 
-  <div ui-layout-container>
     <div id="properties" ng-view></div>
   </div>
 

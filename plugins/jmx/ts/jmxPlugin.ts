@@ -9,7 +9,7 @@
 /// <reference path="workspace.ts"/>
 module Jmx {
 
-  export var _module = angular.module(pluginName, ['ui.layout']);
+  export var _module = angular.module(pluginName, []);
 
   _module.config(['HawtioNavBuilderProvider', "$routeProvider", (builder:HawtioMainNav.BuilderFactory, $routeProvider) => {
 

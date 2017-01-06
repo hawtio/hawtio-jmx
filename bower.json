@@ -28,8 +28,7 @@
     "hawtio-core-navigation": "~2.0.0",
     "hawtio-utilities": "~2.0.0",
     "hawtio-forms": "~2.0.0",
-    "hawtio-ui": "~2.0.0",
-    "angular-ui-layout": "~1.4.2"
+    "hawtio-ui": "~2.0.0"
   },
   "devDependencies": {
     "patternfly": "~3.15.0",
