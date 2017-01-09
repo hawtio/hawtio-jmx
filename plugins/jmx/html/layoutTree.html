@@ -10,6 +10,8 @@
          ng-click="contractAll()"></i>
     </div>
 
+    <div class="pull-right" ng-include="'plugins/jmx/html/subLevelTabs.html'"></div>
+
     <ul class="nav nav-pills pull-right" ng-controller="Jmx.TabController">
       <li class="nav-link" ng-class="{active: isTabActive('jmx-attributes')}">
         <a class="nav-link" href="#" ng-click="goto('/jmx/attributes', 'jmx-attributes')">Attributes</a>
