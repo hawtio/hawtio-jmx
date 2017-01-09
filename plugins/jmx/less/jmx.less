@@ -1,35 +1,176 @@
+// Main layout
+
 #jmx-box {
   display: flex;
   flex-flow: column;
   height: 100%;
   align-items: stretch;
+
+  .header {
+    flex: 0 0 auto;
+    padding-top: 5px;
+    padding-bottom: 5px;
+  }
+
+  .main {
+    flex: 1 1 auto;
+    display: flex;
+    flex-flow: row;
+    align-items: stretch;
+    width: 100%;
+    border-top: 2px solid #eee;
+  }
+
+  #tree-container {
+    border-right: 2px solid #eee;
+    width: 300px;
+    max-width: 50%;
+    resize: horizontal;
+    overflow: scroll;
+    flex: 0 0 auto;
+  }
+
+  #properties {
+    overflow: scroll;
+    flex: 1 1 auto;
+  }
 }
 
-#jmx-box .header {
-  flex: 0 0 auto;
-  padding-top: 5px;
-  padding-bottom: 5px;
-}
+// Attributes
 
-#jmx-box .main {
-  flex: 1 1 auto;
-  display: flex;
-  flex-flow: row;
-  align-items: stretch;
+.jmx-attributes-wrapper {
   width: 100%;
-  border-top: 2px solid #eee;
+  overflow: auto;
 }
 
-#jmx-box #tree-container {
-  border-right: 2px solid #eee;
-  width: 300px;
-  max-width: 50%;
-  resize: horizontal;
-  overflow: scroll;
-  flex: 0 0 auto;
+.jmx-attributes-toolbar {
+  .row {
+    margin-top: 1em;
+    margin-bottom: 1em;
+  }
+
+  .search-query {
+    margin-top: 0;
+    margin-bottom: 0;
+  }
+
+  .pull-right .inline-block .search-query {
+    margin-top: 1em;
+    margin-bottom: 1em;
+  }
 }
 
-#jmx-box #properties {
-  overflow: scroll;
-  flex: 1 1 auto;
+// Operations
+
+.operation-row {
+  position: relative;
+  /* height: 30px; */
+  vertical-align: middle;
+  &.can-invoke {
+    cursor: pointer;
+  }
+
+  &.cant-invoke {
+    cursor: not-allowed;
+  }
+
+  & > * {
+    display: inline-block;
+    height: 100%;
+    line-height: 30px;
+  }
+}
+
+.operation-actions {
+  position: absolute;
+  right: 6px;
+  top: 4px;
+}
+
+.help-block:empty {
+  margin-top: 10px;
+}
+
+// Charts
+
+#charts {
+  display: block;
+  overflow: hidden;
+  margin: 5px auto;
+  position: relative;
+  padding-bottom: 35px;
+}
+
+.group {
+  margin-bottom: 1em;
+}
+
+.axis {
+  font: 10px sans-serif;
+  pointer-events: none;
+  z-index: 2;
+
+  &.text {
+    -webkit-transition: fill-opacity 250ms linear;
+  }
+  &.top {
+    position: relative;
+    top: 0;
+    padding: 0;
+  }
+  &.bottom {
+    position: absolute;
+    bottom: 0px;
+    padding: 0;
+  }
+  path {
+    display: none;
+  }
+  line {
+    stroke: #000;
+    shape-rendering: crispEdges;
+  }
+}
+
+.horizon {
+  overflow: hidden;
+  position: relative;
+  .title,
+  .value {
+    bottom: 0;
+    line-height: 30px;
+    margin: 0 6px;
+    position: absolute;
+    white-space: nowrap;
+  }
+  .title {
+    left: 0;
+  }
+  .value {
+    right: 0;
+  }
+  canvas {
+    display: block;
+  }
+  &:last-child {
+    border-bottom: none;
+  }
+  & + .horizon {
+    border-top: none;
+  }
+}
+
+.line {
+  opacity: .2;
+  z-index: 2;
+}
+
+// Dashboard
+
+fs-donut svg g text.value {
+  font-size: 40px;
+}
+
+fs-donut svg g text.units {
+  font-size: 20px;
 }
