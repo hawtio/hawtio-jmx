@@ -135,6 +135,10 @@ strong.new,
   width: 100%;
   border-top: 2px solid #eee;
 }
+#jmx-box #jmx-tree-controls {
+  position: relative;
+  transform: translateY(50%);
+}
 #jmx-box #tree-container {
   border-right: 2px solid #eee;
   width: 300px;
