@@ -115,9 +115,9 @@ module Jmx {
                       })
                       .show( () => {
                         if (!HawtioCore.injector) {
-                          return true;
+                          return false;
                         }
-                        var dash = HawtioCore.injector.get<any>('HawtioDashboard');
+                        const dash = HawtioCore.injector.get<any>('HawtioDashboard');
                         return dash && dash.hasDashboard;
                       })
                       .click( () => {
