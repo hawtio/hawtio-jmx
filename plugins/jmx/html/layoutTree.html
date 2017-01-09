@@ -10,19 +10,19 @@
          ng-click="contractAll()"></i>
     </div>
 
-    <ul class="nav nav-tabs pull-right" ng-controller="Jmx.TabController">
-      <li ng-class="{'active': isTabActive('jmx-attributes')}">
-        <a href="#" ng-click="goto('/jmx/attributes', 'jmx-attributes')">Attributes</a>
+    <ul class="nav nav-pills pull-right" ng-controller="Jmx.TabController">
+      <li class="nav-link" ng-class="{'active': isTabActive('jmx-attributes')}">
+        <a class="nav-link" href="#" ng-click="goto('/jmx/attributes', 'jmx-attributes')">Attributes</a>
       </li>
-      <li ng-class="{'active': isTabActive('jmx-operations')}">
-        <a href="#" ng-click="goto('/jmx/operations', 'jmx-operations')">Operations</a>
+      <li class="nav-link" ng-class="{'active': isTabActive('jmx-operations')}">
+        <a class="nav-link" href="#" ng-click="goto('/jmx/operations', 'jmx-operations')">Operations</a>
       </li>
-      <li ng-class="{'active': isTabActive('jmx-chart')}">
-        <a href="#" ng-click="goto('/jmx/charts', 'jmx-chart')">Chart</a>
+      <li class="nav-link" ng-class="{'active': isTabActive('jmx-chart')}">
+        <a class="nav-link" href="#" ng-click="goto('/jmx/charts', 'jmx-chart')">Chart</a>
       </li>
-      <li ng-class="{'active': isTabActive('jmx-edit-chart')}"
+      <li class="nav-link" ng-class="{'active': isTabActive('jmx-edit-chart')}"
           ng-show="isTabActive('jmx-chart') || isTabActive('jmx-edit-chart')">
-        <a href="#" ng-click="goto('/jmx/chartEdit', 'jmx-edit-chart')">Edit Chart</a>
+        <a class="nav-link" href="#" ng-click="goto('/jmx/chartEdit', 'jmx-edit-chart')">Edit Chart</a>
       </li>
     </ul>
 

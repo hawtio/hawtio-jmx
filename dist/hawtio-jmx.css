@@ -273,7 +273,8 @@ strong.new,
 }
 #jmx-box .header {
   flex: 0 0 auto;
-  padding-top: 10px;
+  padding-top: 5px;
+  padding-bottom: 5px;
 }
 #jmx-box .main {
   flex: 1 1 auto;
