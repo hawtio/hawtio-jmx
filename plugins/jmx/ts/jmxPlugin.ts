@@ -40,25 +40,29 @@ module Jmx {
       return answer;
   }]);
 
-   _module.controller("Jmx.TabController", ["$scope", "$route", "$location", "layoutTree", "layoutFull", "viewRegistry", "workspace", ($scope, $route, $location:ng.ILocationService, layoutTree, layoutFull, viewRegistry, workspace:Core.Workspace) => {
+  _module.controller("Jmx.TabController", ["$scope", "$route", "$location", "layoutTree", "layoutFull", "viewRegistry", "workspace", ($scope, $route, $location: ng.ILocationService, layoutTree, layoutFull, viewRegistry, workspace: Core.Workspace) => {
 
-     $scope.isTabActive = path => {
-       const tab = workspace.$location.search()['sub-tab'];
-       if (angular.isString(tab)) {
-         return tab.startsWith(path);
-       }
-       return false;
-     };
+    $scope.isTabActive = path => {
+      const tab = workspace.$location.search()['sub-tab'];
+      if (angular.isString(tab)) {
+        return tab.startsWith(path);
+      }
+      return false;
+    };
 
-     $scope.goto = (path:string, tab:string) => {
-       const search = workspace.$location.search();
-       search['sub-tab'] = tab;
-       $location.url(path);
-       $location.search(search);
-     }
-   }]);
+    $scope.goto = (path: string, tab: string) => {
+      const search      = workspace.$location.search();
+      search['sub-tab'] = tab;
+      $location.url(path);
+      $location.search(search);
+    };
 
-    _module.controller("Jmx.MBeanTreeController", ['$scope', 'workspace', ($scope, workspace) => {
+    $scope.editChart = () => ($scope.isTabActive('jmx-chart') || $scope.isTabActive('jmx-edit-chart'))
+      ? $scope.goto('/jmx/chartEdit', 'jmx-edit-chart') : false;
+
+  }]);
+
+  _module.controller("Jmx.MBeanTreeController", ['$scope', 'workspace', ($scope, workspace) => {
     $scope.node = {};
     workspace.addNamedTreePostProcessor('MBeanTree', (tree:Core.Folder) => {
       angular.copy(tree, $scope.node);
