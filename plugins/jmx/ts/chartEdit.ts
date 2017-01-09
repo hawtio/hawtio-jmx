@@ -136,14 +136,14 @@ module Jmx {
                   var elementNames = Core.toSearchArgumentArray(search["el"]);
                   if (attributeNames && attributeNames.length) {
                     attributeNames.forEach((name) => {
-                      if ($scope.metrics[name] && $scope.selectedAttributes.none(el => el === name)) {
+                      if ($scope.metrics[name] && !_.some($scope.selectedAttributes, el => el === name)) {
                         $scope.selectedAttributes.push(name);
                       }
                     });
                   }
                   if (elementNames && elementNames.length) {
                     elementNames.forEach((name) => {
-                      if ($scope.mbeans[name] && $scope.selectedMBeans.none(el => el === name)) {
+                      if ($scope.mbeans[name] && !_.some($scope.selectedAttributes, el => el === name)) {
                         $scope.selectedMBeans.push(name);
                       }
                     });
