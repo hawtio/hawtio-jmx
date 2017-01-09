@@ -103,6 +103,7 @@ module Jmx {
     var editChart = builder.id(prefix + '-edit-chart')
                       .title( () => '<i class="fa fa-cog"></i> Edit Chart' )
                       .tooltip( () => 'Edit the chart to choose which attributes to show from the MBean')
+                      .show(() => workspace.isLinkActive('jmx/chart'))
                       .href( () => '/jmx/chartEdit' + workspace.hash() )
                       .build();
 
@@ -129,7 +130,7 @@ module Jmx {
                           var height = 2;
                           var title = workspace.getSelectedMBeanName();
                           var $location = workspace.$location;
-                          if ($location.path().has('/jmx/charts')) {
+                          if ($location.path().startsWith('/jmx/charts')) {
                             width = 4;
                             height = 3;
                           }
@@ -142,7 +143,6 @@ module Jmx {
                       .href( () => '' )
                       .build();
 
-    editChart.show = () => workspace.isLinkActive('jmx/chart');
     return [attributes, operations, chart, editChart, addToDashboard];
   }
 

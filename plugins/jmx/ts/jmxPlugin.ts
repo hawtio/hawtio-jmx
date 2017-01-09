@@ -139,14 +139,15 @@ module Jmx {
       return Jmx.currentProcessId;
     });
 
-    var myUrl = '/jmx/attributes';
-    var builder = nav.builder();
-    var tab = builder.id('jmx')
+    const myUrl = '/jmx/attributes';
+    const builder = nav.builder();
+    const items = getNavItems(builder, workspace, $templateCache);
+    const tab = builder.id('jmx')
                 .title( () => 'JMX' )
                 .defaultPage({
                   rank: 10,
                   isValid: (yes, no) => {
-                    var name = 'JmxDefaultPage';
+                    const name = 'JmxDefaultPage';
                     workspace.addNamedTreePostProcessor(name, (tree) => {
                       workspace.removeNamedTreePostProcessor(name);
                       if (workspace.hasMBeans()) {
@@ -159,8 +160,8 @@ module Jmx {
                 })
                 .isValid( () => workspace.hasMBeans() )
                 .href( () => myUrl )
+                .tabs(items[0], ...items.slice(1))
                 .build();
-    tab.tabs = getNavItems(builder, workspace, $templateCache);
     nav.add(tab);
 
   }]);
