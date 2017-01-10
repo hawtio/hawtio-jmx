@@ -52,7 +52,7 @@ module Jmx {
     };
 
     $scope.fullScreenLink = () => {
-      var href = "#" + $location.path() + "?tab=notree";
+      var href = $location.path() + "?tab=notree";
       return Core.createHref($location, href, ['tab']);
     };
 

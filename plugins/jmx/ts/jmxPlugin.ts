@@ -119,10 +119,11 @@ module Jmx {
     } 
   }]);
 
-  _module.run(["HawtioNav", "$location", "workspace", "viewRegistry", "layoutTree", "jolokia", "helpRegistry", "pageTitle", "$templateCache", (nav:HawtioMainNav.Registry, $location: ng.ILocationService, workspace:Core.Workspace, viewRegistry, layoutTree, jolokia, helpRegistry, pageTitle, $templateCache) => {
+  _module.run(["HawtioNav", "$location", "workspace", "viewRegistry", "layoutTree", "layoutFull", "jolokia", "helpRegistry", "pageTitle", "$templateCache", (nav:HawtioMainNav.Registry, $location: ng.ILocationService, workspace:Core.Workspace, viewRegistry, layoutTree, layoutFull, jolokia, helpRegistry, pageTitle, $templateCache) => {
     log.debug('loaded');
 
-    viewRegistry['{ "main-tab": "jmx" }'] = layoutTree;
+    viewRegistry['jmx'] = layoutTree;
+    viewRegistry['{ "tab": "notree" }'] = layoutFull;
     helpRegistry.addUserDoc('jmx', 'app/jmx/doc/help.md');
 
     pageTitle.addTitleElement(():string => {
