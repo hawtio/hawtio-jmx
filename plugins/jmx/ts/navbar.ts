@@ -59,7 +59,7 @@ module Jmx {
     $scope.addToDashboardLink = () => {
       var href = "#" + $location.path() + workspace.hash();
 
-      var answer =  "#/dashboard/add?tab=dashboard&href=" + encodeURIComponent(href);
+      var answer =  "/dashboard/add?tab=dashboard&href=" + encodeURIComponent(href);
 
       if ($location.url().indexOf("/jmx/charts") !== -1) {
         var size = {
