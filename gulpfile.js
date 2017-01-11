@@ -7,12 +7,14 @@ var gulp = require('gulp'),
     path = require('path'),
     s = require('underscore.string'),
     argv = require('yargs').argv,
+    logger = require('js-logger'),
     hawtio = require('hawtio-node-backend');
 
 var plugins = gulpLoadPlugins({});
 var pkg = require('./package.json');
 
 var config = {
+  proxyPort: argv.port || 8282,
   main: '.',
   ts: ['plugins/**/*.ts'],
   less: ['plugins/**/*.less'],
@@ -124,9 +126,10 @@ gulp.task('watch', ['build', 'watch-less'], function() {
 
 gulp.task('connect', ['watch'], function() {
   hawtio.setConfig({
+    logLevel: logger.DEBUG,
     port: 2772,
     staticProxies: [{
-      port: 8282,
+      port: config.proxyPort,
       path: '/jolokia',
       targetPath: '/hawtio/jolokia'
     }],
