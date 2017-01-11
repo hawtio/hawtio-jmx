@@ -23,9 +23,9 @@
     "plugins"
   ],
   "dependencies": {
-    "hawtio-core": "~2.0.0",
-    "hawtio-template-cache": "~2.0.0",
-    "hawtio-core-navigation": "~2.0.0",
+    "hawtio-core": "~3.0.0",
+    "hawtio-template-cache": "~3.0.0",
+    "hawtio-core-navigation": "~3.0.0",
     "hawtio-utilities": "~3.0.1",
     "hawtio-forms": "~2.0.0",
     "hawtio-ui": "~3.0.1"
