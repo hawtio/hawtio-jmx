@@ -70,6 +70,7 @@ module Core {
     public mbeanTypesToDomain = {};
     public mbeanServicesToDomain = {};
     public attributeColumnDefs = {};
+    public onClickRowHandlers = {};
     public treePostProcessors = {};
     public topLevelTabs:any = undefined 
     public subLevelTabs = [];
@@ -258,15 +259,12 @@ module Core {
       }
       if (this.treeWatcherCounter !== counter) {
         this.treeWatcherCounter = counter;
-        var workspace = this;
-        function wrapInValue(response) {
-          var wrapper = {
-            value: response
-          };
-          workspace.populateTree(wrapper);
-        }
-        this.jolokia.list(null, onSuccess(wrapInValue, {ignoreErrors: true, maxDepth: 2}));
+        this.jolokia.list(null, onSuccess(this.wrapInValue, {ignoreErrors: true, maxDepth: 2}));
       }
+    }
+
+    private wrapInValue(response) {
+      this.populateTree({value: response});
     }
 
     public folderGetOrElse(folder, value) {
@@ -444,7 +442,7 @@ module Core {
       this.tree = tree;
 
       var processors = this.treePostProcessors;
-      _.forIn(processors, (fn, key) => {
+      _.forIn(processors, (fn: (tree: Folder) => void, key) => {
         log.debug("Running tree post processor: ", key);
         fn(tree);
       });

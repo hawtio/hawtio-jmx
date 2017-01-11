@@ -1,8 +1,7 @@
-<script type="text/ng-template" id="header">
-  <div class="tree-header" ng-controller="Jmx.TreeHeaderController">
-    <div class="left">
-    </div>
-    <div class="right">
+<div id="jmx-box">
+  <div class="header">
+
+    <div id="jmx-tree-controls" class="pull-left" ng-controller="Jmx.TreeHeaderController">
       <i class="fa fa-chevron-down clickable"
          title="Expand all nodes"
          ng-click="expandAll()"></i>
@@ -10,21 +9,35 @@
          title="Unexpand all nodes"
          ng-click="contractAll()"></i>
     </div>
-  </div>
-</script>
 
-<hawtio-pane position="left" width="300" header="header">
-  <div id="tree-container"
-       ng-controller="Jmx.MBeansController">
-    <div id="jmxtree"></div>
-  </div>
-</hawtio-pane>
+    <div class="pull-right" ng-include="'plugins/jmx/html/subLevelTabs.html'"></div>
 
-<div class="row-fluid">
-  <!--
-  <ng-include src="'plugins/jmx/html/subLevelTabs.html'"></ng-include>
-  -->
-  <div id="properties" ng-view></div>
+    <ul class="nav nav-pills pull-right" ng-controller="Jmx.TabController">
+      <li class="nav-link" ng-class="{active: isTabActive('jmx-attributes')}">
+        <a class="nav-link" href="#" ng-click="goto('/jmx/attributes', 'jmx-attributes')">Attributes</a>
+      </li>
+      <li class="nav-link" ng-class="{active: isTabActive('jmx-operations')}">
+        <a class="nav-link" href="#" ng-click="goto('/jmx/operations', 'jmx-operations')">Operations</a>
+      </li>
+      <li class="nav-link" ng-class="{active: isTabActive('jmx-chart')}">
+        <a class="nav-link" href="#" ng-click="goto('/jmx/charts', 'jmx-chart')">Chart</a>
+      </li>
+      <li class="nav-link" ng-class="{active: isTabActive('jmx-edit-chart')}">
+        <a class="nav-link"
+           ng-class="{disabled: !isTabActive('jmx-chart') && !isTabActive('jmx-edit-chart')}"
+           href="#" ng-click="editChart()">Edit Chart</a>
+      </li>
+    </ul>
+
+  </div>
+
+  <div class="main">
+
+    <div id="tree-container" ng-controller="Jmx.MBeansController">
+      <div id="jmxtree"></div>
+    </div>
+
+    <div id="properties" ng-view></div>
+  </div>
+
 </div>
-
-

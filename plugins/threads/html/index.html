@@ -1,71 +1,173 @@
-<div class="jmx-threads-page" ng-controller="Threads.ThreadsController">
+<h1>Threads</h1>
 
-  <div>
-    <div class="pull-right">
-      <hawtio-filter ng-model="searchFilter" placeholder="Filter..." save-as="threads-text-filter"></hawtio-filter>
-    </div>
+<div ng-controller="Threads.ToolbarController">
+  <script type="text/ng-template" id="threadStateTemplate">
+    <span class="thread-state-indicator"
+         title="{{row.entity.threadState | humanize}}"
+         ng-switch on="row.entity.threadState">
+      <i ng-switch-when="NEW"
+         class="lightgreen fa fa-bolt"></i>
+      <i ng-switch-when="RUNNABLE"
+         class="green fa fa-play-circle"></i>
+      <i ng-switch-when="BLOCKED"
+         class="red fa fa-stop-circle"></i>
+      <i ng-switch-when="WAITING"
+         class="darkgray fa fa-pause-circle"></i>
+      <i ng-switch-when="TIMED_WAITING"
+         class="orange fa fa-clock-o"></i>
+      <i ng-switch-default="TERMINATED"
+         class="darkred fa fa-times-circle"></i>
+    </span>
+  </script>
 
-    <p></p>
+  <div class="row row-monitor">
+    <span ng-repeat="(name, value) in support track by $index" class="label"
+          ng-class="{'label-success': value, 'label-default': !value}"
+          ng-click="maybeToggleMonitor(name, value)">
+      {{getMonitorName(name)}}
+    </span>
+</div>
 
-    <table class="table table-condensed table-striped"
-           hawtio-simple-table="threadGridOptions"></table>
+<div class="threads-page" ng-controller="Threads.ThreadsController">
 
-    <div ng-show="threadSelected" class="log-info-panel">
-      <div class="log-info-panel-frame">
-        <div class="log-info-panel-header">
-          <div class="row-fluid">
-            <button class="btn" ng-click="deselect()"><i class="icon-remove"></i> Close</button>
-            <div class="btn-group"
-                 style="margin-top: 9px;"
-                 hawtio-pager="hawtioSimpleTable.threads.rows"
-                 on-index-change="selectThreadByIndex"
-                 row-index="selectedRowIndex">
-            </div>
-
-            <span><strong>Thread ID:</strong> {{row.threadId}}</span>
-          </div>
-
-          <div class="row-fluid">
-            <span><strong>Thread Name:</strong> {{row.threadName}}</span>
-          </div>
-
+  <div class="row toolbar-pf">
+    <form class="toolbar-pf-actions">
+      <div class="form-group">
+        <label>
+          Filter by state
+        </label>
+        <div class="btn-group">
+          <button type="button" class="btn btn-default" title="Show all"
+                  ng-click="filterOn('NONE')" ng-class="selectedFilterClass('NONE')">
+            All<span class="badge">{{unfilteredThreads.length}}</span>
+          </button>
+          <button type="button" class="btn btn-default" title="Filter by {{state | humanize}}"
+                  ng-click="filterOn(state)" ng-class="selectedFilterClass(state)"
+                  ng-repeat="(state, total) in totals track by $index">
+            {{state | humanize}}<span class="badge">{{total}}</span>
+          </button>
         </div>
-        <div class="log-info-panel-body">
+      </div>
+      <div class="form-group">
+        <input type="text" ng-model="searchFilter" class="form-control" placeholder="Filter..." autocomplete="off">
+      </div>
+    </form>
+  </div>
 
-          <div class="row-fluid">
-            <span><strong>Waited Count:</strong> {{row.waitedCount}}</span>
-            <span><strong>Waited Time:</strong> {{row.waitedTime}}ms</span>
+  <div class="row">
+    <table class="table dataTable"
+           hawtio-simple-table="threadGridOptions"></table>
+  </div>
+
+  <script type="text/ng-template" id="threadModalContent.html">
+    <div class="modal-header">
+      <button type="button" class="close" aria-label="Close" ng-click="$close()">
+        <span class="pficon pficon-close" aria-hidden="true"></span>
+      </button>
+      <div class="row">
+        <div class="col-md-4">
+          <h4 class="modal-title" id="myModalLabel">Thread</h4>
+        </div>
+        <div class="col-md-7">
+          <div class="pagination-container"
+               hawtio-pager="hawtioSimpleTable.threads.rows"
+               on-index-change="selectThreadByIndex"
+               row-index="selectedRowIndex">
           </div>
-
-          <div class="row-fluid">
-            <span><strong>Blocked Count:</strong> {{row.blockedCount}}</span>
-            <span><strong>Blocked Time:</strong> {{row.blockedTime}}ms</span>
-          </div>
-
-          <div class="row-fluid" ng-show="row.lockInfo != null">
-            <span><strong>Lock Name:</strong> {{row.lockName}}</span>
-            <span><strong>Lock Class Name:</strong> {{row.lockInfo.className}}</span>
-            <span><strong>Lock Identity Hash Code:</strong> {{row.lockInfo.identityHashCode}}</span>
-          </div>
-
-          <div class="row-fluid" ng-show="row.lockOwnerId > 0">
-            <span>Waiting for lock owned by <a href="" ng-click="selectThreadById(row.lockOwnerId)">{{row.lockOwnerId}}</a></span>
-            <span><strong>Owner Name:</strong> {{row.lockOwnerName}}</span>
-          </div>
-
-          <dl ng-show="row.lockedSynchronizers.length > 0">
+        </div>
+      </div>
+    </div>
+    <div class="modal-body">
+      <div class="row">
+        <div class="col-md-3">
+          <dl>
+            <dt>ID</dt>
+            <dd>{{row.threadId}}</dd>
+          </dl>            
+        </div>
+        <div class="col-md-9">
+          <dl>
+            <dt>Name</dt>
+            <dd>{{row.threadName}}</dd>
+          </dl>            
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-md-3">
+          <dl>
+            <dt>Waited Count</dt>
+            <dd>{{row.waitedCount}}</dd>
+          </dl>            
+        </div>
+        <div class="col-md-3">
+          <dl>
+            <dt>Waited Time</dt>
+            <dd>{{row.waitedTime}} ms</dd>
+          </dl>            
+        </div>
+        <div class="col-md-3">
+          <dl>
+            <dt>Blocked Count</dt>
+            <dd>{{row.blockedCount}}</dd>
+          </dl>            
+        </div>
+        <div class="col-md-3">
+          <dl>
+            <dt>Blocked Time</dt>
+            <dd>{{row.blockedTime}} ms</dd>
+          </dl>            
+        </div>
+      </div>
+      <div class="row" ng-show="row.lockInfo != null">
+        <div class="col-md-12">
+          <dl>
+            <dt>Lock Name</dt>
+            <dd>{{row.lockName}}</dd>
+          </dl>            
+        </div>
+      </div>
+      <div class="row" ng-show="row.lockInfo != null">
+        <div class="col-md-12">
+          <dl>
+            <dt>Lock Class Name</dt>
+            <dd>{{row.lockInfo.className}}</dd>
+          </dl>
+        </div>
+      </div>
+      <div class="row" ng-show="row.lockInfo != null">
+        <div class="col-md-12">
+          <dl>
+            <dt>Lock Identity Hash Code</dt>
+            <dd>{{row.lockInfo.identityHashCode}}</dd>
+          </dl>
+        </div>
+      </div>
+      <div class="row" ng-show="row.lockOwnerId > 0">
+        <div class="col-md-12">
+          <dl>
+            <dt>Waiting for lock owned by</dt>
+            <dd><a href="" ng-click="selectThreadById(row.lockOwnerId)">{{row.lockOwnerId}} - {{row.lockOwnerName}}</a></dd>
+          </dl>
+        </div>
+      </div>
+      <div class="row" ng-show="row.lockedSynchronizers.length > 0">
+        <div class="col-md-12">
+          <dl>
             <dt>Locked Synchronizers</dt>
             <dd>
-              <ol class="zebra-list">
+              <ol class="list-unstyled">
                 <li ng-repeat="synchronizer in row.lockedSynchronizers">
-                  <span><strong>Class Name:</strong> {{synchronizer.className}}</span>
-                  <span><strong>Identity Hash Code:</strong> {{synchronizer.identityHashCode}}</span>
+                  <span title="Class Name">{{synchronizer.className}}</span> -
+                  <span title="Identity Hash Code">{{synchronizer.identityHashCode}}</span>
                 </li>
               </ol>
             </dd>
           </dl>
-
-          <dl ng-show="row.lockedMonitors.length > 0">
+        </div>
+      </div>
+      <div class="row" ng-show="row.lockedMonitors.length > 0">
+        <div class="col-md-12">
+          <dl>
             <dt>Locked Monitors</dt>
             <dd>
               <ol class="zebra-list">
@@ -80,9 +182,10 @@
               </ol>
             </dd>
           </dl>
-
-          <!-- a simple stack trace display, ideally we
-          could show maven links eventually -->
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-md-12">
           <dl>
             <dt>Stack Trace</dt>
             <dd>
@@ -96,25 +199,10 @@
                 </li>
               </ol>
             </dd>
-          </dl>
-
-          <!--
-          <div class="expandable" model="showRaw">
-            <div class="title">
-              <i class="expandable-indicator"></i><span> Show JSON</span>
-            </div>
-            <div class="expandable-body">
-              <div hawtio-editor="selectedRowJson" mode="javascript"></div>
-            </div>
-          </div>
-          -->
-
+          </dl>            
         </div>
       </div>
     </div>
+  </script>
 
-  </div>
 </div>
-
-
-

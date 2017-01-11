@@ -1,4 +1,172 @@
-/* jmx operation page stuff */
+/* GLOBAL */
+html {
+  height: 100%;
+}
+body {
+  height: 100%;
+}
+h1 {
+  margin-bottom: 20px;
+}
+.main-content {
+  margin-top: 20px;
+}
+.modal-header .pagination-container {
+  line-height: 0.8;
+}
+.modal-header .pagination {
+  margin: 0;
+}
+/* JVM REMOTE */
+.jvm-remote .list-group-item-container .form-horizontal {
+  margin: 10px 0;
+}
+.jvm-remote .list-group-item-container .form-horizontal > .form-group:last-child {
+  margin-bottom: 0;
+}
+.jvm-remote .dropdown-kebab-pf .btn-link {
+  padding-left: 10px;
+  padding-right: 10px;
+  margin-left: 0px;
+  margin-right: -10px;
+}
+/* THREADS */
+.threads-page .badge {
+  vertical-align: middle;
+  background-color: inherit;
+  color: inherit;
+  border: inherit;
+  font-weight: inherit;
+}
+.threads-page dd {
+  overflow-wrap: break-word;
+}
+.threads-page .table tr th:nth-child(1) {
+  width: 70px;
+}
+.threads-page .table tr th:nth-child(2) {
+  width: 50px;
+}
+.threads-page .table tr th:nth-child(3) {
+  width: auto;
+}
+.threads-page .table tr th:nth-child(4) {
+  width: 120px;
+}
+.threads-page .table tr th:nth-child(5) {
+  width: 120px;
+}
+.threads-page .table tr th:nth-child(6) {
+  width: 90px;
+}
+.threads-page .table tr th:nth-child(7) {
+  width: 90px;
+}
+/* threads page */
+.row-monitor {
+  text-align: right;
+  line-height: 2em;
+  margin-bottom: 1em;
+}
+.row-monitor .label {
+  font-size: 10px;
+  margin-left: 5px;
+  cursor: default;
+}
+.row-monitor .add-to-dashboard {
+  margin-left: 1em;
+  cursor: pointer;
+}
+.threads.logbar > .logbar-container {
+  margin-top: 2px;
+  margin-bottom: 5px;
+}
+.state-panel > ul > li:not(:first-child) > span {
+  margin-left: 15px;
+}
+.state-panel > ul > li.active {
+  font-weight: bold;
+}
+.runnable {
+  color: green;
+}
+.timed-waiting {
+  color: orange;
+}
+.waiting,
+.darkgray {
+  color: darkgray;
+}
+.blocked {
+  color: red;
+}
+strong.new,
+.lightgreen {
+  color: lightgreen;
+}
+.terminated,
+.darkred {
+  color: darkred;
+}
+.thread-state-indicator {
+  width: 100%;
+  height: 100%;
+  padding-top: 5px;
+  font-size: 15px;
+}
+/* end threads page */
+
+#jmx-box {
+  display: flex;
+  flex-flow: column;
+  height: 100%;
+  align-items: stretch;
+}
+#jmx-box .header {
+  flex: 0 0 auto;
+  padding-top: 5px;
+  padding-bottom: 5px;
+}
+#jmx-box .main {
+  flex: 1 1 auto;
+  display: flex;
+  flex-flow: row;
+  align-items: stretch;
+  width: 100%;
+  border-top: 2px solid #eee;
+}
+#jmx-box #jmx-tree-controls {
+  position: relative;
+  transform: translateY(50%);
+}
+#jmx-box #tree-container {
+  border-right: 2px solid #eee;
+  width: 300px;
+  max-width: 50%;
+  resize: horizontal;
+  overflow: scroll;
+  flex: 0 0 auto;
+}
+#jmx-box #properties {
+  overflow: scroll;
+  flex: 1 1 auto;
+}
+.jmx-attributes-wrapper {
+  width: 100%;
+  overflow: auto;
+}
+.jmx-attributes-toolbar .row {
+  margin-top: 1em;
+  margin-bottom: 1em;
+}
+.jmx-attributes-toolbar .search-query {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+.jmx-attributes-toolbar .pull-right .inline-block .search-query {
+  margin-top: 1em;
+  margin-bottom: 1em;
+}
 .operation-row {
   position: relative;
   /* height: 30px; */
@@ -23,30 +191,6 @@
 .help-block:empty {
   margin-top: 10px;
 }
-/* end jmx operation page stuff */
-/* jmx donut graph */
-fs-donut svg g text.value {
-  font-size: 40px;
-}
-fs-donut svg g text.units {
-  font-size: 20px;
-}
-/* end jmx donut graph */
-#tree-ctrl {
-  position: relative;
-  top: -3px;
-}
-#tree-ctrl > li > a {
-  display: block;
-  padding-left: 5px;
-  padding-right: 5px;
-  /* padding: 5px; */
-}
-.dynatree-container,
-.dynatree-container li {
-  background: inherit;
-}
-/* Chart stuff */
 #charts {
   display: block;
   overflow: hidden;
@@ -113,91 +257,9 @@ fs-donut svg g text.units {
   opacity: .2;
   z-index: 2;
 }
-/* threads page */
-.threads.logbar > .logbar-container {
-  margin-top: 2px;
-  margin-bottom: 5px;
+fs-donut svg g text.value {
+  font-size: 40px;
 }
-.state-panel > ul > li:not(:first-child) > span {
-  margin-left: 15px;
-}
-.state-panel > ul > li.active {
-  font-weight: bold;
-}
-.runnable {
-  color: green;
-}
-.timed-waiting {
-  color: orange;
-}
-.waiting,
-.darkgray {
-  color: darkgray;
-}
-.blocked {
-  color: red;
-}
-strong.new,
-.lightgreen {
-  color: lightgreen;
-}
-.terminated,
-.darkred {
-  color: darkred;
-}
-.thread-state-indicator {
-  width: 100%;
-  height: 100%;
-  padding-top: 5px;
-}
-.monitor-indicator {
-  font-size: 10px;
-  padding: 4px;
-  margin: 5px;
-}
-.monitor-indicator.button {
-  cursor: pointer;
-}
-.monitor-indicator.true {
-  background: #1cd11d;
-  box-shadow: inset 0px 1px 0px 0px rgba(250, 250, 250, 0.5), 0px 0px 4px 1px rgba(34, 203, 1, 0.49);
-}
-.monitor-indicator.false {
-  background: #737373;
-  box-shadow: inset 0px 1px 0px 0px rgba(250, 250, 250, 0.5);
-}
-/* end threads page */
-.tree-header {
-  position: relative;
-  height: 26px;
-}
-.tree-header > .left,
-.tree-header > .right {
-  position: absolute;
-  top: 3px;
-  bottom: 6px;
-  vertical-align: middle;
-  line-height: 10px;
-}
-.tree-header > .left {
-  left: 0;
-}
-.tree-header > .right {
-  right: 10px;
-}
-.jmx-attributes-wrapper {
-  width: 100%;
-  overflow: auto;
-}
-.jmx-attributes-toolbar .row {
-  margin-top: 1em;
-  margin-bottom: 1em;
-}
-.jmx-attributes-toolbar .search-query {
-  margin-top: 0;
-  margin-bottom: 0;
-}
-.jmx-attributes-toolbar .pull-right .inline-block .search-query {
-  margin-top: 1em;
-  margin-bottom: 1em;
+fs-donut svg g text.units {
+  font-size: 20px;
 }

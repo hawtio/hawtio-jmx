@@ -6,39 +6,24 @@
  */
 module JVM {
 
-  interface ScopeSettings {
-    lastConnection: string;
-  }
-
   interface ConnectControllerScope extends ng.IScope {
-    forms: any;
     disableProxy: boolean;
-    lastConnection: string;
-    connectionConfigs: Core.ConnectionMap;
-    currentConfig: Core.ConnectOptions;
-    formConfig: Forms.FormConfiguration;
+    connections: Core.ConnectOptions[];
     newConnection: () => void;
-    deleteConnection: () => void;
-    save: () => void;
-    gotoServer: (options?:Core.ConnectOptions, form?:JQueryStatic, save?:boolean) => void;
+    deleteConnection: (connection: Core.ConnectOptions) => void;
+    saveConnections: () => void;
+    toggleSecondaryActions: (connection: Core.ConnectOptions) => void;
+    hideSecondaryActions: (connection: Core.ConnectOptions) => void;
+    connect: (connection: Core.ConnectOptions) => void;
   }
 
-  export var ConnectController = _module.controller("JVM.ConnectController", ["$scope", "$location", "localStorage", "workspace", "$http", ($scope:ConnectControllerScope, $location:ng.ILocationService, localStorage:WindowLocalStorage, workspace:Core.Workspace, $http:ng.IHttpService) => {
+  export var ConnectController = _module.controller("JVM.ConnectController", ["$scope", "$location",
+      "localStorage", "workspace", "$http", "$timeout", ($scope:ConnectControllerScope,
+      $location:ng.ILocationService, localStorage:WindowLocalStorage, workspace:Core.Workspace,
+      $http:ng.IHttpService, $timeout: ng.ITimeoutService) => {
+
     JVM.configureScope($scope, $location, workspace);
 
-    function newConfig() {
-      return Core.createConnectOptions({
-        scheme: 'http',
-        host: 'localhost',
-        path: 'jolokia',
-        port: 8181,
-        userName: '',
-        password: '',
-        useProxy: !$scope.disableProxy
-      })
-    };
-
-    $scope.forms = {};
     $http.get('proxy').then((resp) => {
       if (resp.status === 200 && Core.isBlank(<string>resp.data)) {
         $scope.disableProxy = false;
@@ -47,7 +32,6 @@ module JVM {
       }
     });
 
-
     var hasMBeans = false;
 
     workspace.addNamedTreePostProcessor('ConnectTab', (tree) => {
@@ -55,135 +39,64 @@ module JVM {
       $scope.disableProxy = !hasMBeans || Core.isChromeApp();
       Core.$apply($scope);
     });
+
+    // load connections
+    $scope.connections = Core.loadConnections();
+    $scope.connections.forEach(connection => connection['expanded'] = false);
     
-    $scope.lastConnection = '';
-
-    // load settings like current tab, last used connection
-    if (connectControllerKey in localStorage) {
-      try {
-        $scope.lastConnection = angular.fromJson(localStorage[connectControllerKey]);
-      } catch (e) {
-        // corrupt config
-        $scope.lastConnection = '';
-        delete localStorage[connectControllerKey];
-      }
-    }
-
-    // load connection settings
-    $scope.connectionConfigs = Core.loadConnectionMap();
-    if (!Core.isBlank($scope.lastConnection)) {
-      $scope.currentConfig = $scope.connectionConfigs[$scope.lastConnection];
-    } else {
-      $scope.currentConfig = newConfig();
-    }
-
-    /*
-    log.debug("Controller settings: ", $scope.settings);
-    log.debug("Current config: ", $scope.currentConfig);
-    log.debug("All connection settings: ", $scope.connectionConfigs);
-    */
-
-    $scope.formConfig = <Forms.FormConfiguration> {
-      properties: <Forms.FormProperties> {
-        name: <Forms.FormElement> {
-          type: "java.lang.String",
-          tooltip: "Name for this connection",
-          required: true,
-          "input-attributes": {
-            "placeholder": "Unnamed..."
-          }
-        },
-        scheme: <Forms.FormElement> {
-          type: "java.lang.String",
-          tooltip: "HTTP or HTTPS",
-          enum: ["http", "https"],
-          required: true
-        },
-        host: <Forms.FormElement> {
-          type: "java.lang.String",
-          tooltip: "Target host to connect to",
-          required: true
-        },
-        port: <Forms.FormElement> {
-          type: "java.lang.Integer",
-          tooltip: "The HTTP port used to connect to the server",
-          "input-attributes": {
-            "min": "0"
-          },
-          required: true
-        },
-        path: <Forms.FormElement> {
-          type: "java.lang.String",
-          tooltip: "The URL path used to connect to Jolokia on the remote server"
-        },
-        userName: <Forms.FormElement> {
-          type: "java.lang.String",
-          tooltip: "The user name to be used when connecting to Jolokia"
-        },
-        password: <Forms.FormElement> {
-          type: "password",
-          tooltip: "The password to be used when connecting to Jolokia"
-        },
-        useProxy: <Forms.FormElement> {
-          type: "java.lang.Boolean",
-          tooltip: "Whether or not we should use a proxy. See more information in the panel to the left.",
-          "control-attributes": {
-            "ng-hide": "disableProxy"
-          }
-        }
-      }
-    };
-
     $scope.newConnection = () => {
-      $scope.lastConnection = '';
+      let connection = Core.createConnectOptions({
+        name: 'Untitled connection',
+        scheme: 'http',
+        host: 'localhost',
+        path: 'jolokia',
+        port: 8181,
+        userName: '',
+        password: '',
+        expanded: true,
+        showSecondaryActions: false
+      });
+      $scope.connections.unshift(connection);
+      $scope.saveConnections();
     };
 
-    $scope.deleteConnection = () => {
-      delete $scope.connectionConfigs[$scope.lastConnection];
-      Core.saveConnectionMap($scope.connectionConfigs);
-      var keys = _.keys($scope.connectionConfigs);
-      if (keys.length === 0) {
-        $scope.lastConnection = '';
-      } else {
-        $scope.lastConnection = keys[0];
-      }
+    $scope.deleteConnection = (connection: Core.ConnectOptions) => {
+      $scope.connections.splice($scope.connections.indexOf(connection), 1);
+      $scope.saveConnections();
     };
 
-    $scope.$watch('lastConnection', (newValue:string, oldValue:string) => {
-      log.debug("lastConnection: ", newValue);
-      if (newValue !== oldValue) {
-        if (Core.isBlank(newValue)) {
-          $scope.currentConfig = newConfig();
-        } else {
-          $scope.currentConfig = $scope.connectionConfigs[newValue];
-        }
-        localStorage[connectControllerKey] = angular.toJson(newValue);
-      }
-    }, true);
-
-    $scope.save = () => {
-      $scope.gotoServer($scope.currentConfig, null, true);
+    $scope.saveConnections = () => {
+      Core.saveConnections($scope.connections);
     };
 
-    $scope.gotoServer = (connectOptions?:Core.ConnectOptions, form?, saveOnly?) => {
-      if (!connectOptions) {
-        connectOptions = Core.getConnectOptions($scope.lastConnection);
-      }
-      var name = <string> connectOptions.name;
-      $scope.connectionConfigs[name] = connectOptions;
-      $scope.lastConnection = name;
-      if (saveOnly === true) {
-        Core.saveConnectionMap($scope.connectionConfigs);
-        $scope.connectionConfigs = Core.loadConnectionMap();
-        angular.extend($scope.currentConfig, $scope.connectionConfigs[$scope.lastConnection]);
-        Core.$apply($scope);
-        return;
-      }
-      Core.connectToServer(localStorage, connectOptions);
-      $scope.connectionConfigs = Core.loadConnectionMap();
-      angular.extend($scope.currentConfig, $scope.connectionConfigs[$scope.lastConnection]);
-      Core.$apply($scope);
+    $scope.toggleSecondaryActions = (connection: any) => {
+      connection.showSecondaryActions = !connection.showSecondaryActions;
+    }
+
+    $scope.hideSecondaryActions = (connection: any) => {
+      $timeout(function() { connection.showSecondaryActions = false; }, 200);
+    }
+
+    $scope.connect = (connection: Core.ConnectOptions) => {
+      // connect to root by default as we do not want to show welcome page
+      connection.view = connection.view || '#/';
+      Core.connectToServer(localStorage, connection);
     };
+
+    var autoconnect = $location.search();
+    if (typeof autoconnect != 'undefined' && typeof autoconnect.name != 'undefined') {
+      var conOpts = Core.createConnectOptions({
+        scheme  : autoconnect.scheme || 'http',
+        host    : autoconnect.host,
+        path    : autoconnect.path,
+        port    : autoconnect.port,
+        userName: autoconnect.userName,
+        password: autoconnect.password,
+        name    : autoconnect.name
+      });
+      $scope.connect(conOpts);
+      window.close();
+    }
 
   }]);
 }

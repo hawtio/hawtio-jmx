@@ -40,6 +40,28 @@ module Jmx {
       return answer;
   }]);
 
+  _module.controller("Jmx.TabController", ["$scope", "$route", "$location", "layoutTree", "layoutFull", "viewRegistry", "workspace", ($scope, $route, $location: ng.ILocationService, layoutTree, layoutFull, viewRegistry, workspace: Core.Workspace) => {
+
+    $scope.isTabActive = path => {
+      const tab = workspace.$location.search()['sub-tab'];
+      if (angular.isString(tab)) {
+        return tab.startsWith(path);
+      }
+      return false;
+    };
+
+    $scope.goto = (path: string, tab: string) => {
+      const search      = workspace.$location.search();
+      search['sub-tab'] = tab;
+      $location.url(path);
+      $location.search(search);
+    };
+
+    $scope.editChart = () => ($scope.isTabActive('jmx-chart') || $scope.isTabActive('jmx-edit-chart'))
+      ? $scope.goto('/jmx/chartEdit', 'jmx-edit-chart') : false;
+
+  }]);
+
   _module.controller("Jmx.MBeanTreeController", ['$scope', 'workspace', ($scope, workspace) => {
     $scope.node = {};
     workspace.addNamedTreePostProcessor('MBeanTree', (tree:Core.Folder) => {
@@ -97,10 +119,11 @@ module Jmx {
     } 
   }]);
 
-  _module.run(["HawtioNav", "$location", "workspace", "viewRegistry", "layoutTree", "jolokia", "helpRegistry", "pageTitle", "$templateCache", (nav:HawtioMainNav.Registry, $location: ng.ILocationService, workspace:Core.Workspace, viewRegistry, layoutTree, jolokia, helpRegistry, pageTitle, $templateCache) => {
+  _module.run(["HawtioNav", "$location", "workspace", "viewRegistry", "layoutTree", "layoutFull", "jolokia", "helpRegistry", "pageTitle", "$templateCache", (nav:HawtioMainNav.Registry, $location: ng.ILocationService, workspace:Core.Workspace, viewRegistry, layoutTree, layoutFull, jolokia, helpRegistry, pageTitle, $templateCache) => {
     log.debug('loaded');
 
-    viewRegistry['{ "main-tab": "jmx" }'] = layoutTree;
+    viewRegistry['jmx'] = layoutTree;
+    viewRegistry['{ "tab": "notree" }'] = layoutFull;
     helpRegistry.addUserDoc('jmx', 'app/jmx/doc/help.md');
 
     pageTitle.addTitleElement(():string => {
@@ -117,14 +140,15 @@ module Jmx {
       return Jmx.currentProcessId;
     });
 
-    var myUrl = '/jmx/attributes';
-    var builder = nav.builder();
-    var tab = builder.id('jmx')
+    const myUrl = '/jmx/attributes';
+    const builder = nav.builder();
+    const items = getNavItems(builder, workspace, $templateCache);
+    const tab = builder.id('jmx')
                 .title( () => 'JMX' )
                 .defaultPage({
                   rank: 10,
                   isValid: (yes, no) => {
-                    var name = 'JmxDefaultPage';
+                    const name = 'JmxDefaultPage';
                     workspace.addNamedTreePostProcessor(name, (tree) => {
                       workspace.removeNamedTreePostProcessor(name);
                       if (workspace.hasMBeans()) {
@@ -137,8 +161,8 @@ module Jmx {
                 })
                 .isValid( () => workspace.hasMBeans() )
                 .href( () => myUrl )
+                .tabs(items[0], ...items.slice(1))
                 .build();
-    tab.tabs = getNavItems(builder, workspace, $templateCache);
     nav.add(tab);
 
   }]);

@@ -103,6 +103,7 @@ module Jmx {
     var editChart = builder.id(prefix + '-edit-chart')
                       .title( () => '<i class="fa fa-cog"></i> Edit Chart' )
                       .tooltip( () => 'Edit the chart to choose which attributes to show from the MBean')
+                      .show(() => workspace.isLinkActive('jmx/chart'))
                       .href( () => '/jmx/chartEdit' + workspace.hash() )
                       .build();
 
@@ -114,9 +115,9 @@ module Jmx {
                       })
                       .show( () => {
                         if (!HawtioCore.injector) {
-                          return true;
+                          return false;
                         }
-                        var dash = HawtioCore.injector.get<any>('HawtioDashboard');
+                        const dash = HawtioCore.injector.get<any>('HawtioDashboard');
                         return dash && dash.hasDashboard;
                       })
                       .click( () => {
@@ -129,7 +130,7 @@ module Jmx {
                           var height = 2;
                           var title = workspace.getSelectedMBeanName();
                           var $location = workspace.$location;
-                          if ($location.path().has('/jmx/charts')) {
+                          if ($location.path().startsWith('/jmx/charts')) {
                             width = 4;
                             height = 3;
                           }
@@ -142,7 +143,6 @@ module Jmx {
                       .href( () => '' )
                       .build();
 
-    editChart.show = () => workspace.isLinkActive('jmx/chart');
     return [attributes, operations, chart, editChart, addToDashboard];
   }
 
@@ -320,7 +320,7 @@ module Jmx {
           }
           if (plugin) {
             console.log("Lazy loading folder " + folder.title);
-            var oldChildren = folder.childen;
+            var oldChildren = folder.children;
             plugin(workspace, folder, () => {
               treeNode.setLazyNodeStatus(DTNodeStatus_Ok);
               var newChildren = folder.children;
@@ -333,6 +333,18 @@ module Jmx {
             });
           } else {
             treeNode.setLazyNodeStatus(DTNodeStatus_Ok);
+          }
+        },
+        onExpand: function(flag:any, node:DynaTreeNode) {
+          // reflect the "expand" status from dynatree in Folder structure
+          // this will also preserve expand status when redrawin tree!
+          // see "this.data = $.extend({}, $.ui.dynatree.nodedatadefaults, data);" in jquery.dynatree. "data" is Folder object
+          node.data.expand = flag;
+          if ((<any>node.data).isFolder()) {
+            var parent = (<any>node.data).children[0].parent;
+            if (parent) {
+              parent.expand = flag;
+            }
           }
         },
         onClick: function (node:DynaTreeNode, event:Event) {

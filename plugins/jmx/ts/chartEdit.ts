@@ -23,6 +23,21 @@ module Jmx {
               $scope.size($scope.mbeans) > 0 && $scope.size($scope.metrics) > 0;
     };
 
+    $scope.canEditChart = () => {
+      // Similar to can view chart, although rules are slightly different for parents
+      var result;
+      if (workspace.selection && workspace.selection.isFolder()) {
+        // For ENTESB-4165. This is a bit hacky but needed to deal with special conditions like
+        // where there is only a single queue or topic
+        result = $scope.selectedAttributes.length && $scope.selectedMBeans.length &&
+          ($scope.size($scope.mbeans) + $scope.size($scope.metrics) > 2);
+      } else {
+        result = $scope.selectedAttributes.length && $scope.selectedMBeans.length &&
+          $scope.size($scope.mbeans) > 0 && $scope.size($scope.metrics) > 0;
+      }
+      return result;
+    };
+
     $scope.showAttributes = () => {
       return $scope.canViewChart() && $scope.size($scope.metrics) > 1;
     };
@@ -41,11 +56,12 @@ module Jmx {
         search["att"] = $scope.selectedAttributes;
       }
       // if we are on an mbean with no children lets discard an unnecessary parameter
-      if ($scope.selectedMBeans.length === $scope.size($scope.mbeans) && $scope.size($scope.mbeans) === 1) {
+      if (!workspace.selection.isFolder() && $scope.selectedMBeans.length === $scope.size($scope.mbeans) && $scope.size($scope.mbeans) === 1) {
         delete search["el"];
       } else {
         search["el"] = $scope.selectedMBeans;
       }
+      search['sub-tab'] = 'jmx-chart';
       $location.search(search);
       $location.path("jmx/charts");
     };
@@ -59,7 +75,7 @@ module Jmx {
 
     function render() {
       var node = workspace.selection;
-      if (!angular.isDefined(node)) {
+      if (!angular.isDefined(node) || node === null) {
         return;
       }
 
@@ -120,14 +136,14 @@ module Jmx {
                   var elementNames = Core.toSearchArgumentArray(search["el"]);
                   if (attributeNames && attributeNames.length) {
                     attributeNames.forEach((name) => {
-                      if ($scope.metrics[name]) {
+                      if ($scope.metrics[name] && !_.some($scope.selectedAttributes, el => el === name)) {
                         $scope.selectedAttributes.push(name);
                       }
                     });
                   }
                   if (elementNames && elementNames.length) {
                     elementNames.forEach((name) => {
-                      if ($scope.mbeans[name]) {
+                      if ($scope.mbeans[name] && !_.some($scope.selectedAttributes, el => el === name)) {
                         $scope.selectedMBeans.push(name);
                       }
                     });

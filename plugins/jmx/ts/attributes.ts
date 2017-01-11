@@ -111,8 +111,10 @@ module Jmx {
       columnDefs: propertiesColumnDefs
     };
 
-    $scope.$watch(function($scope) {
-      return $scope.gridOptions.selectedItems.map(item => item);
+    $scope.$watch(function ($scope) {
+      return $scope.gridOptions.selectedItems.map(function (item) {
+        return item.key || item;
+      });
     }, (newValue, oldValue) => {
       if (newValue !== oldValue) {
         log.debug("Selected items: ", newValue);
@@ -125,9 +127,15 @@ module Jmx {
     $scope.$on("$routeChangeSuccess", function (event, current, previous) {
       // lets do this asynchronously to avoid Error: $digest already in progress
       $scope.nid = $location.search()['nid'];
-      setTimeout(() => {
-        doUpdateTableContents();
-      }, 10);
+      setTimeout(doUpdateTableContents, 10);
+    });
+
+    $scope.$on('jmxTreeUpdated', function () {
+      setTimeout(doUpdateTableContents, 10);
+    });
+
+    $scope.$watch('gridOptions.filterOptions.filterText', (newValue, oldValue) => {
+      setTimeout(doUpdateTableContents, 10);
     });
 
     $scope.$watch('workspace.selection', function () {
@@ -135,21 +143,17 @@ module Jmx {
         Core.unregister(jolokia, $scope);
         return;
       }
-      setTimeout(() => {
-        doUpdateTableContents();
-      }, 10);
+      setTimeout(doUpdateTableContents, 10);
     });
 
     doUpdateTableContents();
 
-    $scope.hasWidget = (row) => {
-      return true;
-    };
+    $scope.hasWidget = (row) => true;
 
     $scope.onCancelAttribute = () => {
       // clear entity
       $scope.entity = {};
-    }
+    };
 
     $scope.onUpdateAttribute = () => {
       var value = $scope.entity["value"];
@@ -185,9 +189,9 @@ module Jmx {
       }
       schema.properties.value = {
         formTemplate: '<div class="form-group"><label class="control-label">Value</label><div hawtio-editor="entity.value"></div></div>'
-      }
+      };
       $scope.showAttributeDialog = true;
-    }
+    };
 
     $scope.getDashboardWidgets = (row) => {
       var mbean = workspace.getSelectedMBeanName();
@@ -212,7 +216,7 @@ module Jmx {
 
       row.addChartToDashboard = (type) => {
         $scope.addChartToDashboard(row, type);
-      }
+      };
 
       var rc = [];
       potentialCandidates.forEach((widget) => {
@@ -389,7 +393,7 @@ module Jmx {
         var children = node.children;
         if (children) {
           var childNodes = children.map((child) => child.objectName);
-          var mbeans = childNodes.filter((mbean) => mbean !== undefined);
+          var mbeans = childNodes.filter((mbean) => FilterHelpers.search(mbean, $scope.gridOptions.filterOptions.filterText));
           if (mbeans) {
             var typeNames = Jmx.getUniqueTypeNames(children);
             if (typeNames.length <= 1) {
@@ -456,6 +460,8 @@ module Jmx {
             if (!$scope.gridOptions.columnDefs.length) {
               // lets update the column definitions based on any configured defaults
               var key = workspace.selectionConfigKey();
+              $scope.gridOptions.gridKey = key;
+              $scope.gridOptions.onClickRowHandlers = workspace.onClickRowHandlers;
               var defaultDefs = workspace.attributeColumnDefs[key] || [];
               var defaultSize = defaultDefs.length;
               var map = {};
@@ -492,7 +498,7 @@ module Jmx {
               });
               extraDefs.forEach(e => {
                 defaultDefs.push(e);
-              })
+              });
 
               // remove all non visible
               defaultDefs = _.filter(defaultDefs, (value:any) => {
@@ -506,6 +512,12 @@ module Jmx {
               $scope.gridOptions.enableRowClickSelection = true;
             }
           }
+          // mask attribute read error
+          angular.forEach(data, (value, key) => {
+            if (includePropertyValue(key, value)) {
+              data[key] = maskReadError(value);
+            }
+          });
           // assume 1 row of data per mbean
           $scope.gridData[idx] = data;
           addHandlerFunctions($scope.gridData);
@@ -545,7 +557,11 @@ module Jmx {
                 }
                 // the value must be string as the sorting/filtering of the table relies on that
                 var type = lookupAttributeType(key);
-                var data = {key: key, name: Core.humanizeValue(key), value: Core.safeNullAsString(value, type)};
+                var data = {
+                  key  : key,
+                  name : Core.humanizeValue(key),
+                  value: maskReadError(Core.safeNullAsString(value, type))
+                };
 
                 generateSummaryAndDetail(key, data);
                 properties.push(data);
@@ -570,6 +586,21 @@ module Jmx {
         $scope.gridData = data;
         addHandlerFunctions($scope.gridData);
         Core.$apply($scope);
+      }
+    }
+
+    function maskReadError(value) {
+      if (typeof value !== 'string') {
+        return value;
+      }
+      var forbidden   = /^ERROR: Reading attribute .+ \(class java\.lang\.SecurityException\)$/;
+      var unsupported = /^ERROR: java\.lang\.UnsupportedOperationException: .+ \(class javax\.management\.RuntimeMBeanException\)$/;
+      if (value.match(forbidden)) {
+        return "**********";
+      } else if (value.match(unsupported)) {
+        return "(Not supported)";
+      } else {
+        return value;
       }
     }
 
@@ -603,7 +634,7 @@ module Jmx {
     }
 
     function generateSummaryAndDetail(key, data) {
-      var value = data.value;
+      var value = Core.escapeHtml(data.value);
       if (!angular.isArray(value) && angular.isObject(value)) {
         var detailHtml = "<table class='table table-striped'>";
         var summary = "";

@@ -8,33 +8,6 @@ module Threads {
     $scope.$on('ThreadControllerSupport', ($event, support) => {
       $scope.support = support;
     });
-    $scope.$on('ThreadControllerThreads', ($event, threads) => {
-      // log.debug("got threads: ", threads);
-      $scope.unfilteredThreads = threads;
-      $scope.totals = {};
-      threads.forEach((t) => {
-        // calculate totals
-        var state = t.threadState;
-        if (!(state in $scope.totals)) {
-          $scope.totals[state] = 1;
-        } else {
-          $scope.totals[state]++
-        }
-      });
-      $scope.threads = threads;
-    });
-    $scope.stateFilter = 'NONE';
-    $scope.filterOn = (state) => {
-      $scope.stateFilter = state;
-      $rootScope.$broadcast('ThreadsToolbarState', state);
-    };
-    $scope.selectedFilterClass = (state) => {
-      if (state === $scope.stateFilter) {
-        return "active";
-      } else {
-        return "";
-      }
-    };
     $scope.getMonitorClass = (name, value) => {
       return value.toString();
     };
@@ -43,28 +16,31 @@ module Threads {
       name = name.replace('Supported', '');
       return _.startCase(name);
     };
-
-
   }]);
 
-  _module.controller("Threads.ThreadsController", ["$scope", "$rootScope", "$routeParams", "$templateCache", "jolokia", "$element", ($scope, $rootScope, $routeParams, $templateCache, jolokia, $element) => {
+  _module.controller("Threads.ThreadsController", ["$scope", "$rootScope", "$routeParams", "$templateCache", "jolokia", "$element", "$modal", ($scope, $rootScope, $routeParams, $templateCache, jolokia, $element, $modal) => {
 
+    let modalInstance = null;
     $scope.selectedRowJson = '';
-
     $scope.lastThreadJson = '';
     $scope.getThreadInfoResponseJson = '';
     $scope.threads = [];
     $scope.totals = {};
     $scope.support = {};
-
     $scope.row = {};
-    $scope.threadSelected = false;
     $scope.selectedRowIndex = -1;
-
     $scope.stateFilter = 'NONE';
 
     $scope.showRaw = {
       expanded: false
+    };
+
+    $scope.selectedFilterClass = (state) => {
+      if (state === $scope.stateFilter) {
+        return "active";
+      } else {
+        return "";
+      }
     };
 
     $scope.addToDashboardLink = () => {
@@ -119,7 +95,8 @@ module Threads {
       columnDefs: [
         {
           field: 'threadId',
-          displayName: 'ID'
+          displayName: 'ID',
+          customSortField: (value) => Number(value.threadId)
         },
         {
           field: 'threadState',
@@ -133,23 +110,22 @@ module Threads {
         {
           field: 'waitedTime',
           displayName: 'Waited Time',
-          cellTemplate: '<div class="ngCellText" ng-show="row.entity.waitedTime > 0">{{row.entity.waitedTime | humanizeMs}}</div>'
+          cellTemplate: '<div ng-show="row.entity.waitedTime > 0">{{row.entity.waitedTime | humanizeMs}}</div>'
         },
         {
           field: 'blockedTime',
           displayName: 'Blocked Time',
-          cellTemplate: '<div class="ngCellText" ng-show="row.entity.blockedTime > 0">{{row.entity.blockedTime | humanizeMs}}</div>'
-
+          cellTemplate: '<div ng-show="row.entity.blockedTime > 0">{{row.entity.blockedTime | humanizeMs}}</div>'
         },
         {
           field: 'inNative',
           displayName: 'Native',
-          cellTemplate: '<div class="ngCellText"><span ng-show="row.entity.inNative" class="orange">(in native)</span></div>'
+          cellTemplate: '<div ng-show="row.entity.inNative" class="orange">(in native)</div>'
         },
         {
           field: 'suspended',
           displayName: 'Suspended',
-          cellTemplate: '<div class="ngCellText"><span ng-show="row.entity.suspended" class="red">(suspended)</span></div>'
+          cellTemplate: '<div ng-show="row.entity.suspended" class="red">(suspended)</div>'
         }
       ]
     };
@@ -158,12 +134,11 @@ module Threads {
       if (newValue !== oldValue) {
         if (newValue.length === 0) {
           $scope.row = {};
-          $scope.threadSelected = false;
           $scope.selectedRowIndex = -1;
         } else {
           $scope.row = _.first(newValue);
-          $scope.threadSelected = true;
           $scope.selectedRowIndex = Core.pathGet($scope, ['hawtioSimpleTable', 'threads', 'rows']).findIndex((t) => { return t.entity['threadId'] === $scope.row['threadId']});
+          openModal();
         }
         $scope.selectedRowJson = angular.toJson($scope.row, true);
       }
@@ -201,18 +176,32 @@ module Threads {
         return t && t['threadId'] == selectedThread.entity['threadId'];
       });
     };
+
     function render(response) {
-      var responseJson = angular.toJson(response.value, true);
-      if ($scope.getThreadInfoResponseJson !== responseJson) {
-        $scope.getThreadInfoResponseJson = responseJson;
-        var threads = _.without(response.value, null);
-        $scope.unfilteredThreads = threads;
-        threads = $scope.filterThreads($scope.stateFilter, threads);
-        $scope.threads = threads;
-        $rootScope.$broadcast('ThreadControllerThreads', threads);
-        Core.$apply($scope);
+      if ($scope.threads.length === 0) {
+        var responseJson = angular.toJson(response.value, true);
+        if ($scope.getThreadInfoResponseJson !== responseJson) {
+          $scope.getThreadInfoResponseJson = responseJson;
+          $scope.unfilteredThreads = _.without(response.value, null);
+          calculateTotals($scope.unfilteredThreads);
+          $scope.threads = $scope.filterThreads($scope.stateFilter, $scope.unfilteredThreads);
+          Core.$apply($scope);
+        }
       }
     }
+
+    function calculateTotals(threads) {
+      $scope.totals = {};
+      threads.forEach((t) => {
+        var state = t.threadState;
+        if (!(state in $scope.totals)) {
+          $scope.totals[state] = 1;
+        } else {
+          $scope.totals[state]++;
+        }
+      });
+    }
+
     $scope.init = () => {
 
       jolokia.request(
@@ -304,6 +293,19 @@ module Threads {
       }
       Core.$apply($scope);
     };
+
+    function openModal() {
+      if (!modalInstance) {
+        modalInstance = $modal.open({
+          templateUrl: 'threadModalContent.html',
+          scope: $scope
+        });
+        modalInstance.result.finally(function() {
+          modalInstance = null;
+          $scope.deselect();
+        });
+      }
+    }
 
     initFunc();
 
