@@ -28,6 +28,11 @@ Then to run the web application:
 
 `bower install --save hawtio-jmx`
 
+#### Change the default proxy port
+
+To proxy to a local JVM running on a different port than 8282 specify the --port CLI arguement to gulp:
+
+`gulp --port=8181`
 
 #### To test with hawtio v1.x
 
