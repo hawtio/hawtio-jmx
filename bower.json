@@ -23,6 +23,8 @@
     "plugins"
   ],
   "dependencies": {
+    "jquery": "^2.0.0",
+    "angular-patternfly": "^3.0.0",
     "hawtio-core": "~3.0.0",
     "hawtio-core-navigation": "~3.0.0",
     "hawtio-forms": "~3.0.0",
@@ -32,9 +34,17 @@
   },
   "devDependencies": {
     "hawtio-core-dts": "~2.0.0",
-    "angular-mocks": "~1.5.0",
-    "hawtio-dashboard": "~2.0.0",
-    "hawtio-extension-service": "~2.0.0",
-    "hawtio-preferences": "~2.0.0"
+    "hawtio-extension-service": "~2.0.0"
+  },
+  "overrides": {
+    "bootstrap": {
+      "main": [
+        "dist/css/bootstrap.css",
+        "dist/js/bootstrap.js"
+      ]
+    }
+  },
+  "resolutions": {
+    "hawtio-core": "~3.0.0"
   }
 }
