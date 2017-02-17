@@ -118,38 +118,53 @@ strong.new,
 
 #jmx-box {
   display: flex;
-  flex-flow: column;
+  flex-direction: column;
   height: 100%;
   align-items: stretch;
 }
-#jmx-box .header {
-  flex: 0 0 auto;
-  padding-top: 5px;
-  padding-bottom: 5px;
+#jmx-box header {
+  flex: 0 1 auto;
 }
 #jmx-box .main {
   flex: 1 1 auto;
   display: flex;
-  flex-flow: row;
+  flex-direction: row;
   align-items: stretch;
-  width: 100%;
-  border-top: 2px solid #eee;
-}
-#jmx-box #jmx-tree-controls {
-  position: relative;
-  transform: translateY(50%);
+  height: 100%;
 }
 #jmx-box #tree-container {
-  border-right: 2px solid #eee;
-  width: 300px;
-  max-width: 50%;
-  resize: horizontal;
-  overflow: scroll;
   flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  width: 300px;
+  overflow: hidden;
+}
+#jmx-box .tree-header {
+  flex: 0 1 auto;
+  min-height: 34px;
+  line-height: 34px;
+  padding-right: 15px;
+}
+#jmx-box #jmxtree {
+  flex: 1 1 auto;
+  padding-top: 5px;
+  overflow-x: hidden;
+  overflow-y: scroll;
 }
 #jmx-box #properties {
-  overflow: scroll;
   flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  margin: 0 -20px 0 10px;
+  overflow: hidden;
+}
+#jmx-box #properties .nav {
+  flex: 0 1 auto;
+}
+#jmx-box #properties .contents {
+  flex: 1 1 auto;
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 .jmx-attributes-wrapper {
   width: 100%;

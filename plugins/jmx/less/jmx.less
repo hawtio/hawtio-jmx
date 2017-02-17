@@ -2,43 +2,63 @@
 
 #jmx-box {
   display: flex;
-  flex-flow: column;
+  flex-direction: column;
   height: 100%;
   align-items: stretch;
 
-  .header {
-    flex: 0 0 auto;
-    padding-top: 5px;
-    padding-bottom: 5px;
+  header {
+    flex: 0 1 auto;
   }
 
   .main {
     flex: 1 1 auto;
     display: flex;
-    flex-flow: row;
+    flex-direction: row;
     align-items: stretch;
-    width: 100%;
-    border-top: 2px solid #eee;
-  }
-
-  #jmx-tree-controls {
-    position: relative;
-    transform: translateY(50%);
+    height: 100%;
   }
 
   #tree-container {
-    border-right: 2px solid #eee;
-    width: 300px;
-    max-width: 50%;
-    resize: horizontal;
-    overflow: scroll;
     flex: 0 0 auto;
+    display: flex;
+    flex-direction: column;
+    width: 300px;
+    overflow: hidden;
+  }
+
+  .tree-header {
+    flex: 0 1 auto;
+    min-height: 34px;
+    line-height: 34px;
+    padding-right: 15px;
+  }
+
+  #jmxtree {
+    flex: 1 1 auto;
+    padding-top: 5px;
+    overflow-x: hidden;
+    overflow-y: scroll;
   }
 
   #properties {
-    overflow: scroll;
     flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    margin: 0 -20px 0 10px;
+    overflow: hidden;
+
+    .nav {
+      flex: 0 1 auto;
+    }
+
+    .contents {
+      flex: 1 1 auto;
+      overflow-x: hidden;
+      overflow-y: auto;
+    }
   }
+
+
 }
 
 // Attributes
