@@ -26,10 +26,6 @@
         <li ng-class="{active: isTabActive('jmx-chart')}">
           <a href="#" ng-click="goto('/jmx/charts', 'jmx-chart')">Chart</a>
         </li>
-        <li ng-class="{active: isTabActive('jmx-edit-chart')}">
-          <a ng-class="{disabled: !isTabActive('jmx-chart') && !isTabActive('jmx-edit-chart')}"
-            href="#" ng-click="editChart()">Edit Chart</a>
-        </li>
       </ul>
       <div class="contents" ng-view></div>
     </div>

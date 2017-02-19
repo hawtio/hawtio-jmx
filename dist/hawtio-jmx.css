@@ -137,7 +137,10 @@ strong.new,
   display: flex;
   flex-direction: column;
   width: 300px;
-  overflow: hidden;
+  max-width: 50%;
+  overflow-x: scroll;
+  overflow-y: hidden;
+  resize: horizontal;
 }
 #jmx-box .tree-header {
   flex: 0 1 auto;
