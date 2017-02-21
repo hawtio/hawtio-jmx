@@ -1,3 +1,18 @@
-<div class="pull-right" ng-hide="inDashboard">
-  <hawtio-filter ng-model="gridOptions.filterOptions.filterText" placeholder="Filter..." save-as="{{nid}}-filter-text"></hawtio-filter>
+<div class="row toolbar-pf">
+  <div class="col-md-12">
+    <form class="toolbar-pf-actions search-pf">
+      <div class="toolbar-pf-action-right">
+        <div class="form-group has-clear">
+          <div class="search-pf-input-group">
+            <label for="search1" class="sr-only">Filter</label>
+            <input id="search1" type="search" class="form-control" ng-model="gridOptions.filterOptions.filterText"
+                  placeholder="Search">
+            <button type="button" class="clear" aria-hidden="true" ng-click="gridOptions.filterOptions.filterText = ''">
+              <span class="pficon pficon-close"></span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </form>
+  </div>
 </div>

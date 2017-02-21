@@ -298,7 +298,8 @@ module Threads {
       if (!modalInstance) {
         modalInstance = $modal.open({
           templateUrl: 'threadModalContent.html',
-          scope: $scope
+          scope: $scope,
+          size: 'lg'
         });
         modalInstance.result.finally(function() {
           modalInstance = null;

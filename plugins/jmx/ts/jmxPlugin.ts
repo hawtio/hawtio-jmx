@@ -43,18 +43,11 @@ module Jmx {
   _module.controller("Jmx.TabController", ["$scope", "$route", "$location", "layoutTree", "layoutFull", "viewRegistry", "workspace", ($scope, $route, $location: ng.ILocationService, layoutTree, layoutFull, viewRegistry, workspace: Core.Workspace) => {
 
     $scope.isTabActive = path => {
-      const tab = workspace.$location.search()['sub-tab'];
-      if (angular.isString(tab)) {
-        return tab.startsWith(path);
-      }
-      return false;
+      return path === $location.path();
     };
 
-    $scope.goto = (path: string, tab: string) => {
-      const search      = workspace.$location.search();
-      search['sub-tab'] = tab;
-      $location.url(path);
-      $location.search(search);
+    $scope.goto = (path: string) => {
+      $location.path(path);
     };
 
     $scope.editChart = () => ($scope.isTabActive('jmx-chart') || $scope.isTabActive('jmx-edit-chart'))
@@ -140,10 +133,7 @@ module Jmx {
       return Jmx.currentProcessId;
     });
 
-    const myUrl = '/jmx/attributes';
-    const builder = nav.builder();
-    const items = getNavItems(builder, workspace, $templateCache);
-    const tab = builder.id('jmx')
+    const tab = nav.builder().id('jmx')
                 .title( () => 'JMX' )
                 .defaultPage({
                   rank: 10,
@@ -160,8 +150,7 @@ module Jmx {
                   }
                 })
                 .isValid( () => workspace.hasMBeans() )
-                .href( () => myUrl )
-                .tabs(items[0], ...items.slice(1))
+                .href( () => '/jmx' )
                 .build();
     nav.add(tab);
 

@@ -6,7 +6,6 @@ declare module Jmx {
     var propertiesColumnDefs: {
         field: string;
         displayName: string;
-        width: string;
         cellTemplate: string;
     }[];
     var foldersColumnDefs: {
