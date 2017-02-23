@@ -176,9 +176,6 @@ module JVM {
     if (!jolokiaURI.hostname()) {
       jolokiaURI.host(windowURI.hostname());
     }
-    if (!jolokiaURI.port()) {
-      jolokiaURI.port(windowURI.port());
-    }
     answer = jolokiaURI.toString();
     log.debug("Complete jolokia URL: ", answer);
     return answer;
