@@ -24,13 +24,10 @@
   ],
   "dependencies": {
     "jquery": "^2.0.0",
+    "jquery-ui": "~1.12.0",
     "angular-patternfly": "^3.0.0",
-    "hawtio-core": "~3.0.0",
-    "hawtio-core-navigation": "~3.0.0",
     "hawtio-forms": "~3.0.0",
-    "hawtio-template-cache": "~3.0.0",
-    "hawtio-ui": "~3.0.0",
-    "hawtio-utilities": "~3.0.0"
+    "hawtio-ui": "~3.0.0"
   },
   "devDependencies": {
     "hawtio-core-dts": "~2.0.0",

@@ -1,57 +1,72 @@
-/// <reference path="jmxPlugin.ts"/>
 /**
 * @module Jmx
 */
+/// <reference path="./jmxPlugin.ts"/>
+
 module Jmx {
 
+  const JAVA_TYPE_DEFAULT_VALUES = {
+    'boolean': false,
+    'int': 0,
+    'long': 0,
+    'java.lang.Boolean': false,
+    'java.lang.Integer': 0,
+    'java.lang.Long': 0,
+    'java.lang.String': ''
+  }
+
   // IOperationControllerScope
-  _module.controller("Jmx.OperationController", ["$scope", "workspace", "jolokia", "jolokiaUrl", "$timeout", "$location", "localStorage", "$browser", ($scope,
-                                      workspace:Workspace,
-                                      jolokia,
-                                      jolokiaUrl:string,
-                                      $timeout,
-                                      $location,
-                                      localStorage,
-                                      $browser) => {
+  _module.controller("Jmx.OperationController", ["$scope", "workspace", "jolokia", "$timeout", "$location", "localStorage", "$browser", ($scope,
+    workspace: Workspace,
+    jolokia,
+    $timeout,
+    $location,
+    localStorage,
+    $browser) => {
     $scope.item = $scope.selectedOperation;
     $scope.title = $scope.item.humanReadable;
     $scope.desc = $scope.item.desc;
     $scope.operationResult = '';
-    $scope.executeIcon = "fa fa-ok";
     $scope.mode = "text";
     $scope.entity = {};
     $scope.formConfig = {
-      hideLegend: true,
       properties: {}
-      //description: $scope.objectName + "::" + $scope.item.name
     };
-    $scope.jolokiaUrl = getUrlForThing(jolokiaUrl, 'exec', workspace.getSelectedMBeanName(), $scope.item.name);
+
+    var url = $location.protocol() + "://" + $location.host() + ":" + $location.port() + $browser.baseHref();
+    $scope.jolokiaUrl = url + localStorage["url"] + "/exec/" + workspace.getSelectedMBeanName() + "/" + $scope.item.name;
 
     $scope.item.args.forEach((arg) => {
-      var property:any = {
+      $scope.formConfig.properties[arg.name] = {
         type: arg.type,
         tooltip: arg.desc,
-        description: "Type: " + arg.type
+        help: "Type: " + arg.type
       }
-      if (arg.type.toLowerCase() === 'java.util.list' ||
-          arg.type.toLowerCase() === '[j') {
-        property.type = 'array';
-        property.items = { type: 'string' };
-      }
-      if (arg.type.toLowerCase() === 'java.util.map') {
-        property.type = 'map';
-        property.items = {
-          key: { type: 'string' },
-          value: { type: 'string' }
-        }
-      }
-      $scope.formConfig.properties[arg.name] = property;
     });
-    log.debug("Form config: ", $scope.formConfig);
 
     $timeout(() => {
       $("html, body").animate({ scrollTop: 0 }, "medium");
     }, 250);
+
+    var sanitize = (args) => {
+      if (args) {
+        args.forEach(function (arg) {
+          switch (arg.type) {
+            case "int":
+            case "long":
+              arg.formType = "number";
+              break;
+            default:
+              arg.formType = "text";
+          }
+        });
+      }
+
+      return args;
+    };
+
+    $scope.args = sanitize($scope.item.args);
+
 
     $scope.dump = (data) => {
       console.log(data);
@@ -65,6 +80,7 @@ module Jmx {
 
     $scope.reset = () => {
       $scope.entity = {};
+      $scope.operationResult = '';
     };
 
     $scope.close = () => {
@@ -73,7 +89,6 @@ module Jmx {
 
 
     $scope.handleResponse = (response) => {
-      $scope.executeIcon = "fa fa-ok";
       $scope.operationStatus = "success";
 
       if (response === null || 'null' === response) {
@@ -89,9 +104,8 @@ module Jmx {
       Core.$apply($scope);
     };
 
-    $scope.onSubmit = () => {
-      var json = $scope.entity;
-      log.debug("onSubmit: json:", json);
+    $scope.onSubmit = (json, form) => {
+      log.debug("onSubmit: json:", json, " form: ", form);
       log.debug("$scope.item.args: ", $scope.item.args);
       angular.forEach(json, (value, key) => {
         $scope.item.args.find((arg) => {
@@ -103,7 +117,6 @@ module Jmx {
 
 
     $scope.execute = () => {
-
       var node = workspace.selection;
 
       if (!node) {
@@ -118,14 +131,14 @@ module Jmx {
 
       var args = [objectName, $scope.item.name];
       if ($scope.item.args) {
-        $scope.item.args.forEach( function (arg) {
-          args.push(arg.value);
+        $scope.item.args.forEach(function (arg) {
+          let value = $scope.entity[arg.name] || JAVA_TYPE_DEFAULT_VALUES[arg.type];
+          args.push(value);
         });
       }
 
       args.push(Core.onSuccess($scope.handleResponse, {
         error: function (response) {
-          $scope.executeIcon = "fa fa-ok";
           $scope.operationStatus = "error";
           var error = response.error;
           $scope.operationResult = error;
@@ -137,20 +150,20 @@ module Jmx {
         }
       }));
 
-      $scope.executeIcon = "fa fa-spinner fa fa-spin";
+      console.log(args);
+
       var fn = jolokia.execute;
       fn.apply(jolokia, args);
-     };
-
+    };
 
   }]);
 
 
   _module.controller("Jmx.OperationsController", ["$scope", "workspace", "jolokia", "rbacACLMBean", "$templateCache", ($scope,
-                                       workspace:Workspace,
-                                       jolokia,
-                                       rbacACLMBean:ng.IPromise<string>,
-                                       $templateCache) => {
+    workspace: Workspace,
+    jolokia,
+    rbacACLMBean: ng.IPromise<string>,
+    $templateCache) => {
 
     $scope.fetched = false;
     $scope.operations = {};
@@ -188,8 +201,8 @@ module Jmx {
       }
     });
 
-    var fetch = <() => void>_.debounce(() => {
-      var node = workspace.selection || workspace.getSelectedMBean();
+    var fetch = <() => void>Core.throttled(() => {
+      var node = workspace.selection;
       if (!node) {
         return;
       }
@@ -199,23 +212,53 @@ module Jmx {
         return;
       }
 
+      $scope.title = node.title;
+
       jolokia.request({
         type: 'list',
-        path:  Core.escapeMBeanPath($scope.objectName)
+        path: Core.escapeMBeanPath($scope.objectName)
       }, Core.onSuccess(render));
-    }, 100, { trailing: true });
+    }, 500);
 
     function getArgs(args) {
-      return "(" + args.map(function(arg) {return arg.type}).join() + ")";
+      return "(" + args.map(arg => arg.type).join() + ")";
     }
 
-    function sanitize (value) {
-      for (var item in value) {
-        item = "" + item;
-        value[item].name = item;
-        value[item].humanReadable = Core.humanizeValue(item);
+    function getArgType(arg) {
+      let lastDotIndex = arg.type.lastIndexOf('.');
+      if (lastDotIndex > 0) {
+        return arg.type.substr(lastDotIndex + 1);
+      } else {
+        return arg.type;
       }
-      return value;
+    }
+
+    function sanitize(operations) {
+      for (var operationName in operations) {
+        operationName = "" + operationName;
+        operations[operationName].name = operationName;
+        operations[operationName].humanReadable = Core.humanizeValue(operationName);
+        operations[operationName].displayName = toDisplayName(operationName);
+      }
+      return operations;
+    }
+
+    function toDisplayName(operationName: string) {
+      let startParamsIndex = operationName.indexOf('(') + 1;
+      let endParamsIndex = operationName.indexOf(')');
+      if (startParamsIndex === endParamsIndex) {
+        return operationName;
+      } else {
+        let paramsStr = operationName.substring(startParamsIndex, endParamsIndex);
+        let params = paramsStr.split(',');
+        let simpleParams = params.map(param => {
+          let lastDotIndex = param.lastIndexOf('.');
+          return lastDotIndex > 0 ? param.substr(lastDotIndex + 1) : param;
+        });
+        let simpleParamsStr = simpleParams.join(', ');
+        let simpleOperationName = operationName.replace(paramsStr, simpleParamsStr);
+        return simpleOperationName;
+      }
     }
 
     $scope.isOperationsEmpty = () => {
@@ -223,14 +266,10 @@ module Jmx {
     };
 
     $scope.doFilter = (item) => {
-      if (Core.isBlank($scope.methodFilter)) {
-        return true;
-      }
-      if (item.name.toLowerCase().has($scope.methodFilter.toLowerCase())
-          || item.humanReadable.toLowerCase().has($scope.methodFilter.toLowerCase())) {
-        return true;
-      }
-      return false;
+      let filterTextLowerCase = $scope.methodFilter.toLowerCase();
+      return Core.isBlank($scope.methodFilter) ||
+        item.name.toLowerCase().indexOf(filterTextLowerCase) !== -1 ||
+        item.humanReadable.toLowerCase().indexOf(filterTextLowerCase) !== -1;
     };
 
     $scope.canInvoke = (operation) => {
@@ -241,16 +280,8 @@ module Jmx {
       }
     };
 
-    $scope.getClass = (operation) => {
-      if ($scope.canInvoke(operation)) {
-        return 'can-invoke';
-      } else {
-        return 'cant-invoke';
-      }
-    };
-
     $scope.$watch('workspace.selection', (newValue, oldValue) => {
-      if (workspace.moveIfViewInvalid()) {
+      if (!workspace.selection || workspace.moveIfViewInvalid()) {
         return;
       }
       fetch();
@@ -278,12 +309,12 @@ module Jmx {
           log.debug("Got operations: ", $scope.operations);
           Core.$apply($scope);
         }, {
-          error: (response) => {
-            // silently ignore
-            log.debug("Failed to fetch ACL for operations: ", response);
-            Core.$apply($scope);
-          }
-        }));
+            error: (response) => {
+              // silently ignore
+              log.debug("Failed to fetch ACL for operations: ", response);
+              Core.$apply($scope);
+            }
+          }));
       });
 
     }
@@ -291,18 +322,18 @@ module Jmx {
     function render(response) {
       $scope.fetched = true;
       var ops = response.value.op;
-      var answer = {};
+      var operations = {};
 
-      angular.forEach(ops, function(value, key) {
+      angular.forEach(ops, function (value, key) {
         if (angular.isArray(value)) {
-          angular.forEach(value, function(value, index) {
-            answer[key + getArgs(value.args)] = value;
+          angular.forEach(value, function (value, index) {
+            operations[key + getArgs(value.args)] = value;
           });
         } else {
-          answer[key + getArgs(value.args)] = value;
+          operations[key + getArgs(value.args)] = value;
         }
       });
-      $scope.operations = sanitize(answer);
+      $scope.operations = sanitize(operations);
       if ($scope.isOperationsEmpty()) {
         Core.$apply($scope);
       } else {

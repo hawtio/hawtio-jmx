@@ -500,6 +500,7 @@ module Jmx {
       }
       if (node) {
         $scope.lastKey = node.key;
+        $scope.title = node.title;
       }
       Core.$apply($scope);
     }

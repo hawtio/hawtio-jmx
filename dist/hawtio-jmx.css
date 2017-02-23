@@ -165,9 +165,12 @@ strong.new,
 }
 #jmx-box #properties .contents {
   flex: 1 1 auto;
+  padding-right: 20px;
   overflow-x: hidden;
   overflow-y: auto;
-  padding-right: 20px;
+}
+#jmx-box #properties .contents .toolbar-pf {
+  margin-right: 0;
 }
 .jmx-attributes-wrapper {
   width: 100%;
@@ -191,29 +194,11 @@ strong.new,
   margin-top: 1em;
   margin-bottom: 1em;
 }
-.operation-row {
-  position: relative;
-  /* height: 30px; */
-  vertical-align: middle;
+.jmx-operation-wrapper .jolokia-form {
+  margin-top: 20px;
 }
-.operation-row.can-invoke {
-  cursor: pointer;
-}
-.operation-row.cant-invoke {
-  cursor: not-allowed;
-}
-.operation-row > * {
-  display: inline-block;
-  height: 100%;
-  line-height: 30px;
-}
-.operation-actions {
-  position: absolute;
-  right: 6px;
-  top: 4px;
-}
-.help-block:empty {
-  margin-top: 10px;
+.jmx-operation-wrapper .jolokia-url {
+  word-break: break-all;
 }
 #charts {
   display: block;
