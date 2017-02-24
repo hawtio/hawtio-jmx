@@ -21,6 +21,10 @@ html {
 body {
   height: 100%;
 }
+#main {
+  height: 100%;
+  overflow: auto;
+}
 .main-content {
   margin-top: 20px;
 }
