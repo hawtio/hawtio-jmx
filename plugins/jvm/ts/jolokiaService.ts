@@ -31,12 +31,12 @@ module JVM {
         var name = query['title'] || 'Unknown Connection';
         var token = query['token'] || Core.trimLeading(uri.hash(), '#');
         var options = Core.createConnectOptions({
-        name: name,
-        scheme: jolokiaURI.protocol(),
-        host: jolokiaURI.hostname(),
-        port: Core.parseIntValue(jolokiaURI.port()),
-        path: Core.trimLeading(jolokiaURI.pathname(), '/'),
-        useProxy: false
+          jolokiaUrl: jolokiaUrl,
+          name      : name,
+          scheme    : jolokiaURI.protocol(),
+          host      : jolokiaURI.hostname(),
+          port      : Core.parseIntValue(jolokiaURI.port()),
+          path      : Core.trimLeading(jolokiaURI.pathname(), '/')
         });
         if (!Core.isBlank(token)) {
           options['token'] = token;
@@ -170,11 +170,16 @@ module JVM {
     } else {
       jolokiaURI = new URI(UrlHelpers.join(documentBase, answer));
     }
-    if (!jolokiaURI.protocol()) {
-      jolokiaURI.protocol(windowURI.protocol());
-    }
-    if (!jolokiaURI.hostname()) {
-      jolokiaURI.host(windowURI.hostname());
+    if (!ConnectOptions.jolokiaUrl) {
+      if (!jolokiaURI.protocol()) {
+        jolokiaURI.protocol(windowURI.protocol());
+      }
+      if (!jolokiaURI.hostname()) {
+        jolokiaURI.host(windowURI.hostname());
+      }
+      if (!jolokiaURI.port()) {
+        jolokiaURI.port(windowURI.port());
+      }
     }
     answer = jolokiaURI.toString();
     log.debug("Complete jolokia URL: ", answer);
