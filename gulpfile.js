@@ -58,19 +58,19 @@ gulp.task('tsc', ['clean-defs'], function() {
       title: 'Typescript compilation error'
     }));
 
-    return eventStream.merge(
-      tsResult.js
-        .pipe(plugins.concat('compiled.js'))
-        .pipe(gulp.dest('.')),
-      tsResult.dts
-        .pipe(gulp.dest('d.ts')))
-        .pipe(plugins.filter('**/*.d.ts'))
-        .pipe(plugins.concatFilenames('defs.d.ts', {
-          root: cwd,
-          prepend: '/// <reference path="',
-          append: '"/>'
-        }))
-        .pipe(gulp.dest('.'));
+  return eventStream.merge(
+    tsResult.js
+      .pipe(plugins.concat('compiled.js'))
+      .pipe(gulp.dest('.')),
+    tsResult.dts
+      .pipe(gulp.dest('d.ts')))
+    .pipe(plugins.filter('**/*.d.ts'))
+    .pipe(plugins.concatFilenames('defs.d.ts', {
+      root: cwd,
+      prepend: '/// <reference path="',
+      append: '"/>'
+    }))
+    .pipe(gulp.dest('.'));
 });
 
 gulp.task('less', function () {
