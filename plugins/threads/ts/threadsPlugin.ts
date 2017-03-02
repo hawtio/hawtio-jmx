@@ -13,7 +13,7 @@ module Threads {
   export var mbeanType = 'Threading';
   export var mbean = jmxDomain + ":type=" + mbeanType;
 
-  export var _module = angular.module(pluginName, []);
+  export var _module = angular.module(pluginName, ['patternfly']);
 
   _module.config(["$routeProvider", ($routeProvider) => {
     $routeProvider.

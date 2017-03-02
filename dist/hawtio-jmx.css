@@ -62,7 +62,7 @@ body {
   width: 70px;
 }
 .threads-page .table tr th:nth-child(2) {
-  width: 50px;
+  width: 80px;
 }
 .threads-page .table tr th:nth-child(3) {
   width: auto;

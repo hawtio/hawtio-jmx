@@ -29,18 +29,19 @@ module Threads {
     $scope.support = {};
     $scope.row = {};
     $scope.selectedRowIndex = -1;
-    $scope.stateFilter = 'NONE';
+    $scope.stateFilter = null;
+    
+    $scope.availableStates = [
+      {id: 'BLOCKED', name: 'Blocked'},
+      {id: 'NEW', name: 'New'},
+      {id: 'RUNNABLE', name: 'Runnable'},
+      {id: 'TERMINATED', name: 'Terminated'},
+      {id: 'TIMED_WAITING', name: 'Timed waiting'},
+      {id: 'WAITING', name: 'Waiting'}
+    ];
 
     $scope.showRaw = {
       expanded: false
-    };
-
-    $scope.selectedFilterClass = (state) => {
-      if (state === $scope.stateFilter) {
-        return "active";
-      } else {
-        return "";
-      }
     };
 
     $scope.addToDashboardLink = () => {
@@ -70,10 +71,10 @@ module Threads {
 
     $scope.$watch('stateFilter', (newValue, oldValue) => {
       if (newValue !== oldValue) {
-        if ($scope.stateFilter === 'NONE') {
-          $scope.threads = $scope.unfilteredThreads;
+        if ($scope.stateFilter) {
+          $scope.threads = filterThreads($scope.stateFilter, $scope.unfilteredThreads);
         } else {
-          $scope.threads = $scope.filterThreads($scope.stateFilter, $scope.unfilteredThreads);
+          $scope.threads = $scope.unfilteredThreads;
         }
       }
     });
@@ -101,7 +102,7 @@ module Threads {
         {
           field: 'threadState',
           displayName: 'State',
-          cellTemplate: $templateCache.get("threadStateTemplate")
+          cellTemplate: '{{row.entity.threadState | humanize}}'
         },
         {
           field: 'threadName',
@@ -148,18 +149,24 @@ module Threads {
       $scope.filterOn(state);
     });
 
-    $scope.filterOn = (state) => {
-      $scope.stateFilter = state;
-    };
+    $scope.clearStateFilter = () => $scope.stateFilter = null;
 
-    $scope.filterThreads = (state, threads) => {
+    $scope.clearSearchFilter = () => $scope.searchFilter = null;
+
+    $scope.clearAllFilters = () => {
+      $scope.clearStateFilter();
+      $scope.clearSearchFilter();
+    }
+
+    function filterThreads(state, threads) {
       log.debug("Filtering threads by: ", state);
-      if (state === 'NONE') {
+      if (state) {
+        return threads.filter((t) => {
+          return t && t['threadState'] === state.id;
+        });
+      } else {
         return threads;
       }
-      return threads.filter((t) => {
-        return t && t['threadState'] === state;
-      });
     };
 
     $scope.deselect = () => {
@@ -183,23 +190,10 @@ module Threads {
         if ($scope.getThreadInfoResponseJson !== responseJson) {
           $scope.getThreadInfoResponseJson = responseJson;
           $scope.unfilteredThreads = _.without(response.value, null);
-          calculateTotals($scope.unfilteredThreads);
-          $scope.threads = $scope.filterThreads($scope.stateFilter, $scope.unfilteredThreads);
+          $scope.threads = filterThreads($scope.stateFilter, $scope.unfilteredThreads);
           Core.$apply($scope);
         }
       }
-    }
-
-    function calculateTotals(threads) {
-      $scope.totals = {};
-      threads.forEach((t) => {
-        var state = t.threadState;
-        if (!(state in $scope.totals)) {
-          $scope.totals[state] = 1;
-        } else {
-          $scope.totals[state]++;
-        }
-      });
     }
 
     $scope.init = () => {
