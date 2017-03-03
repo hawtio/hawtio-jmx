@@ -1,5 +1,6 @@
 <h1>Threads</h1>
 
+<!--
 <div ng-controller="Threads.ToolbarController">
 
   <div class="row row-monitor">
@@ -12,6 +13,7 @@
   </div>
 
 </div>
+-->
 
 <div class="threads-page" ng-controller="Threads.ThreadsController">
 
@@ -38,8 +40,8 @@
       </form>
       <div class="row toolbar-pf-results">
         <div class="col-sm-12">
-          <div ng-if="stateFilter">
-            <h5>{{threads.length}} Results</h5>
+          <h5>{{threads.length}} Results</h5>
+          <span ng-if="stateFilter">
             <p>Active filters:</p>
             <ul class="list-inline">
               <li>
@@ -50,7 +52,7 @@
               </li>
             </ul>
             <p><a href="#" ng-click="clearAllFilters()">Clear All Filters</a></p>
-          </div>
+          </span>
         </div>
       </div>
     </div>

@@ -18,14 +18,13 @@ module Threads {
     };
   }]);
 
-  _module.controller("Threads.ThreadsController", ["$scope", "$rootScope", "$routeParams", "$templateCache", "jolokia", "$element", "$modal", ($scope, $rootScope, $routeParams, $templateCache, jolokia, $element, $modal) => {
+  _module.controller("Threads.ThreadsController", ["$scope", "$rootScope", "$routeParams", "$templateCache", "jolokia", "$element", "$uibModal", ($scope, $rootScope, $routeParams, $templateCache, jolokia, $element, $uibModal) => {
 
     let modalInstance = null;
     $scope.selectedRowJson = '';
     $scope.lastThreadJson = '';
     $scope.getThreadInfoResponseJson = '';
     $scope.threads = [];
-    $scope.totals = {};
     $scope.support = {};
     $scope.row = {};
     $scope.selectedRowIndex = -1;
@@ -76,6 +75,7 @@ module Threads {
         } else {
           $scope.threads = $scope.unfilteredThreads;
         }
+        $scope.apply();
       }
     });
 
@@ -144,10 +144,6 @@ module Threads {
         $scope.selectedRowJson = angular.toJson($scope.row, true);
       }
     }, true);
-
-    $scope.$on('ThreadsToolbarState', ($event, state) => {
-      $scope.filterOn(state);
-    });
 
     $scope.clearStateFilter = () => $scope.stateFilter = null;
 
@@ -290,7 +286,7 @@ module Threads {
 
     function openModal() {
       if (!modalInstance) {
-        modalInstance = $modal.open({
+        modalInstance = $uibModal.open({
           templateUrl: 'threadModalContent.html',
           scope: $scope,
           size: 'lg'

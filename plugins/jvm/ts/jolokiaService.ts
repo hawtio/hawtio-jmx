@@ -259,7 +259,7 @@ module JVM {
     }
   }
 
-  _module.factory('jolokia',["$location", "localStorage", "jolokiaStatus", "$rootScope", "userDetails", "jolokiaParams", "jolokiaUrl", "ConnectOptions", "HawtioDashboard", "$modal", ($location:ng.ILocationService, localStorage, jolokiaStatus, $rootScope, userDetails:Core.UserDetails, jolokiaParams, jolokiaUrl, connectionOptions, dash, $modal):Jolokia.IJolokia => {
+  _module.factory('jolokia',["$location", "localStorage", "jolokiaStatus", "$rootScope", "userDetails", "jolokiaParams", "jolokiaUrl", "ConnectOptions", "HawtioDashboard", "$uibModal", ($location:ng.ILocationService, localStorage, jolokiaStatus, $rootScope, userDetails:Core.UserDetails, jolokiaParams, jolokiaUrl, connectionOptions, dash, $uibModal):Jolokia.IJolokia => {
 
     if (dash.inDashboard && windowJolokia) {
       return windowJolokia;
@@ -309,7 +309,7 @@ module JVM {
           }
         }
         if (!modal) {
-          modal = $modal.open({
+          modal = $uibModal.open({
             templateUrl: UrlHelpers.join(templatePath, 'jolokiaError.html'),
             controller: ['$scope', '$modalInstance', 'ConnectOptions', 'jolokia', ($scope, instance, ConnectOptions, jolokia) => {
               jolokia.stop();
