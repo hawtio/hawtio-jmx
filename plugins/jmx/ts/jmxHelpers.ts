@@ -372,6 +372,8 @@ module Jmx {
             window.focus();
             return false;
           }
+          // Emit an event so other parts of the UI can update accordingly
+          $scope.$root.$emit('jmxTreeClicked');
           return true;
         },
         persist: false,
