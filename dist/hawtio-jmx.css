@@ -133,64 +133,36 @@ strong.new,
 }
 /* end threads page */
 
-#jmx-box {
+.tree-nav-layout {
+  height: 100%;
+}
+.tree-nav-sidebar {
   display: flex;
   flex-direction: column;
   height: 100%;
-  align-items: stretch;
+  padding-right: 0;
 }
-#jmx-box header {
-  flex: 0 1 auto;
-}
-#jmx-box .main {
-  flex: 1 1 auto;
-  display: flex;
-  flex-direction: row;
-  align-items: stretch;
-  height: 100%;
-}
-#jmx-box #tree-container {
+.tree-nav-sidebar-header {
   flex: 0 0 auto;
-  display: flex;
-  flex-direction: column;
-  width: 30%;
-  max-width: 50%;
-  overflow-x: scroll;
-  overflow-y: hidden;
-  resize: horizontal;
+  padding: 5px 10px;
 }
-#jmx-box .tree-header {
-  flex: 0 1 auto;
-  min-height: 34px;
-  line-height: 34px;
-  padding-right: 15px;
+.tree-nav-sidebar-header-icon {
+  font-size: 1.5em;
+  cursor: pointer;
+  vertical-align: middle;
 }
-#jmx-box #jmxtree {
+.tree-nav-sidebar-header-icon:not(:last-of-type) {
+  margin-right: 5px;
+}
+.tree-nav-sidebar-content {
   flex: 1 1 auto;
-  padding-top: 5px;
-  overflow-x: hidden;
-  overflow-y: scroll;
-}
-#jmx-box #properties {
-  flex: 1 1 auto;
-  display: flex;
-  flex-direction: column;
-  width: 70%;
-  margin-left: 20px;
-  margin-right: -20px;
-  overflow: hidden;
-}
-#jmx-box #properties .nav {
-  flex: 0 1 auto;
-}
-#jmx-box #properties .contents {
-  flex: 1 1 auto;
-  padding-right: 20px;
-  overflow-x: hidden;
   overflow-y: auto;
 }
-#jmx-box #properties .contents .toolbar-pf {
-  margin-right: 0;
+.tree-nav-main {
+  height: 100%;
+  padding-top: 20px;
+  padding-bottom: 20px;
+  overflow-y: auto;
 }
 .jmx-attributes-wrapper {
   width: 100%;

@@ -7,6 +7,7 @@ module Jmx {
 
     var log:Logging.Logger = Logger.get("JMX");
 
+    $scope.title = workspace.selection ? workspace.selection.title : '';
     $scope.metrics = [];
     $scope.updateRate = 1000; //parseInt(localStorage['updateRate']);
 
