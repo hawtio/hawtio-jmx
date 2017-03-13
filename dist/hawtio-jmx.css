@@ -180,6 +180,25 @@ fs-donut svg g text.units {
   font-size: 20px;
 }
 
+@media screen and (max-width: 767px) {
+}
+@media (min-width: 768px) {
+}
+@media (min-width: 768px) {
+}
+@media (max-width: 767px) {
+}
+@media (min-width: 768px) {
+}
+@media (min-width: 768px) {
+}
+@media (max-width: 767px) {
+}
+@media (max-width: 767px) {
+}
+div.threads-page {
+  padding-bottom: 20px;
+}
 .threads-page .badge {
   vertical-align: middle;
   background-color: inherit;
