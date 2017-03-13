@@ -166,13 +166,13 @@ fs-donut svg g text.units {
   font-size: 20px;
 }
 
-.jvm-remote .list-group-item-container .form-horizontal {
+#jvm-remote .list-group-item-container .form-horizontal {
   margin: 10px 0;
 }
-.jvm-remote .list-group-item-container .form-horizontal > .form-group:last-child {
+#jvm-remote .list-group-item-container .form-horizontal > .form-group:last-child {
   margin-bottom: 0;
 }
-.jvm-remote .dropdown-kebab-pf .btn-link {
+#jvm-remote .dropdown-kebab-pf .btn-link {
   padding-left: 10px;
   padding-right: 10px;
   margin-left: 0px;
