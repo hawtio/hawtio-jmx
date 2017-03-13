@@ -199,13 +199,6 @@ fs-donut svg g text.units {
 div.threads-page {
   padding-bottom: 20px;
 }
-.threads-page .badge {
-  vertical-align: middle;
-  background-color: inherit;
-  color: inherit;
-  border: inherit;
-  font-weight: inherit;
-}
 .threads-page dd {
   overflow-wrap: break-word;
 }
