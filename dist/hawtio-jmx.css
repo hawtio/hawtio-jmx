@@ -196,31 +196,31 @@ fs-donut svg g text.units {
 }
 @media (max-width: 767px) {
 }
-div.threads-page {
+div#threads-page {
   padding-bottom: 20px;
 }
-.threads-page dd {
+#threads-page dd {
   overflow-wrap: break-word;
 }
-.threads-page .table tr th:nth-child(1) {
+#threads-page .table tr th:nth-child(1) {
   width: 70px;
 }
-.threads-page .table tr th:nth-child(2) {
+#threads-page .table tr th:nth-child(2) {
   width: 80px;
 }
-.threads-page .table tr th:nth-child(3) {
+#threads-page .table tr th:nth-child(3) {
   width: auto;
 }
-.threads-page .table tr th:nth-child(4) {
+#threads-page .table tr th:nth-child(4) {
   width: 120px;
 }
-.threads-page .table tr th:nth-child(5) {
+#threads-page .table tr th:nth-child(5) {
   width: 120px;
 }
-.threads-page .table tr th:nth-child(6) {
+#threads-page .table tr th:nth-child(6) {
   width: 90px;
 }
-.threads-page .table tr th:nth-child(7) {
+#threads-page .table tr th:nth-child(7) {
   width: 90px;
 }
 .row-monitor {
