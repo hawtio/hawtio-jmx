@@ -79,7 +79,7 @@ gulp.task('tsc', ['clean-defs'], function() {
 gulp.task('less', function () {
   return gulp.src(config.less)
     .pipe(plugins.less({
-      paths: [path.join(__dirname, 'libs')]
+      paths: [path.join(__dirname, 'plugins'), path.join(__dirname, 'libs')]
     }))
     .on('error', plugins.notify.onError({
       onLast: true,
