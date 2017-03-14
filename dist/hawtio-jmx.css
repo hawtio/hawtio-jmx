@@ -37,27 +37,11 @@ body {
 #attributesGrid {
   margin-bottom: 20px;
 }
-.jmx-attributes-wrapper {
-  width: 100%;
-  overflow: auto;
-}
-.jmx-attributes-wrapper .table th:nth-child(1) {
+#attributesGrid th:nth-child(1) {
   width: 40%;
 }
-.jmx-attributes-wrapper .table th:nth-child(2) {
+#attributesGrid th:nth-child(2) {
   width: 60%;
-}
-.jmx-attributes-toolbar .row {
-  margin-top: 1em;
-  margin-bottom: 1em;
-}
-.jmx-attributes-toolbar .search-query {
-  margin-top: 0;
-  margin-bottom: 0;
-}
-.jmx-attributes-toolbar .pull-right .inline-block .search-query {
-  margin-top: 1em;
-  margin-bottom: 1em;
 }
 
 #charts {
@@ -180,19 +164,6 @@ fs-donut svg g text.units {
   word-break: break-all;
 }
 
-#jvm-remote .list-group-item-container .form-horizontal {
-  margin: 10px 0;
-}
-#jvm-remote .list-group-item-container .form-horizontal > .form-group:last-child {
-  margin-bottom: 0;
-}
-#jvm-remote .dropdown-kebab-pf .btn-link {
-  padding-left: 10px;
-  padding-right: 10px;
-  margin-left: 0px;
-  margin-right: -10px;
-}
-
 @media screen and (max-width: 767px) {
 }
 @media (min-width: 768px) {
@@ -286,4 +257,17 @@ strong.new,
   height: 100%;
   padding-top: 5px;
   font-size: 15px;
+}
+
+#jvm-remote .list-group-item-container .form-horizontal {
+  margin: 10px 0;
+}
+#jvm-remote .list-group-item-container .form-horizontal > .form-group:last-child {
+  margin-bottom: 0;
+}
+#jvm-remote .dropdown-kebab-pf .btn-link {
+  padding-left: 10px;
+  padding-right: 10px;
+  margin-left: 0px;
+  margin-right: -10px;
 }
