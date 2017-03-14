@@ -1,35 +1,35 @@
-.tree-nav-layout {
+#tree-nav-layout {
   height: 100%;
+
+  .sidebar-pf {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    padding-right: 0;
+  }
+
+  #tree-nav-sidebar-header {
+    flex: 0 0 auto;
+    padding: 5px 10px;
+
+    .fa {
+      font-size: 1.5em;
+      cursor: pointer;
+      vertical-align: middle;
+
+      &:not(:last-of-type) {
+        margin-right: 5px;
+      }
+    }
+  }
+
+  #jmxtree {
+    flex: 1 1 auto;
+    overflow-y: auto;
+  }
 }
 
-.tree-nav-sidebar {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  padding-right: 0;
-}
-
-.tree-nav-sidebar-header {
-  flex: 0 0 auto;
-  padding: 5px 10px;
-}
-
-.tree-nav-sidebar-header-icon {
-  font-size: 1.5em;
-  cursor: pointer;
-  vertical-align: middle;
-}
-
-.tree-nav-sidebar-header-icon:not(:last-of-type) {
-  margin-right: 5px;
-}
-
-.tree-nav-sidebar-content {
-  flex: 1 1 auto;
-  overflow-y: auto;
-}
-
-.tree-nav-main {
+#tree-nav-main {
   display: flex;
   flex-direction: column;
   height: 100%;
