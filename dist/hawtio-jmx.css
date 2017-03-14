@@ -34,6 +34,9 @@ body {
   margin: 0;
 }
 
+#attributesGrid {
+  margin-bottom: 20px;
+}
 .jmx-attributes-wrapper {
   width: 100%;
   overflow: auto;
@@ -168,7 +171,6 @@ fs-donut svg g text.units {
 #tree-nav-main .contents {
   flex: 1 1 auto;
   overflow-y: auto;
-  padding-bottom: 20px;
 }
 
 .jmx-operation-wrapper .jolokia-form {
