@@ -30,8 +30,18 @@
 }
 
 .tree-nav-main {
+  display: flex;
+  flex-direction: column;
   height: 100%;
-  padding-top: 20px;
-  padding-bottom: 20px;
-  overflow-y: auto;
+
+  .nav-tabs {
+    flex: 0 0 auto;
+    padding-top: 20px;
+  }
+
+  .contents {
+    flex: 1 1 auto;
+    overflow-y: auto;
+    padding-bottom: 20px;
+  }
 }
