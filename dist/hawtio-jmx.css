@@ -118,41 +118,41 @@ fs-donut svg g text.units {
   font-size: 20px;
 }
 
-#tree-nav-layout {
+.tree-nav-layout {
   height: 100%;
 }
-#tree-nav-layout .sidebar-pf {
+.tree-nav-layout .sidebar-pf {
   display: flex;
   flex-direction: column;
   height: 100%;
   padding-right: 0;
 }
-#tree-nav-layout #tree-nav-sidebar-header {
+.tree-nav-layout .tree-nav-sidebar-header {
   flex: 0 0 auto;
   padding: 5px 10px;
 }
-#tree-nav-layout #tree-nav-sidebar-header .fa {
+.tree-nav-layout .tree-nav-sidebar-header .fa {
   font-size: 1.5em;
   cursor: pointer;
   vertical-align: middle;
 }
-#tree-nav-layout #tree-nav-sidebar-header .fa:not(:last-of-type) {
+.tree-nav-layout .tree-nav-sidebar-header .fa:not(:last-of-type) {
   margin-right: 5px;
 }
-#tree-nav-layout #jmxtree {
+.tree-nav-layout .tree-nav-sidebar-content {
   flex: 1 1 auto;
   overflow-y: auto;
 }
-#tree-nav-main {
+.tree-nav-main {
   display: flex;
   flex-direction: column;
   height: 100%;
 }
-#tree-nav-main .nav-tabs {
+.tree-nav-main .nav-tabs {
   flex: 0 0 auto;
   padding-top: 20px;
 }
-#tree-nav-main .contents {
+.tree-nav-main .contents {
   flex: 1 1 auto;
   overflow-y: auto;
 }
