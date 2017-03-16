@@ -1,6 +1,6 @@
-<div class="row tree-nav-layout">
+<div class="tree-nav-layout">
 
-  <div class="col-sm-3 sidebar-pf sidebar-pf-left">
+  <div class="sidebar-pf sidebar-pf-left" resizable r-directions="['right']">
     <div class="tree-nav-sidebar-header" ng-controller="Jmx.TreeHeaderController">
       <div class="pull-right">
         <i class="fa fa-plus-square-o" title="Expand All" ng-click="expandAll()"></i>
@@ -10,7 +10,7 @@
     <div id="jmxtree" class="tree-nav-sidebar-content" ng-controller="Jmx.MBeansController"></div>
   </div>
 
-  <div class="col-sm-9 tree-nav-main">
+  <div class="tree-nav-main">
     <ul class="nav nav-tabs" ng-controller="Jmx.TabController">
       <li ng-class="{active: isTabActive('/jmx/attributes')}">
         <a href="#" ng-click="goto('/jmx/attributes')">Attributes</a>

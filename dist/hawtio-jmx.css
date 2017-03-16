@@ -120,12 +120,28 @@ fs-donut svg g text.units {
 
 .tree-nav-layout {
   height: 100%;
+  display: flex;
 }
 .tree-nav-layout .sidebar-pf {
   display: flex;
   flex-direction: column;
+  width: 30%;
   height: 100%;
+  padding-left: 10px;
   padding-right: 0;
+  margin-left: -20px;
+  margin-right: 20px;
+}
+div.tree-nav-layout .sidebar-pf .rg-right {
+  width: 18px;
+  margin-right: -9px;
+}
+.tree-nav-layout .sidebar-pf .rg-right span {
+  border-width: 0 1px;
+  top: 50%;
+  margin: -10px 0 0 4.5px;
+  height: 20px;
+  width: 9px;
 }
 .tree-nav-layout .tree-nav-sidebar-header {
   flex: 0 0 auto;
@@ -144,6 +160,7 @@ fs-donut svg g text.units {
   overflow-y: auto;
 }
 .tree-nav-main {
+  flex: 1;
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -162,19 +179,6 @@ fs-donut svg g text.units {
 }
 .jmx-operation-wrapper .jolokia-url {
   word-break: break-all;
-}
-
-#jvm-remote .list-group-item-container .form-horizontal {
-  margin: 10px 0;
-}
-#jvm-remote .list-group-item-container .form-horizontal > .form-group:last-child {
-  margin-bottom: 0;
-}
-#jvm-remote .dropdown-kebab-pf .btn-link {
-  padding-left: 10px;
-  padding-right: 10px;
-  margin-left: 0px;
-  margin-right: -10px;
 }
 
 @media screen and (max-width: 767px) {
@@ -253,4 +257,17 @@ strong.new,
   height: 100%;
   padding-top: 5px;
   font-size: 15px;
+}
+
+#jvm-remote .list-group-item-container .form-horizontal {
+  margin: 10px 0;
+}
+#jvm-remote .list-group-item-container .form-horizontal > .form-group:last-child {
+  margin-bottom: 0;
+}
+#jvm-remote .dropdown-kebab-pf .btn-link {
+  padding-left: 10px;
+  padding-right: 10px;
+  margin-left: 0px;
+  margin-right: -10px;
 }
