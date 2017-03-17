@@ -13,17 +13,22 @@
     margin-right: 20px;
 
     .rg-right {
+
+      @grabber-width: 7px;
+      @grabber-height: 30px;
+
       div& {
-        width: 18px;
-        margin-right: -9px;
+        width: 2 * @grabber-width;
+        margin-right: -@grabber-width;
       }
 
       span {
-        border-width: 0 1px;
+        border-width: 1px;
+        background-color: white;
         top: 50%;
-        margin: -10px 0 0 4.5px;
-        height: 20px;
-        width: 9px;
+        margin: -@grabber-height / 2 0 0 @grabber-width / 2;
+        height: @grabber-height;
+        width: @grabber-width;
       }
     }
   }

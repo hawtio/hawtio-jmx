@@ -133,15 +133,16 @@ fs-donut svg g text.units {
   margin-right: 20px;
 }
 div.tree-nav-layout .sidebar-pf .rg-right {
-  width: 18px;
-  margin-right: -9px;
+  width: 14px;
+  margin-right: -7px;
 }
 .tree-nav-layout .sidebar-pf .rg-right span {
-  border-width: 0 1px;
+  border-width: 1px;
+  background-color: white;
   top: 50%;
-  margin: -10px 0 0 4.5px;
-  height: 20px;
-  width: 9px;
+  margin: -15px 0 0 3.5px;
+  height: 30px;
+  width: 7px;
 }
 .tree-nav-layout .tree-nav-sidebar-header {
   flex: 0 0 auto;
@@ -179,6 +180,19 @@ div.tree-nav-layout .sidebar-pf .rg-right {
 }
 .jmx-operation-wrapper .jolokia-url {
   word-break: break-all;
+}
+
+#jvm-remote .list-group-item-container .form-horizontal {
+  margin: 10px 0;
+}
+#jvm-remote .list-group-item-container .form-horizontal > .form-group:last-child {
+  margin-bottom: 0;
+}
+#jvm-remote .dropdown-kebab-pf .btn-link {
+  padding-left: 10px;
+  padding-right: 10px;
+  margin-left: 0px;
+  margin-right: -10px;
 }
 
 @media screen and (max-width: 767px) {
@@ -257,17 +271,4 @@ strong.new,
   height: 100%;
   padding-top: 5px;
   font-size: 15px;
-}
-
-#jvm-remote .list-group-item-container .form-horizontal {
-  margin: 10px 0;
-}
-#jvm-remote .list-group-item-container .form-horizontal > .form-group:last-child {
-  margin-bottom: 0;
-}
-#jvm-remote .dropdown-kebab-pf .btn-link {
-  padding-left: 10px;
-  padding-right: 10px;
-  margin-left: 0px;
-  margin-right: -10px;
 }
