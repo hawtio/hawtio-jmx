@@ -4014,7 +4014,9 @@ var Core;
         });
         var g = new dagre.graphlib.Graph()
             .setGraph({})
-            .setDefaultEdgeLabel(function () { return {}; });
+            .setDefaultEdgeLabel(function () {
+            return {};
+        });
         states.forEach(function (node) { return g.setNode(node.id, node); });
         transitions.forEach(function (edge) { return g.setEdge(edge.source.id, edge.target.id, edge); });
         dagre.layout(g);
