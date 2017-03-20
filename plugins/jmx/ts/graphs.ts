@@ -88,9 +88,7 @@ module Core {
         .call(force.drag);
 
       node.append("image")
-        .attr("xlink:href", function (d) {
-          return d.imageUrl;
-        })
+        .attr("xlink:href", d => d.imageUrl)
         .attr("x", -15)
         .attr("y", -15)
         .attr("width", 30)
@@ -99,27 +97,15 @@ module Core {
       node.append("text")
         .attr("dx", 20)
         .attr("dy", ".35em")
-        .text(function (d) {
-          return d.label
-        });
+        .text(d => d.label);
 
       force.on("tick", function () {
-        link.attr("x1", function (d) {
-            return d.source.x;
-          })
-          .attr("y1", function (d) {
-            return d.source.y;
-          })
-          .attr("x2", function (d) {
-            return d.target.x;
-          })
-          .attr("y2", function (d) {
-            return d.target.y;
-          });
+        link.attr("x1", d => d.source.x)
+          .attr("y1", d => d.source.y)
+          .attr("x2", d => d.target.x)
+          .attr("y2", d => d.target.y);
 
-        node.attr("transform", function (d) {
-          return "translate(" + d.x + "," + d.y + ")";
-        });
+        node.attr("transform", d => "translate(" + d.x + "," + d.y + ")");
       });
     }
   }
@@ -137,7 +123,7 @@ module Core {
       }
     });
     var states = d3.values(stateKeys);
-    links.forEach(function (d) {
+    links.forEach(d => {
       var source = stateKeys[d.source];
       var target = stateKeys[d.target];
       if (source === undefined || target === undefined) {
@@ -159,21 +145,9 @@ module Core {
     var transitions = [];
     var states      = Core.createGraphStates(nodes, links, transitions);
 
-    function spline(e) {
-      return d3.svg.line()
-        .x(function (d) {
-          return d.x;
-        })
-        .y(function (d) {
-          return d.y;
-        })
-        .interpolate("linear")
-        (e.points);
-    }
-
     // Translates all points in the edge using `dx` and `dy`.
     function translateEdge(e, dx, dy) {
-      e.points.forEach(function (p) {
+      e.points.forEach(p => {
         p.x = Math.max(0, Math.min(svgBBox.width, p.x + dx));
         p.y = Math.max(0, Math.min(svgBBox.height, p.y + dy));
       });
@@ -197,17 +171,11 @@ module Core {
       .enter()
       .append("g")
       .attr("class", "node")
-      .attr("data-cid", function (d) {
-        return d.cid;
-      })
-      .attr("id", function (d) {
-        return "node-" + d.label
-      });
+      .attr("data-cid", d => d.cid)
+      .attr("id", d => "node-" + d.label);
 
     // lets add a tooltip
-    nodes.append("title").text(function (d) {
-      return d.tooltip || "";
-    });
+    nodes.append("title").text(d => d.tooltip || "");
 
     var edges = svgGroup
       .selectAll("path .edge")
@@ -225,14 +193,10 @@ module Core {
       .attr("ry", "4")
       // lets add shadow (do not add shadow as the filter does not work in firefox browser
       /*.attr("filter", "url(#drop-shadow)")*/
-      .attr("class", function (d) {
-        return d.type;
-      });
+      .attr("class", d => d.type);
 
     var images = nodes.append("image")
-      .attr("xlink:href", function (d) {
-        return d.imageUrl;
-      })
+      .attr("xlink:href", d => d.imageUrl)
       .attr("x", -12)
       .attr("y", -20)
       .attr("height", 24)
@@ -264,9 +228,7 @@ module Core {
       .append("tspan")
       .attr("x", 0)
       .attr("dy", 28)
-      .text(function (d) {
-        return d.label;
-      });
+      .text(d => d.label);
 
     var labelPadding  = 12;
     var minLabelwidth = 80;
@@ -282,64 +244,43 @@ module Core {
     });
 
     rects
-      .attr("x", function (d) {
-        return -(d.bbox.width / 2 + nodePadding);
-      })
-      .attr("y", function (d) {
-        return -(d.bbox.height / 2 + nodePadding + (labelPadding / 2));
-      })
-      .attr("width", function (d) {
-        return d.width;
-      })
-      .attr("height", function (d) {
-        return d.height;
-      });
+      .attr("x", d => -(d.bbox.width / 2 + nodePadding))
+      .attr("y", d => -(d.bbox.height / 2 + nodePadding + (labelPadding / 2)))
+      .attr("width", d => d.width)
+      .attr("height", d => d.height);
 
     if (onClick != null) {
       rects.on("click", onClick);
     }
 
-    images
-      .attr("x", function (d) {
-        return -(d.bbox.width) / 2;
-      });
+    images.attr("x", d => -(d.bbox.width) / 2);
 
     labels
-      .attr("x", function (d) {
-        return -d.bbox.width / 2;
-      })
-      .attr("y", function (d) {
-        return -d.bbox.height / 2;
-      });
+      .attr("x", d => -d.bbox.width / 2)
+      .attr("y", d => -d.bbox.height / 2);
 
-    counters.attr("x", function (d) {
-      var w = d.bbox.width;
-      return w / 2;
-    });
+    counters.attr("x", d => d.bbox.width / 2);
 
     var g = new dagre.graphlib.Graph()
       .setGraph({})
-      .setDefaultEdgeLabel(function () {
-        return {};
-      });
+      .setDefaultEdgeLabel(Function.prototype);
 
     states.forEach(node => g.setNode(node.id, node));
     transitions.forEach(edge => g.setEdge(edge.source.id, edge.target.id, edge));
 
     dagre.layout(g);
 
-    nodes.attr("transform", function (d) {
-      return 'translate(' + d.x + ',' + d.y + ')';
-    });
+    nodes.attr("transform", d => 'translate(' + d.x + ',' + d.y + ')');
+
+    const line = d3.svg.line()
+      .x(d => d.x)
+      .y(d => d.y)
+      .interpolate("linear");
 
     edges
     // Set the id. of the SVG element to have access to it later
-      .attr('id', function (e) {
-        return e.id;
-      })
-      .attr("d", function (e) {
-        return spline(e);
-      });
+      .attr('id', e => e.id)
+      .attr("d", e => line(e.points));
 
     // Resize the SVG element
     var svgNode = svg.node();
@@ -356,9 +297,7 @@ module Core {
       // Drag handlers
       var nodeDrag = d3.behavior.drag()
         // Set the right origin (based on the Dagre layout or the current position)
-        .origin(function (d) {
-          return d.pos ? {x: d.pos.x, y: d.pos.y} : {x: d.x, y: d.y};
-        })
+        .origin(d => d.pos ? {x: d.pos.x, y: d.pos.y} : {x: d.x, y: d.y})
         .on('drag', function (d, i) {
           var prevX = d.x,
               prevY = d.y;
@@ -372,16 +311,16 @@ module Core {
               dy = d.y - prevY;
 
           // Edges position (inside SVG area)
-          d.edges.forEach(function (e) {
+          d.edges.forEach(e => {
             translateEdge(e, dx, dy);
-            d3.select('#' + e.id).attr('d', spline(e));
+            d3.select('#' + e.id).attr('d', line(e));
           });
         });
 
       var edgeDrag = d3.behavior.drag()
-        .on('drag', function (d, i) {
+        .on('drag', (d, i) => {
           translateEdge(d, d3.event.dx, d3.event.dy);
-          d3.select(this).attr('d', spline(d));
+          d3.select(this).attr('d', line(d));
         });
 
       nodes.call(nodeDrag);
@@ -398,9 +337,7 @@ module Core {
     svg.selectAll("text.inflight").text(_inflightFunction);
 
     // add tooltip
-    svg.selectAll("g .node title").text(function (d) {
-      return d.tooltip || "";
-    });
+    svg.selectAll("g .node title").text(d => d.tooltip || "");
     /*
      TODO can we reuse twitter bootstrap on an svg title?
      .each(function (d) {
@@ -419,5 +356,4 @@ module Core {
   function _inflightFunction(d) {
     return d.inflight || "";
   }
-
 }

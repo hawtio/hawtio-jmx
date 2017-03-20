@@ -3807,9 +3807,7 @@ var Core;
                 .attr("class", "node")
                 .call(force.drag);
             node.append("image")
-                .attr("xlink:href", function (d) {
-                return d.imageUrl;
-            })
+                .attr("xlink:href", function (d) { return d.imageUrl; })
                 .attr("x", -15)
                 .attr("y", -15)
                 .attr("width", 30)
@@ -3817,25 +3815,13 @@ var Core;
             node.append("text")
                 .attr("dx", 20)
                 .attr("dy", ".35em")
-                .text(function (d) {
-                return d.label;
-            });
+                .text(function (d) { return d.label; });
             force.on("tick", function () {
-                link.attr("x1", function (d) {
-                    return d.source.x;
-                })
-                    .attr("y1", function (d) {
-                    return d.source.y;
-                })
-                    .attr("x2", function (d) {
-                    return d.target.x;
-                })
-                    .attr("y2", function (d) {
-                    return d.target.y;
-                });
-                node.attr("transform", function (d) {
-                    return "translate(" + d.x + "," + d.y + ")";
-                });
+                link.attr("x1", function (d) { return d.source.x; })
+                    .attr("y1", function (d) { return d.source.y; })
+                    .attr("x2", function (d) { return d.target.x; })
+                    .attr("y2", function (d) { return d.target.y; });
+                node.attr("transform", function (d) { return "translate(" + d.x + "," + d.y + ")"; });
             });
         }
     }
@@ -3874,21 +3860,12 @@ var Core;
     Core.createGraphStates = createGraphStates;
     // TODO Export as a service
     function dagreLayoutGraph(nodes, links, width, height, svgElement, allowDrag, onClick) {
+        var _this = this;
         if (allowDrag === void 0) { allowDrag = false; }
         if (onClick === void 0) { onClick = null; }
         var nodePadding = 10;
         var transitions = [];
         var states = Core.createGraphStates(nodes, links, transitions);
-        function spline(e) {
-            return d3.svg.line()
-                .x(function (d) {
-                return d.x;
-            })
-                .y(function (d) {
-                return d.y;
-            })
-                .interpolate("linear")(e.points);
-        }
         // Translates all points in the edge using `dx` and `dy`.
         function translateEdge(e, dx, dy) {
             e.points.forEach(function (p) {
@@ -3911,16 +3888,10 @@ var Core;
             .enter()
             .append("g")
             .attr("class", "node")
-            .attr("data-cid", function (d) {
-            return d.cid;
-        })
-            .attr("id", function (d) {
-            return "node-" + d.label;
-        });
+            .attr("data-cid", function (d) { return d.cid; })
+            .attr("id", function (d) { return "node-" + d.label; });
         // lets add a tooltip
-        nodes.append("title").text(function (d) {
-            return d.tooltip || "";
-        });
+        nodes.append("title").text(function (d) { return d.tooltip || ""; });
         var edges = svgGroup
             .selectAll("path .edge")
             .data(transitions)
@@ -3933,13 +3904,9 @@ var Core;
         var rects = nodes.append("rect")
             .attr("rx", "4")
             .attr("ry", "4")
-            .attr("class", function (d) {
-            return d.type;
-        });
+            .attr("class", function (d) { return d.type; });
         var images = nodes.append("image")
-            .attr("xlink:href", function (d) {
-            return d.imageUrl;
-        })
+            .attr("xlink:href", function (d) { return d.imageUrl; })
             .attr("x", -12)
             .attr("y", -20)
             .attr("height", 24)
@@ -3967,9 +3934,7 @@ var Core;
             .append("tspan")
             .attr("x", 0)
             .attr("dy", 28)
-            .text(function (d) {
-            return d.label;
-        });
+            .text(function (d) { return d.label; });
         var labelPadding = 12;
         var minLabelwidth = 80;
         labels.each(function (d) {
@@ -3982,54 +3947,32 @@ var Core;
             d.height = bbox.height + 2 * nodePadding + labelPadding;
         });
         rects
-            .attr("x", function (d) {
-            return -(d.bbox.width / 2 + nodePadding);
-        })
-            .attr("y", function (d) {
-            return -(d.bbox.height / 2 + nodePadding + (labelPadding / 2));
-        })
-            .attr("width", function (d) {
-            return d.width;
-        })
-            .attr("height", function (d) {
-            return d.height;
-        });
+            .attr("x", function (d) { return -(d.bbox.width / 2 + nodePadding); })
+            .attr("y", function (d) { return -(d.bbox.height / 2 + nodePadding + (labelPadding / 2)); })
+            .attr("width", function (d) { return d.width; })
+            .attr("height", function (d) { return d.height; });
         if (onClick != null) {
             rects.on("click", onClick);
         }
-        images
-            .attr("x", function (d) {
-            return -(d.bbox.width) / 2;
-        });
+        images.attr("x", function (d) { return -(d.bbox.width) / 2; });
         labels
-            .attr("x", function (d) {
-            return -d.bbox.width / 2;
-        })
-            .attr("y", function (d) {
-            return -d.bbox.height / 2;
-        });
-        counters.attr("x", function (d) {
-            var w = d.bbox.width;
-            return w / 2;
-        });
+            .attr("x", function (d) { return -d.bbox.width / 2; })
+            .attr("y", function (d) { return -d.bbox.height / 2; });
+        counters.attr("x", function (d) { return d.bbox.width / 2; });
         var g = new dagre.graphlib.Graph()
             .setGraph({})
-            .setDefaultEdgeLabel(function () {
-            return {};
-        });
+            .setDefaultEdgeLabel(Function.prototype);
         states.forEach(function (node) { return g.setNode(node.id, node); });
         transitions.forEach(function (edge) { return g.setEdge(edge.source.id, edge.target.id, edge); });
         dagre.layout(g);
-        nodes.attr("transform", function (d) {
-            return 'translate(' + d.x + ',' + d.y + ')';
-        });
+        nodes.attr("transform", function (d) { return 'translate(' + d.x + ',' + d.y + ')'; });
+        var line = d3.svg.line()
+            .x(function (d) { return d.x; })
+            .y(function (d) { return d.y; })
+            .interpolate("linear");
         edges
-            .attr('id', function (e) {
-            return e.id;
-        })
-            .attr("d", function (e) {
-            return spline(e);
-        });
+            .attr('id', function (e) { return e.id; })
+            .attr("d", function (e) { return line(e.points); });
         // Resize the SVG element
         var svgNode = svg.node();
         if (svgNode) {
@@ -4043,9 +3986,7 @@ var Core;
         if (allowDrag) {
             // Drag handlers
             var nodeDrag = d3.behavior.drag()
-                .origin(function (d) {
-                return d.pos ? { x: d.pos.x, y: d.pos.y } : { x: d.x, y: d.y };
-            })
+                .origin(function (d) { return d.pos ? { x: d.pos.x, y: d.pos.y } : { x: d.x, y: d.y }; })
                 .on('drag', function (d, i) {
                 var prevX = d.x, prevY = d.y;
                 // The node must be inside the SVG area
@@ -4056,13 +3997,13 @@ var Core;
                 // Edges position (inside SVG area)
                 d.edges.forEach(function (e) {
                     translateEdge(e, dx, dy);
-                    d3.select('#' + e.id).attr('d', spline(e));
+                    d3.select('#' + e.id).attr('d', line(e));
                 });
             });
             var edgeDrag = d3.behavior.drag()
                 .on('drag', function (d, i) {
                 translateEdge(d, d3.event.dx, d3.event.dy);
-                d3.select(this).attr('d', spline(d));
+                d3.select(_this).attr('d', line(d));
             });
             nodes.call(nodeDrag);
             edges.call(edgeDrag);
@@ -4076,9 +4017,7 @@ var Core;
         svg.selectAll("text.counter").text(_counterFunction);
         svg.selectAll("text.inflight").text(_inflightFunction);
         // add tooltip
-        svg.selectAll("g .node title").text(function (d) {
-            return d.tooltip || "";
-        });
+        svg.selectAll("g .node title").text(function (d) { return d.tooltip || ""; });
         /*
          TODO can we reuse twitter bootstrap on an svg title?
          .each(function (d) {
