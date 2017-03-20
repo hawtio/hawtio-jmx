@@ -6,7 +6,6 @@
   "main": [
     "dist/hawtio-jmx.css",
     "dist/dangle.js",
-    "dist/dagre.js",
     "dist/jolokia.js",
     "dist/cubism.v1.js",
     "dist/jolokia-simple.js",
