@@ -159,11 +159,6 @@ module Core {
     var transitions = [];
     var states = Core.createGraphStates(nodes, links, transitions);
     function spline(e) {
-      var points = e.dagre.points.slice(0);
-      var source = dagre.util.intersectRect(e.source.dagre, points.length > 0 ? points[0] : e.source.dagre);
-      var target = dagre.util.intersectRect(e.target.dagre, points.length > 0 ? points[points.length - 1] : e.source.dagre);
-      points.unshift(source);
-      points.push(target);
       return d3.svg.line()
               .x(function (d) {
                 return d.x;
@@ -172,12 +167,12 @@ module Core {
                 return d.y;
               })
               .interpolate("linear")
-              (points);
+              (e.points);
     }
 
     // Translates all points in the edge using `dx` and `dy`.
     function translateEdge(e, dx, dy) {
-      e.dagre.points.forEach(function (p) {
+      e.points.forEach(function (p) {
         p.x = Math.max(0, Math.min(svgBBox.width, p.x + dx));
         p.y = Math.max(0, Math.min(svgBBox.height, p.y + dy));
       });
@@ -322,24 +317,23 @@ module Core {
       return w / 2;
     });
 
-    // Create the layout and get the graph
-    dagre.layout()
-            .nodeSep(50)
-            .edgeSep(10)
-            .rankSep(50)
-            .nodes(states)
-            .edges(transitions)
-            .debugLevel(1)
-            .run();
+    var g = new dagre.graphlib.Graph()
+      .setGraph({})
+      .setDefaultEdgeLabel(function() { return {}; });
+
+    states.forEach(node => g.setNode(node.id, node));
+    transitions.forEach(edge => g.setEdge(edge.source.id, edge.target.id, edge));
+
+    dagre.layout(g);
 
     nodes.attr("transform", function (d) {
-      return 'translate(' + d.dagre.x + ',' + d.dagre.y + ')';
+      return 'translate(' + d.x + ',' + d.y + ')';
     });
 
     edges
       // Set the id. of the SVG element to have access to it later
             .attr('id', function (e) {
-              return e.dagre.id;
+              return e.id;
             })
             .attr("d", function (e) {
               return spline(e);
@@ -361,24 +355,24 @@ module Core {
       var nodeDrag = d3.behavior.drag()
         // Set the right origin (based on the Dagre layout or the current position)
         .origin(function (d) {
-          return d.pos ? {x: d.pos.x, y: d.pos.y} : {x: d.dagre.x, y: d.dagre.y};
+          return d.pos ? {x: d.pos.x, y: d.pos.y} : {x: d.x, y: d.y};
         })
         .on('drag', function (d, i) {
-          var prevX = d.dagre.x,
-            prevY = d.dagre.y;
+          var prevX = d.x,
+            prevY = d.y;
 
           // The node must be inside the SVG area
-          d.dagre.x = Math.max(d.width / 2, Math.min(svgBBox.width - d.width / 2, d3.event.x));
-          d.dagre.y = Math.max(d.height / 2, Math.min(svgBBox.height - d.height / 2, d3.event.y));
-          d3.select(this).attr('transform', 'translate(' + d.dagre.x + ',' + d.dagre.y + ')');
+          d.x = Math.max(d.width / 2, Math.min(svgBBox.width - d.width / 2, d3.event.x));
+          d.y = Math.max(d.height / 2, Math.min(svgBBox.height - d.height / 2, d3.event.y));
+          d3.select(this).attr('transform', 'translate(' + d.x + ',' + d.y + ')');
 
-          var dx = d.dagre.x - prevX,
-            dy = d.dagre.y - prevY;
+          var dx = d.x - prevX,
+            dy = d.y - prevY;
 
           // Edges position (inside SVG area)
           d.edges.forEach(function (e) {
             translateEdge(e, dx, dy);
-            d3.select('#' + e.dagre.id).attr('d', spline(e));
+            d3.select('#' + e.id).attr('d', spline(e));
           });
         });
 
