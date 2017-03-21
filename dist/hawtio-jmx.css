@@ -173,6 +173,8 @@ div.tree-nav-layout .sidebar-pf .rg-right {
 .tree-nav-main .contents {
   flex: 1 1 auto;
   overflow-y: auto;
+  margin-right: -20px;
+  padding-right: 20px;
 }
 
 .jmx-operation-wrapper .jolokia-form {

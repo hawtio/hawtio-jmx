@@ -15,6 +15,8 @@
 /// <reference path="d.ts/jmx/ts/donutChart.d.ts"/>
 /// <reference path="d.ts/jmx/ts/mbeans.d.ts"/>
 /// <reference path="d.ts/jmx/ts/operations.d.ts"/>
+/// <reference path="d.ts/threads/ts/threadsPlugin.d.ts"/>
+/// <reference path="d.ts/threads/ts/threads.d.ts"/>
 /// <reference path="d.ts/jvm/ts/connect.d.ts"/>
 /// <reference path="d.ts/jvm/ts/discover.d.ts"/>
 /// <reference path="d.ts/jvm/ts/header.d.ts"/>
@@ -22,5 +24,3 @@
 /// <reference path="d.ts/jvm/ts/local.d.ts"/>
 /// <reference path="d.ts/jvm/ts/navbar.d.ts"/>
 /// <reference path="d.ts/jvm/ts/reset.d.ts"/>
-/// <reference path="d.ts/threads/ts/threadsPlugin.d.ts"/>
-/// <reference path="d.ts/threads/ts/threads.d.ts"/>
