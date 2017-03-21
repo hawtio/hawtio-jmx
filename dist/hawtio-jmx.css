@@ -33,14 +33,27 @@ body {
 .modal-header .pagination {
   margin: 0;
 }
-
-#attributesGrid {
+.table-view {
   margin-bottom: 20px;
 }
-#attributesGrid th:nth-child(1) {
+
+#jvm-remote .list-group-item-container .form-horizontal {
+  margin: 10px 0;
+}
+#jvm-remote .list-group-item-container .form-horizontal > .form-group:last-child {
+  margin-bottom: 0;
+}
+#jvm-remote .dropdown-kebab-pf .btn-link {
+  padding-left: 10px;
+  padding-right: 10px;
+  margin-left: 0px;
+  margin-right: -10px;
+}
+
+.jmx-attributes-table th:nth-child(1) {
   width: 40%;
 }
-#attributesGrid th:nth-child(2) {
+.jmx-attributes-table th:nth-child(2) {
   width: 60%;
 }
 
@@ -182,19 +195,6 @@ div.tree-nav-layout .sidebar-pf .rg-right {
 }
 .jmx-operation-wrapper .jolokia-url {
   word-break: break-all;
-}
-
-#jvm-remote .list-group-item-container .form-horizontal {
-  margin: 10px 0;
-}
-#jvm-remote .list-group-item-container .form-horizontal > .form-group:last-child {
-  margin-bottom: 0;
-}
-#jvm-remote .dropdown-kebab-pf .btn-link {
-  padding-left: 10px;
-  padding-right: 10px;
-  margin-left: 0px;
-  margin-right: -10px;
 }
 
 @media screen and (max-width: 767px) {
