@@ -2,6 +2,8 @@
 @pf-less-path: "/patternfly/dist/less";
 @import (reference) "@{pf-less-path}/patternfly.less";
 
+@pf-padding: @grid-gutter-width / 2;
+
 html {
   height: 100%;
 }
@@ -13,10 +15,17 @@ body {
 #main {
   height: 100%;
   overflow: auto;
+  padding-left: 0;
+  padding-right: 0;
+
+  & > div[ng-view] {
+    padding-left: @pf-padding;
+    padding-right: @pf-padding;
+  }
 }
 
 .main-content {
-  margin-top: 20px;
+  margin-top: @pf-padding;
 }
 
 .modal-header .pagination-container {
@@ -28,5 +37,5 @@ body {
 }
 
 .table-view {
-  margin-bottom: 20px;
+  margin-bottom: @pf-padding;
 }
