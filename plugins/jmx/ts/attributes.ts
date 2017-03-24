@@ -7,7 +7,7 @@ module Jmx {
   export var propertiesColumnDefs = [
     {
       field: 'name',
-      displayName: 'Property',
+      displayName: 'Attribute',
       cellTemplate: '<div class="ngCellText" title="{{row.entity.attrDesc}}" ' +
         'data-placement="bottom"><div ng-show="!inDashboard" class="inline" compile="row.entity.getDashboardWidgets()"></div><a href="" ng-click="row.entity.onViewAttribute()">{{row.entity.name}}</a></div>'},
     {
@@ -237,9 +237,20 @@ module Jmx {
           type: 'string',
           formTemplate: "<textarea class='form-control' rows='" + rows + "' readonly='true'></textarea>"
         };
+        $scope.attributeSchemaView.properties.copyAttrValueViewToClipboard = {
+          label: '&nbsp;',
+          type: 'string',
+          formTemplate: `
+            <button class="btn btn-sm btn-default btn-clipboard pull-right" data-clipboard-text="{{entity.attrValueView}}"
+                    title="Copy value to clipboard" aria-label="Copy value to clipboard">
+              <i class="fa fa-clipboard" aria-hidden="true"></i>
+            </button>          
+          `
+        };
         // just to be safe, then delete not needed part of the schema
         if ($scope.attributeSchemaView) {
           delete $scope.attributeSchemaView.properties.attrValueEdit;
+          delete $scope.attributeSchemaView.properties.copyAttrValueEditToClipboard;
         }
       } else {
         // if the value is empty its a &nbsp; as we need this for the table to allow us to click on the empty row
@@ -263,9 +274,20 @@ module Jmx {
           type: 'string',
           formTemplate: "<textarea class='form-control' rows='" + rows + "'></textarea>"
         };
+        $scope.attributeSchemaEdit.properties.copyAttrValueEditToClipboard = {
+          label: '&nbsp;',
+          type: 'string',
+          formTemplate: `
+            <button class="btn btn-sm btn-default btn-clipboard pull-right" data-clipboard-text="{{entity.attrValueEdit}}"
+                    title="Copy value to clipboard" aria-label="Copy value to clipboard">
+              <i class="fa fa-clipboard" aria-hidden="true"></i>
+            </button>          
+          `
+        };
         // just to be safe, then delete not needed part of the schema
         if ($scope.attributeSchemaEdit) {
           delete $scope.attributeSchemaEdit.properties.attrValueView;
+          delete $scope.attributeSchemaEdit.properties.copyAttrValueViewToClipboard;
         }
       }
 
