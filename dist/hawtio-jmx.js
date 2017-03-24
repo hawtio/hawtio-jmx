@@ -679,40 +679,6 @@ var Core;
 (function (Core) {
     var log = Logger.get("workspace");
     Core.tree = null;
-    hawtioPluginLoader.registerPreBootstrapTask({
-        name: 'JmxLoadTree',
-        depends: ['JvmParseLocation'],
-        task: function (next) {
-            var jolokiaUrl = JVM.getJolokiaUrl();
-            if (!jolokiaUrl) {
-                log.debug("No jolokia URL set up, not fetching JMX tree");
-                next();
-                return;
-            }
-            var uri = new URI(jolokiaUrl);
-            uri.segment('list');
-            uri.search({
-                canonicalNaming: false,
-                ignoreErrors: true
-            });
-            $.ajax(uri.toString(), {
-                async: true,
-                beforeSend: JVM.getBeforeSend(),
-                dataType: 'json',
-                cache: false,
-                success: function (data) {
-                    Core.tree = data;
-                    log.debug("Fetched JMX tree: ", Core.tree);
-                },
-                error: function (jqXHR, textStatus, errorThrown) {
-                    log.info("Failed to load JMX tree, status: ", textStatus, " error: ", errorThrown, " jqXHR: ", jqXHR);
-                },
-                complete: function () {
-                    next();
-                }
-            });
-        }
-    });
     /**
      * @class Workspace
      */

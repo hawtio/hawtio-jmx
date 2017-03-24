@@ -10,43 +10,6 @@ module Core {
   var log:Logging.Logger = Logger.get("workspace");
   export var tree:any = null;
 
-  hawtioPluginLoader.registerPreBootstrapTask({
-    name: 'JmxLoadTree',
-    depends: ['JvmParseLocation'],
-    task: (next) => {
-      var jolokiaUrl = JVM.getJolokiaUrl();
-      if (!jolokiaUrl) {
-        log.debug("No jolokia URL set up, not fetching JMX tree");
-        next();
-        return;
-      }
-
-      var uri = new URI(jolokiaUrl);
-      uri.segment('list');
-      uri.search({
-        canonicalNaming: false,
-        ignoreErrors: true
-      });
-
-      $.ajax(uri.toString(), {
-        async: true,
-        beforeSend: JVM.getBeforeSend(),
-        dataType: 'json',
-        cache: false,
-        success: (data) => {
-          Core.tree = data;
-          log.debug("Fetched JMX tree: ", tree);
-        },
-        error: (jqXHR, textStatus, errorThrown) => {
-          log.info("Failed to load JMX tree, status: ", textStatus, " error: ", errorThrown, " jqXHR: ", jqXHR);
-        },
-        complete: () => {
-          next();
-        }
-      });
-    }
-  });
-
   /**
    * @class NavMenuItem
    */
