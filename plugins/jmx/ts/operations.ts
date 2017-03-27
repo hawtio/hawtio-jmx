@@ -24,7 +24,6 @@ module Jmx {
     localStorage,
     $browser) => {
     $scope.item = $scope.selectedOperation;
-    $scope.title = $scope.item.humanReadable;
     $scope.desc = $scope.item.desc;
     $scope.operationResult = '';
     $scope.mode = "text";
@@ -48,7 +47,7 @@ module Jmx {
       $("html, body").animate({ scrollTop: 0 }, "medium");
     }, 250);
 
-    var sanitize = (args) => {
+    var sanitizeArgs = (args) => {
       if (args) {
         args.forEach(function (arg) {
           switch (arg.type) {
@@ -65,8 +64,7 @@ module Jmx {
       return args;
     };
 
-    $scope.args = sanitize($scope.item.args);
-
+    $scope.args = sanitizeArgs($scope.item.args);
 
     $scope.dump = (data) => {
       console.log(data);
@@ -166,7 +164,7 @@ module Jmx {
     $templateCache) => {
 
     $scope.fetched = false;
-    $scope.operations = {};
+    $scope.operations = [];
     $scope.objectName = '';
     $scope.methodFilter = '';
     $scope.workspace = workspace;
@@ -233,16 +231,6 @@ module Jmx {
       }
     }
 
-    function sanitize(operations) {
-      for (var operationName in operations) {
-        operationName = "" + operationName;
-        operations[operationName].name = operationName;
-        operations[operationName].humanReadable = Core.humanizeValue(operationName);
-        operations[operationName].displayName = toDisplayName(operationName);
-      }
-      return operations;
-    }
-
     function toDisplayName(operationName: string) {
       let startParamsIndex = operationName.indexOf('(') + 1;
       let endParamsIndex = operationName.indexOf(')');
@@ -261,15 +249,10 @@ module Jmx {
       }
     }
 
-    $scope.isOperationsEmpty = () => {
-      return $.isEmptyObject($scope.operations);
-    };
-
     $scope.doFilter = (item) => {
       let filterTextLowerCase = $scope.methodFilter.toLowerCase();
       return Core.isBlank($scope.methodFilter) ||
-        item.name.toLowerCase().indexOf(filterTextLowerCase) !== -1 ||
-        item.humanReadable.toLowerCase().indexOf(filterTextLowerCase) !== -1;
+        item.name.toLowerCase().indexOf(filterTextLowerCase) !== -1;
     };
 
     $scope.canInvoke = (operation) => {
@@ -287,12 +270,12 @@ module Jmx {
       fetch();
     });
 
-    function fetchPermissions(objectName, operations) {
+    function fetchPermissions(objectName, operations: any[]) {
       var map = {};
       map[objectName] = [];
 
-      angular.forEach(operations, (value, key) => {
-        map[objectName].push(value.name);
+      angular.forEach(operations, (operation) => {
+        map[objectName].push(operation.name);
       });
 
       rbacACLMBean.then((rbacACLMBean) => {
@@ -303,6 +286,7 @@ module Jmx {
           arguments: [map]
         }, Core.onSuccess((response) => {
           var map = response.value;
+          console.log(map);
           angular.forEach(map[objectName], (value, key) => {
             operations[key]['canInvoke'] = value['CanInvoke'];
           });
@@ -319,27 +303,34 @@ module Jmx {
 
     }
 
+    function createOperation(key, value) {
+      let name = key + getArgs(value.args);
+      return angular.extend({
+        name: name,
+        displayName: toDisplayName(name)
+      }, value);
+    }
+
     function render(response) {
       $scope.fetched = true;
-      var ops = response.value.op;
-      var operations = {};
+      var operations = [];
 
-      angular.forEach(ops, function (value, key) {
+      angular.forEach(response.value.op, function(value, key) {
         if (angular.isArray(value)) {
-          angular.forEach(value, function (value, index) {
-            operations[key + getArgs(value.args)] = value;
+          angular.forEach(value, function(item) {
+            operations.push(createOperation(key, item));
           });
         } else {
-          operations[key + getArgs(value.args)] = value;
+          operations.push(createOperation(key, value));
         }
       });
-      $scope.operations = sanitize(operations);
-      if ($scope.isOperationsEmpty()) {
-        Core.$apply($scope);
-      } else {
-        fetchPermissions($scope.objectName, $scope.operations);
-        Core.$apply($scope);
+      
+      if (operations.length > 0) {
+        fetchPermissions($scope.objectName, operations);
       }
+
+      $scope.operations = _.sortBy(operations, operation => operation.displayName);
+      Core.$apply($scope);
     }
 
   }]);

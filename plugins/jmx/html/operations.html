@@ -45,19 +45,19 @@
   
   <div ng-show="fetched">
     
-    <p ng-hide="isOperationsEmpty() || showInvoke">
+    <p ng-hide="operations.length === 0 || showInvoke">
       This MBean supports the following JMX operations.  Click an item in the list to invoke that operation.
     </p>
-    <p ng-show="isOperationsEmpty()">This MBean has no JMX operations.</p>
+    <p ng-show="operations.length === 0">This MBean has no JMX operations.</p>
     
-    <div class="row toolbar-pf" ng-hide="isOperationsEmpty() || showInvoke">
-      <div class="col-md-12">
+    <div class="row toolbar-pf table-view-pf-toolbar" ng-hide="operations.length === 0 || showInvoke">
+      <div class="col-sm-12">
         <form class="toolbar-pf-actions search-pf">
-          <div class="form-group has-clear">
+          <div class="form-group toolbar-pf-filter has-clear">
             <div class="search-pf-input-group">
-              <label for="search1" class="sr-only">Filter</label>
-              <input id="search1" type="search" class="form-control" ng-model="methodFilter"
-                    placeholder="Search">
+              <label for="jmx-operations-search" class="sr-only">Filter</label>
+              <input id="jmx-operations-search" type="search" class="form-control" ng-model="methodFilter"
+                     placeholder="Filter by keyword...">
               <button type="button" class="clear" aria-hidden="true" ng-click="methodFilter = ''">
                 <span class="pficon pficon-close"></span>
               </button>
@@ -65,22 +65,29 @@
           </div>
         </form>
       </div>
-    </div>    
+    </div>
     
     <div ng-show="showInvoke">
       <div compile="template"></div>
     </div>
 
-    <ul class="list-group" ng-hide="showInvoke || isOperationsEmpty()">
-      <li class="list-group-item" ng-repeat="operation in operations track by operation.name"
-          ng-show="doFilter(operation)">
-        <a href="" ng-click="invokeOp(operation)" ng-show="canInvoke(operation)">{{operation.displayName}}</a>
-        <span ng-show="!canInvoke(operation)">{{operation.displayName}}</span>
-        <button class="btn btn-sm btn-default btn-clipboard pull-right" data-clipboard-text="{{operation.name}}"
-                title="Copy to clipboard" aria-label="Copy to clipboard">
-          <i class="fa fa-clipboard" aria-hidden="true"></i>
-        </button>
-      </li>
-    </ul>
+    <table class="table table-striped table-bordered jmx-operations-table" ng-hide="operations.length === 0 || showInvoke">
+      <tbody>
+        <tr ng-repeat="operation in operations track by operation.displayName" ng-show="doFilter(operation)">
+          <td>
+            <a href="" ng-click="invokeOp(operation)" ng-show="canInvoke(operation)">{{operation.displayName}}</a>
+            <span ng-show="!canInvoke(operation)">{{operation.displayName}}</span>
+          </td>
+          <td>
+            <button class="btn btn-sm btn-default btn-clipboard" data-clipboard-text="{{operation.displayName}}"
+                    title="Copy method name to clipboard" aria-label="Copy method name to clipboard">
+              <i class="fa fa-clipboard" aria-hidden="true"></i>
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
   </div>
+  
 </div>
