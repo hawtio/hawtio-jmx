@@ -25,10 +25,11 @@ module Threads {
     $scope.lastThreadJson = '';
     $scope.getThreadInfoResponseJson = '';
     $scope.threads = [];
+    $scope.unfilteredThreads = [];
     $scope.support = {};
     $scope.row = {};
     $scope.selectedRowIndex = -1;
-    $scope.stateFilter = null;
+    $scope.filters = {state: '', name: ''};
     
     $scope.availableStates = [
       {id: 'BLOCKED', name: 'Blocked'},
@@ -61,23 +62,6 @@ module Threads {
       }
       return "threads logbar";
     };
-
-    $scope.$watch('searchFilter', (newValue, oldValue) => {
-      if (newValue !== oldValue) {
-        $scope.threadGridOptions.filterOptions.filterText = newValue;
-      }
-    });
-
-    $scope.$watch('stateFilter', (newValue, oldValue) => {
-      if (newValue !== oldValue) {
-        if ($scope.stateFilter) {
-          $scope.threads = filterThreads($scope.stateFilter, $scope.unfilteredThreads);
-        } else {
-          $scope.threads = $scope.unfilteredThreads;
-        }
-        $scope.apply();
-      }
-    });
 
     $scope.threadGridOptions = {
       selectedItems: [],
@@ -131,6 +115,37 @@ module Threads {
       ]
     };
 
+    $scope.$watchCollection('filters', (newValue, oldValue) => {
+      let threads = $scope.unfilteredThreads;
+      if ($scope.filters.name) {
+        threads = filterByName($scope.filters.name, threads);
+      }
+      if ($scope.filters.state) {
+        threads = filterThreads($scope.filters.state, threads);
+      }
+      $scope.threads = threads;
+    });
+
+    function filterByName(name, threads) {
+      log.debug("Filtering threads by name: ", name);
+      if (name) {
+        return threads.filter(t => t['threadName'].toLowerCase().indexOf(name.toLowerCase()) !== -1);
+      } else {
+        return threads;
+      }
+    };
+
+    function filterThreads(state, threads) {
+      log.debug("Filtering threads by: ", state);
+      if (state) {
+        return threads.filter((t) => {
+          return t && t['threadState'] === state.id;
+        });
+      } else {
+        return threads;
+      }
+    };
+
     $scope.$watch('threadGridOptions.selectedItems', (newValue, oldValue) => {
       if (newValue !== oldValue) {
         if (newValue.length === 0) {
@@ -144,26 +159,6 @@ module Threads {
         $scope.selectedRowJson = angular.toJson($scope.row, true);
       }
     }, true);
-
-    $scope.clearStateFilter = () => $scope.stateFilter = null;
-
-    $scope.clearSearchFilter = () => $scope.searchFilter = null;
-
-    $scope.clearAllFilters = () => {
-      $scope.clearStateFilter();
-      $scope.clearSearchFilter();
-    }
-
-    function filterThreads(state, threads) {
-      log.debug("Filtering threads by: ", state);
-      if (state) {
-        return threads.filter((t) => {
-          return t && t['threadState'] === state.id;
-        });
-      } else {
-        return threads;
-      }
-    };
 
     $scope.deselect = () => {
       $scope.threadGridOptions.selectedItems = [];

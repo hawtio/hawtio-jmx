@@ -23,16 +23,16 @@
       <form class="toolbar-pf-actions search-pf">
         <div class="form-group">
           <label class="sr-only" for="state-filter">State</label>
-          <select pf-select id="state-filter" title="Filter by State..." ng-model="stateFilter"
+          <select pf-select id="state-filter" title="Filter by State..." ng-model="filters.state"
                   ng-options="state.name for state in availableStates track by state.id">
           </select>
         </div>
         <div class="form-group has-clear">
           <div class="search-pf-input-group">
-            <label for="filterByKeyword" class="sr-only">Filter by keyword</label>
-            <input id="filterByKeyword" type="search" ng-model="searchFilter" class="form-control"
-                   placeholder="Filter by keyword..." autocomplete="off">
-            <button type="button" class="clear" aria-hidden="true" ng-click="clearSearchFilter()">
+            <label for="filterByKeyword" class="sr-only">Filter by name</label>
+            <input id="filterByKeyword" type="search" ng-model="filters.name" class="form-control"
+                   placeholder="Filter by name..." autocomplete="off">
+            <button type="button" class="clear" aria-hidden="true" ng-click="filters.name = ''">
               <span class="pficon pficon-close"></span>
             </button>
           </div>
@@ -41,17 +41,23 @@
       <div class="row toolbar-pf-results">
         <div class="col-sm-12">
           <h5>{{threads.length}} Results</h5>
-          <span ng-if="stateFilter">
+          <span ng-if="filters.state || filters.name">
             <p>Active filters:</p>
             <ul class="list-inline">
-              <li>
+              <li ng-show="filters.state">
                 <span class="label label-info">
-                  State: {{stateFilter.name}}
-                  <a href="#" ng-click="clearStateFilter()"><span class="pficon pficon-close"></span></a>
+                  State: {{filters.state.name}}
+                  <a href="#" ng-click="filters.state = ''"><span class="pficon pficon-close"></span></a>
+                </span>
+              </li>
+              <li ng-show="filters.name">
+                <span class="label label-info">
+                  Name: {{filters.name}}
+                  <a href="#" ng-click="filters.name = ''"><span class="pficon pficon-close"></span></a>
                 </span>
               </li>
             </ul>
-            <p><a href="#" ng-click="clearAllFilters()">Clear All Filters</a></p>
+            <p><a href="#" ng-click="filters.name = filters.state = ''">Clear All Filters</a></p>
           </span>
         </div>
       </div>
