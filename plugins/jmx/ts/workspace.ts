@@ -536,6 +536,14 @@ module Core {
       return this.isLinkActive(path);
     }
 
+    public isMainTabActive(path:string):boolean {
+      var tab = this.$location.search()['main-tab'];
+      if (angular.isString(tab)) {
+        return tab === path;
+      }
+      return false;
+    }
+
     /**
      * Returns the selected mbean name if there is one
      * @method getSelectedMBeanName

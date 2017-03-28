@@ -113,6 +113,7 @@ declare module Core {
          * @return {Boolean}
          */
         isTopTabActive(path: string): boolean;
+        isMainTabActive(path: string): boolean;
         /**
          * Returns the selected mbean name if there is one
          * @method getSelectedMBeanName
