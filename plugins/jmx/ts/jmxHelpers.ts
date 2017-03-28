@@ -84,68 +84,6 @@ module Jmx {
     return uri.toString();
   }
 
-  export function getNavItems(builder, workspace, $templateCache, prefix:string = 'jmx'):Array<HawtioMainNav.NavItem> {
-    var attributes = builder.id(prefix + '-attributes')
-                       .title( () => '<i class="fa fa-list"></i> Attributes' )
-                       .tooltip( () => 'List the attributes on the MBean')
-                       .href( () => '/jmx/attributes' + workspace.hash() )
-                       .build();
-    var operations = builder.id(prefix + '-operations')
-                      .title( () => '<i class="fa fa-leaf"></i> Operations' )
-                      .tooltip( () => 'List the operations on the MBean')
-                      .href( () => '/jmx/operations' + workspace.hash() )
-                      .build();
-    var chart = builder.id(prefix + '-chart')
-                      .title( () => '<i class="fa fa-bar-chart"></i> Charts' )
-                      .tooltip( () => 'Real time chart of the attributes from the MBean')
-                      .href( () => '/jmx/charts' + workspace.hash() )
-                      .build();
-    var editChart = builder.id(prefix + '-edit-chart')
-                      .title( () => '<i class="fa fa-cog"></i> Edit Chart' )
-                      .tooltip( () => 'Edit the chart to choose which attributes to show from the MBean')
-                      .show(() => workspace.isLinkActive('jmx/chart'))
-                      .href( () => '/jmx/chartEdit' + workspace.hash() )
-                      .build();
-
-    var addToDashboard = builder.id(prefix + '-add-dashboard')
-                      .title( () => '<i class="fa fa-share"></i>' )
-                      .tooltip( () => 'Add current view to dashboard')
-                      .attributes({
-                        'class': 'pull-right'
-                      })
-                      .show( () => {
-                        if (!HawtioCore.injector) {
-                          return false;
-                        }
-                        const dash = HawtioCore.injector.get<any>('HawtioDashboard');
-                        return dash && dash.hasDashboard;
-                      })
-                      .click( () => {
-                        if (!HawtioCore.injector) {
-                          return;
-                        }
-                        var dash = HawtioCore.injector.get<any>('HawtioDashboard');
-                        if (dash) {
-                          var width = 2;
-                          var height = 2;
-                          var title = workspace.getSelectedMBeanName();
-                          var $location = workspace.$location;
-                          if ($location.path().startsWith('/jmx/charts')) {
-                            width = 4;
-                            height = 3;
-                          }
-                          var url = dash.getAddLink(title, width, height);
-                          workspace.$location.url(url.toString());
-                          Core.$apply(workspace.$rootScope);
-                        }
-                        return false;
-                      })
-                      .href( () => '' )
-                      .build();
-
-    return [attributes, operations, chart, editChart, addToDashboard];
-  }
-
   var attributesToolBars = {};
 
   export function findLazyLoadingFunction(workspace, folder) {
