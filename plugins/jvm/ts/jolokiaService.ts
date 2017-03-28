@@ -311,13 +311,13 @@ module JVM {
         if (!modal) {
           modal = $uibModal.open({
             templateUrl: UrlHelpers.join(templatePath, 'jolokiaError.html'),
-            controller: ['$scope', '$modalInstance', 'ConnectOptions', 'jolokia', ($scope, instance, ConnectOptions, jolokia) => {
+            controller: ['$scope', '$uibModalInstance', 'ConnectOptions', 'jolokia', ($scope, $uibModalInstance, ConnectOptions, jolokia) => {
               jolokia.stop();
               $scope.responseText = xhr.responseText;
               $scope.ConnectOptions = ConnectOptions;
               $scope.retry = () => {
                 modal = null;
-                instance.close();
+                $uibModalInstance.close();
                 jolokia.start();
               }
               $scope.goBack = () => {

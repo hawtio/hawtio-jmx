@@ -202,6 +202,8 @@ div.tree-nav-layout .sidebar-pf .rg-right {
   flex: 1 1 auto;
   overflow-y: auto;
   position: relative;
+  margin-right: -20px;
+  padding-right: 20px;
 }
 
 .jmx-operation-wrapper .jolokia-form {

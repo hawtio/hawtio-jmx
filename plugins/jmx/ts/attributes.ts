@@ -655,7 +655,7 @@ module Jmx {
               }
             }
           });
-          if (!_.any(properties, (p) => {
+          if (!_.some(properties, (p) => {
             return p['key'] === 'ObjectName';
           })) {
             var objectName = {

@@ -23,10 +23,8 @@
   ],
   "dependencies": {
     "jquery": "~2.1.0",
-    "jquery-ui": "~1.12.0",
-    "angular-patternfly": "^3.0.0",
-    "hawtio-forms": "~3.0.0",
     "hawtio-ui": "~3.0.0",
+    "hawtio-forms": "~3.0.0",
     "angular-resizable": "~1.2.0"
   },
   "devDependencies": {
@@ -43,6 +41,7 @@
   },
   "resolutions": {
     "jquery": "~2.1.0",
-    "angular": "1.5.11"
+    "angular": "1.5.11",
+    "lodash": "^4.0.0"
   }
 }
