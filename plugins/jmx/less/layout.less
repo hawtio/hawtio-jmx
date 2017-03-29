@@ -58,19 +58,19 @@
   display: flex;
   flex-direction: column;
   height: 100%;
-  margin-left: @pf-padding;
-  margin-right: @pf-padding;
 
   .nav-tabs {
     flex: 0 0 auto;
     padding-top: @pf-padding;
+    margin-left: @pf-padding;
+    margin-right: @pf-padding;
   }
 
   .contents {
     flex: 1 1 auto;
     overflow-y: auto;
     position: relative;
-    margin-right: -20px;
-    padding-right: 20px;    
+    padding-left: @pf-padding;
+    padding-right: @pf-padding;
   }
 }

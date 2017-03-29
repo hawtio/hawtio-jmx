@@ -191,18 +191,18 @@ div.tree-nav-layout .sidebar-pf .rg-right {
   display: flex;
   flex-direction: column;
   height: 100%;
-  margin-left: 20px;
-  margin-right: 20px;
 }
 .tree-nav-main .nav-tabs {
   flex: 0 0 auto;
   padding-top: 20px;
+  margin-left: 20px;
+  margin-right: 20px;
 }
 .tree-nav-main .contents {
   flex: 1 1 auto;
   overflow-y: auto;
   position: relative;
-  margin-right: -20px;
+  padding-left: 20px;
   padding-right: 20px;
 }
 
