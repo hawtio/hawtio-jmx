@@ -1,77 +1,20 @@
 @import (reference) "main.less";
 
 #threads-page {
-  dd {
-    overflow-wrap: break-word;
-  }
   .table {
     tr {
-      th:nth-child(3) {
-        width: 30%;
-        max-width: 0;
+      td:nth-child(2) {
+        white-space: nowrap
+      }
+      td:nth-child(3) {
+        width: 300px;
+        span {
+          width: inherit;
+        }
+      }
+      td:nth-child(6), td:nth-child(7) {
+        text-align: center;
       }
     }
   }
-}
-
-.row-monitor {
-  text-align: right;
-  line-height: 2em;
-  margin-bottom: 1em;
-  .label {
-    font-size: 10px;
-    margin-left: 5px;
-    cursor: default;
-  }
-  .add-to-dashboard {
-    margin-left: 1em;
-    cursor: pointer;
-  }
-}
-
-.threads.logbar > .logbar-container {
-  margin-top: 2px;
-  margin-bottom: 5px;
-}
-
-.state-panel > ul > li:not(:first-child) > span {
-  margin-left: 15px;
-}
-
-.state-panel > ul > li.active {
-  font-weight: bold;
-}
-
-.runnable {
-  color: green;
-}
-
-.timed-waiting {
-  color: orange;
-}
-
-.waiting,
-.darkgray {
-  color: darkgray;
-}
-
-.blocked {
-  color: red;
-}
-
-strong.new,
-.lightgreen {
-  color: lightgreen;
-}
-
-.terminated,
-.darkred {
-  color: darkred;
-}
-
-.thread-state-indicator {
-  width: 100%;
-  height: 100%;
-  padding-top: 5px;
-  font-size: 15px;
 }

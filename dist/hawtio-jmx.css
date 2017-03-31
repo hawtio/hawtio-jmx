@@ -49,6 +49,16 @@ body {
   margin-top: 30px;
   text-align: center;
 }
+.modal dd {
+  overflow-wrap: break-word;
+}
+.table-cell-truncated {
+  display: inline-block;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  vertical-align: middle;
+}
 
 table.jmx-attributes-table.ht-table-extra-columns {
   table-layout: auto;
@@ -318,61 +328,16 @@ div.tree-nav-layout .sidebar-pf .rg-right {
 }
 @media (max-width: 767px) {
 }
-#threads-page dd {
-  overflow-wrap: break-word;
+#threads-page .table tr td:nth-child(2) {
+  white-space: nowrap;
 }
-#threads-page .table tr th:nth-child(3) {
-  width: 30%;
-  max-width: 0;
+#threads-page .table tr td:nth-child(3) {
+  width: 300px;
 }
-.row-monitor {
-  text-align: right;
-  line-height: 2em;
-  margin-bottom: 1em;
+#threads-page .table tr td:nth-child(3) span {
+  width: inherit;
 }
-.row-monitor .label {
-  font-size: 10px;
-  margin-left: 5px;
-  cursor: default;
-}
-.row-monitor .add-to-dashboard {
-  margin-left: 1em;
-  cursor: pointer;
-}
-.threads.logbar > .logbar-container {
-  margin-top: 2px;
-  margin-bottom: 5px;
-}
-.state-panel > ul > li:not(:first-child) > span {
-  margin-left: 15px;
-}
-.state-panel > ul > li.active {
-  font-weight: bold;
-}
-.runnable {
-  color: green;
-}
-.timed-waiting {
-  color: orange;
-}
-.waiting,
-.darkgray {
-  color: darkgray;
-}
-.blocked {
-  color: red;
-}
-strong.new,
-.lightgreen {
-  color: lightgreen;
-}
-.terminated,
-.darkred {
-  color: darkred;
-}
-.thread-state-indicator {
-  width: 100%;
-  height: 100%;
-  padding-top: 5px;
-  font-size: 15px;
+#threads-page .table tr td:nth-child(6),
+#threads-page .table tr td:nth-child(7) {
+  text-align: center;
 }

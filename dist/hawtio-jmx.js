@@ -7020,6 +7020,450 @@ var Jmx;
             populateTree();
         }]);
 })(Jmx || (Jmx = {}));
+/// <reference path="../../jmx/ts/workspace.ts" />
+var Threads;
+(function (Threads) {
+    Threads.pluginName = 'threads';
+    Threads.templatePath = 'plugins/threads/html/';
+    Threads.log = Logger.get("Threads");
+    Threads.jmxDomain = 'java.lang';
+    Threads.mbeanType = 'Threading';
+    Threads.mbean = Threads.jmxDomain + ":type=" + Threads.mbeanType;
+    Threads._module = angular.module(Threads.pluginName, ['patternfly', 'patternfly.toolbars', 'patternfly.table']);
+    Threads._module.config(["$routeProvider", function ($routeProvider) {
+            $routeProvider
+                .when('/threads', { templateUrl: UrlHelpers.join(Threads.templatePath, 'threads.html') });
+        }]);
+    Threads._module.run(["$templateCache", "workspace", "viewRegistry", "layoutFull", "helpRegistry", "HawtioNav",
+        function ($templateCache, workspace, viewRegistry, layoutFull, helpRegistry, nav) {
+            viewRegistry['threads'] = layoutFull;
+            helpRegistry.addUserDoc('threads', 'plugins/threads/doc/help.md');
+            var tab = nav.builder().id('threads')
+                .href(function () { return '/threads'; })
+                .isValid(function () { return workspace.treeContainsDomainAndProperties(Threads.jmxDomain, { type: Threads.mbeanType }); })
+                .title(function () { return 'Threads'; })
+                .tooltip(function () { return 'View information about the threads in the JVM'; })
+                .isSelected(function () { return workspace.isTopTabActive("threads"); })
+                .build();
+            nav.add(tab);
+        }]);
+    hawtioPluginLoader.addModule(Threads.pluginName);
+})(Threads || (Threads = {}));
+/// <reference path="./threadsPlugin.ts"/>
+var Threads;
+(function (Threads) {
+    var ThreadsService = (function () {
+        function ThreadsService($q, jolokia) {
+            this.$q = $q;
+            this.jolokia = jolokia;
+        }
+        ThreadsService.prototype.getThreads = function () {
+            var _this = this;
+            return this.$q(function (resolve, reject) {
+                _this.jolokia.execute("java.lang:type=Threading", "dumpAllThreads", false, false, {
+                    success: function (threads) {
+                        threads.forEach(function (thread) {
+                            thread.threadState = ThreadsService.STATE_LABELS[thread.threadState];
+                            thread.waitedTime = thread.waitedTime > 0 ? Core.humanizeMilliseconds(thread.waitedTime) : '';
+                            thread.blockedTime = thread.blockedTime > 0 ? Core.humanizeMilliseconds(thread.blockedTime) : '';
+                            delete thread.lockMonitors;
+                        });
+                        resolve(threads);
+                    }
+                });
+            });
+        };
+        ThreadsService.STATE_LABELS = {
+            BLOCKED: 'Blocked',
+            NEW: 'New',
+            RUNNABLE: 'Runnable',
+            TERMINATED: 'Terminated',
+            TIMED_WAITING: 'Timed waiting',
+            WAITING: 'Waiting'
+        };
+        return ThreadsService;
+    }());
+    Threads.ThreadsService = ThreadsService;
+    Threads._module.service('threadsService', ['$q', 'jolokia', ThreadsService]);
+})(Threads || (Threads = {}));
+/// <reference path="./threadsPlugin.ts"/>
+/// <reference path="./threads.service.ts"/>
+var Threads;
+(function (Threads) {
+    Threads._module.controller('ThreadsController', ['$scope', '$uibModal', 'threadsService', function ($scope, $uibModal, threadsService) {
+            var FILTER_FUNCTIONS = {
+                state: function (threads, state) { return threads.filter(function (thread) { return thread.threadState === state; }); },
+                name: function (threads, name) {
+                    var re = new RegExp(name, 'i');
+                    return threads.filter(function (thread) { return re.test(thread.threadName); });
+                }
+            };
+            var allThreads;
+            $scope.toolbarConfig = {
+                filterConfig: {
+                    fields: [
+                        {
+                            id: 'state',
+                            title: 'State',
+                            placeholder: 'Filter by state...',
+                            filterType: 'select',
+                            filterValues: ['Blocked', 'New', 'Runnable', 'Terminated', 'Timed waiting', 'Waiting']
+                        },
+                        {
+                            id: 'name',
+                            title: 'Name',
+                            placeholder: 'Filter by name...',
+                            filterType: 'text'
+                        }
+                    ],
+                    onFilterChange: filterChange
+                },
+                isTableView: true
+            };
+            $scope.tableConfig = {
+                selectionMatchProp: 'threadId',
+                showCheckboxes: false
+            };
+            $scope.tableDtOptions = {
+                order: [[0, "desc"]]
+            };
+            $scope.tableColumns = [
+                { header: 'ID', itemField: 'threadId' },
+                { header: 'State', itemField: 'threadState' },
+                { header: 'Name', itemField: 'threadName', htmlTemplate: 'threadName.html' },
+                { header: 'Waited Time', itemField: 'waitedTime' },
+                { header: 'Blocked Time', itemField: 'blockedTime' },
+                { header: 'Native', itemField: 'inNative', htmlTemplate: 'yesNo.html' },
+                { header: 'Suspended', itemField: 'suspended', htmlTemplate: 'yesNo.html' }
+            ];
+            $scope.tableItems = null;
+            $scope.tableActionButtons = [
+                {
+                    name: 'More',
+                    title: 'View more information about this thread',
+                    actionFn: viewDetails
+                }
+            ];
+            (function init() {
+                loadThreads();
+            })();
+            function loadThreads() {
+                threadsService.getThreads().then(function (threads) {
+                    allThreads = threads;
+                    $scope.filteredThreads = threads;
+                });
+            }
+            function filterChange(filters) {
+                keepOnlyLatestStateFilter(filters);
+                applyFilters(filters);
+                updateResultCount();
+            }
+            function keepOnlyLatestStateFilter(filters) {
+                var numStateFilters = filters.reduce(function (sum, filter) { return filter.id === 'state' ? sum + 1 : sum; }, 0);
+                if (numStateFilters > 1) {
+                    filters.splice(_.findIndex(filters, ['id', 'state']), 1);
+                }
+            }
+            function applyFilters(filters) {
+                var filteredThreads = allThreads;
+                filters.forEach(function (filter) {
+                    filteredThreads = FILTER_FUNCTIONS[filter.id](filteredThreads, filter.value);
+                });
+                $scope.filteredThreads = filteredThreads;
+            }
+            function updateResultCount() {
+                $scope.toolbarConfig.filterConfig.resultsCount = $scope.filteredThreads.length;
+            }
+            function viewDetails(action, item) {
+                $scope.thread = $scope.filteredThreads.find(function (thread) { return thread.threadId === item.threadId; });
+                openModal();
+            }
+            function openModal() {
+                $uibModal.open({
+                    templateUrl: 'threadModalContent.html',
+                    scope: $scope,
+                    size: 'lg'
+                });
+            }
+        }]);
+})(Threads || (Threads = {}));
+/**
+ * @module Threads
+ */
+/// <reference path="./threadsPlugin.ts"/>
+var Threads;
+(function (Threads) {
+    Threads._module.controller("Threads.ToolbarController", ["$scope", "$rootScope", "jolokia", function ($scope, $rootScope, jolokia) {
+            $scope.$on('ThreadControllerSupport', function ($event, support) {
+                $scope.support = support;
+            });
+            $scope.getMonitorClass = function (name, value) {
+                return value.toString();
+            };
+            $scope.getMonitorName = function (name) {
+                name = name.replace('Supported', '');
+                return _.startCase(name);
+            };
+        }]);
+    Threads._module.controller("Threads.ThreadsController", ["$scope", "$rootScope", "$routeParams", "$templateCache", "jolokia", "$element", "$uibModal", function ($scope, $rootScope, $routeParams, $templateCache, jolokia, $element, $uibModal) {
+            var modalInstance = null;
+            $scope.selectedRowJson = '';
+            $scope.lastThreadJson = '';
+            $scope.getThreadInfoResponseJson = '';
+            $scope.threads = [];
+            $scope.unfilteredThreads = [];
+            $scope.support = {};
+            $scope.row = {};
+            $scope.selectedRowIndex = -1;
+            $scope.filters = { state: '', name: '' };
+            $scope.availableStates = [
+                { id: 'BLOCKED', name: 'Blocked' },
+                { id: 'NEW', name: 'New' },
+                { id: 'RUNNABLE', name: 'Runnable' },
+                { id: 'TERMINATED', name: 'Terminated' },
+                { id: 'TIMED_WAITING', name: 'Timed waiting' },
+                { id: 'WAITING', name: 'Waiting' }
+            ];
+            $scope.showRaw = {
+                expanded: false
+            };
+            $scope.addToDashboardLink = function () {
+                var href = "#/threads";
+                var size = angular.toJson({
+                    size_x: 8,
+                    size_y: 2
+                });
+                var title = "Threads";
+                return "#/dashboard/add?tab=dashboard&href=" + encodeURIComponent(href) +
+                    "&title=" + encodeURIComponent(title) +
+                    "&size=" + encodeURIComponent(size);
+            };
+            $scope.isInDashboardClass = function () {
+                if (angular.isDefined($scope.inDashboard && $scope.inDashboard)) {
+                    return "threads-dashboard";
+                }
+                return "threads logbar";
+            };
+            $scope.threadGridOptions = {
+                selectedItems: [],
+                data: 'threads',
+                showSelectionCheckbox: false,
+                enableRowClickSelection: true,
+                multiSelect: false,
+                primaryKeyFn: function (entity, idx) { return entity.threadId; },
+                filterOptions: {
+                    filterText: ''
+                },
+                sortInfo: {
+                    sortBy: 'threadId',
+                    ascending: false
+                },
+                columnDefs: [
+                    {
+                        field: 'threadId',
+                        displayName: 'ID',
+                        customSortField: function (value) { return Number(value.threadId); }
+                    },
+                    {
+                        field: 'threadState',
+                        displayName: 'State',
+                        cellTemplate: '{{row.entity.threadState | humanize}}'
+                    },
+                    {
+                        field: 'threadName',
+                        displayName: 'Name'
+                    },
+                    {
+                        field: 'waitedTime',
+                        displayName: 'Waited Time',
+                        cellTemplate: '<div ng-show="row.entity.waitedTime > 0">{{row.entity.waitedTime | humanizeMs}}</div>'
+                    },
+                    {
+                        field: 'blockedTime',
+                        displayName: 'Blocked Time',
+                        cellTemplate: '<div ng-show="row.entity.blockedTime > 0">{{row.entity.blockedTime | humanizeMs}}</div>'
+                    },
+                    {
+                        field: 'inNative',
+                        displayName: 'Native',
+                        cellTemplate: '<div ng-show="row.entity.inNative" class="orange">(in native)</div>'
+                    },
+                    {
+                        field: 'suspended',
+                        displayName: 'Suspended',
+                        cellTemplate: '<div ng-show="row.entity.suspended" class="red">(suspended)</div>'
+                    }
+                ]
+            };
+            $scope.$watchCollection('filters', function (newValue, oldValue) {
+                var threads = $scope.unfilteredThreads;
+                if ($scope.filters.name) {
+                    threads = filterByName($scope.filters.name, threads);
+                }
+                if ($scope.filters.state) {
+                    threads = filterThreads($scope.filters.state, threads);
+                }
+                $scope.threads = threads;
+            });
+            function filterByName(name, threads) {
+                Threads.log.debug("Filtering threads by name: ", name);
+                if (name) {
+                    return threads.filter(function (t) { return t['threadName'].toLowerCase().indexOf(name.toLowerCase()) !== -1; });
+                }
+                else {
+                    return threads;
+                }
+            }
+            ;
+            function filterThreads(state, threads) {
+                Threads.log.debug("Filtering threads by: ", state);
+                if (state) {
+                    return threads.filter(function (t) {
+                        return t && t['threadState'] === state.id;
+                    });
+                }
+                else {
+                    return threads;
+                }
+            }
+            ;
+            $scope.$watch('threadGridOptions.selectedItems', function (newValue, oldValue) {
+                if (newValue !== oldValue) {
+                    if (newValue.length === 0) {
+                        $scope.row = {};
+                        $scope.selectedRowIndex = -1;
+                    }
+                    else {
+                        $scope.row = _.first(newValue);
+                        $scope.selectedRowIndex = Core.pathGet($scope, ['hawtioSimpleTable', 'threads', 'rows']).findIndex(function (t) { return t.entity['threadId'] === $scope.row['threadId']; });
+                        openModal();
+                    }
+                    $scope.selectedRowJson = angular.toJson($scope.row, true);
+                }
+            }, true);
+            $scope.deselect = function () {
+                $scope.threadGridOptions.selectedItems = [];
+            };
+            $scope.selectThreadById = function (id) {
+                $scope.threadGridOptions.selectedItems = $scope.threads.filter(function (t) { return t.threadId === id; });
+            };
+            $scope.selectThreadByIndex = function (idx) {
+                var selectedThread = Core.pathGet($scope, ['hawtioSimpleTable', 'threads', 'rows'])[idx];
+                $scope.threadGridOptions.selectedItems = $scope.threads.filter(function (t) {
+                    return t && t['threadId'] == selectedThread.entity['threadId'];
+                });
+            };
+            function render(response) {
+                if ($scope.threads.length === 0) {
+                    var responseJson = angular.toJson(response.value, true);
+                    if ($scope.getThreadInfoResponseJson !== responseJson) {
+                        $scope.getThreadInfoResponseJson = responseJson;
+                        $scope.unfilteredThreads = _.without(response.value, null);
+                        $scope.threads = filterThreads($scope.stateFilter, $scope.unfilteredThreads);
+                        Core.$apply($scope);
+                    }
+                }
+            }
+            $scope.init = function () {
+                jolokia.request([{
+                        type: 'read',
+                        mbean: Threads.mbean,
+                        attribute: 'ThreadContentionMonitoringSupported'
+                    }, {
+                        type: 'read',
+                        mbean: Threads.mbean,
+                        attribute: 'ObjectMonitorUsageSupported'
+                    }, {
+                        type: 'read',
+                        mbean: Threads.mbean,
+                        attribute: 'SynchronizerUsageSupported'
+                    }], {
+                    method: 'post',
+                    success: [
+                        function (response) {
+                            $scope.support.threadContentionMonitoringSupported = response.value;
+                            $rootScope.$broadcast('ThreadControllerSupport', $scope.support);
+                            Threads.log.debug("ThreadContentionMonitoringSupported: ", $scope.support.threadContentionMonitoringSupported);
+                            $scope.maybeRegister();
+                        },
+                        function (response) {
+                            $scope.support.objectMonitorUsageSupported = response.value;
+                            $rootScope.$broadcast('ThreadControllerSupport', $scope.support);
+                            Threads.log.debug("ObjectMonitorUsageSupported: ", $scope.support.objectMonitorUsageSupported);
+                            $scope.maybeRegister();
+                        },
+                        function (response) {
+                            $scope.support.synchronizerUsageSupported = response.value;
+                            $rootScope.$broadcast('ThreadControllerSupport', $scope.support);
+                            Threads.log.debug("SynchronizerUsageSupported: ", $scope.support.synchronizerUsageSupported);
+                            $scope.maybeRegister();
+                        }
+                    ],
+                    error: function (response) {
+                        Threads.log.error('Failed to query for supported usages: ', response.error);
+                    }
+                });
+            };
+            var initFunc = Core.throttled($scope.init, 500);
+            $scope.maybeRegister = function () {
+                if ('objectMonitorUsageSupported' in $scope.support &&
+                    'synchronizerUsageSupported' in $scope.support &&
+                    'threadContentionMonitoringSupported' in $scope.support) {
+                    Threads.log.debug("Registering dumpAllThreads polling");
+                    Core.register(jolokia, $scope, {
+                        type: 'exec',
+                        mbean: Threads.mbean,
+                        operation: 'dumpAllThreads',
+                        arguments: [$scope.support.objectMonitorUsageSupported, $scope.support.synchronizerUsageSupported]
+                    }, Core.onSuccess(render));
+                    if ($scope.support.threadContentionMonitoringSupported) {
+                        // check and see if it's actually turned on, if not
+                        // enable it
+                        jolokia.request({
+                            type: 'read',
+                            mbean: Threads.mbean,
+                            attribute: 'ThreadContentionMonitoringEnabled'
+                        }, Core.onSuccess($scope.maybeEnableThreadContentionMonitoring));
+                    }
+                }
+            };
+            function disabledContentionMonitoring(response) {
+                Threads.log.info("Disabled contention monitoring: ", response);
+                Core.$apply($scope);
+            }
+            function enabledContentionMonitoring(response) {
+                $element.on('$destroy', function () {
+                    jolokia.setAttribute(Threads.mbean, 'ThreadContentionMonitoringEnabled', false, Core.onSuccess(disabledContentionMonitoring));
+                });
+                Threads.log.info("Enabled contention monitoring");
+                Core.$apply($scope);
+            }
+            $scope.maybeEnableThreadContentionMonitoring = function (response) {
+                if (response.value === false) {
+                    Threads.log.info("Thread contention monitoring not enabled, enabling");
+                    jolokia.setAttribute(Threads.mbean, 'ThreadContentionMonitoringEnabled', true, Core.onSuccess(enabledContentionMonitoring));
+                }
+                else {
+                    Threads.log.info("Thread contention monitoring already enabled");
+                }
+                Core.$apply($scope);
+            };
+            function openModal() {
+                if (!modalInstance) {
+                    modalInstance = $uibModal.open({
+                        templateUrl: 'plugins/threads/html/thread-modal.html',
+                        scope: $scope,
+                        size: 'lg'
+                    });
+                    modalInstance.result.finally(function () {
+                        modalInstance = null;
+                        $scope.deselect();
+                    });
+                }
+            }
+            initFunc();
+        }]);
+})(Threads || (Threads = {}));
 /// <reference path="../../../jmx/ts/workspace.ts"/>
 var JVM;
 (function (JVM) {
@@ -7904,312 +8348,6 @@ var JVM;
             };
         }]);
 })(JVM || (JVM = {}));
-/// <reference path="../../jmx/ts/workspace.ts" />
-var Threads;
-(function (Threads) {
-    Threads.pluginName = 'threads';
-    Threads.templatePath = 'plugins/threads/html/';
-    Threads.log = Logger.get("Threads");
-    Threads.jmxDomain = 'java.lang';
-    Threads.mbeanType = 'Threading';
-    Threads.mbean = Threads.jmxDomain + ":type=" + Threads.mbeanType;
-    Threads._module = angular.module(Threads.pluginName, ['patternfly']);
-    Threads._module.config(["$routeProvider", function ($routeProvider) {
-            $routeProvider.
-                when('/threads', { templateUrl: UrlHelpers.join(Threads.templatePath, 'threads.html') });
-        }]);
-    Threads._module.run(["$templateCache", "workspace", "viewRegistry", "layoutFull", "helpRegistry", "HawtioNav",
-        function ($templateCache, workspace, viewRegistry, layoutFull, helpRegistry, nav) {
-            viewRegistry['threads'] = layoutFull;
-            helpRegistry.addUserDoc('threads', 'plugins/threads/doc/help.md');
-            var tab = nav.builder().id('threads')
-                .href(function () { return '/threads'; })
-                .isValid(function () { return workspace.treeContainsDomainAndProperties(Threads.jmxDomain, { type: Threads.mbeanType }); })
-                .title(function () { return 'Threads'; })
-                .tooltip(function () { return 'View information about the threads in the JVM'; })
-                .isSelected(function () { return workspace.isTopTabActive("threads"); })
-                .build();
-            nav.add(tab);
-        }]);
-    hawtioPluginLoader.addModule(Threads.pluginName);
-})(Threads || (Threads = {}));
-/**
- * @module Threads
- */
-/// <reference path="./threadsPlugin.ts"/>
-var Threads;
-(function (Threads) {
-    Threads._module.controller("Threads.ToolbarController", ["$scope", "$rootScope", "jolokia", function ($scope, $rootScope, jolokia) {
-            $scope.$on('ThreadControllerSupport', function ($event, support) {
-                $scope.support = support;
-            });
-            $scope.getMonitorClass = function (name, value) {
-                return value.toString();
-            };
-            $scope.getMonitorName = function (name) {
-                name = name.replace('Supported', '');
-                return _.startCase(name);
-            };
-        }]);
-    Threads._module.controller("Threads.ThreadsController", ["$scope", "$rootScope", "$routeParams", "$templateCache", "jolokia", "$element", "$uibModal", function ($scope, $rootScope, $routeParams, $templateCache, jolokia, $element, $uibModal) {
-            var modalInstance = null;
-            $scope.selectedRowJson = '';
-            $scope.lastThreadJson = '';
-            $scope.getThreadInfoResponseJson = '';
-            $scope.threads = [];
-            $scope.unfilteredThreads = [];
-            $scope.support = {};
-            $scope.row = {};
-            $scope.selectedRowIndex = -1;
-            $scope.filters = { state: '', name: '' };
-            $scope.availableStates = [
-                { id: 'BLOCKED', name: 'Blocked' },
-                { id: 'NEW', name: 'New' },
-                { id: 'RUNNABLE', name: 'Runnable' },
-                { id: 'TERMINATED', name: 'Terminated' },
-                { id: 'TIMED_WAITING', name: 'Timed waiting' },
-                { id: 'WAITING', name: 'Waiting' }
-            ];
-            $scope.showRaw = {
-                expanded: false
-            };
-            $scope.addToDashboardLink = function () {
-                var href = "#/threads";
-                var size = angular.toJson({
-                    size_x: 8,
-                    size_y: 2
-                });
-                var title = "Threads";
-                return "#/dashboard/add?tab=dashboard&href=" + encodeURIComponent(href) +
-                    "&title=" + encodeURIComponent(title) +
-                    "&size=" + encodeURIComponent(size);
-            };
-            $scope.isInDashboardClass = function () {
-                if (angular.isDefined($scope.inDashboard && $scope.inDashboard)) {
-                    return "threads-dashboard";
-                }
-                return "threads logbar";
-            };
-            $scope.threadGridOptions = {
-                selectedItems: [],
-                data: 'threads',
-                showSelectionCheckbox: false,
-                enableRowClickSelection: true,
-                multiSelect: false,
-                primaryKeyFn: function (entity, idx) { return entity.threadId; },
-                filterOptions: {
-                    filterText: ''
-                },
-                sortInfo: {
-                    sortBy: 'threadId',
-                    ascending: false
-                },
-                columnDefs: [
-                    {
-                        field: 'threadId',
-                        displayName: 'ID',
-                        customSortField: function (value) { return Number(value.threadId); }
-                    },
-                    {
-                        field: 'threadState',
-                        displayName: 'State',
-                        cellTemplate: '{{row.entity.threadState | humanize}}'
-                    },
-                    {
-                        field: 'threadName',
-                        displayName: 'Name'
-                    },
-                    {
-                        field: 'waitedTime',
-                        displayName: 'Waited Time',
-                        cellTemplate: '<div ng-show="row.entity.waitedTime > 0">{{row.entity.waitedTime | humanizeMs}}</div>'
-                    },
-                    {
-                        field: 'blockedTime',
-                        displayName: 'Blocked Time',
-                        cellTemplate: '<div ng-show="row.entity.blockedTime > 0">{{row.entity.blockedTime | humanizeMs}}</div>'
-                    },
-                    {
-                        field: 'inNative',
-                        displayName: 'Native',
-                        cellTemplate: '<div ng-show="row.entity.inNative" class="orange">(in native)</div>'
-                    },
-                    {
-                        field: 'suspended',
-                        displayName: 'Suspended',
-                        cellTemplate: '<div ng-show="row.entity.suspended" class="red">(suspended)</div>'
-                    }
-                ]
-            };
-            $scope.$watchCollection('filters', function (newValue, oldValue) {
-                var threads = $scope.unfilteredThreads;
-                if ($scope.filters.name) {
-                    threads = filterByName($scope.filters.name, threads);
-                }
-                if ($scope.filters.state) {
-                    threads = filterThreads($scope.filters.state, threads);
-                }
-                $scope.threads = threads;
-            });
-            function filterByName(name, threads) {
-                Threads.log.debug("Filtering threads by name: ", name);
-                if (name) {
-                    return threads.filter(function (t) { return t['threadName'].toLowerCase().indexOf(name.toLowerCase()) !== -1; });
-                }
-                else {
-                    return threads;
-                }
-            }
-            ;
-            function filterThreads(state, threads) {
-                Threads.log.debug("Filtering threads by: ", state);
-                if (state) {
-                    return threads.filter(function (t) {
-                        return t && t['threadState'] === state.id;
-                    });
-                }
-                else {
-                    return threads;
-                }
-            }
-            ;
-            $scope.$watch('threadGridOptions.selectedItems', function (newValue, oldValue) {
-                if (newValue !== oldValue) {
-                    if (newValue.length === 0) {
-                        $scope.row = {};
-                        $scope.selectedRowIndex = -1;
-                    }
-                    else {
-                        $scope.row = _.first(newValue);
-                        $scope.selectedRowIndex = Core.pathGet($scope, ['hawtioSimpleTable', 'threads', 'rows']).findIndex(function (t) { return t.entity['threadId'] === $scope.row['threadId']; });
-                        openModal();
-                    }
-                    $scope.selectedRowJson = angular.toJson($scope.row, true);
-                }
-            }, true);
-            $scope.deselect = function () {
-                $scope.threadGridOptions.selectedItems = [];
-            };
-            $scope.selectThreadById = function (id) {
-                $scope.threadGridOptions.selectedItems = $scope.threads.filter(function (t) { return t.threadId === id; });
-            };
-            $scope.selectThreadByIndex = function (idx) {
-                var selectedThread = Core.pathGet($scope, ['hawtioSimpleTable', 'threads', 'rows'])[idx];
-                $scope.threadGridOptions.selectedItems = $scope.threads.filter(function (t) {
-                    return t && t['threadId'] == selectedThread.entity['threadId'];
-                });
-            };
-            function render(response) {
-                if ($scope.threads.length === 0) {
-                    var responseJson = angular.toJson(response.value, true);
-                    if ($scope.getThreadInfoResponseJson !== responseJson) {
-                        $scope.getThreadInfoResponseJson = responseJson;
-                        $scope.unfilteredThreads = _.without(response.value, null);
-                        $scope.threads = filterThreads($scope.stateFilter, $scope.unfilteredThreads);
-                        Core.$apply($scope);
-                    }
-                }
-            }
-            $scope.init = function () {
-                jolokia.request([{
-                        type: 'read',
-                        mbean: Threads.mbean,
-                        attribute: 'ThreadContentionMonitoringSupported'
-                    }, {
-                        type: 'read',
-                        mbean: Threads.mbean,
-                        attribute: 'ObjectMonitorUsageSupported'
-                    }, {
-                        type: 'read',
-                        mbean: Threads.mbean,
-                        attribute: 'SynchronizerUsageSupported'
-                    }], {
-                    method: 'post',
-                    success: [
-                        function (response) {
-                            $scope.support.threadContentionMonitoringSupported = response.value;
-                            $rootScope.$broadcast('ThreadControllerSupport', $scope.support);
-                            Threads.log.debug("ThreadContentionMonitoringSupported: ", $scope.support.threadContentionMonitoringSupported);
-                            $scope.maybeRegister();
-                        },
-                        function (response) {
-                            $scope.support.objectMonitorUsageSupported = response.value;
-                            $rootScope.$broadcast('ThreadControllerSupport', $scope.support);
-                            Threads.log.debug("ObjectMonitorUsageSupported: ", $scope.support.objectMonitorUsageSupported);
-                            $scope.maybeRegister();
-                        },
-                        function (response) {
-                            $scope.support.synchronizerUsageSupported = response.value;
-                            $rootScope.$broadcast('ThreadControllerSupport', $scope.support);
-                            Threads.log.debug("SynchronizerUsageSupported: ", $scope.support.synchronizerUsageSupported);
-                            $scope.maybeRegister();
-                        }
-                    ],
-                    error: function (response) {
-                        Threads.log.error('Failed to query for supported usages: ', response.error);
-                    }
-                });
-            };
-            var initFunc = Core.throttled($scope.init, 500);
-            $scope.maybeRegister = function () {
-                if ('objectMonitorUsageSupported' in $scope.support &&
-                    'synchronizerUsageSupported' in $scope.support &&
-                    'threadContentionMonitoringSupported' in $scope.support) {
-                    Threads.log.debug("Registering dumpAllThreads polling");
-                    Core.register(jolokia, $scope, {
-                        type: 'exec',
-                        mbean: Threads.mbean,
-                        operation: 'dumpAllThreads',
-                        arguments: [$scope.support.objectMonitorUsageSupported, $scope.support.synchronizerUsageSupported]
-                    }, Core.onSuccess(render));
-                    if ($scope.support.threadContentionMonitoringSupported) {
-                        // check and see if it's actually turned on, if not
-                        // enable it
-                        jolokia.request({
-                            type: 'read',
-                            mbean: Threads.mbean,
-                            attribute: 'ThreadContentionMonitoringEnabled'
-                        }, Core.onSuccess($scope.maybeEnableThreadContentionMonitoring));
-                    }
-                }
-            };
-            function disabledContentionMonitoring(response) {
-                Threads.log.info("Disabled contention monitoring: ", response);
-                Core.$apply($scope);
-            }
-            function enabledContentionMonitoring(response) {
-                $element.on('$destroy', function () {
-                    jolokia.setAttribute(Threads.mbean, 'ThreadContentionMonitoringEnabled', false, Core.onSuccess(disabledContentionMonitoring));
-                });
-                Threads.log.info("Enabled contention monitoring");
-                Core.$apply($scope);
-            }
-            $scope.maybeEnableThreadContentionMonitoring = function (response) {
-                if (response.value === false) {
-                    Threads.log.info("Thread contention monitoring not enabled, enabling");
-                    jolokia.setAttribute(Threads.mbean, 'ThreadContentionMonitoringEnabled', true, Core.onSuccess(enabledContentionMonitoring));
-                }
-                else {
-                    Threads.log.info("Thread contention monitoring already enabled");
-                }
-                Core.$apply($scope);
-            };
-            function openModal() {
-                if (!modalInstance) {
-                    modalInstance = $uibModal.open({
-                        templateUrl: 'plugins/threads/html/thread-modal.html',
-                        scope: $scope,
-                        size: 'lg'
-                    });
-                    modalInstance.result.finally(function () {
-                        modalInstance = null;
-                        $scope.deselect();
-                    });
-                }
-            }
-            initFunc();
-        }]);
-})(Threads || (Threads = {}));
 /// <reference path="../jmxPlugin.ts"/>
 var Jmx;
 (function (Jmx) {
@@ -8533,8 +8671,7 @@ $templateCache.put('plugins/jvm/html/layoutConnect.html','<div class="jvm-nav-ma
 $templateCache.put('plugins/jvm/html/local.html','<div ng-controller="JVM.JVMsController">\n\n  <h1>Local</h1>\n\n  <div class="row toolbar-pf">\n    <div class="col-sm-12">\n      <form class="toolbar-pf-actions">\n        <div class="form-group">\n          <input type="text" class="form-control" ng-model="filter" placeholder="Filter..." autocomplete="off">\n        </div>\n        <div class="form-group">\n          <button class="btn btn-default" ng-click="fetch()" title="Refresh"><i class="fa fa-refresh"></i> Refresh</button>\n        </div>\n      </form>\n    </div>\n  </div>\n\n  <div ng-hide="initDone">\n    <div class="spinner spinner-lg loading-page"></div>\n    <div class="row">\n      <div class="col-sm-12">\n        <div class="loading-message">\n          Please wait, discovering local JVM processes ...\n        </div>\n      </div>\n    </div>\n  </div>\n\n  <div ng-hide=\'data.length > 0\' class=\'row\'>\n    {{status}}\n  </div>\n\n  <div ng-show=\'data.length > 0\' class="row">\n    <table class=\'centered table table-bordered table-condensed table-striped\'>\n      <thead>\n      <tr>\n        <th style="width: 70px">PID</th>\n        <th>Name</th>\n        <th style="width: 300px">Agent URL</th>\n        <th style="width: 50px"></th>\n      </tr>\n      </thead>\n      <tbody>\n      <tr ng-repeat="jvm in data track by $index" ng-show="filterMatches(jvm)">\n        <td>{{jvm.id}}</td>\n        <td title="{{jvm.displayName}}">{{jvm.alias}}</td>\n        <td><a href=\'\' title="Connect to this agent"\n               ng-click="connectTo(jvm.url, jvm.scheme, jvm.hostname, jvm.port, jvm.path)">{{jvm.agentUrl}}</a></td>\n        <td>\n          <a class=\'btn control-button\' href="" title="Stop agent" ng-show="jvm.agentUrl"\n             ng-click="stopAgent(jvm.id)"><i class="fa fa-off"></i></a>\n          <a class=\'btn control-button\' href="" title="Start agent" ng-hide="jvm.agentUrl"\n             ng-click="startAgent(jvm.id)"><i class="icon-play-circle"></i></a>\n        </td>\n      </tr>\n\n      </tbody>\n    </table>\n\n  </div>\n\n\n</div>\n');
 $templateCache.put('plugins/jvm/html/navbarHeaderExtension.html','<style>\n  .navbar-header-hawtio-jvm {\n    float: left;\n    margin: 0;\n  }\n\n  .navbar-header-hawtio-jvm h4 {\n    color: white;\n    margin: 0px;\n  }\n\n  .navbar-header-hawtio-jvm li {\n    list-style-type: none;\n    display: inline-block;\n    margin-right: 10px;\n    margin-top: 4px;\n  }\n</style>\n<ul class="navbar-header-hawtio-jvm" ng-controller="JVM.HeaderController">\n  <li ng-show="containerName"><h4 ng-bind="containerName"></h4></li>\n  <li ng-show="goBack"><strong><a href="" ng-click="goBack()">Back</a></strong></li>\n</ul>\n');
 $templateCache.put('plugins/jvm/html/reset.html','<div ng-controller="JVM.ResetController">\n  <form class="form-horizontal">\n    <fieldset>\n      <div class="form-group">\n        <label class="col-sm-2 control-label">\n          <strong>\n            <span class="pficon pficon-warning-triangle-o"></span> Clear saved connections\n          </strong>\n        </label>\n        <div class="col-sm-10">\n          <button class="btn btn-danger" ng-click="doClearConnectSettings()">Clear saved connections</button>\n          <span class="help-block">Wipe all saved connection settings stored by {{branding.appName}} in your browser\'s local storage</span>\n        </div>\n      </div>\n    </fieldset>\n  </form>\n</div>\n\n');
-$templateCache.put('plugins/threads/html/thread-modal.html','<div class="modal-header">\n  <button type="button" class="close" aria-label="Close" ng-click="$close()">\n    <span class="pficon pficon-close" aria-hidden="true"></span>\n  </button>\n  <div class="row">\n    <div class="col-md-4">\n      <h4 class="modal-title" id="myModalLabel">Thread</h4>\n    </div>\n    <div class="col-md-7">\n      <div class="pagination-container"\n            hawtio-pager="hawtioSimpleTable.threads.rows"\n            on-index-change="selectThreadByIndex"\n            row-index="selectedRowIndex">\n      </div>\n    </div>\n  </div>\n</div>\n<div class="modal-body">\n  <div class="row">\n    <div class="col-md-12">\n      <dl class="dl-horizontal">\n        <dt>ID</dt>\n        <dd>{{row.threadId}}</dd>\n        <dt>Name</dt>\n        <dd>{{row.threadName}}</dd>\n        <dt>Waited Count</dt>\n        <dd>{{row.waitedCount}}</dd>\n        <dt>Waited Time</dt>\n        <dd>{{row.waitedTime}} ms</dd>\n        <dt>Blocked Count</dt>\n        <dd>{{row.blockedCount}}</dd>\n        <dt>Blocked Time</dt>\n        <dd>{{row.blockedTime}} ms</dd>\n        <div ng-show="row.lockInfo != null">\n          <dt>Lock Name</dt>\n          <dd>{{row.lockName}}</dd>\n          <dt>Lock Class Name</dt>\n          <dd>{{row.lockInfo.className}}</dd>\n          <dt>Lock Identity Hash Code</dt>\n          <dd>{{row.lockInfo.identityHashCode}}</dd>\n        </div>\n        <div ng-show="row.lockOwnerId > 0">\n          <dt>Waiting for lock owned by</dt>\n          <dd><a href="" ng-click="selectThreadById(row.lockOwnerId)">{{row.lockOwnerId}} - {{row.lockOwnerName}}</a></dd>\n        </div>\n        <div ng-show="row.lockedSynchronizers.length > 0">\n          <dt>Locked Synchronizers</dt>\n          <dd>\n            <ol class="list-unstyled">\n              <li ng-repeat="synchronizer in row.lockedSynchronizers">\n                <span title="Class Name">{{synchronizer.className}}</span> -\n                <span title="Identity Hash Code">{{synchronizer.identityHashCode}}</span>\n              </li>\n            </ol>\n          </dd>\n        </div>\n      </dl>\n    </div>\n  </div>\n  <div class="row" ng-show="row.lockedMonitors.length > 0">\n    <div class="col-md-12">\n      <dl>\n        <dt>Locked Monitors</dt>\n        <dd>\n          <ol class="zebra-list">\n            <li ng-repeat="monitor in row.lockedMonitors">\n              Frame: <strong>{{monitor.lockedStackDepth}}</strong>\n              <span class="green">{{monitor.lockedStackFrame.className}}</span>\n              <span class="bold">.</span>\n              <span class="blue bold">{{monitor.lockedStackFrame.methodName}}</span>\n              &nbsp;({{monitor.lockedStackFrame.fileName}}<span ng-show="frame.lineNumber > 0">:{{monitor.lockedStackFrame.lineNumber}}</span>)\n              <span class="orange" ng-show="monitor.lockedStackFrame.nativeMethod">(Native)</span>\n            </li>\n          </ol>\n        </dd>\n      </dl>\n    </div>\n  </div>\n  <div class="row">\n    <div class="col-md-12">\n      <dl>\n        <dt>Stack Trace</dt>\n        <dd>\n          <ol class="zebra-list">\n            <li ng-repeat="frame in row.stackTrace">\n              <span class="green">{{frame.className}}</span>\n              <span class="bold">.</span>\n              <span class="blue bold">{{frame.methodName}}</span>\n              &nbsp;({{frame.fileName}}<span ng-show="frame.lineNumber > 0">:{{frame.lineNumber}}</span>)\n              <span class="orange" ng-show="frame.nativeMethod">(Native)</span>\n            </li>\n          </ol>\n        </dd>\n      </dl>            \n    </div>\n  </div>\n</div>\n');
-$templateCache.put('plugins/threads/html/threads.html','<!--\n<div ng-controller="Threads.ToolbarController">\n\n  <div class="row row-monitor">\n    <div class="col-md-12">\n      <span ng-repeat="(name, value) in support track by $index" class="label" ng-class="{\'label-success\': value, \'label-default\': !value}"\n        ng-click="maybeToggleMonitor(name, value)">\n          {{getMonitorName(name)}}\n        </span>\n    </div>\n  </div>\n\n</div>\n-->\n<div id="threads-page" class="table-view" ng-controller="Threads.ThreadsController">\n\n  <h1>Threads</h1>\n  \n  <!-- Toolbar -->\n  <div class="row toolbar-pf table-view-pf-toolbar">\n    <div class="col-sm-12">\n      <form class="toolbar-pf-actions search-pf">\n        <div class="form-group">\n          <label class="sr-only" for="state-filter">State</label>\n          <select id="state-filter" title="Filter by State..." ng-model="filters.state"\n                  ng-options="state.name for state in availableStates track by state.id">\n          </select>\n        </div>\n        <div class="form-group has-clear">\n          <div class="search-pf-input-group">\n            <label for="filterByKeyword" class="sr-only">Filter by name</label>\n            <input id="filterByKeyword" type="search" ng-model="filters.name" class="form-control"\n                   placeholder="Filter by name..." autocomplete="off">\n            <button type="button" class="clear" aria-hidden="true" ng-click="filters.name = \'\'">\n              <span class="pficon pficon-close"></span>\n            </button>\n          </div>\n        </div>\n      </form>\n      <div class="row toolbar-pf-results">\n        <div class="col-sm-12">\n          <h5>{{threads.length}} Results</h5>\n          <span ng-if="filters.state || filters.name">\n            <p>Active filters:</p>\n            <ul class="list-inline">\n              <li ng-show="filters.state">\n                <span class="label label-info">\n                  State: {{filters.state.name}}\n                  <a href="#" ng-click="filters.state = \'\'"><span class="pficon pficon-close"></span></a>\n                </span>\n              </li>\n              <li ng-show="filters.name">\n                <span class="label label-info">\n                  Name: {{filters.name}}\n                  <a href="#" ng-click="filters.name = \'\'"><span class="pficon pficon-close"></span></a>\n                </span>\n              </li>\n            </ul>\n            <p><a href="#" ng-click="filters.name = filters.state = \'\'">Clear All Filters</a></p>\n          </span>\n        </div>\n      </div>\n    </div>\n  </div>\n\n  <!-- Table -->\n  <div class="row">\n    <div class="col-md-12">\n      <table class="table table-striped table-bordered table-hover dataTable" hawtio-simple-table="threadGridOptions"></table>\n    </div>\n  </div>\n\n</div>');
+$templateCache.put('plugins/threads/html/threads.html','<div id="threads-page" class="table-view" ng-controller="ThreadsController">\n\n  <h1>Threads</h1>\n\n  <pf-toolbar config="toolbarConfig"></pf-toolbar>\n\n  <pf-table-view class="threads-table" config="tableConfig" dt-options="tableDtOptions"\n    colummns="tableColumns" items="filteredThreads" action-buttons="tableActionButtons">\n  </pf-table-view>\n\n  <script type="text/ng-template" id="threadName.html">\n    <span class="table-cell-truncated" title="{{value}}">{{value}}</span>\n  </script>\n\n  <script type="text/ng-template" id="yesNo.html">\n    <span ng-class="{\'fa fa-circle\': value}" aria-hidden="true"></span>\n  </script>\n\n  <script type="text/ng-template" id="threadModalContent.html">\n    <div class="modal-header">\n      <button type="button" class="close" aria-label="Close" ng-click="$close()">\n        <span class="pficon pficon-close" aria-hidden="true"></span>\n      </button>\n      <h4 class="modal-title">Thread</h4>\n    </div>\n    <div class="modal-body">\n      <div class="row">\n        <div class="col-md-12">\n          <dl class="dl-horizontal">\n            <dt>ID</dt>\n            <dd>{{thread.threadId}}</dd>\n            <dt>Name</dt>\n            <dd>{{thread.threadName}}</dd>\n            <dt>Waited Count</dt>\n            <dd>{{thread.waitedCount}}</dd>\n            <dt>Waited Time</dt>\n            <dd>{{thread.waitedTime}} ms</dd>\n            <dt>Blocked Count</dt>\n            <dd>{{thread.blockedCount}}</dd>\n            <dt>Blocked Time</dt>\n            <dd>{{thread.blockedTime}} ms</dd>\n            <div ng-show="thread.lockInfo != null">\n              <dt>Lock Name</dt>\n              <dd>{{thread.lockName}}</dd>\n              <dt>Lock Class Name</dt>\n              <dd>{{thread.lockInfo.className}}</dd>\n              <dt>Lock Identity Hash Code</dt>\n              <dd>{{thread.lockInfo.identityHashCode}}</dd>\n            </div>\n            <div ng-show="thread.lockOwnerId > 0">\n              <dt>Waiting for lock owned by</dt>\n              <dd><a href="" ng-click="selectThreadById(thread.lockOwnerId)">{{thread.lockOwnerId}} - {{thread.lockOwnerName}}</a></dd>\n            </div>\n            <div ng-show="thread.lockedSynchronizers.length > 0">\n              <dt>Locked Synchronizers</dt>\n              <dd>\n                <ol class="list-unstyled">\n                  <li ng-repeat="synchronizer in thread.lockedSynchronizers">\n                    <span title="Class Name">{{synchronizer.className}}</span> -\n                    <span title="Identity Hash Code">{{synchronizer.identityHashCode}}</span>\n                  </li>\n                </ol>\n              </dd>\n            </div>\n          </dl>\n        </div>\n      </div>\n      <div class="row" ng-show="thread.lockedMonitors.length > 0">\n        <div class="col-md-12">\n          <dl>\n            <dt>Locked Monitors</dt>\n            <dd>\n              <ol class="zebra-list">\n                <li ng-repeat="monitor in thread.lockedMonitors">\n                  Frame: <strong>{{monitor.lockedStackDepth}}</strong>\n                  <span class="green">{{monitor.lockedStackFrame.className}}</span>\n                  <span class="bold">.</span>\n                  <span class="blue bold">{{monitor.lockedStackFrame.methodName}}</span>\n                  &nbsp;({{monitor.lockedStackFrame.fileName}}<span ng-show="frame.lineNumber > 0">:{{monitor.lockedStackFrame.lineNumber}}</span>)\n                  <span class="orange" ng-show="monitor.lockedStackFrame.nativeMethod">(Native)</span>\n                </li>\n              </ol>\n            </dd>\n          </dl>\n        </div>\n      </div>\n      <div class="row">\n        <div class="col-md-12">\n          <dl>\n            <dt>Stack Trace</dt>\n            <dd>\n              <ol class="zebra-list">\n                <li ng-repeat="frame in thread.stackTrace">\n                  <span class="green">{{frame.className}}</span>\n                  <span class="bold">.</span>\n                  <span class="blue bold">{{frame.methodName}}</span>\n                  &nbsp;({{frame.fileName}}<span ng-show="frame.lineNumber > 0">:{{frame.lineNumber}}</span>)\n                  <span class="orange" ng-show="frame.nativeMethod">(Native)</span>\n                </li>\n              </ol>\n            </dd>\n          </dl>            \n        </div>\n      </div>\n    </div>\n  </script>\n\n</div>\n');
 $templateCache.put('plugins/jmx/doc/help.md','### JMX\n\nThe [JMX](#/jmx/attributes) plugin in [hawtio](http://hawt.io "hawtio") gives a raw view of the underlying JMX metric data, allowing access to the entire JMX domain tree of MBeans.\n');
 $templateCache.put('plugins/jvm/doc/help.md','### Connect\n\nThe Connect tab allows you to connect to local and remote Jolokia instances so you can examine JVMs.\n\nThe "Remote" sub-tab is used to manually add connection details for a Jolokia instance.  You can store connection details and quickly recall the details of a connection and connect.\n\nThe use proxy option should often be enabled, as hawtio is running in your browser; usually due to CORS; you cannot open a different host or port from your browser (due to browse security restrictions); so we have to use a proxy servlet inside the hawtio web app to proxy all requests for a different jolokia server - so we can communicate with a different jolokia agent.\nIf you use the hawtio Chrome Extension this isn\u2019t required; since Chrome Extensions are allowed to connect to any host/port.\n\nThe "Local" sub-tab lists local JVMs running on your machine and allows you to install the Jolokia JVM agent into a running JVM and connect to it.\nFor this to actually work you need to have your JDK\'s "tools.jar" in the classpath, along with Jolokia\'s JVM agent jar.\n\nThe "Discover" sub-tab lists all JVMs which Jolokia could discover in the network, using its built-in discovery.\n');
 $templateCache.put('plugins/threads/doc/help.md','### Threads\n\nThe Threads plugin in [hawtio](http://hawt.io "hawtio") offers functionality for inspecting the threads running in the JVM.\n');}]); hawtioPluginLoader.addModule("hawtio-jmx-templates");

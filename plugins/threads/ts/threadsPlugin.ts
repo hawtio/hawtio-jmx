@@ -9,11 +9,11 @@ namespace Threads {
   export var mbeanType = 'Threading';
   export var mbean = jmxDomain + ":type=" + mbeanType;
 
-  export var _module = angular.module(pluginName, ['patternfly']);
-
+  export var _module = angular.module(pluginName, ['patternfly', 'patternfly.toolbars', 'patternfly.table']);
+  
   _module.config(["$routeProvider", ($routeProvider) => {
-    $routeProvider.
-        when('/threads', {templateUrl: UrlHelpers.join(templatePath, 'threads.html')});
+    $routeProvider
+      .when('/threads', {templateUrl: UrlHelpers.join(templatePath, 'threads.html')});
   }]);
 
   _module.run(["$templateCache", "workspace", "viewRegistry", "layoutFull", "helpRegistry", "HawtioNav",
@@ -30,7 +30,6 @@ namespace Threads {
                 .tooltip(() => 'View information about the threads in the JVM')
                 .isSelected(() => workspace.isTopTabActive("threads"))
                 .build();
-
     nav.add(tab);
   }]);
 

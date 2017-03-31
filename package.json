@@ -16,7 +16,7 @@
     "@hawtio/forms": "~3.0.0",
     "@hawtio/preferences": "~3.0.8",
     "@hawtio/ui": "~3.0.28",
-    "angular-patternfly": "^4.0.0",
+    "angular-patternfly": "~4.2.0",
     "angular-resizable": "~1.2.0",
     "patternfly-bootstrap-treeview": "~2.1.1"
   },
@@ -51,7 +51,7 @@
     "angular": "1.6.5",
     "angular-sanitize": "1.6.5",
     "angular-ui-bootstrap": "2.5.0",
-    "bootstrap-select": "1.12.3",
+    "bootstrap-select": "1.12.4",
     "@types/jquery": "2.0.48",
     "datatables.net": "1.10.15",
     "moment": "2.18.1"
