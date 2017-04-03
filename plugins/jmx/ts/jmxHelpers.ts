@@ -234,12 +234,10 @@ module Jmx {
   }
 
   export function enableTree($scope, $location: ng.ILocationService, workspace: Core.Workspace, treeElement, children, redraw = false, onActivateFn = null) {
-    //$scope.workspace = workspace;
     if (treeElement.length) {
       if (!onActivateFn) {
         onActivateFn = (node:DynaTreeNode) => {
           var data = node.data;
-          //$scope.select(data);
           workspace.updateSelectionNode(data);
           Core.$apply($scope);
         };
@@ -314,7 +312,6 @@ module Jmx {
         },
         persist: false,
         debugLevel: 0,
-        //children: $scope.workspace.tree.children
         children: children
       });
 
