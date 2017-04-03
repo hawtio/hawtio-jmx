@@ -310,6 +310,7 @@ module Jmx {
           }
           return true;
         },
+        imagePath: '/',
         persist: false,
         debugLevel: 0,
         children: children

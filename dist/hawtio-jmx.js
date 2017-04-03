@@ -1916,12 +1916,10 @@ var Jmx;
     function enableTree($scope, $location, workspace, treeElement, children, redraw, onActivateFn) {
         if (redraw === void 0) { redraw = false; }
         if (onActivateFn === void 0) { onActivateFn = null; }
-        //$scope.workspace = workspace;
         if (treeElement.length) {
             if (!onActivateFn) {
                 onActivateFn = function (node) {
                     var data = node.data;
-                    //$scope.select(data);
                     workspace.updateSelectionNode(data);
                     Core.$apply($scope);
                 };
@@ -1995,9 +1993,9 @@ var Jmx;
                     }
                     return true;
                 },
+                imagePath: '/',
                 persist: false,
                 debugLevel: 0,
-                //children: $scope.workspace.tree.children
                 children: children
             });
             if (redraw) {
