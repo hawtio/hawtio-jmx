@@ -9,14 +9,17 @@
 /// <reference path="workspace.ts"/>
 module Jmx {
 
-  export var _module = angular.module(pluginName, ['angularResizable']);
+  export var _module = angular.module(pluginName, [
+    'angularResizable',
+    'hawtio-jmx-operations'
+  ]);
 
   _module.config(['HawtioNavBuilderProvider', "$routeProvider", (builder:HawtioMainNav.BuilderFactory, $routeProvider) => {
 
     $routeProvider
       .when('/jmx', { redirectTo: '/jmx/attributes' })
       .when('/jmx/attributes', {templateUrl: UrlHelpers.join(templatePath, 'attributes.html')})
-      .when('/jmx/operations', {templateUrl: UrlHelpers.join(templatePath, 'operations.html')})
+      .when('/jmx/operations', {template: '<operations></operations>'})
       .when('/jmx/charts', {templateUrl: UrlHelpers.join(templatePath, 'charts.html')})
       .when('/jmx/chartEdit', {templateUrl: UrlHelpers.join(templatePath, 'chartEdit.html')})
       .when('/jmx/help/:tabName', {templateUrl: 'app/core/html/help.html'})
@@ -43,7 +46,7 @@ module Jmx {
   _module.controller("Jmx.TabController", ["$scope", "$route", "$location", "layoutTree", "layoutFull", "viewRegistry", "workspace", ($scope, $route, $location: ng.ILocationService, layoutTree, layoutFull, viewRegistry, workspace: Core.Workspace) => {
 
     $scope.isTabActive = path => {
-      return path === $location.path();
+      return _.startsWith($location.path(), path);
     };
 
     $scope.goto = (path: string) => {

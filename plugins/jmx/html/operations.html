@@ -1,93 +1,22 @@
-<script type="text/ng-template" id="operationTemplate">
-  <div class="jmx-operation-wrapper" ng-controller="Jmx.OperationController">
-    <h3 ng-bind="item.name"></h3>
-    <div>
-      <p ng-hide="item.args.length">
-        This JMX operation requires no arguments. Click the 'Execute' button to invoke the operation.
-      </p>
-      <p ng-show="item.args.length">
-        This JMX operation requires some parameters. Fill in the fields below as necessary and click the 'Execute'
-        button to invoke the operation.
-      </p>
-      <div simple-form data="formConfig" entity="entity" name="entryForm"></div>
-      <form class="form-horizontal" ng-submit="onSubmit()">
-        <div class="form-group">
-          <div ng-class="{'col-sm-offset-2 col-sm-10': item.args.length, 'col-sm-12': !item.args.length}">
-            <button type="submit" class="btn btn-primary">Execute</button>
-            <button type="button" class="btn btn-default" ng-click="reset()" ng-show="item.args.length">Reset</button>
-            <button type="button" class="btn btn-default" ng-click="close()">Close</button>
-          </div>
-        </div>
-      </form>
-      <div hawtio-editor="operationResult" mode="mode" read-only="true" ng-show="operationResult !== ''"></div>
-    </div>
-    <form class="jolokia-form">
-      <div class="form-group">
-        <label for="jolokia-url-field">Jolokia REST URL</label>
-        <div class="input-group">
-          <input type="text" id="jolokia-url-field" class="form-control" value="{{jolokiaUrl}}" readonly>
-          <div class="input-group-addon input-group-button">
-            <button class="btn btn-sm btn-default btn-clipboard" data-clipboard-target="#jolokia-url-field"
-                    title="Copy to clipboard" aria-label="Copy to clipboard">
-              <i class="fa fa-clipboard" aria-hidden="true"></i>
-            </button>
-          </div>
-        </div>
+<p ng-if="$ctrl.operations.length === 0">
+  This MBean has no JMX operations.
+</p>
+<div ng-if="$ctrl.operations.length > 0">
+  <p>
+    This MBean supports the following JMX operations. Expand an item in the list to invoke that operation.
+  </p>
+  <pf-list-view class="jmx-operations-list-view" items="$ctrl.operations" config="$ctrl.config"
+    action-buttons="$ctrl.actionButtons" menu-actions="$ctrl.menuActions">
+    <div class="list-view-pf-stacked">
+      <div class="list-group-item-heading">
+        {{item.simpleName}}
       </div>
-    </form>
-  </div>
-</script>
-
-<div ng-controller="Jmx.OperationsController">
-  
-  <h2>Operations</h2>
-  <h3>{{title}}</h3>
-  
-  <div ng-show="fetched">
-    
-    <p ng-hide="operations.length === 0 || showInvoke">
-      This MBean supports the following JMX operations.  Click an item in the list to invoke that operation.
-    </p>
-    <p ng-show="operations.length === 0">This MBean has no JMX operations.</p>
-    
-    <div class="row toolbar-pf table-view-pf-toolbar" ng-hide="operations.length === 0 || showInvoke">
-      <div class="col-sm-12">
-        <form class="toolbar-pf-actions search-pf">
-          <div class="form-group toolbar-pf-filter has-clear">
-            <div class="search-pf-input-group">
-              <label for="jmx-operations-search" class="sr-only">Filter</label>
-              <input id="jmx-operations-search" type="search" class="form-control" ng-model="methodFilter"
-                     placeholder="Filter by keyword...">
-              <button type="button" class="clear" aria-hidden="true" ng-click="methodFilter = ''">
-                <span class="pficon pficon-close"></span>
-              </button>
-            </div>
-          </div>
-        </form>
+      <div class="list-group-item-text">
+        {{item.description}}
       </div>
     </div>
-    
-    <div ng-show="showInvoke">
-      <div compile="template"></div>
-    </div>
-
-    <table class="table table-striped table-bordered jmx-operations-table" ng-hide="operations.length === 0 || showInvoke">
-      <tbody>
-        <tr ng-repeat="operation in operations track by operation.displayName" ng-show="doFilter(operation)">
-          <td>
-            <a href="" ng-click="invokeOp(operation)" ng-show="canInvoke(operation)">{{operation.displayName}}</a>
-            <span ng-show="!canInvoke(operation)">{{operation.displayName}}</span>
-          </td>
-          <td>
-            <button class="btn btn-sm btn-default btn-clipboard" data-clipboard-text="{{operation.displayName}}"
-                    title="Copy method name to clipboard" aria-label="Copy method name to clipboard">
-              <i class="fa fa-clipboard" aria-hidden="true"></i>
-            </button>
-          </td>
-        </tr>
-      </tbody>
-    </table>
-
-  </div>
-  
+    <list-expanded-content>
+      <operation-form operation="$parent.item"></operation-form>
+    </list-expanded-content>
+  </pf-list-view>
 </div>

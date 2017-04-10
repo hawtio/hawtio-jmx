@@ -4,9 +4,6 @@
 
 <div class="table-view" ng-controller="Jmx.AttributesController">
   
-  <h2>Attributes</h2>
-  <h3>{{title}}</h3>
-  
   <div ng-if="gridData.length > 0">
     <div ng-include src="toolBarTemplate()"></div>
     <div compile="attributes"></div>

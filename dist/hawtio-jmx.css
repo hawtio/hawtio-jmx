@@ -50,6 +50,19 @@ body {
   text-align: center;
 }
 
+#jvm-remote .list-group-item-container .form-horizontal {
+  margin: 10px 0;
+}
+#jvm-remote .list-group-item-container .form-horizontal > .form-group:last-child {
+  margin-bottom: 0;
+}
+#jvm-remote .dropdown-kebab-pf .btn-link {
+  padding-left: 10px;
+  padding-right: 10px;
+  margin-left: 0px;
+  margin-right: -10px;
+}
+
 .jmx-attributes-table th:nth-child(1) {
   width: 40%;
 }
@@ -192,11 +205,15 @@ div.tree-nav-layout .sidebar-pf .rg-right {
   flex-direction: column;
   height: 100%;
 }
+.tree-nav-main h1 {
+  margin-left: 20px;
+}
 .tree-nav-main .nav-tabs {
   flex: 0 0 auto;
   padding-top: 20px;
   margin-left: 20px;
   margin-right: 20px;
+  margin-bottom: 20px;
 }
 .tree-nav-main .contents {
   flex: 1 1 auto;
@@ -206,27 +223,18 @@ div.tree-nav-layout .sidebar-pf .rg-right {
   padding-right: 20px;
 }
 
-.jmx-operation-wrapper .jolokia-form {
-  margin-top: 20px;
+.jmx-operations-list-view .list-view-pf-stacked {
+  width: 100%;
 }
-.jmx-operation-wrapper .jolokia-url {
-  word-break: break-all;
+.jmx-operations-list-view .list-group-item-heading {
+  font-size: 14px;
 }
-.jmx-operations-table td:last-child {
-  width: 1%;
+.jmx-operation-result {
+  max-height: 400px;
+  white-space: pre-wrap;
 }
-
-#jvm-remote .list-group-item-container .form-horizontal {
-  margin: 10px 0;
-}
-#jvm-remote .list-group-item-container .form-horizontal > .form-group:last-child {
-  margin-bottom: 0;
-}
-#jvm-remote .dropdown-kebab-pf .btn-link {
-  padding-left: 10px;
-  padding-right: 10px;
-  margin-left: 0px;
-  margin-right: -10px;
+.jmx-operation-error {
+  background-color: #ffe6e6;
 }
 
 @media screen and (max-width: 767px) {

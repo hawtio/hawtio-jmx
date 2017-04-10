@@ -745,7 +745,7 @@ module Core {
         $location.search(q);
       }
       // Emit an event so other parts of the UI can update accordingly
-      this.$rootScope.$emit('jmxTreeClicked');
+      this.$rootScope.$emit('jmxTreeClicked', this.selection);
 
       // if we have updated the selection (rather than just loaded a page)
       // lets use the previous preferred view - otherwise we may be loading

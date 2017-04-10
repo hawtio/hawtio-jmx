@@ -1364,7 +1364,7 @@ var Core;
                 $location.search(q);
             }
             // Emit an event so other parts of the UI can update accordingly
-            this.$rootScope.$emit('jmxTreeClicked');
+            this.$rootScope.$emit('jmxTreeClicked', this.selection);
             // if we have updated the selection (rather than just loaded a page)
             // lets use the previous preferred view - otherwise we may be loading
             // a page from a bookmark so lets not change the view :)
@@ -2129,12 +2129,13 @@ var Jmx;
 /// <reference path="workspace.ts"/>
 var Jmx;
 (function (Jmx) {
-    Jmx._module = angular.module(Jmx.pluginName, ['angularResizable']);
+    Jmx._module = angular.module(Jmx.pluginName, ['angularResizable', 'hawtio-jmx-operations']);
     Jmx._module.config(['HawtioNavBuilderProvider', "$routeProvider", function (builder, $routeProvider) {
             $routeProvider
                 .when('/jmx', { redirectTo: '/jmx/attributes' })
                 .when('/jmx/attributes', { templateUrl: UrlHelpers.join(Jmx.templatePath, 'attributes.html') })
-                .when('/jmx/operations', { templateUrl: UrlHelpers.join(Jmx.templatePath, 'operations.html') })
+                .when('/jmx/operations', { template: '<operations></operations>' })
+                .when('/jmx/operations/:name', { templateUrl: UrlHelpers.join(Jmx.templatePath, 'operation.html') })
                 .when('/jmx/charts', { templateUrl: UrlHelpers.join(Jmx.templatePath, 'charts.html') })
                 .when('/jmx/chartEdit', { templateUrl: UrlHelpers.join(Jmx.templatePath, 'chartEdit.html') })
                 .when('/jmx/help/:tabName', { templateUrl: 'app/core/html/help.html' })
@@ -2155,7 +2156,7 @@ var Jmx;
         }]);
     Jmx._module.controller("Jmx.TabController", ["$scope", "$route", "$location", "layoutTree", "layoutFull", "viewRegistry", "workspace", function ($scope, $route, $location, layoutTree, layoutFull, viewRegistry, workspace) {
             $scope.isTabActive = function (path) {
-                return path === $location.path();
+                return _.startsWith($location.path(), path);
             };
             $scope.goto = function (path) {
                 $location.path(path);
@@ -3701,284 +3702,6 @@ var Jmx;
         }]);
 })(Jmx || (Jmx = {}));
 
-/**
-* @module Jmx
-*/
-/// <reference path="./jmxPlugin.ts"/>
-var Jmx;
-(function (Jmx) {
-    var JAVA_TYPE_DEFAULT_VALUES = {
-        'boolean': false,
-        'int': 0,
-        'long': 0,
-        'java.lang.Boolean': false,
-        'java.lang.Integer': 0,
-        'java.lang.Long': 0,
-        'java.lang.String': ''
-    };
-    // IOperationControllerScope
-    Jmx._module.controller("Jmx.OperationController", ["$scope", "workspace", "jolokia", "$timeout", "$location", "localStorage", "$browser", function ($scope, workspace, jolokia, $timeout, $location, localStorage, $browser) {
-            $scope.item = $scope.selectedOperation;
-            $scope.desc = $scope.item.desc;
-            $scope.operationResult = '';
-            $scope.mode = "text";
-            $scope.entity = {};
-            $scope.formConfig = {
-                properties: {}
-            };
-            var url = $location.protocol() + "://" + $location.host() + ":" + $location.port() + $browser.baseHref();
-            $scope.jolokiaUrl = url + localStorage["url"] + "/exec/" + workspace.getSelectedMBeanName() + "/" + $scope.item.name;
-            $scope.item.args.forEach(function (arg) {
-                $scope.formConfig.properties[arg.name] = {
-                    type: arg.type,
-                    tooltip: arg.desc,
-                    help: "Type: " + arg.type
-                };
-            });
-            $timeout(function () {
-                $("html, body").animate({ scrollTop: 0 }, "medium");
-            }, 250);
-            var sanitizeArgs = function (args) {
-                if (args) {
-                    args.forEach(function (arg) {
-                        switch (arg.type) {
-                            case "int":
-                            case "long":
-                                arg.formType = "number";
-                                break;
-                            default:
-                                arg.formType = "text";
-                        }
-                    });
-                }
-                return args;
-            };
-            $scope.args = sanitizeArgs($scope.item.args);
-            $scope.dump = function (data) {
-                console.log(data);
-            };
-            $scope.ok = function () {
-                $scope.operationResult = '';
-            };
-            $scope.reset = function () {
-                $scope.entity = {};
-                $scope.operationResult = '';
-            };
-            $scope.close = function () {
-                $scope.$parent.showInvoke = false;
-            };
-            $scope.handleResponse = function (response) {
-                $scope.operationStatus = "success";
-                if (response === null || 'null' === response) {
-                    $scope.operationResult = "Operation Succeeded!";
-                }
-                else if (typeof response === 'string') {
-                    $scope.operationResult = response;
-                }
-                else {
-                    $scope.operationResult = angular.toJson(response, true);
-                }
-                $scope.mode = CodeEditor.detectTextFormat($scope.operationResult);
-                Core.$apply($scope);
-            };
-            $scope.onSubmit = function (json, form) {
-                Jmx.log.debug("onSubmit: json:", json, " form: ", form);
-                Jmx.log.debug("$scope.item.args: ", $scope.item.args);
-                angular.forEach(json, function (value, key) {
-                    $scope.item.args.find(function (arg) {
-                        return arg['name'] === key;
-                    }).value = value;
-                });
-                $scope.execute();
-            };
-            $scope.execute = function () {
-                var node = workspace.selection;
-                if (!node) {
-                    return;
-                }
-                var objectName = node.objectName;
-                if (!objectName) {
-                    return;
-                }
-                var args = [objectName, $scope.item.name];
-                if ($scope.item.args) {
-                    $scope.item.args.forEach(function (arg) {
-                        var value = $scope.entity[arg.name] || JAVA_TYPE_DEFAULT_VALUES[arg.type];
-                        args.push(value);
-                    });
-                }
-                args.push(Core.onSuccess($scope.handleResponse, {
-                    error: function (response) {
-                        $scope.operationStatus = "error";
-                        var error = response.error;
-                        $scope.operationResult = error;
-                        var stacktrace = response.stacktrace;
-                        if (stacktrace) {
-                            $scope.operationResult = stacktrace;
-                        }
-                        Core.$apply($scope);
-                    }
-                }));
-                console.log(args);
-                var fn = jolokia.execute;
-                fn.apply(jolokia, args);
-            };
-        }]);
-    Jmx._module.controller("Jmx.OperationsController", ["$scope", "workspace", "jolokia", "rbacACLMBean", "$templateCache", function ($scope, workspace, jolokia, rbacACLMBean, $templateCache) {
-            $scope.fetched = false;
-            $scope.operations = [];
-            $scope.objectName = '';
-            $scope.methodFilter = '';
-            $scope.workspace = workspace;
-            $scope.selectedOperation = null;
-            $scope.showInvoke = false;
-            $scope.template = "";
-            $scope.invokeOp = function (operation) {
-                if (!$scope.canInvoke(operation)) {
-                    return;
-                }
-                $scope.selectedOperation = operation;
-                $scope.showInvoke = true;
-            };
-            $scope.getJson = function (operation) {
-                return angular.toJson(operation, true);
-            };
-            $scope.cancel = function () {
-                $scope.selectedOperation = null;
-                $scope.showInvoke = false;
-            };
-            $scope.$watch('showInvoke', function (newValue, oldValue) {
-                if (newValue !== oldValue) {
-                    if (newValue) {
-                        $scope.template = $templateCache.get("operationTemplate");
-                    }
-                    else {
-                        $scope.template = "";
-                    }
-                }
-            });
-            var fetch = Core.throttled(function () {
-                var node = workspace.selection;
-                if (!node) {
-                    return;
-                }
-                $scope.objectName = node.objectName;
-                if (!$scope.objectName) {
-                    return;
-                }
-                $scope.title = node.title;
-                jolokia.request({
-                    type: 'list',
-                    path: Core.escapeMBeanPath($scope.objectName)
-                }, Core.onSuccess(render));
-            }, 500);
-            function getArgs(args) {
-                return "(" + args.map(function (arg) { return arg.type; }).join() + ")";
-            }
-            function getArgType(arg) {
-                var lastDotIndex = arg.type.lastIndexOf('.');
-                if (lastDotIndex > 0) {
-                    return arg.type.substr(lastDotIndex + 1);
-                }
-                else {
-                    return arg.type;
-                }
-            }
-            function toDisplayName(operationName) {
-                var startParamsIndex = operationName.indexOf('(') + 1;
-                var endParamsIndex = operationName.indexOf(')');
-                if (startParamsIndex === endParamsIndex) {
-                    return operationName;
-                }
-                else {
-                    var paramsStr = operationName.substring(startParamsIndex, endParamsIndex);
-                    var params = paramsStr.split(',');
-                    var simpleParams = params.map(function (param) {
-                        var lastDotIndex = param.lastIndexOf('.');
-                        return lastDotIndex > 0 ? param.substr(lastDotIndex + 1) : param;
-                    });
-                    var simpleParamsStr = simpleParams.join(', ');
-                    var simpleOperationName = operationName.replace(paramsStr, simpleParamsStr);
-                    return simpleOperationName;
-                }
-            }
-            $scope.doFilter = function (item) {
-                var filterTextLowerCase = $scope.methodFilter.toLowerCase();
-                return Core.isBlank($scope.methodFilter) ||
-                    item.name.toLowerCase().indexOf(filterTextLowerCase) !== -1;
-            };
-            $scope.canInvoke = function (operation) {
-                if (!('canInvoke' in operation)) {
-                    return true;
-                }
-                else {
-                    return operation['canInvoke'];
-                }
-            };
-            $scope.$watch('workspace.selection', function (newValue, oldValue) {
-                if (!workspace.selection || workspace.moveIfViewInvalid()) {
-                    return;
-                }
-                fetch();
-            });
-            function fetchPermissions(objectName, operations) {
-                var map = {};
-                map[objectName] = [];
-                angular.forEach(operations, function (operation) {
-                    map[objectName].push(operation.name);
-                });
-                rbacACLMBean.then(function (rbacACLMBean) {
-                    jolokia.request({
-                        type: 'exec',
-                        mbean: rbacACLMBean,
-                        operation: 'canInvoke(java.util.Map)',
-                        arguments: [map]
-                    }, Core.onSuccess(function (response) {
-                        var map = response.value;
-                        console.log(map);
-                        angular.forEach(map[objectName], function (value, key) {
-                            operations[key]['canInvoke'] = value['CanInvoke'];
-                        });
-                        Jmx.log.debug("Got operations: ", $scope.operations);
-                        Core.$apply($scope);
-                    }, {
-                        error: function (response) {
-                            // silently ignore
-                            Jmx.log.debug("Failed to fetch ACL for operations: ", response);
-                            Core.$apply($scope);
-                        }
-                    }));
-                });
-            }
-            function createOperation(key, value) {
-                var name = key + getArgs(value.args);
-                return angular.extend({
-                    name: name,
-                    displayName: toDisplayName(name)
-                }, value);
-            }
-            function render(response) {
-                $scope.fetched = true;
-                var operations = [];
-                angular.forEach(response.value.op, function (value, key) {
-                    if (angular.isArray(value)) {
-                        angular.forEach(value, function (item) {
-                            operations.push(createOperation(key, item));
-                        });
-                    }
-                    else {
-                        operations.push(createOperation(key, value));
-                    }
-                });
-                if (operations.length > 0) {
-                    fetchPermissions($scope.objectName, operations);
-                }
-                $scope.operations = _.sortBy(operations, function (operation) { return operation.displayName; });
-                Core.$apply($scope);
-            }
-        }]);
-})(Jmx || (Jmx = {}));
-
 /// <reference path="../../includes.ts"/>
 /// <reference path="jvmPlugin.ts"/>
 /**
@@ -4657,14 +4380,323 @@ var Threads;
         }]);
 })(Threads || (Threads = {}));
 
+/// <reference path="../jmxPlugin.ts"/>
+/// <reference path="../workspace.ts"/>
+var Jmx;
+(function (Jmx) {
+    var HeaderController = (function () {
+        HeaderController.$inject = ["$rootScope"];
+        function HeaderController($rootScope) {
+            'ngInject';
+            var _this = this;
+            $rootScope.$on('jmxTreeClicked', function (event, selectedNode) {
+                _this.title = selectedNode.title;
+            });
+        }
+        return HeaderController;
+    }());
+    Jmx.HeaderController = HeaderController;
+    Jmx.headerComponent = {
+        template: "<h1>{{$ctrl.title}}</h1>",
+        controller: HeaderController
+    };
+    Jmx._module.component('jmxHeader', Jmx.headerComponent);
+})(Jmx || (Jmx = {}));
+
+var Jmx;
+(function (Jmx) {
+    var Operation = (function () {
+        function Operation(method, args, description) {
+            this.args = args;
+            this.description = description;
+            this.name = Operation.buildName(method, args);
+            this.simpleName = Operation.buildSimpleName(this.name);
+        }
+        Operation.buildName = function (method, args) {
+            return method + "(" + args.map(function (arg) { return arg.type; }).join() + ")";
+        };
+        Operation.buildSimpleName = function (name) {
+            var startParamsIndex = name.indexOf('(') + 1;
+            var endParamsIndex = name.indexOf(')');
+            if (startParamsIndex === endParamsIndex) {
+                return name;
+            }
+            else {
+                var paramsStr = name.substring(startParamsIndex, endParamsIndex);
+                var params = paramsStr.split(',');
+                var simpleParams = params.map(function (param) {
+                    var lastDotIndex = param.lastIndexOf('.');
+                    return lastDotIndex > 0 ? param.substr(lastDotIndex + 1) : param;
+                });
+                var simpleParamsStr = simpleParams.join(', ');
+                var simpleOperationName = name.replace(paramsStr, simpleParamsStr);
+                return simpleOperationName;
+            }
+        };
+        return Operation;
+    }());
+    Jmx.Operation = Operation;
+})(Jmx || (Jmx = {}));
+
+/// <reference path="operation.ts"/>
+var Jmx;
+(function (Jmx) {
+    var OperationsService = (function () {
+        OperationsService.$inject = ["$q", "jolokia", "rbacACLMBean"];
+        function OperationsService($q, jolokia, rbacACLMBean) {
+            'ngInject';
+            this.$q = $q;
+            this.jolokia = jolokia;
+            this.rbacACLMBean = rbacACLMBean;
+        }
+        OperationsService.prototype.getOperations = function (mbeanName) {
+            return this.loadOperations(mbeanName)
+                .then(function (operations) { return _.sortBy(operations, function (operation) { return operation.simpleName; }); });
+        };
+        OperationsService.prototype.loadOperations = function (mbeanName) {
+            var _this = this;
+            return this.$q(function (resolve, reject) {
+                _this.jolokia.request({
+                    type: 'list',
+                    path: Core.escapeMBeanPath(mbeanName)
+                }, {
+                    success: function (response) {
+                        var operations = [];
+                        angular.forEach(response.value.op, function (value, key) {
+                            if (angular.isArray(value)) {
+                                angular.forEach(value, function (item) {
+                                    operations.push(new Jmx.Operation(key, item.args, item.desc));
+                                });
+                            }
+                            else {
+                                operations.push(new Jmx.Operation(key, value.args, value.desc));
+                            }
+                        });
+                        resolve(operations);
+                    }
+                }, {
+                    error: function (response) {
+                        Jmx.log.debug('OperationsService.loadOperations() failed: ' + response.error);
+                    }
+                });
+            });
+        };
+        OperationsService.prototype.getOperation = function (mbeanName, operationName) {
+            return this.getOperations(mbeanName)
+                .then(function (operations) { return _.find(operations, function (operation) { return operation.name === operationName; }); });
+        };
+        OperationsService.prototype.executeOperation = function (mbeanName, operation, argValues) {
+            var _this = this;
+            if (argValues === void 0) { argValues = []; }
+            return this.$q(function (resolve, reject) {
+                (_a = _this.jolokia).execute.apply(_a, [mbeanName, operation.name].concat(argValues, [{
+                    success: function (response) {
+                        if (response === null || response === 'null') {
+                            resolve('Operation Succeeded!');
+                        }
+                        else if (typeof response === 'string') {
+                            resolve(response);
+                        }
+                        else {
+                            resolve(angular.toJson(response, true));
+                        }
+                    },
+                    error: function (response) { return reject(response.stacktrace ? response.stacktrace : response.error); }
+                }]));
+                var _a;
+            });
+        };
+        ;
+        return OperationsService;
+    }());
+    Jmx.OperationsService = OperationsService;
+})(Jmx || (Jmx = {}));
+
+/// <reference path="../workspace.ts"/>
+/// <reference path="operations.service.ts"/>
+/// <reference path="operation.ts"/>
+var Jmx;
+(function (Jmx) {
+    var OperationFormController = (function () {
+        OperationFormController.$inject = ["workspace", "operationsService"];
+        function OperationFormController(workspace, operationsService) {
+            'ngInject';
+            this.workspace = workspace;
+            this.operationsService = operationsService;
+            this.editorMode = 'text';
+            this.formFields = this.operation.args.map(function (arg) { return ({
+                label: arg.name,
+                type: OperationFormController.convertToHtmlInputType(arg.type),
+                helpText: OperationFormController.buildHelpText(arg),
+                value: OperationFormController.getDefaultValue(arg.type)
+            }); });
+        }
+        OperationFormController.buildHelpText = function (arg) {
+            if (arg.desc && arg.desc !== arg.name) {
+                if (arg.desc.charAt(arg.desc.length - 1) !== '.') {
+                    arg.desc = arg.desc + '.';
+                }
+                arg.desc = arg.desc + ' ';
+            }
+            else {
+                arg.desc = '';
+            }
+            return arg.desc + 'Type: ' + arg.type;
+        };
+        OperationFormController.convertToHtmlInputType = function (javaType) {
+            switch (javaType) {
+                case 'boolean':
+                case 'java.lang.Boolean':
+                    return 'checkbox';
+                case 'int':
+                case 'long':
+                case 'java.lang.Integer':
+                case 'java.lang.Long':
+                    return 'number';
+                default:
+                    return 'text';
+            }
+        };
+        OperationFormController.getDefaultValue = function (javaType) {
+            switch (javaType) {
+                case 'boolean':
+                case 'java.lang.Boolean':
+                    return false;
+                case 'int':
+                case 'long':
+                case 'java.lang.Integer':
+                case 'java.lang.Long':
+                    return 0;
+                default:
+                    return '';
+            }
+        };
+        OperationFormController.prototype.execute = function () {
+            var _this = this;
+            var mbeanName = this.workspace.getSelectedMBeanName();
+            var argValues = this.formFields.map(function (formField) { return formField.value; });
+            this.operationsService.executeOperation(mbeanName, this.operation, argValues)
+                .then(function (result) {
+                _this.operationFailed = false;
+                _this.operationResult = result.trim();
+            })
+                .catch(function (error) {
+                _this.operationFailed = true;
+                _this.operationResult = error.trim();
+            });
+        };
+        OperationFormController.prototype.cancel = function () {
+            this.operation.isExpanded = false;
+        };
+        return OperationFormController;
+    }());
+    Jmx.OperationFormController = OperationFormController;
+    Jmx.operationFormComponent = {
+        bindings: {
+            operation: '<'
+        },
+        templateUrl: 'plugins/jmx/html/operation-form.html',
+        controller: OperationFormController
+    };
+})(Jmx || (Jmx = {}));
+
+/// <reference path="../workspace.ts"/>
+/// <reference path="operations.service.ts"/>
+/// <reference path="operation.ts"/>
+var Jmx;
+(function (Jmx) {
+    var OperationsController = (function () {
+        OperationsController.$inject = ["$scope", "$location", "workspace", "jolokiaUrl", "operationsService"];
+        function OperationsController($scope, $location, workspace, jolokiaUrl, operationsService) {
+            'ngInject';
+            this.$scope = $scope;
+            this.$location = $location;
+            this.workspace = workspace;
+            this.jolokiaUrl = jolokiaUrl;
+            this.operationsService = operationsService;
+        }
+        OperationsController.prototype.$onInit = function () {
+            this.configureListView();
+            this.fetchOperations();
+        };
+        OperationsController.prototype.configureListView = function () {
+            var _this = this;
+            this.config = {
+                showSelectBox: false,
+                useExpandingRows: true
+            };
+            this.actionButtons = [
+                {
+                    name: 'Copy',
+                    class: 'btn-copy',
+                    title: 'Copy method name',
+                    actionFn: function (action, item) {
+                        var clipboard = new window.Clipboard('.btn-copy', {
+                            text: function (trigger) {
+                                return item.simpleName;
+                            }
+                        });
+                        setTimeout(function () { return clipboard.destroy(); }, 1000);
+                    }
+                }
+            ];
+            this.menuActions = [
+                {
+                    name: 'Copy Jolokia URL',
+                    actionFn: function (action, item) {
+                        var clipboard = new window.Clipboard('.jmx-operations-list-view .dropdown-menu a', {
+                            text: function (trigger) { return _this.buildJolokiaUrl(item); }
+                        });
+                        setTimeout(function () { return clipboard.destroy(); }, 1000);
+                    }
+                }
+            ];
+        };
+        OperationsController.prototype.buildJolokiaUrl = function (operation) {
+            return this.jolokiaUrl + '/exec/' + this.workspace.getSelectedMBeanName() + '/' + operation.simpleName;
+        };
+        OperationsController.prototype.fetchOperations = function () {
+            var _this = this;
+            var objectName = this.workspace.getSelectedMBeanName();
+            if (objectName) {
+                this.operationsService.getOperations(objectName)
+                    .then(function (operations) { return _this.operations = operations; });
+            }
+        };
+        OperationsController.prototype.gotoOperation = function (operation) {
+            this.$location.path("/jmx/operations/" + operation.name);
+        };
+        return OperationsController;
+    }());
+    Jmx.OperationsController = OperationsController;
+    Jmx.operationsComponent = {
+        templateUrl: 'plugins/jmx/html/operations.html',
+        controller: OperationsController
+    };
+})(Jmx || (Jmx = {}));
+
+/// <reference path="../jmxPlugin.ts"/>
+/// <reference path="operations.component.ts"/>
+/// <reference path="operation-form.component.ts"/>
+/// <reference path="operations.service.ts"/>
+var Jmx;
+(function (Jmx) {
+    angular
+        .module('hawtio-jmx-operations', [])
+        .component('operations', Jmx.operationsComponent)
+        .component('operationForm', Jmx.operationFormComponent)
+        .service('operationsService', Jmx.OperationsService);
+})(Jmx || (Jmx = {}));
+
 angular.module('hawtio-jmx-templates', []).run(['$templateCache', function($templateCache) {$templateCache.put('plugins/jmx/html/areaChart.html','<div ng-controller="Jmx.AreaChartController">\n  <script type="text/ng-template" id="areaChart">\n    <fs-area bind="data" duration="250" interpolate="false" point-radius="5" width="width" height="height" label=""></fs-area>\n  </script>\n  <div compile="template"></div>\n</div>\n');
 $templateCache.put('plugins/jmx/html/attributeToolBar.html','<div class="row toolbar-pf table-view-pf-toolbar">\n  <div class="col-sm-12">\n    <form class="toolbar-pf-actions search-pf">\n      <div class="form-group toolbar-pf-filter has-clear">\n        <div class="search-pf-input-group">\n          <label for="jmx-attributes-search" class="sr-only">Filter</label>\n          <input id="jmx-attributes-search" type="search" class="form-control" ng-model="gridOptions.filterOptions.filterText"\n                placeholder="Filter by keyword...">\n          <button type="button" class="clear" aria-hidden="true" ng-click="gridOptions.filterOptions.filterText = \'\'">\n            <span class="pficon pficon-close"></span>\n          </button>\n        </div>\n      </div>\n    </form>\n  </div>\n</div>\n');
-$templateCache.put('plugins/jmx/html/attributes.html','<script type="text/ng-template" id="gridTemplate">\n  <table class="table table-striped table-bordered table-hover jmx-attributes-table" hawtio-simple-table="gridOptions"></table>\n</script>\n\n<div class="table-view" ng-controller="Jmx.AttributesController">\n  \n  <h2>Attributes</h2>\n  <h3>{{title}}</h3>\n  \n  <div ng-if="gridData.length > 0">\n    <div ng-include src="toolBarTemplate()"></div>\n    <div compile="attributes"></div>\n  </div>\n\n  <!-- modal dialog to show/edit the attribute -->\n  <div hawtio-confirm-dialog="showAttributeDialog" ok-button-text="Update"\n       show-ok-button="{{entity.rw ? \'true\' : \'false\'}}" on-ok="onUpdateAttribute()" on-cancel="onCancelAttribute()"\n       cancel-button-text="Close" title="Attribute: {{entity.key}}" optional-size="lg">\n    <div class="dialog-body">\n      <!-- have a form for view and another for edit -->\n      <div simple-form ng-hide="!entity.rw" name="attributeEditor" mode="edit" entity=\'entity\' data=\'attributeSchemaEdit\'></div>\n      <div simple-form ng-hide="entity.rw" name="attributeViewer" mode="view" entity=\'entity\' data=\'attributeSchemaView\'></div>\n    </div>\n  </div>\n\n</div>');
+$templateCache.put('plugins/jmx/html/attributes.html','<script type="text/ng-template" id="gridTemplate">\n  <table class="table table-striped table-bordered table-hover jmx-attributes-table" hawtio-simple-table="gridOptions"></table>\n</script>\n\n<div class="table-view" ng-controller="Jmx.AttributesController">\n  \n  <div ng-if="gridData.length > 0">\n    <div ng-include src="toolBarTemplate()"></div>\n    <div compile="attributes"></div>\n  </div>\n\n  <!-- modal dialog to show/edit the attribute -->\n  <div hawtio-confirm-dialog="showAttributeDialog" ok-button-text="Update"\n       show-ok-button="{{entity.rw ? \'true\' : \'false\'}}" on-ok="onUpdateAttribute()" on-cancel="onCancelAttribute()"\n       cancel-button-text="Close" title="Attribute: {{entity.key}}" optional-size="lg">\n    <div class="dialog-body">\n      <!-- have a form for view and another for edit -->\n      <div simple-form ng-hide="!entity.rw" name="attributeEditor" mode="edit" entity=\'entity\' data=\'attributeSchemaEdit\'></div>\n      <div simple-form ng-hide="entity.rw" name="attributeViewer" mode="view" entity=\'entity\' data=\'attributeSchemaView\'></div>\n    </div>\n  </div>\n\n</div>');
 $templateCache.put('plugins/jmx/html/chartEdit.html','<div ng-controller="Jmx.ChartEditController">\n  <form>\n    <fieldset>\n      <div class="control-group" ng-show="canEditChart()">\n        <input type="submit" class="btn" value="View Chart" ng-click="viewChart()"\n               ng-disabled="!selectedAttributes.length && !selectedMBeans.length"/>\n      </div>\n      <div class="control-group">\n        <table class="table">\n          <thead>\n          <tr>\n            <th ng-show="showAttributes()">Attributes</th>\n            <th ng-show="showElements()">Elements</th>\n          </tr>\n          </thead>\n          <tbody>\n          <tr>\n            <td ng-show="showAttributes()">\n              <select id="attributes" size="20" multiple ng-multiple="true" ng-model="selectedAttributes"\n                      ng-options="name | humanize for (name, value) in metrics"></select>\n            </td>\n            <td ng-show="showElements()">\n              <select id="mbeans" size="20" multiple ng-multiple="true" ng-model="selectedMBeans"\n                      ng-options="name for (name, value) in mbeans"></select>\n            </td>\n          </tr>\n          </tbody>\n        </table>\n\n        <div class="alert" ng-show="!canEditChart()">\n          <button type="button" class="close" data-dismiss="alert">\xD7</button>\n          <strong>No numeric metrics available!</strong> Try select another item to chart on.\n        </div>\n      </div>\n    </fieldset>\n  </form>\n</div>\n');
-$templateCache.put('plugins/jmx/html/charts.html','<div ng-controller="Jmx.ChartController">\n  <h2>Chart</h2>\n  <h3>{{title}}</h3>\n  <div ng-switch="errorMessage()">\n    <div ng-switch-when="metrics">No valid metrics to show for this mbean.</div>\n    <div ng-switch-when="updateRate">Charts aren\'t available when the update rate is set to "No refreshes", go to the <a ng-href="#/preferences{{hash}}">Preferences</a> panel and set a refresh rate to enable charts</div>\n    <div id="charts"></div>\n  </div>\n</div>\n');
+$templateCache.put('plugins/jmx/html/charts.html','<div ng-controller="Jmx.ChartController">\n  <div ng-switch="errorMessage()">\n    <div ng-switch-when="metrics">No valid metrics to show for this mbean.</div>\n    <div ng-switch-when="updateRate">Charts aren\'t available when the update rate is set to "No refreshes", go to the <a ng-href="#/preferences{{hash}}">Preferences</a> panel and set a refresh rate to enable charts</div>\n    <div id="charts"></div>\n  </div>\n</div>\n');
 $templateCache.put('plugins/jmx/html/donutChart.html','<div ng-controller="Jmx.DonutChartController">\n  <script type="text/ng-template" id="donut">\n    <fs-donut bind="data" outer-radius="200" inner-radius="75"></fs-donut>\n  </script>\n  <div compile="template"></div>\n</div>\n');
-$templateCache.put('plugins/jmx/html/layoutTree.html','<div class="tree-nav-layout">\n\n  <div class="sidebar-pf sidebar-pf-left" resizable r-directions="[\'right\']">\n    <div class="tree-nav-sidebar-header" ng-controller="Jmx.TreeHeaderController">\n      <div class="pull-right">\n        <i class="fa fa-plus-square-o" title="Expand All" ng-click="expandAll()"></i>\n        <i class="fa fa-minus-square-o" title="Collapse All" ng-click="contractAll()"></i>\n      </div>\n    </div>\n    <div id="jmxtree" class="tree-nav-sidebar-content" ng-controller="Jmx.MBeansController"></div>\n  </div>\n\n  <div class="tree-nav-main">\n    <ul class="nav nav-tabs" ng-controller="Jmx.TabController">\n      <li ng-class="{active: isTabActive(\'/jmx/attributes\')}">\n        <a href="#" ng-click="goto(\'/jmx/attributes\')">Attributes</a>\n      </li>\n      <li ng-class="{active: isTabActive(\'/jmx/operations\')}">\n        <a href="#" ng-click="goto(\'/jmx/operations\')">Operations</a>\n      </li>\n      <li ng-class="{active: isTabActive(\'/jmx/charts\')}">\n        <a href="#" ng-click="goto(\'/jmx/charts\')">Chart</a>\n      </li>\n    </ul>\n    <div class="contents" ng-view></div>\n  </div>\n</div>\n');
-$templateCache.put('plugins/jmx/html/operations.html','<script type="text/ng-template" id="operationTemplate">\n  <div class="jmx-operation-wrapper" ng-controller="Jmx.OperationController">\n    <h3 ng-bind="item.name"></h3>\n    <div>\n      <p ng-hide="item.args.length">\n        This JMX operation requires no arguments. Click the \'Execute\' button to invoke the operation.\n      </p>\n      <p ng-show="item.args.length">\n        This JMX operation requires some parameters. Fill in the fields below as necessary and click the \'Execute\'\n        button to invoke the operation.\n      </p>\n      <div simple-form data="formConfig" entity="entity" name="entryForm"></div>\n      <form class="form-horizontal" ng-submit="onSubmit()">\n        <div class="form-group">\n          <div ng-class="{\'col-sm-offset-2 col-sm-10\': item.args.length, \'col-sm-12\': !item.args.length}">\n            <button type="submit" class="btn btn-primary">Execute</button>\n            <button type="button" class="btn btn-default" ng-click="reset()" ng-show="item.args.length">Reset</button>\n            <button type="button" class="btn btn-default" ng-click="close()">Close</button>\n          </div>\n        </div>\n      </form>\n      <div hawtio-editor="operationResult" mode="mode" read-only="true" ng-show="operationResult !== \'\'"></div>\n    </div>\n    <form class="jolokia-form">\n      <div class="form-group">\n        <label for="jolokia-url-field">Jolokia REST URL</label>\n        <div class="input-group">\n          <input type="text" id="jolokia-url-field" class="form-control" value="{{jolokiaUrl}}" readonly>\n          <div class="input-group-addon input-group-button">\n            <button class="btn btn-sm btn-default btn-clipboard" data-clipboard-target="#jolokia-url-field"\n                    title="Copy to clipboard" aria-label="Copy to clipboard">\n              <i class="fa fa-clipboard" aria-hidden="true"></i>\n            </button>\n          </div>\n        </div>\n      </div>\n    </form>\n  </div>\n</script>\n\n<div ng-controller="Jmx.OperationsController">\n  \n  <h2>Operations</h2>\n  <h3>{{title}}</h3>\n  \n  <div ng-show="fetched">\n    \n    <p ng-hide="operations.length === 0 || showInvoke">\n      This MBean supports the following JMX operations.  Click an item in the list to invoke that operation.\n    </p>\n    <p ng-show="operations.length === 0">This MBean has no JMX operations.</p>\n    \n    <div class="row toolbar-pf table-view-pf-toolbar" ng-hide="operations.length === 0 || showInvoke">\n      <div class="col-sm-12">\n        <form class="toolbar-pf-actions search-pf">\n          <div class="form-group toolbar-pf-filter has-clear">\n            <div class="search-pf-input-group">\n              <label for="jmx-operations-search" class="sr-only">Filter</label>\n              <input id="jmx-operations-search" type="search" class="form-control" ng-model="methodFilter"\n                     placeholder="Filter by keyword...">\n              <button type="button" class="clear" aria-hidden="true" ng-click="methodFilter = \'\'">\n                <span class="pficon pficon-close"></span>\n              </button>\n            </div>\n          </div>\n        </form>\n      </div>\n    </div>\n    \n    <div ng-show="showInvoke">\n      <div compile="template"></div>\n    </div>\n\n    <table class="table table-striped table-bordered jmx-operations-table" ng-hide="operations.length === 0 || showInvoke">\n      <tbody>\n        <tr ng-repeat="operation in operations track by operation.displayName" ng-show="doFilter(operation)">\n          <td>\n            <a href="" ng-click="invokeOp(operation)" ng-show="canInvoke(operation)">{{operation.displayName}}</a>\n            <span ng-show="!canInvoke(operation)">{{operation.displayName}}</span>\n          </td>\n          <td>\n            <button class="btn btn-sm btn-default btn-clipboard" data-clipboard-text="{{operation.displayName}}"\n                    title="Copy method name to clipboard" aria-label="Copy method name to clipboard">\n              <i class="fa fa-clipboard" aria-hidden="true"></i>\n            </button>\n          </td>\n        </tr>\n      </tbody>\n    </table>\n\n  </div>\n  \n</div>\n');
+$templateCache.put('plugins/jmx/html/layoutTree.html','<div class="tree-nav-layout">\n\n  <div class="sidebar-pf sidebar-pf-left" resizable r-directions="[\'right\']">\n    <div class="tree-nav-sidebar-header" ng-controller="Jmx.TreeHeaderController">\n      <div class="pull-right">\n        <i class="fa fa-plus-square-o" title="Expand All" ng-click="expandAll()"></i>\n        <i class="fa fa-minus-square-o" title="Collapse All" ng-click="contractAll()"></i>\n      </div>\n    </div>\n    <div id="jmxtree" class="tree-nav-sidebar-content" ng-controller="Jmx.MBeansController"></div>\n  </div>\n\n  <div class="tree-nav-main">\n    <jmx-header></jmx-header>\n    <ul class="nav nav-tabs" ng-controller="Jmx.TabController">\n      <li ng-class="{active: isTabActive(\'/jmx/attributes\')}">\n        <a href="#" ng-click="goto(\'/jmx/attributes\')">Attributes</a>\n      </li>\n      <li ng-class="{active: isTabActive(\'/jmx/operations\')}">\n        <a href="#" ng-click="goto(\'/jmx/operations\')">Operations</a>\n      </li>\n      <li ng-class="{active: isTabActive(\'/jmx/charts\')}">\n        <a href="#" ng-click="goto(\'/jmx/charts\')">Chart</a>\n      </li>\n    </ul>\n    <div class="contents" ng-view></div>\n  </div>\n</div>\n');
+$templateCache.put('plugins/jmx/html/operation-form.html','<p ng-hide="$ctrl.operation.args.length">\n  This JMX operation requires no arguments. Click the \'Execute\' button to invoke the operation.\n</p>\n<p ng-show="$ctrl.operation.args.length">\n  This JMX operation requires some parameters. Fill in the fields below and click the \'Execute\' button\n  to invoke the operation.\n</p>\n\n<form class="form-horizontal" ng-submit="$ctrl.execute()">\n  <div class="form-group" ng-repeat="formField in $ctrl.formFields">\n    <label class="col-sm-2 control-label" for="{{formField.label}}">{{formField.label}}</label>\n    <div class="col-sm-10">\n      <input type="{{formField.type}}" id="{{formField.label}}" ng-class="{\'form-control\': formField.type !== \'checkbox\'}"\n        ng-model="formField.value">\n      <span class="help-block">{{formField.helpText}}</span>\n    </div>\n  </div>\n  <div class="form-group">\n    <div ng-class="{\'col-sm-offset-2 col-sm-10\': $ctrl.operation.args.length, \'col-sm-12\': !$ctrl.operation.args.length}">\n      <button type="submit" class="btn btn-primary">Execute</button>\n    </div>\n  </div>\n</form>\n\n<pre class="jmx-operation-result" ng-class="{\'jmx-operation-error\': $ctrl.operationFailed}" ng-show="$ctrl.operationResult">\n  {{$ctrl.operationResult}}\n</pre>\n');
+$templateCache.put('plugins/jmx/html/operations.html','<p ng-if="$ctrl.operations.length === 0">\n  This MBean has no JMX operations.\n</p>\n<div ng-if="$ctrl.operations.length > 0">\n  <p>\n    This MBean supports the following JMX operations. Expand an item in the list to invoke that operation.\n  </p>\n  <pf-list-view class="jmx-operations-list-view" items="$ctrl.operations" config="$ctrl.config"\n    action-buttons="$ctrl.actionButtons" menu-actions="$ctrl.menuActions">\n    <div class="list-view-pf-stacked">\n      <div class="list-group-item-heading">\n        {{item.simpleName}}\n      </div>\n      <div class="list-group-item-text">\n        {{item.description}}\n      </div>\n    </div>\n    <list-expanded-content>\n      <operation-form operation="$parent.item"></operation-form>\n    </list-expanded-content>\n  </pf-list-view>\n</div>\n');
 $templateCache.put('plugins/jvm/html/connect.html','<div id="jvm-remote" ng-controller="JVM.ConnectController">\n\n  <h1>Remote</h1>\n\n  <div class="row">\n    <div class="col-md-7">\n      <div class="toolbar-pf">\n        <form class="toolbar-pf-actions">\n          <div class="form-group">\n            <button class="btn btn-default" ng-click="newConnection()">\n              Add connection\n            </button>\n          </div>\n        </form>\n      </div>\n      <div class="list-group list-view-pf list-view-pf-view">\n        <div class="list-group-item list-view-pf-stacked" \n             ng-class="{\'list-view-pf-expand-active\': connection.expanded}"\n             ng-repeat="connection in connections track by $index">\n          <div class="list-group-item-header" title="{{connection.expanded ? \'\' : \'Click to edit\'}}"\n               ng-click="connection.expanded = !connection.expanded">\n            <div class="list-view-pf-expand">\n              <span class="fa fa-angle-right" ng-class="{\'fa-angle-down\': connection.expanded}"></span>\n            </div>\n            <div class="list-view-pf-actions">\n              <button class="btn btn-default" title="" ng-click="connect(connection); $event.stopPropagation();">\n                Connect\n              </button>\n              <div class="dropdown pull-right dropdown-kebab-pf" ng-class="{\'open\': connection.showSecondaryActions}">\n                <button type="button" id="dropdown-{{$index}}" class="btn btn-link dropdown-toggle" title=""\n                        data-toggle="dropdown" aria-haspopup="true" aria-expanded="{{connection.showSecondaryActions}}" \n                        ng-click="toggleSecondaryActions(connection); $event.stopPropagation();"\n                        ng-blur="hideSecondaryActions(connection)">\n                  <span class="fa fa-ellipsis-v"></span>\n                </button>\n                <ul class="dropdown-menu dropdown-menu-right" aria-labelledby="dropdown-{{$index}}">\n                  <li><a href="#" ng-click="deleteConnection(connection); $event.preventDefault(); $event.stopPropagation();">Remove</a></li>\n                </ul>\n              </div>\n            </div>\n            <div class="list-view-pf-main-info">\n              <div class="list-view-pf-body">\n                <div class="list-view-pf-description">\n                  <div class="list-group-item-heading">\n                    {{connection.name}}\n                  </div>\n                  <div class="list-group-item-text" ng-show="connection.scheme && connection.host &&\n                      connection.port && connection.path">\n                    {{connection.scheme}}://{{connection.host}}:{{connection.port}}/{{connection.path}}\n                  </div>\n                </div>\n              </div>\n            </div>\n          </div>\n          <div class="list-group-item-container" ng-if="connection.expanded">\n            <div class="close" ng-click="connection.expanded = false">\n              <span class="pficon pficon-close"></span>\n            </div>\n            <form name="connectForm" class="form-horizontal" ng-model-options="{ updateOn: \'change\' }">\n              <div class="form-group">\n                <label class="col-sm-3 control-label" for="name-{{$index}}">Name</label>\n                <div class="col-sm-8">\n                  <input type="text" class="form-control" id="name-{{$index}}" name="name" required\n                         ng-model="connection.name" ng-change="saveConnections()">\n                </div>\n              </div>\n              <div class="form-group">\n                <label class="col-sm-3 control-label" for="scheme-{{$index}}">Scheme</label>\n                <div class="col-sm-8">\n                  <select class="form-control" id="scheme-{{$index}}" name="scheme" required\n                          ng-model="connection.scheme" ng-change="saveConnections()">\n                    <option>http</option>\n                    <option>https</option>\n                  </select>\n                </div>\n              </div>\n              <div class="form-group">\n                <label class="col-sm-3 control-label" for="host-{{$index}}">Host</label>\n                <div class="col-sm-8">\n                  <input type="text" class="form-control" id="host-{{$index}}" name="host" required\n                         ng-model="connection.host"  ng-change="saveConnections()">\n                </div>\n              </div>\n              <div class="form-group">\n                <label class="col-sm-3 control-label" for="port-{{$index}}">Port</label>\n                <div class="col-sm-8">\n                  <input type="number" class="form-control" id="port-{{$index}}" name="port" required\n                         ng-model="connection.port" ng-change="saveConnections()">\n                </div>\n              </div>\n              <div class="form-group">\n                <label class="col-sm-3 control-label" for="path-{{$index}}">Path</label>\n                <div class="col-sm-8">\n                  <input type="text" class="form-control" id="path-{{$index}}" name="path"\n                         ng-model="connection.path" ng-change="saveConnections()">\n                </div>\n              </div>\n            </form>\n          </div>\n        </div>\n      </div>\n    </div>\n    <div class="col-md-5">\n      <div class="panel panel-default">\n        <div class="panel-heading">\n          <h3 class="panel-title">Instructions</h3>\n        </div>\n        <div class="panel-body">\n          <p>\n            This page allows you to connect to remote processes which <strong>already have a\n            <a href="http://jolokia.org/" target="_blank">jolokia agent</a> running inside them</strong>. You will need to\n            know the host name, port and path of the jolokia agent to be able to connect.\n          </p>\n          <p>\n            If the process you wish to connect to does not have a jolokia agent inside, please refer to the\n            <a href="http://jolokia.org/agent.html" target="_blank">jolokia documentation</a> for how to add a JVM, servlet\n            or OSGi based agent inside it.\n          </p>\n          <p>\n            If you are using <a href="http://fabric8.io/" target="_blank">Fabric8</a>,\n            <a href="http://www.jboss.org/products/fuse" target="_blank">JBoss Fuse</a>, or <a href="http://activemq.apache.org"\n              target="_blank">Apache ActiveMQ</a>; then a jolokia agent is included by default (use context path of jolokia\n            agent, usually\n            <code>jolokia</code>). Or you can always just deploy hawtio inside the process (which includes the jolokia agent,\n            use Jolokia servlet mapping inside hawtio context path, usually <code>hawtio/jolokia</code>).\n          </p>\n          <p ng-show="hasLocalMBean()">\n            Use the <strong><a href="#/jvm/local">Local Tab</a></strong> to connect to processes locally on this machine\n            (which will install a jolokia agent automatically if required).\n          </p>\n          <p ng-show="!hasLocalMBean()">\n            The <strong>Local Tab</strong> is not currently enabled because either the server side\n            <strong>hawtio-local-jvm-mbean plugin</strong> is not installed or this JVM cannot find the\n            <strong>com.sun.tools.attach.VirtualMachine</strong> API usually found in the <strong>tool.jar</strong>. Please\n            see the <a href="http://hawt.io/faq/index.html" target="_blank">FAQ entry</a> for more details.\n          </p>\n        </div>\n      </div>\n    </div>\n  </div>\n</div>\n');
 $templateCache.put('plugins/jvm/html/discover.html','<div ng-controller="JVM.DiscoveryController">\n\n  <h1>Discover</h1>\n\n  <div class="row toolbar-pf">\n    <div class="col-sm-12">\n      <form class="toolbar-pf-actions">\n        <div class="form-group">\n          <input type="text" class="form-control" ng-model="filter" placeholder="Filter..." autocomplete="off">\n        </div>\n        <div class="form-group">\n          <button class="btn btn-default" ng-click="fetch()" title="Refresh"><i class="fa fa-refresh"></i> Refresh</button>\n        </div>\n      </form>\n    </div>\n  </div>\n\n  <div ng-if="discovering">\n    <div class="spinner spinner-lg loading-page"></div>\n    <div class="row">\n      <div class="col-sm-12">\n        <div class="loading-message">\n          Please wait, discovering agents ...\n        </div>\n      </div>\n    </div>\n  </div>\n\n  <div class="row main-content">\n    <div class="col-sm-12">\n      <div ng-show="!discovering">\n        <div class="loading-message" ng-show="agents.length === 0">\n          No agents discovered.\n        </div>\n        <div ng-show="agents.length > 0">\n          <ul class="discovery zebra-list">\n            <li ng-repeat="agent in agents track by $index" ng-show="filterMatches(agent)">\n\n              <div class="inline-block">\n                <img ng-src="{{getLogo(agent)}}">\n              </div>\n\n              <div class="inline-block">\n                <p ng-hide="!hasName(agent)">\n                <span class="strong"\n                      ng-show="agent.server_vendor">\n                  {{agent.server_vendor}} {{_.startCase(agent.server_product)}} {{agent.server_version}}\n                </span>\n                </p>\n              <span ng-class="getAgentIdClass(agent)">\n                <strong ng-show="hasName(agent)">Agent ID: </strong>{{agent.agent_id}}<br/>\n                <strong ng-show="hasName(agent)">Agent Version: </strong><span ng-hide="hasName(agent)"> Version: </span>{{agent.agent_version}}</span><br/>\n                <strong ng-show="hasName(agent)">Agent Description: </strong><span\n                  ng-hide="hasName(agent)"> Description: </span>{{agent.agent_description}}</span><br/>\n\n                <p ng-hide="!agent.url"><strong>Agent URL: </strong><a ng-href="{{agent.url}}"\n                                                                      target="_blank">{{agent.url}}</a>\n                </p>\n              </div>\n\n              <div class="inline-block lock" ng-show="agent.secured">\n                <i class="fa fa-lock" title="A valid username and password will be required to connect"></i>\n              </div>\n\n              <div class="inline-block" ng-hide="!agent.url">\n                <div class="connect-button"\n                    ng-click="gotoServer($event, agent)"\n                    hawtio-template-popover\n                    content="authPrompt"\n                    trigger="manual"\n                    placement="auto"\n                    data-title="Please enter your username and password">\n                  <i ng-show="agent.url" class="icon-play-circle"></i>\n                </div>\n              </div>\n\n            </li>\n          </ul>\n        </div>\n      </div>\n    </div>\n  </div>\n\n  <script type="text/ng-template" id="authPrompt">\n    <div class="auth-form">\n      <form name="authForm">\n        <input type="text"\n                class="input-sm"\n                placeholder="Username..."\n                ng-model="agent.username"\n                required>\n        <input type="password"\n                class="input-sm"\n                placeholder="Password..."\n                ng-model="agent.password"\n                required>\n        <button ng-disabled="!authForm.$valid"\n                ng-click="connectWithCredentials($event, agent)"\n                class="btn btn-success">\n          <i class="fa fa-share"></i> Connect\n        </button>\n        <button class="btn" ng-click="closePopover($event)"><i class="fa fa-remove"></i></button>\n      </form>\n    </div>\n  </script>\n\n</div>\n');
 $templateCache.put('plugins/jvm/html/jolokiaError.html','<div class="modal-header">\n  <h3 class="modal-title">The connection to jolokia failed!</h3>\n</div>\n<div class="modal-body">\n  <div ng-show="responseText">\n    <p>The connection to jolokia has failed with the following error, also check the javascript console for more details.</p>\n    <div hawtio-editor="responseText" readonly="true"></div>\n  </div>\n  <div ng-hide="responseText">\n    <p>The connection to jolokia has failed for an unknown reason, check the javascript console for more details.</p>\n  </div>\n</div>\n<div class="modal-footer">\n  <button ng-show="ConnectOptions.returnTo" class="btn" ng-click="goBack()">Back</button>\n  <button class="btn btn-primary" ng-click="retry()">Retry</button>\n</div>\n');
@@ -4673,4 +4705,4 @@ $templateCache.put('plugins/jvm/html/layoutConnect.html','<ul class="nav nav-tab
 $templateCache.put('plugins/jvm/html/local.html','<div ng-controller="JVM.JVMsController">\n\n  <div class="row">\n    <div class="pull-right">\n      <button class="btn" ng-click="fetch()" title="Refresh"><i class="fa fa-refresh"></i></button>\n    </div>\n    <div class="pull-right">\n      <input class="search-query" type="text" ng-model="filter" placeholder="Filter...">\n    </div>\n  </div>\n\n  <div ng-hide="initDone">\n    <div class="alert alert-info">\n      <i class="fa fa-spinner icon-spin"></i> Please wait, discovering local JVM processes ...\n    </div>\n  </div>\n\n  <div ng-hide=\'data.length > 0\' class=\'row\'>\n    {{status}}\n  </div>\n\n  <div ng-show=\'data.length > 0\' class="row">\n    <table class=\'centered table table-bordered table-condensed table-striped\'>\n      <thead>\n      <tr>\n        <th style="width: 70px">PID</th>\n        <th>Name</th>\n        <th style="width: 300px">Agent URL</th>\n        <th style="width: 50px"></th>\n      </tr>\n      </thead>\n      <tbody>\n      <tr ng-repeat="jvm in data track by $index" ng-show="filterMatches(jvm)">\n        <td>{{jvm.id}}</td>\n        <td title="{{jvm.displayName}}">{{jvm.alias}}</td>\n        <td><a href=\'\' title="Connect to this agent"\n               ng-click="connectTo(jvm.url, jvm.scheme, jvm.hostname, jvm.port, jvm.path)">{{jvm.agentUrl}}</a></td>\n        <td>\n          <a class=\'btn control-button\' href="" title="Stop agent" ng-show="jvm.agentUrl"\n             ng-click="stopAgent(jvm.id)"><i class="fa fa-off"></i></a>\n          <a class=\'btn control-button\' href="" title="Start agent" ng-hide="jvm.agentUrl"\n             ng-click="startAgent(jvm.id)"><i class="icon-play-circle"></i></a>\n        </td>\n      </tr>\n\n      </tbody>\n    </table>\n\n  </div>\n\n\n</div>\n');
 $templateCache.put('plugins/jvm/html/navbarHeaderExtension.html','<style>\n  .navbar-header-hawtio-jvm {\n    float: left;\n    margin: 0;\n  }\n\n  .navbar-header-hawtio-jvm h4 {\n    color: white;\n    margin: 0px;\n  }\n\n  .navbar-header-hawtio-jvm li {\n    list-style-type: none;\n    display: inline-block;\n    margin-right: 10px;\n    margin-top: 4px;\n  }\n</style>\n<ul class="navbar-header-hawtio-jvm" ng-controller="JVM.HeaderController">\n  <li ng-show="containerName"><h4 ng-bind="containerName"></h4></li>\n  <li ng-show="goBack"><strong><a href="" ng-click="goBack()">Back</a></strong></li>\n</ul>\n');
 $templateCache.put('plugins/jvm/html/reset.html','<div ng-controller="JVM.ResetController">\n  <form class="form-horizontal">\n    <fieldset>\n      <div class="control-group">\n        <label class="control-label">\n          <strong>\n            <i class=\'yellow text-shadowed icon-warning-sign\'></i> Clear saved connections\n          </strong>\n        </label>\n        <div class="controls">\n          <button class="btn btn-danger" ng-click="doClearConnectSettings()">Clear saved connections</button>\n          <span class="help-block">Wipe all saved connection settings stored by {{branding.appName}} in your browser\'s local storage</span>\n        </div>\n      </div>\n    </fieldset>\n  </form>\n</div>\n\n');
-$templateCache.put('plugins/threads/html/index.html','<h1>Threads</h1>\n\n<!--\n<div ng-controller="Threads.ToolbarController">\n\n  <div class="row row-monitor">\n    <div class="col-md-12">\n      <span ng-repeat="(name, value) in support track by $index" class="label" ng-class="{\'label-success\': value, \'label-default\': !value}"\n        ng-click="maybeToggleMonitor(name, value)">\n          {{getMonitorName(name)}}\n        </span>\n    </div>\n  </div>\n\n</div>\n-->\n\n<div id="threads-page" ng-controller="Threads.ThreadsController">\n\n  <!-- Toolbar -->\n  <div class="row toolbar-pf table-view-pf-toolbar">\n    <div class="col-sm-12">\n      <form class="toolbar-pf-actions search-pf">\n        <div class="form-group">\n          <label class="sr-only" for="state-filter">State</label>\n          <select id="state-filter" title="Filter by State..." ng-model="filters.state"\n                  ng-options="state.name for state in availableStates track by state.id">\n          </select>\n        </div>\n        <div class="form-group has-clear">\n          <div class="search-pf-input-group">\n            <label for="filterByKeyword" class="sr-only">Filter by name</label>\n            <input id="filterByKeyword" type="search" ng-model="filters.name" class="form-control"\n                   placeholder="Filter by name..." autocomplete="off">\n            <button type="button" class="clear" aria-hidden="true" ng-click="filters.name = \'\'">\n              <span class="pficon pficon-close"></span>\n            </button>\n          </div>\n        </div>\n      </form>\n      <div class="row toolbar-pf-results">\n        <div class="col-sm-12">\n          <h5>{{threads.length}} Results</h5>\n          <span ng-if="filters.state || filters.name">\n            <p>Active filters:</p>\n            <ul class="list-inline">\n              <li ng-show="filters.state">\n                <span class="label label-info">\n                  State: {{filters.state.name}}\n                  <a href="#" ng-click="filters.state = \'\'"><span class="pficon pficon-close"></span></a>\n                </span>\n              </li>\n              <li ng-show="filters.name">\n                <span class="label label-info">\n                  Name: {{filters.name}}\n                  <a href="#" ng-click="filters.name = \'\'"><span class="pficon pficon-close"></span></a>\n                </span>\n              </li>\n            </ul>\n            <p><a href="#" ng-click="filters.name = filters.state = \'\'">Clear All Filters</a></p>\n          </span>\n        </div>\n      </div>\n    </div>\n  </div>\n\n  <!-- Table -->\n  <div class="row">\n    <div class="col-md-12">\n      <table class="table table-striped table-bordered table-hover dataTable" hawtio-simple-table="threadGridOptions"></table>\n    </div>\n  </div>\n\n  <script type="text/ng-template" id="threadModalContent.html">\n    <div class="modal-header">\n      <button type="button" class="close" aria-label="Close" ng-click="$close()">\n        <span class="pficon pficon-close" aria-hidden="true"></span>\n      </button>\n      <div class="row">\n        <div class="col-md-4">\n          <h4 class="modal-title" id="myModalLabel">Thread</h4>\n        </div>\n        <div class="col-md-7">\n          <div class="pagination-container"\n               hawtio-pager="hawtioSimpleTable.threads.rows"\n               on-index-change="selectThreadByIndex"\n               row-index="selectedRowIndex">\n          </div>\n        </div>\n      </div>\n    </div>\n    <div class="modal-body">\n      <div class="row">\n        <div class="col-md-12">\n          <dl class="dl-horizontal">\n            <dt>ID</dt>\n            <dd>{{row.threadId}}</dd>\n            <dt>Name</dt>\n            <dd>{{row.threadName}}</dd>\n            <dt>Waited Count</dt>\n            <dd>{{row.waitedCount}}</dd>\n            <dt>Waited Time</dt>\n            <dd>{{row.waitedTime}} ms</dd>\n            <dt>Blocked Count</dt>\n            <dd>{{row.blockedCount}}</dd>\n            <dt>Blocked Time</dt>\n            <dd>{{row.blockedTime}} ms</dd>\n            <div ng-show="row.lockInfo != null">\n              <dt>Lock Name</dt>\n              <dd>{{row.lockName}}</dd>\n              <dt>Lock Class Name</dt>\n              <dd>{{row.lockInfo.className}}</dd>\n              <dt>Lock Identity Hash Code</dt>\n              <dd>{{row.lockInfo.identityHashCode}}</dd>\n            </div>\n            <div ng-show="row.lockOwnerId > 0">\n              <dt>Waiting for lock owned by</dt>\n              <dd><a href="" ng-click="selectThreadById(row.lockOwnerId)">{{row.lockOwnerId}} - {{row.lockOwnerName}}</a></dd>\n            </div>\n            <div ng-show="row.lockedSynchronizers.length > 0">\n              <dt>Locked Synchronizers</dt>\n              <dd>\n                <ol class="list-unstyled">\n                  <li ng-repeat="synchronizer in row.lockedSynchronizers">\n                    <span title="Class Name">{{synchronizer.className}}</span> -\n                    <span title="Identity Hash Code">{{synchronizer.identityHashCode}}</span>\n                  </li>\n                </ol>\n              </dd>\n            </div>\n          </dl>\n        </div>\n      </div>\n      <div class="row" ng-show="row.lockedMonitors.length > 0">\n        <div class="col-md-12">\n          <dl>\n            <dt>Locked Monitors</dt>\n            <dd>\n              <ol class="zebra-list">\n                <li ng-repeat="monitor in row.lockedMonitors">\n                  Frame: <strong>{{monitor.lockedStackDepth}}</strong>\n                  <span class="green">{{monitor.lockedStackFrame.className}}</span>\n                  <span class="bold">.</span>\n                  <span class="blue bold">{{monitor.lockedStackFrame.methodName}}</span>\n                  &nbsp;({{monitor.lockedStackFrame.fileName}}<span ng-show="frame.lineNumber > 0">:{{monitor.lockedStackFrame.lineNumber}}</span>)\n                  <span class="orange" ng-show="monitor.lockedStackFrame.nativeMethod">(Native)</span>\n                </li>\n              </ol>\n            </dd>\n          </dl>\n        </div>\n      </div>\n      <div class="row">\n        <div class="col-md-12">\n          <dl>\n            <dt>Stack Trace</dt>\n            <dd>\n              <ol class="zebra-list">\n                <li ng-repeat="frame in row.stackTrace">\n                  <span class="green">{{frame.className}}</span>\n                  <span class="bold">.</span>\n                  <span class="blue bold">{{frame.methodName}}</span>\n                  &nbsp;({{frame.fileName}}<span ng-show="frame.lineNumber > 0">:{{frame.lineNumber}}</span>)\n                  <span class="orange" ng-show="frame.nativeMethod">(Native)</span>\n                </li>\n              </ol>\n            </dd>\n          </dl>            \n        </div>\n      </div>\n    </div>\n  </script>\n\n</div>');}]); hawtioPluginLoader.addModule("hawtio-jmx-templates");
+$templateCache.put('plugins/threads/html/index.html','<!--\n<div ng-controller="Threads.ToolbarController">\n\n  <div class="row row-monitor">\n    <div class="col-md-12">\n      <span ng-repeat="(name, value) in support track by $index" class="label" ng-class="{\'label-success\': value, \'label-default\': !value}"\n        ng-click="maybeToggleMonitor(name, value)">\n          {{getMonitorName(name)}}\n        </span>\n    </div>\n  </div>\n\n</div>\n-->\n<div id="threads-page" class="table-view" ng-controller="Threads.ThreadsController">\n\n  <h1>Threads</h1>\n  \n  <!-- Toolbar -->\n  <div class="row toolbar-pf table-view-pf-toolbar">\n    <div class="col-sm-12">\n      <form class="toolbar-pf-actions search-pf">\n        <div class="form-group">\n          <label class="sr-only" for="state-filter">State</label>\n          <select id="state-filter" title="Filter by State..." ng-model="filters.state"\n                  ng-options="state.name for state in availableStates track by state.id">\n          </select>\n        </div>\n        <div class="form-group has-clear">\n          <div class="search-pf-input-group">\n            <label for="filterByKeyword" class="sr-only">Filter by name</label>\n            <input id="filterByKeyword" type="search" ng-model="filters.name" class="form-control"\n                   placeholder="Filter by name..." autocomplete="off">\n            <button type="button" class="clear" aria-hidden="true" ng-click="filters.name = \'\'">\n              <span class="pficon pficon-close"></span>\n            </button>\n          </div>\n        </div>\n      </form>\n      <div class="row toolbar-pf-results">\n        <div class="col-sm-12">\n          <h5>{{threads.length}} Results</h5>\n          <span ng-if="filters.state || filters.name">\n            <p>Active filters:</p>\n            <ul class="list-inline">\n              <li ng-show="filters.state">\n                <span class="label label-info">\n                  State: {{filters.state.name}}\n                  <a href="#" ng-click="filters.state = \'\'"><span class="pficon pficon-close"></span></a>\n                </span>\n              </li>\n              <li ng-show="filters.name">\n                <span class="label label-info">\n                  Name: {{filters.name}}\n                  <a href="#" ng-click="filters.name = \'\'"><span class="pficon pficon-close"></span></a>\n                </span>\n              </li>\n            </ul>\n            <p><a href="#" ng-click="filters.name = filters.state = \'\'">Clear All Filters</a></p>\n          </span>\n        </div>\n      </div>\n    </div>\n  </div>\n\n  <!-- Table -->\n  <div class="row">\n    <div class="col-md-12">\n      <table class="table table-striped table-bordered table-hover dataTable" hawtio-simple-table="threadGridOptions"></table>\n    </div>\n  </div>\n\n  <script type="text/ng-template" id="threadModalContent.html">\n    <div class="modal-header">\n      <button type="button" class="close" aria-label="Close" ng-click="$close()">\n        <span class="pficon pficon-close" aria-hidden="true"></span>\n      </button>\n      <div class="row">\n        <div class="col-md-4">\n          <h4 class="modal-title" id="myModalLabel">Thread</h4>\n        </div>\n        <div class="col-md-7">\n          <div class="pagination-container"\n               hawtio-pager="hawtioSimpleTable.threads.rows"\n               on-index-change="selectThreadByIndex"\n               row-index="selectedRowIndex">\n          </div>\n        </div>\n      </div>\n    </div>\n    <div class="modal-body">\n      <div class="row">\n        <div class="col-md-12">\n          <dl class="dl-horizontal">\n            <dt>ID</dt>\n            <dd>{{row.threadId}}</dd>\n            <dt>Name</dt>\n            <dd>{{row.threadName}}</dd>\n            <dt>Waited Count</dt>\n            <dd>{{row.waitedCount}}</dd>\n            <dt>Waited Time</dt>\n            <dd>{{row.waitedTime}} ms</dd>\n            <dt>Blocked Count</dt>\n            <dd>{{row.blockedCount}}</dd>\n            <dt>Blocked Time</dt>\n            <dd>{{row.blockedTime}} ms</dd>\n            <div ng-show="row.lockInfo != null">\n              <dt>Lock Name</dt>\n              <dd>{{row.lockName}}</dd>\n              <dt>Lock Class Name</dt>\n              <dd>{{row.lockInfo.className}}</dd>\n              <dt>Lock Identity Hash Code</dt>\n              <dd>{{row.lockInfo.identityHashCode}}</dd>\n            </div>\n            <div ng-show="row.lockOwnerId > 0">\n              <dt>Waiting for lock owned by</dt>\n              <dd><a href="" ng-click="selectThreadById(row.lockOwnerId)">{{row.lockOwnerId}} - {{row.lockOwnerName}}</a></dd>\n            </div>\n            <div ng-show="row.lockedSynchronizers.length > 0">\n              <dt>Locked Synchronizers</dt>\n              <dd>\n                <ol class="list-unstyled">\n                  <li ng-repeat="synchronizer in row.lockedSynchronizers">\n                    <span title="Class Name">{{synchronizer.className}}</span> -\n                    <span title="Identity Hash Code">{{synchronizer.identityHashCode}}</span>\n                  </li>\n                </ol>\n              </dd>\n            </div>\n          </dl>\n        </div>\n      </div>\n      <div class="row" ng-show="row.lockedMonitors.length > 0">\n        <div class="col-md-12">\n          <dl>\n            <dt>Locked Monitors</dt>\n            <dd>\n              <ol class="zebra-list">\n                <li ng-repeat="monitor in row.lockedMonitors">\n                  Frame: <strong>{{monitor.lockedStackDepth}}</strong>\n                  <span class="green">{{monitor.lockedStackFrame.className}}</span>\n                  <span class="bold">.</span>\n                  <span class="blue bold">{{monitor.lockedStackFrame.methodName}}</span>\n                  &nbsp;({{monitor.lockedStackFrame.fileName}}<span ng-show="frame.lineNumber > 0">:{{monitor.lockedStackFrame.lineNumber}}</span>)\n                  <span class="orange" ng-show="monitor.lockedStackFrame.nativeMethod">(Native)</span>\n                </li>\n              </ol>\n            </dd>\n          </dl>\n        </div>\n      </div>\n      <div class="row">\n        <div class="col-md-12">\n          <dl>\n            <dt>Stack Trace</dt>\n            <dd>\n              <ol class="zebra-list">\n                <li ng-repeat="frame in row.stackTrace">\n                  <span class="green">{{frame.className}}</span>\n                  <span class="bold">.</span>\n                  <span class="blue bold">{{frame.methodName}}</span>\n                  &nbsp;({{frame.fileName}}<span ng-show="frame.lineNumber > 0">:{{frame.lineNumber}}</span>)\n                  <span class="orange" ng-show="frame.nativeMethod">(Native)</span>\n                </li>\n              </ol>\n            </dd>\n          </dl>            \n        </div>\n      </div>\n    </div>\n  </script>\n\n</div>');}]); hawtioPluginLoader.addModule("hawtio-jmx-templates");
