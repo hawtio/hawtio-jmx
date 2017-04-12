@@ -13,6 +13,7 @@
 /// <reference path="d.ts/jmx/ts/chartEdit.d.ts"/>
 /// <reference path="d.ts/jmx/ts/charts.d.ts"/>
 /// <reference path="d.ts/jmx/ts/donutChart.d.ts"/>
+/// <reference path="d.ts/jmx/ts/folder.d.ts"/>
 /// <reference path="d.ts/jmx/ts/mbeans.d.ts"/>
 /// <reference path="d.ts/jvm/ts/connect.d.ts"/>
 /// <reference path="d.ts/jvm/ts/discover.d.ts"/>

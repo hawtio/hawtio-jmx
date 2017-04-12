@@ -130,6 +130,7 @@ declare module Core {
         entity: any;
         version: string;
         mbean: JMXMBean;
+        expand: boolean;
         get(key: string): NodeSelection;
         isFolder(): boolean;
         /**
@@ -153,7 +154,7 @@ declare module Core {
          * Removes this node from my parent if I have one
          * @method detach
          * @for Folder
-      \   */
+         */
         detach(): void;
         /**
          * Searches this folder and all its descendants for the first folder to match the filter
