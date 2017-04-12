@@ -200,7 +200,6 @@ div.tree-nav-layout .sidebar-pf .rg-right {
   padding-top: 20px;
   margin-left: 20px;
   margin-right: 20px;
-  margin-bottom: 20px;
 }
 .tree-nav-main .contents {
   flex: 1 1 auto;
@@ -208,6 +207,7 @@ div.tree-nav-layout .sidebar-pf .rg-right {
   position: relative;
   padding-left: 20px;
   padding-right: 20px;
+  padding-top: 20px;
 }
 
 .jmx-operations-list-view .list-view-pf-stacked {
