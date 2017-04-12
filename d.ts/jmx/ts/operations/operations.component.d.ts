@@ -17,7 +17,6 @@ declare module Jmx {
         private configureListView();
         private buildJolokiaUrl(operation);
         private fetchOperations();
-        gotoOperation(operation: any): void;
     }
     const operationsComponent: {
         templateUrl: string;
