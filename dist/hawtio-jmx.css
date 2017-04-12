@@ -253,9 +253,6 @@ div.tree-nav-layout .sidebar-pf .rg-right {
 }
 @media (max-width: 767px) {
 }
-div#threads-page {
-  padding-bottom: 20px;
-}
 #threads-page dd {
   overflow-wrap: break-word;
 }
