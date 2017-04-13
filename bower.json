@@ -38,6 +38,12 @@
         "dist/css/bootstrap.css",
         "dist/js/bootstrap.js"
       ]
+    },
+    "angular-resizable": {
+      "main": [
+        "src/angular-resizable.css",
+        "src/angular-resizable.js"
+      ]
     }
   },
   "resolutions": {

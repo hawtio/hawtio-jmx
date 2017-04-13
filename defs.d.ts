@@ -24,10 +24,10 @@
 /// <reference path="d.ts/jvm/ts/reset.d.ts"/>
 /// <reference path="d.ts/threads/ts/threadsPlugin.d.ts"/>
 /// <reference path="d.ts/threads/ts/threads.d.ts"/>
-/// <reference path="d.ts/jmx/ts/common/header.component.d.ts"/>
-/// <reference path="d.ts/jmx/ts/common/common.module.d.ts"/>
 /// <reference path="d.ts/jmx/ts/operations/operation.d.ts"/>
 /// <reference path="d.ts/jmx/ts/operations/operations.service.d.ts"/>
 /// <reference path="d.ts/jmx/ts/operations/operation-form.component.d.ts"/>
 /// <reference path="d.ts/jmx/ts/operations/operations.component.d.ts"/>
 /// <reference path="d.ts/jmx/ts/operations/operations.module.d.ts"/>
+/// <reference path="d.ts/jmx/ts/common/header.component.d.ts"/>
+/// <reference path="d.ts/jmx/ts/common/common.module.d.ts"/>
