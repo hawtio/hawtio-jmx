@@ -11,6 +11,7 @@ module Jmx {
 
   export var _module = angular.module(pluginName, [
     'angularResizable',
+    'hawtio-jmx-common',
     'hawtio-jmx-operations'
   ]);
 

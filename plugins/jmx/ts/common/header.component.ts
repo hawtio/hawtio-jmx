@@ -1,5 +1,4 @@
 /// <reference path="../jmxPlugin.ts"/>
-/// <reference path="../workspace.ts"/>
 
 namespace Jmx {
 
@@ -18,7 +17,5 @@ namespace Jmx {
     template: `<h1>{{$ctrl.title}}</h1>`,
     controller: HeaderController
   };
-
-  _module.component('jmxHeader', headerComponent);
 
 }
