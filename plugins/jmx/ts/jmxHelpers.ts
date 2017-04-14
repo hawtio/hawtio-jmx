@@ -73,7 +73,7 @@ module Core {
 module Jmx {
 
   export var pluginName = 'hawtio-jmx';
-  export var log:Logging.Logger = Logger.get(pluginName);
+  export var log: Logging.Logger = Logger.get(pluginName);
   export var currentProcessId = '';
   export var templatePath = 'plugins/jmx/html';
 
@@ -224,6 +224,38 @@ module Jmx {
     return typeNames;
   }
 
+  export function folderGetOrElse(folder: Folder, name: string): Folder {
+    if (folder) {
+      try {
+        return folder.getOrElse(name);
+      } catch (e) {
+        log.warn("Failed to find name " + name + " on folder " + folder);
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Escape only '<' and '>' as opposed to Core.escapeHtml() and _.escape()
+   * 
+   * @param {string} str string to be escaped
+   */
+  export function escapeTagOnly(str: string): string {
+    var tagChars = {
+      "<": "&lt;",
+      ">": "&gt;"
+    };
+    if (!angular.isString(str)) {
+      return str;
+    }
+    var escaped = "";
+    for (var i = 0; i < str.length; i++) {
+      var c = str.charAt(i);
+      escaped += tagChars[c] || c;
+    }
+    return escaped;
+  }
+
   export function enableTree($scope, $location: ng.ILocationService, workspace: Core.Workspace, treeElement, children: Array<NodeSelection>, redraw: boolean = false, onActivateFn: (DynaTreeNode) => void = null) {
     if (treeElement.length) {
       if (!onActivateFn) {
@@ -246,7 +278,7 @@ module Jmx {
             plugin = Jmx.findLazyLoadingFunction(workspace, folder);
           }
           if (plugin) {
-            console.log("Lazy loading folder " + folder.title);
+            log.debug("Lazy loading folder " + folder.title);
             var oldChildren = folder.children;
             plugin(workspace, folder, () => {
               treeNode.setLazyNodeStatus(DTNodeStatus_Ok);

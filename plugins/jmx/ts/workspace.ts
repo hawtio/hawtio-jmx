@@ -233,17 +233,6 @@ module Core {
       this.populateTree({value: response});
     }
 
-    public folderGetOrElse(folder: Folder, name: string): Folder {
-      if (folder) {
-        try {
-          return folder.getOrElse(name);
-        } catch (e) {
-          log.warn("Failed to find name " + name + " on folder " + folder);
-        }
-      }
-      return null;
-    }
-
     public populateTree(response): void {
       log.debug("JMX tree has been loaded, data: ", response.value);
 
@@ -256,7 +245,8 @@ module Core {
       var domains = <Core.JMXDomains>response.value;
       angular.forEach(domains, (domain, domainName) => {
         // domain name is displayed in the tree, so let's escape it here
-        this.populateDomainFolder(newTree, _.escape(domainName), domain);
+        // Core.escapeHtml() and _.escape() cannot be used, as escaping '"' breaks Camel tree...
+        this.populateDomainFolder(newTree, Jmx.escapeTagOnly(domainName), domain);
       });
 
       newTree.sortChildren(true);
@@ -292,7 +282,7 @@ module Core {
     private populateDomainFolder(tree: Folder, domainName: string, domain: Core.JMXDomain): void {
       log.debug("JMX tree domain: " + domainName);
       var domainClass = Core.escapeDots(domainName);
-      var folder = this.folderGetOrElse(tree, domainName);
+      var folder = Jmx.folderGetOrElse(tree, domainName);
       this.initFolder(folder, domainName, [domainName]);
       angular.forEach(domain, (mbean, mbeanName) => {
         this.populateMBeanFolder(folder, domainClass, mbeanName, mbean);
@@ -312,7 +302,8 @@ module Core {
         var kv = this.splitMBeanProperty(prop);
         var propKey = kv[0];
         // mbean property value is displayed in the tree, so let's escape it here
-        var propValue = _.escape(kv[1] || propKey);
+        // Core.escapeHtml() and _.escape() cannot be used, as escaping '"' breaks Camel tree...
+        var propValue = Jmx.escapeTagOnly(kv[1] || propKey);
         entries[propKey] = propValue;
         var moveToFront = false;
         var lowerKey = propKey.toLowerCase();
@@ -339,7 +330,7 @@ module Core {
       var folderNames = _.clone(domainFolder.folderNames);
       var lastPath = paths.pop();
       paths.forEach(path => {
-        folder = this.folderGetOrElse(folder, path);
+        folder = Jmx.folderGetOrElse(folder, path);
         if (folder) {
           folderNames.push(path);
           this.configureFolder(folder, domainName, domainClass, folderNames, path);
@@ -347,7 +338,7 @@ module Core {
       });
 
       if (folder) {
-        folder = this.folderGetOrElse(folder, lastPath);
+        folder = Jmx.folderGetOrElse(folder, lastPath);
         if (folder) {
           // lets add the various data into the folder
           folder.entries = entries;
