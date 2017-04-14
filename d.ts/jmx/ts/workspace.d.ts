@@ -75,7 +75,6 @@ declare module Core {
         maybeUpdatePlugins(response: any): void;
         maybeReloadTree(response: any): void;
         private wrapInValue(response);
-        folderGetOrElse(folder: Folder, name: string): Folder;
         populateTree(response: any): void;
         private initFolder(folder, domain, folderNames);
         private populateDomainFolder(tree, domainName, domain);

@@ -1098,17 +1098,6 @@ var Core;
         Workspace.prototype.wrapInValue = function (response) {
             this.populateTree({ value: response });
         };
-        Workspace.prototype.folderGetOrElse = function (folder, name) {
-            if (folder) {
-                try {
-                    return folder.getOrElse(name);
-                }
-                catch (e) {
-                    log.warn("Failed to find name " + name + " on folder " + folder);
-                }
-            }
-            return null;
-        };
         Workspace.prototype.populateTree = function (response) {
             var _this = this;
             log.debug("JMX tree has been loaded, data: ", response.value);
@@ -1120,7 +1109,8 @@ var Core;
             var domains = response.value;
             angular.forEach(domains, function (domain, domainName) {
                 // domain name is displayed in the tree, so let's escape it here
-                _this.populateDomainFolder(newTree, _.escape(domainName), domain);
+                // Core.escapeHtml() and _.escape() cannot be used, as escaping '"' breaks Camel tree...
+                _this.populateDomainFolder(newTree, Jmx.escapeTagOnly(domainName), domain);
             });
             newTree.sortChildren(true);
             // now lets mark the nodes with no children as lazy loading...
@@ -1150,7 +1140,7 @@ var Core;
             var _this = this;
             log.debug("JMX tree domain: " + domainName);
             var domainClass = Core.escapeDots(domainName);
-            var folder = this.folderGetOrElse(tree, domainName);
+            var folder = Jmx.folderGetOrElse(tree, domainName);
             this.initFolder(folder, domainName, [domainName]);
             angular.forEach(domain, function (mbean, mbeanName) {
                 _this.populateMBeanFolder(folder, domainClass, mbeanName, mbean);
@@ -1169,7 +1159,8 @@ var Core;
                 var kv = _this.splitMBeanProperty(prop);
                 var propKey = kv[0];
                 // mbean property value is displayed in the tree, so let's escape it here
-                var propValue = _.escape(kv[1] || propKey);
+                // Core.escapeHtml() and _.escape() cannot be used, as escaping '"' breaks Camel tree...
+                var propValue = Jmx.escapeTagOnly(kv[1] || propKey);
                 entries[propKey] = propValue;
                 var moveToFront = false;
                 var lowerKey = propKey.toLowerCase();
@@ -1196,14 +1187,14 @@ var Core;
             var folderNames = _.clone(domainFolder.folderNames);
             var lastPath = paths.pop();
             paths.forEach(function (path) {
-                folder = _this.folderGetOrElse(folder, path);
+                folder = Jmx.folderGetOrElse(folder, path);
                 if (folder) {
                     folderNames.push(path);
                     _this.configureFolder(folder, domainName, domainClass, folderNames, path);
                 }
             });
             if (folder) {
-                folder = this.folderGetOrElse(folder, lastPath);
+                folder = Jmx.folderGetOrElse(folder, lastPath);
                 if (folder) {
                     // lets add the various data into the folder
                     folder.entries = entries;
@@ -2112,6 +2103,39 @@ var Jmx;
         return typeNames;
     }
     Jmx.getUniqueTypeNames = getUniqueTypeNames;
+    function folderGetOrElse(folder, name) {
+        if (folder) {
+            try {
+                return folder.getOrElse(name);
+            }
+            catch (e) {
+                Jmx.log.warn("Failed to find name " + name + " on folder " + folder);
+            }
+        }
+        return null;
+    }
+    Jmx.folderGetOrElse = folderGetOrElse;
+    /**
+     * Escape only '<' and '>' as opposed to Core.escapeHtml() and _.escape()
+     *
+     * @param {string} str string to be escaped
+     */
+    function escapeTagOnly(str) {
+        var tagChars = {
+            "<": "&lt;",
+            ">": "&gt;"
+        };
+        if (!angular.isString(str)) {
+            return str;
+        }
+        var escaped = "";
+        for (var i = 0; i < str.length; i++) {
+            var c = str.charAt(i);
+            escaped += tagChars[c] || c;
+        }
+        return escaped;
+    }
+    Jmx.escapeTagOnly = escapeTagOnly;
     function enableTree($scope, $location, workspace, treeElement, children, redraw, onActivateFn) {
         if (redraw === void 0) { redraw = false; }
         if (onActivateFn === void 0) { onActivateFn = null; }
@@ -2136,7 +2160,7 @@ var Jmx;
                         plugin = Jmx.findLazyLoadingFunction(workspace, folder);
                     }
                     if (plugin) {
-                        console.log("Lazy loading folder " + folder.title);
+                        Jmx.log.debug("Lazy loading folder " + folder.title);
                         var oldChildren = folder.children;
                         plugin(workspace, folder, function () {
                             treeNode.setLazyNodeStatus(DTNodeStatus_Ok);

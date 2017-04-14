@@ -68,5 +68,12 @@ declare module Jmx {
     function updateTreeSelectionFromURL($location: any, treeElement: any, activateIfNoneSelected?: boolean): void;
     function updateTreeSelectionFromURLAndAutoSelect($location: any, treeElement: any, autoSelect: any, activateIfNoneSelected?: boolean): void;
     function getUniqueTypeNames(children: any): string[];
+    function folderGetOrElse(folder: Folder, name: string): Folder;
+    /**
+     * Escape only '<' and '>' as opposed to Core.escapeHtml() and _.escape()
+     *
+     * @param {string} str string to be escaped
+     */
+    function escapeTagOnly(str: string): string;
     function enableTree($scope: any, $location: ng.ILocationService, workspace: Core.Workspace, treeElement: any, children: Array<NodeSelection>, redraw?: boolean, onActivateFn?: (DynaTreeNode) => void): void;
 }
