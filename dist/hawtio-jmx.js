@@ -205,6 +205,237 @@ var Core;
     Core.createServerConnectionUrl = createServerConnectionUrl;
 })(Core || (Core = {}));
 
+var __extends = (this && this.__extends) || function (d, b) {
+    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+    function __() { this.constructor = d; }
+    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+};
+/// <reference path="../../includes.ts"/>
+/**
+ * @module Core
+ */
+var Core;
+(function (Core) {
+    /**
+     * @class Folder
+     * @uses NodeSelection
+     */
+    var Folder = (function () {
+        function Folder(title) {
+            this.title = title;
+            this.id = null;
+            this.typeName = null;
+            this.items = [];
+            this.folderNames = [];
+            this.domain = null;
+            this.objectName = null;
+            this.map = {};
+            this.entries = {};
+            this.addClass = null;
+            this.parent = null;
+            this.isLazy = false;
+            this.icon = null;
+            this.tooltip = null;
+            this.entity = null;
+            this.version = null;
+            this.mbean = null;
+            this.expand = false;
+            this.addClass = Core.escapeTreeCssStyles(title);
+        }
+        Object.defineProperty(Folder.prototype, "key", {
+            get: function () {
+                return this.id;
+            },
+            set: function (key) {
+                this.id = key;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(Folder.prototype, "children", {
+            get: function () {
+                return this.items;
+            },
+            set: function (items) {
+                this.items = items;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Folder.prototype.get = function (key) {
+            return this.map[key];
+        };
+        Folder.prototype.isFolder = function () {
+            return this.children.length > 0;
+        };
+        /**
+         * Navigates the given paths and returns the value there or null if no value could be found
+         * @method navigate
+         * @for Folder
+         * @param {Array} paths
+         * @return {NodeSelection}
+         */
+        Folder.prototype.navigate = function () {
+            var paths = [];
+            for (var _i = 0; _i < arguments.length; _i++) {
+                paths[_i - 0] = arguments[_i];
+            }
+            var node = this;
+            paths.forEach(function (path) {
+                if (node) {
+                    node = node.get(path);
+                }
+            });
+            return node;
+        };
+        Folder.prototype.hasEntry = function (key, value) {
+            var entries = this.entries;
+            if (entries) {
+                var actual = entries[key];
+                return actual && value === actual;
+            }
+            return false;
+        };
+        Folder.prototype.parentHasEntry = function (key, value) {
+            if (this.parent) {
+                return this.parent.hasEntry(key, value);
+            }
+            return false;
+        };
+        Folder.prototype.ancestorHasEntry = function (key, value) {
+            var parent = this.parent;
+            while (parent) {
+                if (parent.hasEntry(key, value))
+                    return true;
+                parent = parent.parent;
+            }
+            return false;
+        };
+        Folder.prototype.ancestorHasType = function (typeName) {
+            var parent = this.parent;
+            while (parent) {
+                if (typeName === parent.typeName)
+                    return true;
+                parent = parent.parent;
+            }
+            return false;
+        };
+        Folder.prototype.getOrElse = function (key, defaultValue) {
+            if (defaultValue === void 0) { defaultValue = new Folder(key); }
+            var answer = this.map[key];
+            if (!answer) {
+                answer = defaultValue;
+                this.map[key] = answer;
+                this.children.push(answer);
+                answer.parent = this;
+            }
+            return answer;
+        };
+        Folder.prototype.sortChildren = function (recursive) {
+            var children = this.children;
+            if (children) {
+                this.children = _.sortBy(children, "title");
+                if (recursive) {
+                    angular.forEach(children, function (child) { return child.sortChildren(recursive); });
+                }
+            }
+        };
+        Folder.prototype.moveChild = function (child) {
+            if (child && child.parent !== this) {
+                child.detach();
+                child.parent = this;
+                this.children.push(child);
+            }
+        };
+        Folder.prototype.insertBefore = function (child, referenceFolder) {
+            child.detach();
+            child.parent = this;
+            var idx = _.indexOf((this.children), referenceFolder);
+            if (idx >= 0) {
+                this.children.splice(idx, 0, child);
+            }
+        };
+        Folder.prototype.insertAfter = function (child, referenceFolder) {
+            child.detach();
+            child.parent = this;
+            var idx = _.indexOf((this.children), referenceFolder);
+            if (idx >= 0) {
+                this.children.splice(idx + 1, 0, child);
+            }
+        };
+        /**
+         * Removes this node from my parent if I have one
+         * @method detach
+         * @for Folder
+         */
+        Folder.prototype.detach = function () {
+            var _this = this;
+            var oldParent = this.parent;
+            if (oldParent) {
+                var oldParentChildren = oldParent.children;
+                if (oldParentChildren) {
+                    var idx = oldParentChildren.indexOf(this);
+                    if (idx < 0) {
+                        _.remove(oldParent.children, function (child) { return child.key === _this.key; });
+                    }
+                    else {
+                        oldParentChildren.splice(idx, 1);
+                    }
+                }
+                this.parent = null;
+            }
+        };
+        /**
+         * Searches this folder and all its descendants for the first folder to match the filter
+         * @method findDescendant
+         * @for Folder
+         * @param {Function} filter
+         * @return {Folder}
+         */
+        Folder.prototype.findDescendant = function (filter) {
+            if (filter(this)) {
+                return this;
+            }
+            var answer = null;
+            angular.forEach(this.children, function (child) {
+                if (!answer) {
+                    answer = child.findDescendant(filter);
+                }
+            });
+            return answer;
+        };
+        /**
+         * Searches this folder and all its ancestors for the first folder to match the filter
+         * @method findDescendant
+         * @for Folder
+         * @param {Function} filter
+         * @return {Folder}
+         */
+        Folder.prototype.findAncestor = function (filter) {
+            if (filter(this)) {
+                return this;
+            }
+            if (this.parent != null) {
+                return this.parent.findAncestor(filter);
+            }
+            else {
+                return null;
+            }
+        };
+        return Folder;
+    }());
+    Core.Folder = Folder;
+})(Core || (Core = {}));
+;
+var Folder = (function (_super) {
+    __extends(Folder, _super);
+    function Folder() {
+        _super.apply(this, arguments);
+    }
+    return Folder;
+}(Core.Folder));
+;
+
 /// <reference path="../../includes.ts"/>
 /// <reference path="jvmHelpers.ts"/>
 /**
@@ -707,6 +938,8 @@ var Core;
             this.treeFetched = false;
             // mapData allows to store arbitrary data on the workspace
             this.mapData = {};
+            this.rootId = 'root';
+            this.separator = '-';
             // set defaults
             if (!('autoRefresh' in localStorage)) {
                 localStorage['autoRefresh'] = true;
@@ -865,186 +1098,190 @@ var Core;
         Workspace.prototype.wrapInValue = function (response) {
             this.populateTree({ value: response });
         };
-        Workspace.prototype.folderGetOrElse = function (folder, value) {
+        Workspace.prototype.folderGetOrElse = function (folder, name) {
             if (folder) {
                 try {
-                    return folder.getOrElse(value);
+                    return folder.getOrElse(name);
                 }
                 catch (e) {
-                    log.warn("Failed to find value " + value + " on folder " + folder);
+                    log.warn("Failed to find name " + name + " on folder " + folder);
                 }
             }
             return null;
         };
         Workspace.prototype.populateTree = function (response) {
+            var _this = this;
             log.debug("JMX tree has been loaded, data: ", response.value);
-            var rootId = 'root';
-            var separator = '-';
             this.mbeanTypesToDomain = {};
             this.mbeanServicesToDomain = {};
             this.keyToNodeMap = {};
-            var tree = new Core.Folder('MBeans');
-            tree.key = rootId;
+            var newTree = new Core.Folder('MBeans');
+            newTree.key = this.rootId;
             var domains = response.value;
-            for (var domainName in domains) {
-                var domainClass = Core.escapeDots(domainName);
-                var domain = domains[domainName];
-                for (var mbeanName in domain) {
-                    // log.debug("JMX tree mbean name: " + mbeanName);
-                    var entries = {};
-                    var folder = this.folderGetOrElse(tree, domainName);
-                    //if (!folder) continue;
-                    folder.domain = domainName;
-                    if (!folder.key) {
-                        folder.key = rootId + separator + domainName;
-                    }
-                    var folderNames = [domainName];
-                    folder.folderNames = folderNames;
-                    folderNames = _.clone(folderNames);
-                    var items = mbeanName.split(',');
-                    var paths = [];
-                    var typeName = null;
-                    var serviceName = null;
-                    items.forEach(function (item) {
-                        // do not use split('=') as it splits wrong when there is a space in the mbean name
-                        // var kv = item.split('=');
-                        var pos = item.indexOf('=');
-                        var kv = [];
-                        if (pos > 0) {
-                            kv[0] = item.substr(0, pos);
-                            kv[1] = item.substr(pos + 1);
-                        }
-                        else {
-                            kv[0] = item;
-                        }
-                        var key = kv[0];
-                        var value = kv[1] || key;
-                        entries[key] = value;
-                        var moveToFront = false;
-                        var lowerKey = key.toLowerCase();
-                        if (lowerKey === "type") {
-                            typeName = value;
-                            // if the type name value already exists in the root node
-                            // of the domain then lets move this property around too
-                            if (folder.map[value]) {
-                                moveToFront = true;
-                            }
-                        }
-                        if (lowerKey === "service") {
-                            serviceName = value;
-                        }
-                        if (moveToFront) {
-                            paths.splice(0, 0, value);
-                        }
-                        else {
-                            paths.push(value);
-                        }
-                    });
-                    var configureFolder = function (folder, name) {
-                        folder.domain = domainName;
-                        if (!folder.key) {
-                            folder.key = rootId + separator + folderNames.join(separator);
-                        }
-                        this.keyToNodeMap[folder.key] = folder;
-                        folder.folderNames = _.clone(folderNames);
-                        //var classes = escapeDots(folder.key);
-                        var classes = "";
-                        var entries = folder.entries;
-                        var entryKeys = _.filter(_.keys(entries), function (n) { return n.toLowerCase().indexOf("type") >= 0; });
-                        if (entryKeys.length) {
-                            angular.forEach(entryKeys, function (entryKey) {
-                                var entryValue = entries[entryKey];
-                                if (!folder.ancestorHasEntry(entryKey, entryValue)) {
-                                    classes += " " + domainClass + separator + entryValue;
-                                }
-                            });
-                        }
-                        else {
-                            var kindName = _.last(folderNames);
-                            /*if (folder.parent && folder.parent.title === typeName) {
-                               kindName = typeName;
-                               } else */
-                            if (kindName === name) {
-                                kindName += "-folder";
-                            }
-                            if (kindName) {
-                                classes += " " + domainClass + separator + kindName;
-                            }
-                        }
-                        folder.addClass = Core.escapeTreeCssStyles(classes);
-                        return folder;
-                    };
-                    var lastPath = paths.pop();
-                    var ws = this;
-                    paths.forEach(function (value) {
-                        folder = ws.folderGetOrElse(folder, value);
-                        if (folder) {
-                            folderNames.push(value);
-                            angular.bind(ws, configureFolder, folder, value)();
-                        }
-                    });
-                    var key = rootId + separator + folderNames.join(separator) + separator + lastPath;
-                    var objectName = domainName + ":" + mbeanName;
-                    if (folder) {
-                        folder = this.folderGetOrElse(folder, lastPath);
-                        if (folder) {
-                            // lets add the various data into the folder
-                            folder.entries = entries;
-                            folder.key = key;
-                            angular.bind(this, configureFolder, folder, lastPath)();
-                            folder.title = Core.trimQuotes(lastPath);
-                            folder.objectName = objectName;
-                            folder.mbean = domain[mbeanName];
-                            folder.typeName = typeName;
-                            var addFolderByDomain = function (owner, typeName) {
-                                var map = owner[typeName];
-                                if (!map) {
-                                    map = {};
-                                    owner[typeName] = map;
-                                }
-                                var value = map[domainName];
-                                if (!value) {
-                                    map[domainName] = folder;
-                                }
-                                else {
-                                    var array = null;
-                                    if (angular.isArray(value)) {
-                                        array = value;
-                                    }
-                                    else {
-                                        array = [value];
-                                        map[domainName] = array;
-                                    }
-                                    array.push(folder);
-                                }
-                            };
-                            if (serviceName) {
-                                angular.bind(this, addFolderByDomain, this.mbeanServicesToDomain, serviceName)();
-                            }
-                            if (typeName) {
-                                angular.bind(this, addFolderByDomain, this.mbeanTypesToDomain, typeName)();
-                            }
-                        }
-                    }
-                    else {
-                        log.info("No folder found for lastPath: " + lastPath);
-                    }
-                }
-            }
-            tree.sortChildren(true);
+            angular.forEach(domains, function (domain, domainName) {
+                // domain name is displayed in the tree, so let's escape it here
+                _this.populateDomainFolder(newTree, _.escape(domainName), domain);
+            });
+            newTree.sortChildren(true);
             // now lets mark the nodes with no children as lazy loading...
-            this.enableLazyLoading(tree);
-            this.tree = tree;
+            this.enableLazyLoading(newTree);
+            this.tree = newTree;
             var processors = this.treePostProcessors;
             _.forIn(processors, function (fn, key) {
                 log.debug("Running tree post processor: ", key);
-                fn(tree);
+                fn(newTree);
             });
             this.maybeMonitorPlugins();
             var rootScope = this.$rootScope;
             if (rootScope) {
                 rootScope.$broadcast('jmxTreeUpdated');
                 Core.$apply(rootScope);
+            }
+        };
+        Workspace.prototype.initFolder = function (folder, domain, folderNames) {
+            folder.domain = domain;
+            if (!folder.key) {
+                folder.key = this.rootId + this.separator + folderNames.join(this.separator);
+            }
+            folder.folderNames = folderNames;
+            log.debug("    folder: domain=" + folder.domain + ", key=" + folder.key);
+        };
+        Workspace.prototype.populateDomainFolder = function (tree, domainName, domain) {
+            var _this = this;
+            log.debug("JMX tree domain: " + domainName);
+            var domainClass = Core.escapeDots(domainName);
+            var folder = this.folderGetOrElse(tree, domainName);
+            this.initFolder(folder, domainName, [domainName]);
+            angular.forEach(domain, function (mbean, mbeanName) {
+                _this.populateMBeanFolder(folder, domainClass, mbeanName, mbean);
+            });
+        };
+        Workspace.prototype.populateMBeanFolder = function (domainFolder, domainClass, mbeanName, mbean) {
+            var _this = this;
+            log.debug("  JMX tree mbean: " + mbeanName);
+            var entries = {};
+            var paths = [];
+            var typeName = null;
+            var serviceName = null;
+            mbeanName.split(',').forEach(function (prop) {
+                // do not use split('=') as it splits wrong when there is a space in the mbean name
+                // var kv = prop.split('=');
+                var kv = _this.splitMBeanProperty(prop);
+                var propKey = kv[0];
+                // mbean property value is displayed in the tree, so let's escape it here
+                var propValue = _.escape(kv[1] || propKey);
+                entries[propKey] = propValue;
+                var moveToFront = false;
+                var lowerKey = propKey.toLowerCase();
+                if (lowerKey === "type") {
+                    typeName = propValue;
+                    // if the type name value already exists in the root node
+                    // of the domain then lets move this property around too
+                    if (domainFolder.map[propValue]) {
+                        moveToFront = true;
+                    }
+                }
+                if (lowerKey === "service") {
+                    serviceName = propValue;
+                }
+                if (moveToFront) {
+                    paths.unshift(propValue);
+                }
+                else {
+                    paths.push(propValue);
+                }
+            });
+            var folder = domainFolder;
+            var domainName = domainFolder.domain;
+            var folderNames = _.clone(domainFolder.folderNames);
+            var lastPath = paths.pop();
+            paths.forEach(function (path) {
+                folder = _this.folderGetOrElse(folder, path);
+                if (folder) {
+                    folderNames.push(path);
+                    _this.configureFolder(folder, domainName, domainClass, folderNames, path);
+                }
+            });
+            if (folder) {
+                folder = this.folderGetOrElse(folder, lastPath);
+                if (folder) {
+                    // lets add the various data into the folder
+                    folder.entries = entries;
+                    folderNames.push(lastPath);
+                    this.configureFolder(folder, domainName, domainClass, folderNames, lastPath);
+                    folder.title = Core.trimQuotes(lastPath);
+                    folder.objectName = domainName + ":" + mbeanName;
+                    folder.mbean = mbean;
+                    folder.typeName = typeName;
+                    if (serviceName) {
+                        this.addFolderByDomain(folder, domainName, serviceName, this.mbeanServicesToDomain);
+                    }
+                    if (typeName) {
+                        this.addFolderByDomain(folder, domainName, typeName, this.mbeanTypesToDomain);
+                    }
+                }
+            }
+            else {
+                log.info("No folder found for last path: " + lastPath);
+            }
+        };
+        Workspace.prototype.splitMBeanProperty = function (property) {
+            var pos = property.indexOf('=');
+            if (pos > 0) {
+                return [property.substr(0, pos), property.substr(pos + 1)];
+            }
+            else {
+                return [property, property];
+            }
+        };
+        Workspace.prototype.configureFolder = function (folder, domainName, domainClass, folderNames, path) {
+            var _this = this;
+            this.initFolder(folder, domainName, _.clone(folderNames));
+            this.keyToNodeMap[folder.key] = folder;
+            var classes = "";
+            var typeKey = _.filter(_.keys(folder.entries), function (key) { return key.toLowerCase().indexOf("type") >= 0; });
+            if (typeKey.length) {
+                // last path
+                angular.forEach(typeKey, function (key) {
+                    var typeName = folder.entries[key];
+                    if (!folder.ancestorHasEntry(key, typeName)) {
+                        classes += " " + domainClass + _this.separator + typeName;
+                    }
+                });
+            }
+            else {
+                // folder
+                var kindName = _.last(folderNames);
+                if (kindName === path) {
+                    kindName += "-folder";
+                }
+                if (kindName) {
+                    classes += " " + domainClass + this.separator + kindName;
+                }
+            }
+            folder.addClass = Core.escapeTreeCssStyles(classes);
+            return folder;
+        };
+        Workspace.prototype.addFolderByDomain = function (folder, domainName, typeName, owner) {
+            var map = owner[typeName];
+            if (!map) {
+                map = {};
+                owner[typeName] = map;
+            }
+            var value = map[domainName];
+            if (!value) {
+                map[domainName] = folder;
+            }
+            else {
+                var array = null;
+                if (angular.isArray(value)) {
+                    array = value;
+                }
+                else {
+                    array = [value];
+                    map[domainName] = array;
+                }
+                array.push(folder);
             }
         };
         Workspace.prototype.enableLazyLoading = function (folder) {
@@ -1204,45 +1441,8 @@ var Core;
          * @return {Boolean}
          */
         Workspace.prototype.validSelection = function (uri) {
-            return true;
-            /*
             // TODO
-            var workspace = this;
-            var filter = (t) => {
-              var fn = t.href;
-              if (fn) {
-                var href = fn();
-                if (href) {
-                  if (href.startsWith("#")) {
-                    href = href.substring(1);
-                  }
-                  return href === uri;
-                }
-              }
-              return false;
-            };
-            var tab = this.subLevelTabs.find(filter);
-            if (!tab) {
-              tab = this.topLevelTabs.find(filter);
-            }
-            if (tab) {
-              console.log("Found tab: ", tab);
-              var validFn = tab['isValid'];
-              return !angular.isDefined(validFn) || validFn(workspace);
-            } else {
-              log.info("Could not find tab for " + uri);
-              return false;
-            }
-            */
-            /*
-                var value = this.uriValidations[uri];
-                if (value) {
-                  if (angular.isFunction(value)) {
-                    return value();
-                  }
-                }
-                return true;
-            */
+            return true;
         };
         /**
          * In cases where we have just deleted something we typically want to change
@@ -1683,6 +1883,7 @@ var Workspace = (function (_super) {
 ;
 
 /// <reference path="../../includes.ts"/>
+/// <reference path="folder.ts"/>
 /// <reference path="workspace.ts"/>
 /**
  * @module Core
@@ -1892,8 +2093,6 @@ var Jmx;
                             first.expand();
                             first.activate();
                         }
-                    }
-                    else {
                     }
                 }
             }
@@ -3662,237 +3861,6 @@ var Jmx;
         }]);
 })(Jmx || (Jmx = {}));
 
-var __extends = (this && this.__extends) || function (d, b) {
-    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
-    function __() { this.constructor = d; }
-    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-};
-/// <reference path="../../includes.ts"/>
-/**
- * @module Core
- */
-var Core;
-(function (Core) {
-    /**
-     * @class Folder
-     * @uses NodeSelection
-     */
-    var Folder = (function () {
-        function Folder(title) {
-            this.title = title;
-            this.id = null;
-            this.typeName = null;
-            this.items = [];
-            this.folderNames = [];
-            this.domain = null;
-            this.objectName = null;
-            this.map = {};
-            this.entries = {};
-            this.addClass = null;
-            this.parent = null;
-            this.isLazy = false;
-            this.icon = null;
-            this.tooltip = null;
-            this.entity = null;
-            this.version = null;
-            this.mbean = null;
-            this.expand = false;
-            this.addClass = Core.escapeTreeCssStyles(title);
-        }
-        Object.defineProperty(Folder.prototype, "key", {
-            get: function () {
-                return this.id;
-            },
-            set: function (key) {
-                this.id = key;
-            },
-            enumerable: true,
-            configurable: true
-        });
-        Object.defineProperty(Folder.prototype, "children", {
-            get: function () {
-                return this.items;
-            },
-            set: function (items) {
-                this.items = items;
-            },
-            enumerable: true,
-            configurable: true
-        });
-        Folder.prototype.get = function (key) {
-            return this.map[key];
-        };
-        Folder.prototype.isFolder = function () {
-            return this.children.length > 0;
-        };
-        /**
-         * Navigates the given paths and returns the value there or null if no value could be found
-         * @method navigate
-         * @for Folder
-         * @param {Array} paths
-         * @return {NodeSelection}
-         */
-        Folder.prototype.navigate = function () {
-            var paths = [];
-            for (var _i = 0; _i < arguments.length; _i++) {
-                paths[_i - 0] = arguments[_i];
-            }
-            var node = this;
-            paths.forEach(function (path) {
-                if (node) {
-                    node = node.get(path);
-                }
-            });
-            return node;
-        };
-        Folder.prototype.hasEntry = function (key, value) {
-            var entries = this.entries;
-            if (entries) {
-                var actual = entries[key];
-                return actual && value === actual;
-            }
-            return false;
-        };
-        Folder.prototype.parentHasEntry = function (key, value) {
-            if (this.parent) {
-                return this.parent.hasEntry(key, value);
-            }
-            return false;
-        };
-        Folder.prototype.ancestorHasEntry = function (key, value) {
-            var parent = this.parent;
-            while (parent) {
-                if (parent.hasEntry(key, value))
-                    return true;
-                parent = parent.parent;
-            }
-            return false;
-        };
-        Folder.prototype.ancestorHasType = function (typeName) {
-            var parent = this.parent;
-            while (parent) {
-                if (typeName === parent.typeName)
-                    return true;
-                parent = parent.parent;
-            }
-            return false;
-        };
-        Folder.prototype.getOrElse = function (key, defaultValue) {
-            if (defaultValue === void 0) { defaultValue = new Folder(key); }
-            var answer = this.map[key];
-            if (!answer) {
-                answer = defaultValue;
-                this.map[key] = answer;
-                this.children.push(answer);
-                answer.parent = this;
-            }
-            return answer;
-        };
-        Folder.prototype.sortChildren = function (recursive) {
-            var children = this.children;
-            if (children) {
-                this.children = _.sortBy(children, "title");
-                if (recursive) {
-                    angular.forEach(children, function (child) { return child.sortChildren(recursive); });
-                }
-            }
-        };
-        Folder.prototype.moveChild = function (child) {
-            if (child && child.parent !== this) {
-                child.detach();
-                child.parent = this;
-                this.children.push(child);
-            }
-        };
-        Folder.prototype.insertBefore = function (child, referenceFolder) {
-            child.detach();
-            child.parent = this;
-            var idx = _.indexOf((this.children), referenceFolder);
-            if (idx >= 0) {
-                this.children.splice(idx, 0, child);
-            }
-        };
-        Folder.prototype.insertAfter = function (child, referenceFolder) {
-            child.detach();
-            child.parent = this;
-            var idx = _.indexOf((this.children), referenceFolder);
-            if (idx >= 0) {
-                this.children.splice(idx + 1, 0, child);
-            }
-        };
-        /**
-         * Removes this node from my parent if I have one
-         * @method detach
-         * @for Folder
-         */
-        Folder.prototype.detach = function () {
-            var _this = this;
-            var oldParent = this.parent;
-            if (oldParent) {
-                var oldParentChildren = oldParent.children;
-                if (oldParentChildren) {
-                    var idx = oldParentChildren.indexOf(this);
-                    if (idx < 0) {
-                        _.remove(oldParent.children, function (child) { return child.key === _this.key; });
-                    }
-                    else {
-                        oldParentChildren.splice(idx, 1);
-                    }
-                }
-                this.parent = null;
-            }
-        };
-        /**
-         * Searches this folder and all its descendants for the first folder to match the filter
-         * @method findDescendant
-         * @for Folder
-         * @param {Function} filter
-         * @return {Folder}
-         */
-        Folder.prototype.findDescendant = function (filter) {
-            if (filter(this)) {
-                return this;
-            }
-            var answer = null;
-            angular.forEach(this.children, function (child) {
-                if (!answer) {
-                    answer = child.findDescendant(filter);
-                }
-            });
-            return answer;
-        };
-        /**
-         * Searches this folder and all its ancestors for the first folder to match the filter
-         * @method findDescendant
-         * @for Folder
-         * @param {Function} filter
-         * @return {Folder}
-         */
-        Folder.prototype.findAncestor = function (filter) {
-            if (filter(this)) {
-                return this;
-            }
-            if (this.parent != null) {
-                return this.parent.findAncestor(filter);
-            }
-            else {
-                return null;
-            }
-        };
-        return Folder;
-    }());
-    Core.Folder = Folder;
-})(Core || (Core = {}));
-;
-var Folder = (function (_super) {
-    __extends(Folder, _super);
-    function Folder() {
-        _super.apply(this, arguments);
-    }
-    return Folder;
-}(Core.Folder));
-;
-
 /// <reference path="jmxPlugin.ts"/>
 /**
  * @module Jmx
@@ -4614,6 +4582,35 @@ var Threads;
         }]);
 })(Threads || (Threads = {}));
 
+/// <reference path="../jmxPlugin.ts"/>
+var Jmx;
+(function (Jmx) {
+    var HeaderController = (function () {
+        HeaderController.$inject = ["$rootScope"];
+        function HeaderController($rootScope) {
+            'ngInject';
+            var _this = this;
+            $rootScope.$on('jmxTreeClicked', function (event, selectedNode) {
+                _this.title = selectedNode.title;
+            });
+        }
+        return HeaderController;
+    }());
+    Jmx.HeaderController = HeaderController;
+    Jmx.headerComponent = {
+        template: "<h1>{{$ctrl.title}}</h1>",
+        controller: HeaderController
+    };
+})(Jmx || (Jmx = {}));
+
+/// <reference path="header.component.ts"/>
+var Jmx;
+(function (Jmx) {
+    angular
+        .module('hawtio-jmx-common', [])
+        .component('jmxHeader', Jmx.headerComponent);
+})(Jmx || (Jmx = {}));
+
 var Jmx;
 (function (Jmx) {
     var Operation = (function () {
@@ -4894,35 +4891,6 @@ var Jmx;
         .component('operations', Jmx.operationsComponent)
         .component('operationForm', Jmx.operationFormComponent)
         .service('operationsService', Jmx.OperationsService);
-})(Jmx || (Jmx = {}));
-
-/// <reference path="../jmxPlugin.ts"/>
-var Jmx;
-(function (Jmx) {
-    var HeaderController = (function () {
-        HeaderController.$inject = ["$rootScope"];
-        function HeaderController($rootScope) {
-            'ngInject';
-            var _this = this;
-            $rootScope.$on('jmxTreeClicked', function (event, selectedNode) {
-                _this.title = selectedNode.title;
-            });
-        }
-        return HeaderController;
-    }());
-    Jmx.HeaderController = HeaderController;
-    Jmx.headerComponent = {
-        template: "<h1>{{$ctrl.title}}</h1>",
-        controller: HeaderController
-    };
-})(Jmx || (Jmx = {}));
-
-/// <reference path="header.component.ts"/>
-var Jmx;
-(function (Jmx) {
-    angular
-        .module('hawtio-jmx-common', [])
-        .component('jmxHeader', Jmx.headerComponent);
 })(Jmx || (Jmx = {}));
 
 angular.module('hawtio-jmx-templates', []).run(['$templateCache', function($templateCache) {$templateCache.put('plugins/jmx/html/areaChart.html','<div ng-controller="Jmx.AreaChartController">\n  <script type="text/ng-template" id="areaChart">\n    <fs-area bind="data" duration="250" interpolate="false" point-radius="5" width="width" height="height" label=""></fs-area>\n  </script>\n  <div compile="template"></div>\n</div>\n');

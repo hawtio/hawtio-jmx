@@ -1,4 +1,5 @@
 /// <reference path="../../includes.d.ts" />
+/// <reference path="folder.d.ts" />
 /// <reference path="workspace.d.ts" />
 /**
  * @module Core
@@ -67,5 +68,5 @@ declare module Jmx {
     function updateTreeSelectionFromURL($location: any, treeElement: any, activateIfNoneSelected?: boolean): void;
     function updateTreeSelectionFromURLAndAutoSelect($location: any, treeElement: any, autoSelect: any, activateIfNoneSelected?: boolean): void;
     function getUniqueTypeNames(children: any): string[];
-    function enableTree($scope: any, $location: ng.ILocationService, workspace: Core.Workspace, treeElement: any, children: any, redraw?: boolean, onActivateFn?: any): void;
+    function enableTree($scope: any, $location: ng.ILocationService, workspace: Core.Workspace, treeElement: any, children: Array<NodeSelection>, redraw?: boolean, onActivateFn?: (DynaTreeNode) => void): void;
 }

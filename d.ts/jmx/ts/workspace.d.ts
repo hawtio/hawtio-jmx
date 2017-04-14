@@ -49,6 +49,8 @@ declare module Core {
         treeElement: any;
         private treeFetched;
         mapData: {};
+        private rootId;
+        private separator;
         constructor(jolokia: any, jolokiaStatus: any, jmxTreeLazyLoadRegistry: any, $location: any, $compile: ng.ICompileService, $templateCache: ng.ITemplateCacheService, localStorage: WindowLocalStorage, $rootScope: any, userDetails: any, HawtioNav: HawtioMainNav.Registry);
         /**
          * Creates a shallow copy child workspace with its own selection and location
@@ -73,8 +75,14 @@ declare module Core {
         maybeUpdatePlugins(response: any): void;
         maybeReloadTree(response: any): void;
         private wrapInValue(response);
-        folderGetOrElse(folder: any, value: any): any;
+        folderGetOrElse(folder: Folder, name: string): Folder;
         populateTree(response: any): void;
+        private initFolder(folder, domain, folderNames);
+        private populateDomainFolder(tree, domainName, domain);
+        private populateMBeanFolder(domainFolder, domainClass, mbeanName, mbean);
+        private splitMBeanProperty(property);
+        private configureFolder(folder, domainName, domainClass, folderNames, path);
+        private addFolderByDomain(folder, domainName, typeName, owner);
         private enableLazyLoading(folder);
         /**
          * Returns the hash query argument to append to URL links
