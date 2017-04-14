@@ -590,45 +590,8 @@ module Core {
      * @return {Boolean}
      */
     public validSelection(uri:string) {
-      return true;
-      /*
       // TODO
-      var workspace = this;
-      var filter = (t) => {
-        var fn = t.href;
-        if (fn) {
-          var href = fn();
-          if (href) {
-            if (href.startsWith("#")) {
-              href = href.substring(1);
-            }
-            return href === uri;
-          }
-        }
-        return false;
-      };
-      var tab = this.subLevelTabs.find(filter);
-      if (!tab) {
-        tab = this.topLevelTabs.find(filter);
-      }
-      if (tab) {
-        console.log("Found tab: ", tab);
-        var validFn = tab['isValid'];
-        return !angular.isDefined(validFn) || validFn(workspace);
-      } else {
-        log.info("Could not find tab for " + uri);
-        return false;
-      }
-      */
-  /*
-      var value = this.uriValidations[uri];
-      if (value) {
-        if (angular.isFunction(value)) {
-          return value();
-        }
-      }
       return true;
-  */
     }
 
     /**
