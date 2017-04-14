@@ -233,12 +233,12 @@ module Core {
       this.populateTree({value: response});
     }
 
-    public folderGetOrElse(folder: Folder, value: string): Folder {
+    public folderGetOrElse(folder: Folder, name: string): Folder {
       if (folder) {
         try {
-          return folder.getOrElse(value);
+          return folder.getOrElse(name);
         } catch (e) {
-          log.warn("Failed to find value " + value + " on folder " + folder);
+          log.warn("Failed to find name " + name + " on folder " + folder);
         }
       }
       return null;
@@ -255,7 +255,8 @@ module Core {
       newTree.key = this.rootId;
       var domains = <Core.JMXDomains>response.value;
       angular.forEach(domains, (domain, domainName) => {
-        this.populateDomainFolder(newTree, domainName, domain);
+        // domain name is displayed in the tree, so let's escape it here
+        this.populateDomainFolder(newTree, _.escape(domainName), domain);
       });
 
       newTree.sortChildren(true);
@@ -309,26 +310,27 @@ module Core {
         // do not use split('=') as it splits wrong when there is a space in the mbean name
         // var kv = prop.split('=');
         var kv = this.splitMBeanProperty(prop);
-        var key = kv[0];
-        var value = kv[1] || key;
-        entries[key] = value;
+        var propKey = kv[0];
+        // mbean property value is displayed in the tree, so let's escape it here
+        var propValue = _.escape(kv[1] || propKey);
+        entries[propKey] = propValue;
         var moveToFront = false;
-        var lowerKey = key.toLowerCase();
+        var lowerKey = propKey.toLowerCase();
         if (lowerKey === "type") {
-          typeName = value;
+          typeName = propValue;
           // if the type name value already exists in the root node
           // of the domain then lets move this property around too
-          if (domainFolder.map[value]) {
+          if (domainFolder.map[propValue]) {
             moveToFront = true;
           }
         }
         if (lowerKey === "service") {
-          serviceName = value;
+          serviceName = propValue;
         }
         if (moveToFront) {
-          paths.unshift(value);
+          paths.unshift(propValue);
         } else {
-          paths.push(value);
+          paths.push(propValue);
         }
       });
 
