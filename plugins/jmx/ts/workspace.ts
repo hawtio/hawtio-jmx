@@ -47,6 +47,9 @@ module Core {
     // mapData allows to store arbitrary data on the workspace
     public mapData = {};
 
+    private rootId = 'root';
+    private separator = '-';
+
     constructor(public jolokia,
                 public jolokiaStatus,
                 public jmxTreeLazyLoadRegistry,
@@ -230,7 +233,7 @@ module Core {
       this.populateTree({value: response});
     }
 
-    public folderGetOrElse(folder, value) {
+    public folderGetOrElse(folder: Folder, value: string): Folder {
       if (folder) {
         try {
           return folder.getOrElse(value);
@@ -241,173 +244,30 @@ module Core {
       return null;
     }
 
-    public populateTree(response) {
+    public populateTree(response): void {
       log.debug("JMX tree has been loaded, data: ", response.value);
 
-      var rootId = 'root';
-      var separator = '-';
       this.mbeanTypesToDomain = {};
       this.mbeanServicesToDomain = {};
       this.keyToNodeMap = {};
-      var tree = new Folder('MBeans');
-      tree.key = rootId;
-      var domains = <Core.JMXDomains> response.value;
-      for (var domainName in domains) {
-        var domainClass = escapeDots(domainName);
-        var domain = <Core.JMXDomain> domains[domainName];
-        for (var mbeanName in domain) {
-          // log.debug("JMX tree mbean name: " + mbeanName);
-          var entries = {};
-          var folder = this.folderGetOrElse(tree, domainName);
-          //if (!folder) continue;
-          folder.domain = domainName;
-          if (!folder.key) {
-            folder.key = rootId + separator + domainName;
-          }
-          var folderNames = [domainName];
-          folder.folderNames = folderNames;
-          folderNames = _.clone(folderNames);
-          var items = mbeanName.split(',');
-          var paths = [];
-          var typeName = null;
-          var serviceName = null;
-          items.forEach(item => {
-            // do not use split('=') as it splits wrong when there is a space in the mbean name
-            // var kv = item.split('=');
-            var pos = item.indexOf('=');
-            var kv = [];
-            if (pos > 0) {
-              kv[0] = item.substr(0, pos);
-              kv[1] = item.substr(pos + 1);
-            } else {
-              kv[0] = item;
-            }
-            var key = kv[0];
-            var value = kv[1] || key;
-            entries[key] = value;
-            var moveToFront = false;
-            var lowerKey = key.toLowerCase();
-            if (lowerKey === "type") {
-              typeName = value;
-              // if the type name value already exists in the root node
-              // of the domain then lets move this property around too
-              if (folder.map[value]) {
-                moveToFront = true;
-              }
-            }
-            if (lowerKey === "service") {
-              serviceName = value;
-            }
-            if (moveToFront) {
-              paths.splice(0, 0, value);
-            } else {
-              paths.push(value);
-            }
-          });
 
+      var newTree = new Folder('MBeans');
+      newTree.key = this.rootId;
+      var domains = <Core.JMXDomains>response.value;
+      angular.forEach(domains, (domain, domainName) => {
+        this.populateDomainFolder(newTree, domainName, domain);
+      });
 
-          var configureFolder = function(folder: Folder, name: string) {
-            folder.domain = domainName;
-            if (!folder.key) {
-              folder.key = rootId + separator + folderNames.join(separator);
-            }
-            this.keyToNodeMap[folder.key] = folder;
-            folder.folderNames = _.clone(folderNames);
-            //var classes = escapeDots(folder.key);
-            var classes = "";
-            var entries = folder.entries;
-            var entryKeys = _.filter(_.keys(entries), (n) => n.toLowerCase().indexOf("type") >= 0);
-            if (entryKeys.length) {
-              angular.forEach(entryKeys, (entryKey) => {
-                var entryValue = entries[entryKey];
-                if (!folder.ancestorHasEntry(entryKey, entryValue)) {
-                  classes += " " + domainClass + separator + entryValue;
-                }
-              });
-            } else {
-              var kindName = _.last(folderNames);
-              /*if (folder.parent && folder.parent.title === typeName) {
-                 kindName = typeName;
-                 } else */
-                if (kindName === name) {
-                  kindName += "-folder";
-                }
-                if (kindName) {
-                  classes += " " + domainClass + separator + kindName;
-                }
-            }
-            folder.addClass = escapeTreeCssStyles(classes);
-            return folder;
-          };
-
-          var lastPath = paths.pop();
-          var ws = this;
-          paths.forEach((value) => {
-            folder = ws.folderGetOrElse(folder, value);
-            if (folder) {
-              folderNames.push(value);
-              angular.bind(ws, configureFolder, folder, value)();
-            }
-          });
-          var key = rootId + separator + folderNames.join(separator) + separator + lastPath;
-          var objectName = domainName + ":" + mbeanName;
-
-          if (folder) {
-            folder = this.folderGetOrElse(folder, lastPath);
-            if (folder) {
-              // lets add the various data into the folder
-              folder.entries = entries;
-              folder.key = key;
-              angular.bind(this, configureFolder, folder, lastPath)();
-              folder.title = trimQuotes(lastPath);
-              folder.objectName = objectName;
-              folder.mbean = domain[mbeanName];
-              folder.typeName = typeName;
-
-              var addFolderByDomain = function(owner, typeName) {
-                var map = owner[typeName];
-                if (!map) {
-                  map = {};
-                  owner[typeName] = map;
-                }
-                var value = map[domainName];
-                if (!value) {
-                  map[domainName] = folder;
-                } else {
-                  var array = null;
-                  if (angular.isArray(value)) {
-                    array = value;
-                  } else {
-                    array = [value];
-                    map[domainName] = array;
-                  }
-                  array.push(folder);
-                }
-              };
-
-              if (serviceName) {
-                angular.bind(this, addFolderByDomain, this.mbeanServicesToDomain, serviceName)();
-              }
-              if (typeName) {
-                angular.bind(this, addFolderByDomain, this.mbeanTypesToDomain, typeName)();
-              }
-            }
-          } else {
-            log.info("No folder found for lastPath: " + lastPath);
-          }
-        }
-      }
-
-      tree.sortChildren(true);
+      newTree.sortChildren(true);
 
       // now lets mark the nodes with no children as lazy loading...
-      this.enableLazyLoading(tree);
-      this.tree = tree;
+      this.enableLazyLoading(newTree);
+      this.tree = newTree;
 
       var processors = this.treePostProcessors;
-      _.forIn(processors, (fn: (tree: Folder) => void, key) => {
+      _.forIn(processors, (fn: (Folder) => void, key) => {
         log.debug("Running tree post processor: ", key);
-        fn(tree);
+        fn(newTree);
       });
 
       this.maybeMonitorPlugins();
@@ -416,6 +276,152 @@ module Core {
       if (rootScope) {
         rootScope.$broadcast('jmxTreeUpdated');
         Core.$apply(rootScope);
+      }
+    }
+
+    private initFolder(folder: Folder, domain: string, folderNames: string[]): void {
+      folder.domain = domain;
+      if (!folder.key) {
+        folder.key = this.rootId + this.separator + folderNames.join(this.separator);
+      }
+      folder.folderNames = folderNames;
+      log.debug("    folder: domain=" + folder.domain + ", key=" + folder.key);
+    }
+
+    private populateDomainFolder(tree: Folder, domainName: string, domain: Core.JMXDomain): void {
+      log.debug("JMX tree domain: " + domainName);
+      var domainClass = Core.escapeDots(domainName);
+      var folder = this.folderGetOrElse(tree, domainName);
+      this.initFolder(folder, domainName, [domainName]);
+      angular.forEach(domain, (mbean, mbeanName) => {
+        this.populateMBeanFolder(folder, domainClass, mbeanName, mbean);
+      });
+    }
+
+    private populateMBeanFolder(domainFolder: Folder, domainClass: string, mbeanName: string, mbean: JMXMBean): void {
+      log.debug("  JMX tree mbean: " + mbeanName);
+
+      var entries = {};
+      var paths = [];
+      var typeName = null;
+      var serviceName = null;
+      mbeanName.split(',').forEach(prop => {
+        // do not use split('=') as it splits wrong when there is a space in the mbean name
+        // var kv = prop.split('=');
+        var kv = this.splitMBeanProperty(prop);
+        var key = kv[0];
+        var value = kv[1] || key;
+        entries[key] = value;
+        var moveToFront = false;
+        var lowerKey = key.toLowerCase();
+        if (lowerKey === "type") {
+          typeName = value;
+          // if the type name value already exists in the root node
+          // of the domain then lets move this property around too
+          if (domainFolder.map[value]) {
+            moveToFront = true;
+          }
+        }
+        if (lowerKey === "service") {
+          serviceName = value;
+        }
+        if (moveToFront) {
+          paths.unshift(value);
+        } else {
+          paths.push(value);
+        }
+      });
+
+      var folder = domainFolder;
+      var domainName = domainFolder.domain;
+      var folderNames = _.clone(domainFolder.folderNames);
+      var lastPath = paths.pop();
+      paths.forEach(path => {
+        folder = this.folderGetOrElse(folder, path);
+        if (folder) {
+          folderNames.push(path);
+          this.configureFolder(folder, domainName, domainClass, folderNames, path);
+        }
+      });
+
+      if (folder) {
+        folder = this.folderGetOrElse(folder, lastPath);
+        if (folder) {
+          // lets add the various data into the folder
+          folder.entries = entries;
+          folderNames.push(lastPath);
+          this.configureFolder(folder, domainName, domainClass, folderNames, lastPath);
+          folder.title = Core.trimQuotes(lastPath);
+          folder.objectName = domainName + ":" + mbeanName;
+          folder.mbean = mbean;
+          folder.typeName = typeName;
+
+          if (serviceName) {
+            this.addFolderByDomain(folder, domainName, serviceName, this.mbeanServicesToDomain);
+          }
+          if (typeName) {
+            this.addFolderByDomain(folder, domainName, typeName, this.mbeanTypesToDomain);
+          }
+        }
+      } else {
+        log.info("No folder found for last path: " + lastPath);
+      }
+    }
+
+    private splitMBeanProperty(property: string): [string, string] {
+      var pos = property.indexOf('=');
+      if (pos > 0) {
+        return [property.substr(0, pos), property.substr(pos + 1)];
+      } else {
+        return [property, property];
+      }
+    }
+
+    private configureFolder(folder: Folder, domainName: string, domainClass: string, folderNames: string[], path: string): Folder {
+      this.initFolder(folder, domainName, _.clone(folderNames));
+      this.keyToNodeMap[folder.key] = folder;
+      var classes = "";
+      var typeKey = _.filter(_.keys(folder.entries), key => key.toLowerCase().indexOf("type") >= 0);
+      if (typeKey.length) {
+        // last path
+        angular.forEach(typeKey, key => {
+          var typeName = folder.entries[key];
+          if (!folder.ancestorHasEntry(key, typeName)) {
+            classes += " " + domainClass + this.separator + typeName;
+          }
+        });
+      } else {
+        // folder
+        var kindName = _.last(folderNames);
+        if (kindName === path) {
+          kindName += "-folder";
+        }
+        if (kindName) {
+          classes += " " + domainClass + this.separator + kindName;
+        }
+      }
+      folder.addClass = Core.escapeTreeCssStyles(classes);
+      return folder;
+    }
+
+    private addFolderByDomain(folder: Folder, domainName: string, typeName: string, owner: any): void {
+      var map = owner[typeName];
+      if (!map) {
+        map = {};
+        owner[typeName] = map;
+      }
+      var value = map[domainName];
+      if (!value) {
+        map[domainName] = folder;
+      } else {
+        var array = null;
+        if (angular.isArray(value)) {
+          array = value;
+        } else {
+          array = [value];
+          map[domainName] = array;
+        }
+        array.push(folder);
       }
     }
 

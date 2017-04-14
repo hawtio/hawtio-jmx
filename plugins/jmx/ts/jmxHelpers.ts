@@ -1,4 +1,5 @@
 /// <reference path="../../includes.ts"/>
+/// <reference path="folder.ts"/>
 /// <reference path="workspace.ts"/>
 /**
  * @module Core
@@ -204,16 +205,6 @@ module Jmx {
               first.expand();
               first.activate();
             }
-          } else {
-/*
-            causes NPE :)
-
-            var first = children[0];
-            first.expand(true);
-            if (activateIfNoneSelected) {
-              first.activate();
-            }
-*/
           }
         }
       }
@@ -233,7 +224,7 @@ module Jmx {
     return typeNames;
   }
 
-  export function enableTree($scope, $location: ng.ILocationService, workspace: Core.Workspace, treeElement, children, redraw = false, onActivateFn = null) {
+  export function enableTree($scope, $location: ng.ILocationService, workspace: Core.Workspace, treeElement, children: Array<NodeSelection>, redraw: boolean = false, onActivateFn: (DynaTreeNode) => void = null) {
     if (treeElement.length) {
       if (!onActivateFn) {
         onActivateFn = (node:DynaTreeNode) => {
