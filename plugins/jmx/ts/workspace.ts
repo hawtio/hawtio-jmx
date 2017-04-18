@@ -225,12 +225,9 @@ module Core {
       }
       if (this.treeWatcherCounter !== counter) {
         this.treeWatcherCounter = counter;
-        this.jolokia.list(null, onSuccess(this.wrapInValue, {ignoreErrors: true, maxDepth: 2}));
+        this.jolokia.list(null, onSuccess(response => this.populateTree({ value: response }),
+          {ignoreErrors: true, maxDepth: 2}));
       }
-    }
-
-    private wrapInValue(response) {
-      this.populateTree({value: response});
     }
 
     public populateTree(response): void {

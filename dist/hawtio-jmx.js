@@ -1085,6 +1085,7 @@ var Core;
             }
         };
         Workspace.prototype.maybeReloadTree = function (response) {
+            var _this = this;
             var counter = response.value;
             if (this.treeWatcherCounter === null) {
                 this.treeWatcherCounter = counter;
@@ -1092,11 +1093,8 @@ var Core;
             }
             if (this.treeWatcherCounter !== counter) {
                 this.treeWatcherCounter = counter;
-                this.jolokia.list(null, Core.onSuccess(this.wrapInValue, { ignoreErrors: true, maxDepth: 2 }));
+                this.jolokia.list(null, Core.onSuccess(function (response) { return _this.populateTree({ value: response }); }, { ignoreErrors: true, maxDepth: 2 }));
             }
-        };
-        Workspace.prototype.wrapInValue = function (response) {
-            this.populateTree({ value: response });
         };
         Workspace.prototype.populateTree = function (response) {
             var _this = this;
