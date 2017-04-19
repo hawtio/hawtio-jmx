@@ -29,7 +29,20 @@ module JVM {
 
   _module.constant('mbeanName', 'hawtio:type=JVMList');
 
-  _module.run(["HawtioNav", "$location", "workspace", "viewRegistry", "layoutFull", "helpRegistry", "preferencesRegistry", "ConnectOptions", "locationChangeStartTasks", "HawtioDashboard", "HawtioExtension", "$templateCache", "$compile", (nav:HawtioMainNav.Registry, $location, workspace:Workspace, viewRegistry, layoutFull, helpRegistry, preferencesRegistry, ConnectOptions:Core.ConnectOptions, locationChangeStartTasks, dash, extensions, $templateCache, $compile) => {
+  _module.run(["HawtioNav", "$location", "workspace", "viewRegistry", "layoutFull", "helpRegistry", "preferencesRegistry", "ConnectOptions", "locationChangeStartTasks", "HawtioDashboard", "HawtioExtension", "$templateCache", "$compile", (
+      nav: HawtioMainNav.Registry,
+      $location: ng.ILocationService,
+      workspace: Workspace,
+      viewRegistry,
+      layoutFull,
+      helpRegistry,
+      preferencesRegistry: HawtioPreferences.PreferencesRegistry,
+      ConnectOptions: Core.ConnectOptions,
+      locationChangeStartTasks: Core.ParameterizedTasks,
+      dash,
+      extensions,
+      $templateCache: ng.ITemplateCacheService,
+      $compile) => {
 
     extensions.add('hawtio-header', ($scope) => {
       var template = $templateCache.get(UrlHelpers.join(templatePath, 'navbarHeaderExtension.html'));
