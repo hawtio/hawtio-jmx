@@ -173,7 +173,7 @@ module Jmx {
   }
 
   export function updateTreeSelectionFromURLAndAutoSelect($location, treeElement, autoSelect, activateIfNoneSelected = false) {
-    var dtree = <any>treeElement.dynatree("getTree");
+    var dtree = <any>treeElement.treeview(true);
     if (dtree) {
       var node = <any>null;
       var key = $location.search()['nid'];
@@ -187,9 +187,9 @@ module Jmx {
       if (node) {
         node.expand(true);
       } else {
-        if (!treeElement.dynatree("getActiveNode")) {
+        if (!treeElement.treeview('getSelected')) {
           // lets expand the first node
-          var root = treeElement.dynatree("getRoot");
+          var root = dtree.getRootNode();
           var children = root ? root.getChildren() : null;
           if (children && children.length) {
             var first = children[0];
@@ -256,23 +256,15 @@ module Jmx {
     return escaped;
   }
 
-  export function enableTree($scope, $location: ng.ILocationService, workspace: Core.Workspace, treeElement, children: Array<NodeSelection>, redraw: boolean = false, onActivateFn: (DynaTreeNode) => void = null) {
+  export function enableTree($scope, $location: ng.ILocationService, workspace: Core.Workspace, treeElement, children: Array<NodeSelection>) {
     if (treeElement.length) {
-      if (!onActivateFn) {
-        onActivateFn = (node:DynaTreeNode) => {
-          var data = node.data;
-          workspace.updateSelectionNode(data);
-          Core.$apply($scope);
-        };
-      }
       workspace.treeElement = treeElement;
-      treeElement.dynatree({
+      const tree = treeElement.treeview({
         /*
          * The event handler called when a different node in the tree is selected
          */
-        onActivate: onActivateFn,
-        onLazyRead: function(treeNode) {
-          var folder = treeNode.data;
+        lazyLoad: function(event, data) {
+          var folder = data.node;
           var plugin = <(workspace:Core.Workspace, folder:Core.Folder, func:() => void) => void> null;
           if (folder) {
             plugin = Jmx.findLazyLoadingFunction(workspace, folder);
@@ -281,37 +273,47 @@ module Jmx {
             log.debug("Lazy loading folder " + folder.title);
             var oldChildren = folder.children;
             plugin(workspace, folder, () => {
-              treeNode.setLazyNodeStatus(DTNodeStatus_Ok);
+              data.node.setLazyNodeStatus(DTNodeStatus_Ok);
               var newChildren = folder.children;
               if (newChildren !== oldChildren) {
-                treeNode.removeChildren();
+                data.node.removeChildren();
                 angular.forEach(newChildren, newChild => {
-                  treeNode.addChild(newChild);
+                  data.node.addChild(newChild);
                 });
               }
             });
           } else {
-            treeNode.setLazyNodeStatus(DTNodeStatus_Ok);
+            data.node.setLazyNodeStatus(DTNodeStatus_Ok);
           }
         },
-        onExpand: function(flag:any, node:DynaTreeNode) {
+        onNodeExpanded: function(event, data:Folder) {
           // reflect the "expand" status from dynatree in Folder structure
           // this will also preserve expand status when redrawin tree!
           // see "this.data = $.extend({}, $.ui.dynatree.nodedatadefaults, data);" in jquery.dynatree. "data" is Folder object
-          node.data.expand = flag;
-          if ((<any>node.data).isFolder()) {
-            var parent = (<any>node.data).children[0].parent;
-            if (parent) {
-              parent.expand = flag;
-            }
-          }
+          // const node = data.node;
+          data.expand = true;
+          // if (data.isFolder()) {
+          //   var parent = data.children[0].parent;
+          //   if (parent) {
+          //     parent.expand = true;
+          //   }
+          // }
         },
-        onClick: function (node:DynaTreeNode, event:Event) {
-          if (event["metaKey"]) {
+        onNodeSelected: function (event, data:Folder) {
+          workspace.updateSelectionNode(data);
+          Core.$apply($scope);
+        },
+
+        /*onNodeSelected: function (event, data:Folder) {
+          console.log('onNodeSelected');
+          // const node = data.node;
+          console.log('test:', data);
+          // if (event["metaKey"]) {
             event.preventDefault();
             var url = $location.absUrl();
-            if (node && node.data) {
-              var key = node.data["key"];
+            // if (node && node.data) {
+              // var key = node.data["key"];
+              const key = data.key;
               if (key) {
                 var hash = $location.search();
                 hash["nid"] = key;
@@ -326,22 +328,19 @@ module Jmx {
                 }
                 url += $.param(hash);
               }
-            }
+            // }
             window.open(url, '_blank');
             window.focus();
             return false;
-          }
-          return true;
-        },
-        imagePath: '/',
-        persist: false,
-        debugLevel: 0,
-        children: children
+          // }
+          // return true;
+        },*/
+        debugLevel: 9,
+        data: children,
+        collapseIcon: "fa fa-angle-down",
+        expandIcon: "fa fa-angle-right",
+        nodeIcon: "fa fa-folder"
       });
-
-      if (redraw) {
-        workspace.redrawTree();
-      }
     }
   }
 }

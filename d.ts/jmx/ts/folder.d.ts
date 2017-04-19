@@ -114,8 +114,9 @@ declare module Core {
         constructor(title: string);
         id: string;
         key: string;
+        text: string;
         typeName: string;
-        items: NodeSelection[];
+        nodes: NodeSelection[];
         children: Array<NodeSelection>;
         folderNames: string[];
         domain: string;
@@ -125,7 +126,9 @@ declare module Core {
         addClass: string;
         parent: Folder;
         isLazy: boolean;
+        lazyLoad: boolean;
         icon: string;
+        image: string;
         tooltip: string;
         entity: any;
         version: string;

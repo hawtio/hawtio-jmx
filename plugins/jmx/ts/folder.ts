@@ -119,22 +119,25 @@ module Core {
 
     id:string = null;
 
-
     get key():string {
       return this.id;
     }
     set key(key:string) {
       this.id = key;
-    } 
+    }
+
+    get text():string {
+      return this.title;
+    }
 
     typeName:string = null;
-    items = <Array<NodeSelection>>[];
+    nodes = <Array<NodeSelection>>[];
 
     get children():Array<NodeSelection> {
-      return this.items;
+      return this.nodes;
     }
     set children(items:Array<NodeSelection>) {
-      this.items = items;
+      this.nodes = items;
     }
 
     folderNames:string[] = [];
@@ -145,7 +148,20 @@ module Core {
     addClass:string = null;
     parent:Folder = null;
     isLazy:boolean = false;
+
+    get lazyLoad():boolean {
+      return this.isLazy;
+    }
+    set lazyLoad(isLazy:boolean) {
+      this.isLazy = isLazy;
+    }
+
     icon:string = null;
+
+    get image():string {
+      return this.icon;
+    }
+
     tooltip:string = null;
     entity:any = null;
     version:string = null;
@@ -156,8 +172,8 @@ module Core {
       return this.map[key];
     }
 
-    isFolder() {
-      return this.children.length > 0;
+    isFolder():boolean {
+      return this.nodes.length > 0;
     }
     /**
      * Navigates the given paths and returns the value there or null if no value could be found

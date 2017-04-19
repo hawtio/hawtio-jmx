@@ -75,5 +75,5 @@ declare module Jmx {
      * @param {string} str string to be escaped
      */
     function escapeTagOnly(str: string): string;
-    function enableTree($scope: any, $location: ng.ILocationService, workspace: Core.Workspace, treeElement: any, children: Array<NodeSelection>, redraw?: boolean, onActivateFn?: (DynaTreeNode) => void): void;
+    function enableTree($scope: any, $location: ng.ILocationService, workspace: Core.Workspace, treeElement: any, children: Array<NodeSelection>): void;
 }

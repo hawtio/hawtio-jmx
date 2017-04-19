@@ -144,7 +144,7 @@ module Core {
             this.jolokiaStatus.xhr = null;
           }
           workspace.treeFetched = true;
-          workspace.populateTree(response);  
+          workspace.populateTree(response);
         }, flags));
       }
     }
@@ -425,7 +425,7 @@ module Core {
         // we have no children so enable lazy loading if we have a custom loader registered
         var lazyFunction = Jmx.findLazyLoadingFunction(this, folder);
         if (lazyFunction) {
-          folder.isLazy = true;
+          folder.lazyLoad = true;
         }
       }
     }
@@ -690,7 +690,7 @@ module Core {
       }
     }
 
-    public updateSelectionNode(node) {
+    public updateSelectionNode(node: NodeSelection) {
       var originalSelection = this.selection;
       this.selection = <NodeSelection> node;
       var key:string = null;
@@ -722,33 +722,14 @@ module Core {
     }
 
     /**
-     * Redraws the tree widget
-     * @method redrawTree
-     */
-    public redrawTree() {
-      var treeElement:any = this.treeElement;
-      if (treeElement && angular.isDefined(treeElement.dynatree) && angular.isFunction(treeElement.dynatree)) {
-        var node:any = treeElement.dynatree("getTree");
-        if (angular.isDefined(node)) {
-          try {
-            node.reload();
-          } catch (e) {
-            // ignore as we may get an error if starting hawtio from incognito window on chrome
-          }
-        }
-      }
-    }
-
-
-    /**
      * Expand / collapse the current active node
      * @method expandSelection
      * @param {Boolean} flag
      */
     public expandSelection(flag) {
       var treeElement:any = this.treeElement;
-      if (treeElement && angular.isDefined(treeElement.dynatree) && angular.isFunction(treeElement.dynatree)) {
-        var node:DynaTreeNode = treeElement.dynatree("getActiveNode");
+      if (treeElement && angular.isDefined(treeElement.treeview) && angular.isFunction(treeElement.treeview)) {
+        var node = treeElement.treeview('getSelected');
         if (angular.isDefined(node)) {
           node.expand(flag);
         }

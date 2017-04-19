@@ -29,21 +29,34 @@ module Jmx {
       }
     });
 
-    $scope.select = (node:DynaTreeNode) => {
+    $scope.select = (node:NodeSelection) => {
       $scope.workspace.updateSelectionNode(node);
       Core.$apply($scope);
     };
 
     function updateSelectionFromURL() {
-      updateTreeSelectionFromURL($location, $("#jmxtree"));
+      updateTreeSelectionFromURL($location, $('#jmxtree'));
     }
 
     $scope.populateTree = () => {
-      var treeElement = $("#jmxtree");
+      var treeElement = $('#jmxtree');
       $scope.tree = workspace.tree;
-      enableTree($scope, $location, workspace, treeElement, $scope.tree.children, true);
+      enableTree($scope, $location, workspace, treeElement, $scope.tree.children);
       setTimeout(updateSelectionFromURL, 50);
     };
+
+    $scope.$on('$destroy', () => {
+      // Bootstrap tree view leaks the node elements into the data structure
+      // so let's clean this up when the user leaves the view
+      const cleanTreeFolder = (node:Folder) => {
+          delete node['$el'];
+          if (node.nodes) node.nodes.forEach(cleanTreeFolder);
+      };
+      cleanTreeFolder($scope.tree);
+      // Then call the tree clean-up method
+      const treeElement: any = $('#jmxtree');
+      treeElement.treeview('remove');
+    });
 
     $scope.$on('jmxTreeUpdated', $scope.populateTree);
 

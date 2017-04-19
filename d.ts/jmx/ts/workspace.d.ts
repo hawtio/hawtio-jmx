@@ -157,12 +157,7 @@ declare module Core {
          */
         selectionConfigKey(prefix?: string): string;
         moveIfViewInvalid(): boolean;
-        updateSelectionNode(node: any): void;
-        /**
-         * Redraws the tree widget
-         * @method redrawTree
-         */
-        redrawTree(): void;
+        updateSelectionNode(node: NodeSelection): void;
         /**
          * Expand / collapse the current active node
          * @method expandSelection
