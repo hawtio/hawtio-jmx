@@ -19,7 +19,7 @@ module JVM {
 
   export var ConnectController = _module.controller("JVM.ConnectController", ["$scope", "$location",
       "localStorage", "workspace", "$http", "$timeout", ($scope:ConnectControllerScope,
-      $location:ng.ILocationService, localStorage:WindowLocalStorage, workspace:Core.Workspace,
+      $location:ng.ILocationService, localStorage:WindowLocalStorage, workspace:Jmx.Workspace,
       $http:ng.IHttpService, $timeout: ng.ITimeoutService) => {
 
     JVM.configureScope($scope, $location, workspace);

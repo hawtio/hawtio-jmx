@@ -1,7 +1,7 @@
 /// <reference path="../workspace.d.ts" />
 /// <reference path="operations.service.d.ts" />
 /// <reference path="operation.d.ts" />
-declare module Jmx {
+declare namespace Jmx {
     class OperationsController {
         private $scope;
         private $location;
@@ -12,7 +12,7 @@ declare module Jmx {
         actionButtons: any[];
         menuActions: any[];
         operations: Operation[];
-        constructor($scope: any, $location: any, workspace: Core.Workspace, jolokiaUrl: any, operationsService: OperationsService);
+        constructor($scope: any, $location: any, workspace: Workspace, jolokiaUrl: any, operationsService: OperationsService);
         $onInit(): void;
         private configureListView();
         private buildJolokiaUrl(operation);

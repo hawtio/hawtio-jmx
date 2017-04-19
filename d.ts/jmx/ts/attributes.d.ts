@@ -1,8 +1,5 @@
 /// <reference path="jmxPlugin.d.ts" />
-/**
- * @module Jmx
- */
-declare module Jmx {
+declare namespace Jmx {
     var propertiesColumnDefs: {
         field: string;
         displayName: string;

@@ -21,7 +21,7 @@ module Threads {
   }]);
 
   _module.run(["$templateCache", "workspace", "viewRegistry", "layoutFull", "helpRegistry", "HawtioNav",
-      ($templateCache: ng.ITemplateCacheService, workspace: Core.Workspace, viewRegistry, layoutFull,
+      ($templateCache: ng.ITemplateCacheService, workspace: Jmx.Workspace, viewRegistry, layoutFull,
       helpRegistry, nav: HawtioMainNav.Registry) => {
 
     viewRegistry['threads'] = layoutFull;

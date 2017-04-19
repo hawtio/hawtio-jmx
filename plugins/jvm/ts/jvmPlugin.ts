@@ -32,7 +32,7 @@ module JVM {
   _module.run(["HawtioNav", "$location", "workspace", "viewRegistry", "layoutFull", "helpRegistry", "preferencesRegistry", "ConnectOptions", "locationChangeStartTasks", "HawtioDashboard", "HawtioExtension", "$templateCache", "$compile", (
       nav: HawtioMainNav.Registry,
       $location: ng.ILocationService,
-      workspace: Workspace,
+      workspace: Jmx.Workspace,
       viewRegistry,
       layoutFull,
       helpRegistry,

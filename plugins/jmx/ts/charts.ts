@@ -1,8 +1,7 @@
-/**
- * @module Jmx
- */
 /// <reference path="./jmxPlugin.ts"/>
-module Jmx {
+
+namespace Jmx {
+
   _module.controller("Jmx.ChartController", ["$scope", "$element", "$location", "workspace", "localStorage", "jolokiaUrl", "jolokiaParams", ($scope, $element, $location, workspace:Workspace, localStorage, jolokiaUrl, jolokiaParams) => {
 
     var log:Logging.Logger = Logger.get("JMX");

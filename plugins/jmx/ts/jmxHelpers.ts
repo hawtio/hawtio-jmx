@@ -1,10 +1,9 @@
 /// <reference path="../../includes.ts"/>
 /// <reference path="folder.ts"/>
 /// <reference path="workspace.ts"/>
-/**
- * @module Core
- */
-module Core {
+
+namespace Jmx {
+
   // Add a few functions to the Core namespace
   /**
    * Returns the Folder object for the given domain name and type name or null if it can not be found
@@ -40,7 +39,7 @@ module Core {
    * @return {String}
    */
   export function getMBeanTypeObjectName(workspace:Workspace, domain: string, typeName: string):string {
-    var folder = Core.getMBeanTypeFolder(workspace, domain, typeName);
+    var folder = getMBeanTypeFolder(workspace, domain, typeName);
     return Core.pathGet(folder, ["objectName"]);
   }
 
@@ -101,7 +100,7 @@ module Jmx {
   }
 
 
-  export function registerLazyLoadHandler(domain: string, lazyLoaderFactory: (folder: Core.Folder) => any) {
+  export function registerLazyLoadHandler(domain: string, lazyLoaderFactory: (folder: Folder) => any) {
     if (!Core.lazyLoaders) {
       Core.lazyLoaders = {};
     }
@@ -113,7 +112,7 @@ module Jmx {
     array.push(lazyLoaderFactory);
   }
 
-  export function unregisterLazyLoadHandler(domain: string, lazyLoaderFactory: (folder: Core.Folder) => any) {
+  export function unregisterLazyLoadHandler(domain: string, lazyLoaderFactory: (folder: Folder) => any) {
     if (Core.lazyLoaders) {
       var array = Core.lazyLoaders[domain];
       if (array) {
@@ -256,7 +255,7 @@ module Jmx {
     return escaped;
   }
 
-  export function enableTree($scope, $location: ng.ILocationService, workspace: Core.Workspace, treeElement, children: Array<NodeSelection>) {
+  export function enableTree($scope, $location: ng.ILocationService, workspace: Workspace, treeElement, children: Array<NodeSelection>) {
     if (treeElement.length) {
       workspace.treeElement = treeElement;
       const tree = treeElement.treeview({
@@ -265,7 +264,7 @@ module Jmx {
          */
         lazyLoad: function(event, data) {
           var folder = data.node;
-          var plugin = <(workspace:Core.Workspace, folder:Core.Folder, func:() => void) => void> null;
+          var plugin = <(workspace: Workspace, folder: Folder, func:() => void) => void> null;
           if (folder) {
             plugin = Jmx.findLazyLoadingFunction(workspace, folder);
           }

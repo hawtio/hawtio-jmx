@@ -1,8 +1,6 @@
-/**
- * @module Jmx
- */
 /// <reference path="./jmxPlugin.ts"/>
-module Jmx {
+
+namespace Jmx {
 
   export var propertiesColumnDefs = [
     {

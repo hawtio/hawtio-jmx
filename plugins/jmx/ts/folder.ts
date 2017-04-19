@@ -1,8 +1,6 @@
 /// <reference path="../../includes.ts"/>
-/**
- * @module Core
- */
-module Core {
+
+namespace Jmx {
   /**
    * a NodeSelection interface so we can expose things like the objectName and the MBean's entries
    *
@@ -114,7 +112,7 @@ module Core {
    */
   export class Folder implements NodeSelection {
     constructor(public title:string) {
-      this.addClass = escapeTreeCssStyles(title);
+      this.addClass = Core.escapeTreeCssStyles(title);
     }
 
     id:string = null;
@@ -165,7 +163,7 @@ module Core {
     tooltip:string = null;
     entity:any = null;
     version:string = null;
-    mbean:JMXMBean = null;
+    mbean:Core.JMXMBean = null;
     expand:boolean = false;
 
     get(key:string):NodeSelection {
@@ -334,11 +332,6 @@ module Core {
         return null;
       }
     }
-
   }
 }
-
-// TODO refactor code using these two classes
-interface NodeSelection extends Core.NodeSelection{};
-class Folder extends Core.Folder {};
 

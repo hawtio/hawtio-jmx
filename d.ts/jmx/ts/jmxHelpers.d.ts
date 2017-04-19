@@ -1,10 +1,7 @@
 /// <reference path="../../includes.d.ts" />
 /// <reference path="folder.d.ts" />
 /// <reference path="workspace.d.ts" />
-/**
- * @module Core
- */
-declare module Core {
+declare namespace Jmx {
     /**
      * Returns the Folder object for the given domain name and type name or null if it can not be found
      * @method getMBeanTypeFolder
@@ -46,8 +43,8 @@ declare module Jmx {
     var templatePath: string;
     function getUrlForThing(jolokiaUrl: any, action: any, mbean: any, name: any): any;
     function findLazyLoadingFunction(workspace: any, folder: any): any;
-    function registerLazyLoadHandler(domain: string, lazyLoaderFactory: (folder: Core.Folder) => any): void;
-    function unregisterLazyLoadHandler(domain: string, lazyLoaderFactory: (folder: Core.Folder) => any): void;
+    function registerLazyLoadHandler(domain: string, lazyLoaderFactory: (folder: Folder) => any): void;
+    function unregisterLazyLoadHandler(domain: string, lazyLoaderFactory: (folder: Folder) => any): void;
     /**
      * Registers a toolbar template for the given plugin name, jmxDomain.
      * @method addAttributeToolBar
@@ -75,5 +72,5 @@ declare module Jmx {
      * @param {string} str string to be escaped
      */
     function escapeTagOnly(str: string): string;
-    function enableTree($scope: any, $location: ng.ILocationService, workspace: Core.Workspace, treeElement: any, children: Array<NodeSelection>): void;
+    function enableTree($scope: any, $location: ng.ILocationService, workspace: Workspace, treeElement: any, children: Array<NodeSelection>): void;
 }

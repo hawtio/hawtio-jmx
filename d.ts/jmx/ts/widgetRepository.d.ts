@@ -1,7 +1,4 @@
-/**
- * @module Jmx
- */
-declare module Jmx {
+declare namespace Jmx {
     function createDashboardLink(widgetType: any, widget: any): string;
     function getWidgetType(widget: any): {
         type: string;

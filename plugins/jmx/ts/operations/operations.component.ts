@@ -2,7 +2,7 @@
 /// <reference path="operations.service.ts"/>
 /// <reference path="operation.ts"/>
 
-module Jmx {
+namespace Jmx {
 
   export class OperationsController {
 
@@ -11,7 +11,7 @@ module Jmx {
     menuActions: any[];
     operations: Operation[];
 
-    constructor(private $scope, private $location, private workspace: Core.Workspace, private jolokiaUrl,
+    constructor(private $scope, private $location, private workspace: Workspace, private jolokiaUrl,
       private operationsService: OperationsService) {
       'ngInject';
     }

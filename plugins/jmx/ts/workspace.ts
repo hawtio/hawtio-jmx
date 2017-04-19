@@ -1,11 +1,8 @@
-/**
- * @module Core
- */
-
 /// <reference path="../../includes.ts"/>
 /// <reference path="jmxHelpers.ts"/>
 /// <reference path="../../jvm/ts/jolokiaService.ts"/>
-module Core {
+
+namespace Jmx {
 
   var log:Logging.Logger = Logger.get("workspace");
   export var tree:any = null;
@@ -17,11 +14,10 @@ module Core {
     id: string;
     content: string;
     title?: string;
-    isValid?: (workspace:Core.Workspace, perspectiveId?:string) => any;
-    isActive?: (worksace:Core.Workspace) => boolean;
+    isValid?: (workspace:Workspace, perspectiveId?:string) => any;
+    isActive?: (worksace:Workspace) => boolean;
     href: () => any;
   }
-
 
   /**
    * @class Workspace
@@ -124,11 +120,11 @@ module Core {
         }, 10);
         return;
       }
-      if (Core.tree) {
+      if (tree) {
         setTimeout(() => {
           workspace.treeFetched = true;
           workspace.populateTree(tree);
-          Core.tree = null;
+          tree = null;
         }, 1);
       } else {
         var flags = {
@@ -225,7 +221,7 @@ module Core {
       }
       if (this.treeWatcherCounter !== counter) {
         this.treeWatcherCounter = counter;
-        this.jolokia.list(null, onSuccess(response => this.populateTree({ value: response }),
+        this.jolokia.list(null, Core.onSuccess(response => this.populateTree({ value: response }),
           {ignoreErrors: true, maxDepth: 2}));
       }
     }
@@ -286,7 +282,7 @@ module Core {
       });
     }
 
-    private populateMBeanFolder(domainFolder: Folder, domainClass: string, mbeanName: string, mbean: JMXMBean): void {
+    private populateMBeanFolder(domainFolder: Folder, domainClass: string, mbeanName: string, mbean: Core.JMXMBean): void {
       log.debug("  JMX tree mbean: " + mbeanName);
 
       var entries = {};
@@ -766,10 +762,10 @@ module Core {
       return canInvoke;
     }
 
-    public hasInvokeRights(selection:Core.NodeSelection, ...methods:Array<string>) {
+    public hasInvokeRights(selection: NodeSelection, ...methods:Array<string>) {
       var canInvoke = true;
       if (selection) {
-        var selectionFolder = <Core.Folder> selection;
+        var selectionFolder = <Folder> selection;
         var mbean = selectionFolder.mbean;
         if (mbean) {
           if (angular.isDefined(mbean.canInvoke)) {
@@ -983,9 +979,4 @@ module Core {
       return this.hasDomainAndProperties('osgi.compendium');
     }
   }
-
-
 }
-
-// TODO refactor other code to use Core.Workspace
-class Workspace extends Core.Workspace {};

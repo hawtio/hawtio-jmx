@@ -1,10 +1,7 @@
 /// <reference path="../../includes.d.ts" />
 /// <reference path="jmxHelpers.d.ts" />
 /// <reference path="../../jvm/ts/jolokiaService.d.ts" />
-/**
- * @module Core
- */
-declare module Core {
+declare namespace Jmx {
     var tree: any;
     /**
      * @class NavMenuItem
@@ -13,8 +10,8 @@ declare module Core {
         id: string;
         content: string;
         title?: string;
-        isValid?: (workspace: Core.Workspace, perspectiveId?: string) => any;
-        isActive?: (worksace: Core.Workspace) => boolean;
+        isValid?: (workspace: Workspace, perspectiveId?: string) => any;
+        isActive?: (worksace: Workspace) => boolean;
         href: () => any;
     }
     /**
@@ -166,7 +163,7 @@ declare module Core {
         expandSelection(flag: any): void;
         private matchesProperties(entries, properties);
         hasInvokeRightsForName(objectName: string, ...methods: Array<string>): any;
-        hasInvokeRights(selection: Core.NodeSelection, ...methods: Array<string>): boolean;
+        hasInvokeRights(selection: NodeSelection, ...methods: Array<string>): boolean;
         treeContainsDomainAndProperties(domainName: any, properties?: any): boolean;
         private matches(folder, properties, propertiesCount);
         hasDomainAndProperties(domainName: any, properties?: any, propertiesCount?: any): boolean;
@@ -195,6 +192,4 @@ declare module Core {
         isKarafFolder(): boolean;
         isOsgiCompendiumFolder(): boolean;
     }
-}
-declare class Workspace extends Core.Workspace {
 }

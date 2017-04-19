@@ -1,8 +1,6 @@
 /// <reference path="jmxPlugin.ts"/>
-/**
- * @module Jmx
- */
-module Jmx {
+
+namespace Jmx {
 
   _module.controller("Jmx.TreeHeaderController", ["$scope", ($scope) => {
     $scope.expandAll = () => {

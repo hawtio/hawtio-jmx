@@ -1,13 +1,10 @@
-/**
- * @module Jmx
- * @main Jmx
- */
 /// <reference path="../../includes.ts"/>
 /// <reference path="../../jvm/ts/jvmHelpers.ts"/>
 /// <reference path="jmxHelpers.ts"/>
 /// <reference path="widgetRepository.ts"/>
 /// <reference path="workspace.ts"/>
-module Jmx {
+
+namespace Jmx {
 
   export var _module = angular.module(pluginName, [
     'angularResizable',
@@ -44,7 +41,7 @@ module Jmx {
       return answer;
   }]);
 
-  _module.controller("Jmx.TabController", ["$scope", "$route", "$location", "layoutTree", "layoutFull", "viewRegistry", "workspace", ($scope, $route, $location: ng.ILocationService, layoutTree, layoutFull, viewRegistry, workspace: Core.Workspace) => {
+  _module.controller("Jmx.TabController", ["$scope", "$route", "$location", "layoutTree", "layoutFull", "viewRegistry", "workspace", ($scope, $route, $location: ng.ILocationService, layoutTree, layoutFull, viewRegistry, workspace: Workspace) => {
 
     $scope.isTabActive = path => {
       return _.startsWith($location.path(), path);
@@ -61,7 +58,7 @@ module Jmx {
 
   _module.controller("Jmx.MBeanTreeController", ['$scope', 'workspace', ($scope, workspace) => {
     $scope.node = {};
-    workspace.addNamedTreePostProcessor('MBeanTree', (tree:Core.Folder) => {
+    workspace.addNamedTreePostProcessor('MBeanTree', (tree: Folder) => {
       angular.copy(tree, $scope.node);
       $scope.node.open = true;
       log.debug("got tree: ", $scope.node);
@@ -116,7 +113,7 @@ module Jmx {
     } 
   }]);
 
-  _module.run(["HawtioNav", "$location", "workspace", "viewRegistry", "layoutTree", "layoutFull", "jolokia", "helpRegistry", "pageTitle", "$templateCache", (nav:HawtioMainNav.Registry, $location: ng.ILocationService, workspace:Core.Workspace, viewRegistry, layoutTree, layoutFull, jolokia, helpRegistry, pageTitle, $templateCache) => {
+  _module.run(["HawtioNav", "$location", "workspace", "viewRegistry", "layoutTree", "layoutFull", "jolokia", "helpRegistry", "pageTitle", "$templateCache", (nav: HawtioMainNav.Registry, $location: ng.ILocationService, workspace: Workspace, viewRegistry, layoutTree, layoutFull, jolokia, helpRegistry, pageTitle, $templateCache) => {
     log.debug('loaded');
 
     viewRegistry['jmx'] = layoutTree;
@@ -162,5 +159,4 @@ module Jmx {
 
   hawtioPluginLoader.addModule(pluginName);
   hawtioPluginLoader.addModule('dangle');
-
 }

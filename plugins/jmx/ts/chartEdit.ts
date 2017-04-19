@@ -1,8 +1,7 @@
 /// <reference path="jmxPlugin.ts"/>
-/**
- * @module Jmx
- */
-module Jmx {
+
+namespace Jmx {
+
   _module.controller("Jmx.ChartEditController", ["$scope", "$location", "workspace", "jolokia", ($scope, $location, workspace:Workspace, jolokia) => {
     $scope.selectedAttributes = [];
     $scope.selectedMBeans = [];

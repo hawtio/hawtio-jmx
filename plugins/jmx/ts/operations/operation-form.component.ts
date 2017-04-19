@@ -2,7 +2,7 @@
 /// <reference path="operations.service.ts"/>
 /// <reference path="operation.ts"/>
 
-module Jmx {
+namespace Jmx {
 
   export class OperationFormController {
 
@@ -12,7 +12,7 @@ module Jmx {
     operationFailed: boolean;
     operationResult: string;
 
-    constructor(private workspace: Core.Workspace, private operationsService: OperationsService) {
+    constructor(private workspace: Workspace, private operationsService: OperationsService) {
       'ngInject';
       this.formFields = this.operation.args.map(arg => ({
         label: arg.name,

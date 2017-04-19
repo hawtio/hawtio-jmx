@@ -1,8 +1,5 @@
 /// <reference path="../../includes.d.ts" />
-/**
- * @module Core
- */
-declare module Core {
+declare namespace Jmx {
     /**
      * a NodeSelection interface so we can expose things like the objectName and the MBean's entries
      *
@@ -132,7 +129,7 @@ declare module Core {
         tooltip: string;
         entity: any;
         version: string;
-        mbean: JMXMBean;
+        mbean: Core.JMXMBean;
         expand: boolean;
         get(key: string): NodeSelection;
         isFolder(): boolean;
@@ -176,8 +173,4 @@ declare module Core {
          */
         findAncestor(filter: any): any;
     }
-}
-interface NodeSelection extends Core.NodeSelection {
-}
-declare class Folder extends Core.Folder {
 }

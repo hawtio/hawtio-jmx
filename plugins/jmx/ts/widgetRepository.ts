@@ -1,7 +1,4 @@
-/**
- * @module Jmx
- */
-module Jmx {
+namespace Jmx {
 
   export function createDashboardLink(widgetType, widget) {
     var href = "#" + widgetType.route;
@@ -110,6 +107,4 @@ module Jmx {
       attribute: "SystemCpuTime"
     }
   ];
-
-
 }

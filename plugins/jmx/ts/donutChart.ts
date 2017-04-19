@@ -1,8 +1,6 @@
 /// <reference path="jmxPlugin.ts"/>
-/**
- * @module Jmx
- */
-module Jmx {
+
+namespace Jmx {
 
   export var DonutChartController = _module.controller("Jmx.DonutChartController", ["$scope", "$routeParams", "jolokia", "$templateCache", ($scope, $routeParams, jolokia, $templateCache) => {
 
