@@ -173,7 +173,7 @@ module Core {
     }
 
     isFolder():boolean {
-      return this.nodes.length > 0;
+      return this.nodes && this.nodes.length > 0;
     }
     /**
      * Navigates the given paths and returns the value there or null if no value could be found

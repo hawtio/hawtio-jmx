@@ -50,94 +50,6 @@ body {
   text-align: center;
 }
 
-#jvm-remote .list-group-item-container .form-horizontal {
-  margin: 10px 0;
-}
-#jvm-remote .list-group-item-container .form-horizontal > .form-group:last-child {
-  margin-bottom: 0;
-}
-#jvm-remote .dropdown-kebab-pf .btn-link {
-  padding-left: 10px;
-  padding-right: 10px;
-  margin-left: 0px;
-  margin-right: -10px;
-}
-
-@media screen and (max-width: 767px) {
-}
-@media (min-width: 768px) {
-}
-@media (min-width: 768px) {
-}
-@media (max-width: 767px) {
-}
-@media (min-width: 768px) {
-}
-@media (min-width: 768px) {
-}
-@media (max-width: 767px) {
-}
-@media (max-width: 767px) {
-}
-#threads-page dd {
-  overflow-wrap: break-word;
-}
-#threads-page .table tr th:nth-child(3) {
-  width: 30%;
-  max-width: 0;
-}
-.row-monitor {
-  text-align: right;
-  line-height: 2em;
-  margin-bottom: 1em;
-}
-.row-monitor .label {
-  font-size: 10px;
-  margin-left: 5px;
-  cursor: default;
-}
-.row-monitor .add-to-dashboard {
-  margin-left: 1em;
-  cursor: pointer;
-}
-.threads.logbar > .logbar-container {
-  margin-top: 2px;
-  margin-bottom: 5px;
-}
-.state-panel > ul > li:not(:first-child) > span {
-  margin-left: 15px;
-}
-.state-panel > ul > li.active {
-  font-weight: bold;
-}
-.runnable {
-  color: green;
-}
-.timed-waiting {
-  color: orange;
-}
-.waiting,
-.darkgray {
-  color: darkgray;
-}
-.blocked {
-  color: red;
-}
-strong.new,
-.lightgreen {
-  color: lightgreen;
-}
-.terminated,
-.darkred {
-  color: darkred;
-}
-.thread-state-indicator {
-  width: 100%;
-  height: 100%;
-  padding-top: 5px;
-  font-size: 15px;
-}
-
 .jmx-attributes-table th:nth-child(1) {
   width: 40%;
 }
@@ -314,4 +226,92 @@ div.tree-nav-layout .sidebar-pf .rg-right {
 }
 .jmx-operation-error {
   background-color: #ffe6e6;
+}
+
+#jvm-remote .list-group-item-container .form-horizontal {
+  margin: 10px 0;
+}
+#jvm-remote .list-group-item-container .form-horizontal > .form-group:last-child {
+  margin-bottom: 0;
+}
+#jvm-remote .dropdown-kebab-pf .btn-link {
+  padding-left: 10px;
+  padding-right: 10px;
+  margin-left: 0px;
+  margin-right: -10px;
+}
+
+@media screen and (max-width: 767px) {
+}
+@media (min-width: 768px) {
+}
+@media (min-width: 768px) {
+}
+@media (max-width: 767px) {
+}
+@media (min-width: 768px) {
+}
+@media (min-width: 768px) {
+}
+@media (max-width: 767px) {
+}
+@media (max-width: 767px) {
+}
+#threads-page dd {
+  overflow-wrap: break-word;
+}
+#threads-page .table tr th:nth-child(3) {
+  width: 30%;
+  max-width: 0;
+}
+.row-monitor {
+  text-align: right;
+  line-height: 2em;
+  margin-bottom: 1em;
+}
+.row-monitor .label {
+  font-size: 10px;
+  margin-left: 5px;
+  cursor: default;
+}
+.row-monitor .add-to-dashboard {
+  margin-left: 1em;
+  cursor: pointer;
+}
+.threads.logbar > .logbar-container {
+  margin-top: 2px;
+  margin-bottom: 5px;
+}
+.state-panel > ul > li:not(:first-child) > span {
+  margin-left: 15px;
+}
+.state-panel > ul > li.active {
+  font-weight: bold;
+}
+.runnable {
+  color: green;
+}
+.timed-waiting {
+  color: orange;
+}
+.waiting,
+.darkgray {
+  color: darkgray;
+}
+.blocked {
+  color: red;
+}
+strong.new,
+.lightgreen {
+  color: lightgreen;
+}
+.terminated,
+.darkred {
+  color: darkred;
+}
+.thread-state-indicator {
+  width: 100%;
+  height: 100%;
+  padding-top: 5px;
+  font-size: 15px;
 }
