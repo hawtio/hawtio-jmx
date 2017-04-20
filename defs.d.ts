@@ -1,33 +1,745 @@
-/// <reference path="d.ts/includes.d.ts"/>
-/// <reference path="d.ts/jvm/ts/jvmGlobals.d.ts"/>
-/// <reference path="d.ts/jvm/ts/jvmHelpers.d.ts"/>
-/// <reference path="d.ts/jvm/ts/jvmPlugin.d.ts"/>
-/// <reference path="d.ts/jvm/ts/connect.d.ts"/>
-/// <reference path="d.ts/jvm/ts/discover.d.ts"/>
-/// <reference path="d.ts/jvm/ts/header.d.ts"/>
-/// <reference path="d.ts/jvm/ts/jolokiaPreferences.d.ts"/>
-/// <reference path="d.ts/jvm/ts/jolokiaService.d.ts"/>
-/// <reference path="d.ts/jvm/ts/local.d.ts"/>
-/// <reference path="d.ts/jvm/ts/navbar.d.ts"/>
-/// <reference path="d.ts/jvm/ts/reset.d.ts"/>
-/// <reference path="d.ts/jmx/ts/folder.d.ts"/>
-/// <reference path="d.ts/jmx/ts/workspace.d.ts"/>
-/// <reference path="d.ts/jmx/ts/jmxHelpers.d.ts"/>
-/// <reference path="d.ts/jmx/ts/widgetRepository.d.ts"/>
-/// <reference path="d.ts/jmx/ts/jmxPlugin.d.ts"/>
-/// <reference path="d.ts/jmx/ts/areaChart.d.ts"/>
-/// <reference path="d.ts/jmx/ts/attribute.d.ts"/>
-/// <reference path="d.ts/jmx/ts/attributes.d.ts"/>
-/// <reference path="d.ts/jmx/ts/chartEdit.d.ts"/>
-/// <reference path="d.ts/jmx/ts/charts.d.ts"/>
-/// <reference path="d.ts/jmx/ts/donutChart.d.ts"/>
-/// <reference path="d.ts/jmx/ts/mbeans.d.ts"/>
-/// <reference path="d.ts/threads/ts/threadsPlugin.d.ts"/>
-/// <reference path="d.ts/threads/ts/threads.d.ts"/>
-/// <reference path="d.ts/jmx/ts/common/header.component.d.ts"/>
-/// <reference path="d.ts/jmx/ts/common/common.module.d.ts"/>
-/// <reference path="d.ts/jmx/ts/operations/operation.d.ts"/>
-/// <reference path="d.ts/jmx/ts/operations/operations.service.d.ts"/>
-/// <reference path="d.ts/jmx/ts/operations/operation-form.component.d.ts"/>
-/// <reference path="d.ts/jmx/ts/operations/operations.component.d.ts"/>
-/// <reference path="d.ts/jmx/ts/operations/operations.module.d.ts"/>
+/// <reference path="libs/hawtio-ui/defs.d.ts" />
+/// <reference path="libs/hawtio-forms/defs.d.ts" />
+/// <reference path="libs/hawtio-preferences/defs.d.ts" />
+declare module JVM {
+    var rootPath: string;
+    var templatePath: string;
+    var pluginName: string;
+    var log: Logging.Logger;
+    var connectControllerKey: string;
+    var connectionSettingsKey: string;
+    var logoPath: string;
+    var logoRegistry: {
+        'jetty': string;
+        'tomcat': string;
+        'generic': string;
+    };
+}
+/**
+ * @module JVM
+ */
+declare module JVM {
+    /**
+     * Adds common properties and functions to the scope
+     * @method configureScope
+     * @for Jvm
+     * @param {*} $scope
+     * @param {ng.ILocationService} $location
+     * @param {Core.Workspace} workspace
+     */
+    function configureScope($scope: any, $location: any, workspace: any): void;
+    function hasLocalMBean(workspace: any): any;
+    function hasDiscoveryMBean(workspace: any): any;
+}
+declare module Core {
+    /**
+     * Creates a jolokia object for connecting to the container with the given remote jolokia URL,
+     * username and password
+     * @method createJolokia
+     * @for Core
+     * @static
+     * @param {String} url
+     * @param {String} username
+     * @param {String} password
+     * @return {Object}
+     */
+    function createJolokia(url: string, username: string, password: string): Jolokia.IJolokia;
+    function getRecentConnections(localStorage: any): any;
+    function addRecentConnection(localStorage: any, name: any): void;
+    function removeRecentConnection(localStorage: any, name: any): void;
+    function clearConnections(): void;
+    function isRemoteConnection(): boolean;
+    function connectToServer(localStorage: any, options: Core.ConnectToServerOptions): void;
+    /**
+     * Loads all of the available connections from local storage
+     * @returns {Core.ConnectionMap}
+     */
+    function loadConnections(): Core.ConnectOptions[];
+    /**
+     * Saves the connection map to local storage
+     * @param map
+     */
+    function saveConnections(connections: Core.ConnectOptions[]): void;
+    function getConnectionNameParameter(): any;
+    /**
+     * Returns the connection options for the given connection name from localStorage
+     */
+    function getConnectOptions(name: string, localStorage?: WindowLocalStorage): ConnectOptions;
+    /**
+     * Creates the Jolokia URL string for the given connection options
+     */
+    function createServerConnectionUrl(options: Core.ConnectOptions): string;
+}
+declare namespace Jmx {
+    /**
+     * a NodeSelection interface so we can expose things like the objectName and the MBean's entries
+     *
+     * @class NodeSelection
+     */
+    interface NodeSelection {
+        /**
+         * @property title
+         * @type string
+         */
+        title: string;
+        /**
+         * @property key
+         * @type string
+         * @optional
+         */
+        key?: string;
+        /**
+         * @property typeName
+         * @type string
+         * @optional
+         */
+        typeName?: string;
+        /**
+         * @property objectName
+         * @type string
+         * @optional
+         */
+        objectName?: string;
+        /**
+         * @property domain
+         * @type string
+         * @optional
+         */
+        domain?: string;
+        /**
+         * @property entries
+         * @type any
+         * @optional
+         */
+        entries?: any;
+        /**
+         * @property folderNames
+         * @type array
+         * @optional
+         */
+        folderNames?: string[];
+        /**
+         * @property children
+         * @type NodeSelection
+         * @optional
+         */
+        children?: Array<NodeSelection>;
+        /**
+         * @property parent
+         * @type NodeSelection
+         * @optional
+         */
+        parent?: NodeSelection;
+        /**
+         * @method isFolder
+         * @return {boolean}
+         */
+        isFolder?: () => boolean;
+        /**
+         * @property version
+         * @type string
+         * @optional
+         */
+        version?: string;
+        /**
+         * @method get
+         * @param {String} key
+         * @return {NodeSelection}
+         */
+        get(key: string): NodeSelection;
+        /**
+         * @method ancestorHasType
+         * @param {String} typeName
+         * @return {Boolean}
+         */
+        ancestorHasType(typeName: string): boolean;
+        /**
+         * @method ancestorHasEntry
+         * @param key
+         * @param value
+         * @return {Boolean}
+         */
+        ancestorHasEntry(key: string, value: any): boolean;
+        /**
+         * @method findDescendant
+         * @param {Function} filter
+         * @return {NodeSelection}
+         */
+        findDescendant(filter: any): NodeSelection;
+        /**
+         * @method findAncestor
+         * @param {Function} filter
+         * @return {NodeSelection}
+         */
+        findAncestor(filter: any): NodeSelection;
+    }
+    /**
+     * @class Folder
+     * @uses NodeSelection
+     */
+    class Folder implements NodeSelection {
+        title: string;
+        constructor(title: string);
+        id: string;
+        key: string;
+        readonly text: string;
+        typeName: string;
+        nodes: NodeSelection[];
+        children: Array<NodeSelection>;
+        folderNames: string[];
+        domain: string;
+        objectName: string;
+        map: {};
+        entries: {};
+        addClass: string;
+        parent: Folder;
+        isLazy: boolean;
+        lazyLoad: boolean;
+        icon: string;
+        readonly image: string;
+        tooltip: string;
+        entity: any;
+        version: string;
+        mbean: Core.JMXMBean;
+        expand: boolean;
+        get(key: string): NodeSelection;
+        isFolder(): boolean;
+        /**
+         * Navigates the given paths and returns the value there or null if no value could be found
+         * @method navigate
+         * @for Folder
+         * @param {Array} paths
+         * @return {NodeSelection}
+         */
+        navigate(...paths: string[]): NodeSelection;
+        hasEntry(key: string, value: any): boolean;
+        parentHasEntry(key: string, value: any): boolean;
+        ancestorHasEntry(key: string, value: any): boolean;
+        ancestorHasType(typeName: string): boolean;
+        getOrElse(key: string, defaultValue?: NodeSelection): Folder;
+        sortChildren(recursive: boolean): void;
+        moveChild(child: Folder): void;
+        insertBefore(child: Folder, referenceFolder: Folder): void;
+        insertAfter(child: Folder, referenceFolder: Folder): void;
+        /**
+         * Removes this node from my parent if I have one
+         * @method detach
+         * @for Folder
+         */
+        detach(): void;
+        /**
+         * Searches this folder and all its descendants for the first folder to match the filter
+         * @method findDescendant
+         * @for Folder
+         * @param {Function} filter
+         * @return {Folder}
+         */
+        findDescendant(filter: any): any;
+        /**
+         * Searches this folder and all its ancestors for the first folder to match the filter
+         * @method findDescendant
+         * @for Folder
+         * @param {Function} filter
+         * @return {Folder}
+         */
+        findAncestor(filter: any): any;
+    }
+}
+/**
+ * @module JVM
+ * @main JVM
+ */
+declare module JVM {
+    var windowJolokia: Jolokia.IJolokia;
+    var _module: ng.IModule;
+}
+/**
+ * @module JVM
+ */
+declare module JVM {
+    var skipJolokia: boolean;
+    var ConnectionName: string;
+    function getConnectionName(reset?: boolean): string;
+    function getConnectionOptions(): any;
+    function getJolokiaUrl(): any;
+    interface DummyJolokia extends Jolokia.IJolokia {
+        isDummy: boolean;
+        running: boolean;
+    }
+    var DEFAULT_MAX_DEPTH: number;
+    var DEFAULT_MAX_COLLECTION_SIZE: number;
+    function getBeforeSend(): (xhr: any) => void;
+}
+declare namespace Jmx {
+    var tree: any;
+    /**
+     * @class NavMenuItem
+     */
+    interface NavMenuItem {
+        id: string;
+        content: string;
+        title?: string;
+        isValid?: (workspace: Workspace, perspectiveId?: string) => any;
+        isActive?: (worksace: Workspace) => boolean;
+        href: () => any;
+    }
+    /**
+     * @class Workspace
+     */
+    class Workspace {
+        jolokia: any;
+        jolokiaStatus: any;
+        jmxTreeLazyLoadRegistry: any;
+        $location: any;
+        $compile: ng.ICompileService;
+        $templateCache: ng.ITemplateCacheService;
+        localStorage: WindowLocalStorage;
+        $rootScope: any;
+        userDetails: any;
+        HawtioNav: HawtioMainNav.Registry;
+        operationCounter: number;
+        selection: NodeSelection;
+        tree: Folder;
+        mbeanTypesToDomain: {};
+        mbeanServicesToDomain: {};
+        attributeColumnDefs: {};
+        onClickRowHandlers: {};
+        treePostProcessors: {};
+        topLevelTabs: any;
+        subLevelTabs: any[];
+        keyToNodeMap: {};
+        pluginRegisterHandle: any;
+        pluginUpdateCounter: any;
+        treeWatchRegisterHandle: any;
+        treeWatcherCounter: any;
+        treeElement: any;
+        private treeFetched;
+        mapData: {};
+        private rootId;
+        private separator;
+        constructor(jolokia: any, jolokiaStatus: any, jmxTreeLazyLoadRegistry: any, $location: any, $compile: ng.ICompileService, $templateCache: ng.ITemplateCacheService, localStorage: WindowLocalStorage, $rootScope: any, userDetails: any, HawtioNav: HawtioMainNav.Registry);
+        /**
+         * Creates a shallow copy child workspace with its own selection and location
+         * @method createChildWorkspace
+         * @param {ng.ILocationService} location
+         * @return {Workspace}
+         */
+        createChildWorkspace(location: any): Workspace;
+        getLocalStorage(key: string): any;
+        setLocalStorage(key: string, value: any): void;
+        loadTree(): void;
+        /**
+         * Adds a post processor of the tree to swizzle the tree metadata after loading
+         * such as correcting any typeName values or CSS styles by hand
+         * @method addTreePostProcessor
+         * @param {Function} processor
+         */
+        addTreePostProcessor(processor: (tree: any) => void): string;
+        addNamedTreePostProcessor(name: string, processor: (tree: any) => void): string;
+        removeNamedTreePostProcessor(name: string): void;
+        maybeMonitorPlugins(): void;
+        maybeUpdatePlugins(response: any): void;
+        maybeReloadTree(response: any): void;
+        populateTree(response: any): void;
+        private initFolder(folder, domain, folderNames);
+        private populateDomainFolder(tree, domainName, domain);
+        private populateMBeanFolder(domainFolder, domainClass, mbeanName, mbean);
+        private splitMBeanProperty(property);
+        private configureFolder(folder, domainName, domainClass, folderNames, path);
+        private addFolderByDomain(folder, domainName, typeName, owner);
+        private enableLazyLoading(folder);
+        /**
+         * Returns the hash query argument to append to URL links
+         * @method hash
+         * @return {String}
+         */
+        hash(): string;
+        /**
+         * Returns the currently active tab
+         * @method getActiveTab
+         * @return {Boolean}
+         */
+        getActiveTab(): any;
+        private getStrippedPathName();
+        linkContains(...words: String[]): boolean;
+        /**
+         * Returns true if the given link is active. The link can omit the leading # or / if necessary.
+         * The query parameters of the URL are ignored in the comparison.
+         * @method isLinkActive
+         * @param {String} href
+         * @return {Boolean} true if the given link is active
+         */
+        isLinkActive(href: string): boolean;
+        /**
+         * Returns true if the given link is active. The link can omit the leading # or / if necessary.
+         * The query parameters of the URL are ignored in the comparison.
+         * @method isLinkActive
+         * @param {String} href
+         * @return {Boolean} true if the given link is active
+         */
+        isLinkPrefixActive(href: string): boolean;
+        /**
+         * Returns true if the tab query parameter is active or the URL starts with the given path
+         * @method isTopTabActive
+         * @param {String} path
+         * @return {Boolean}
+         */
+        isTopTabActive(path: string): boolean;
+        isMainTabActive(path: string): boolean;
+        /**
+         * Returns the selected mbean name if there is one
+         * @method getSelectedMBeanName
+         * @return {String}
+         */
+        getSelectedMBeanName(): string;
+        getSelectedMBean(): NodeSelection;
+        /**
+         * Returns true if the path is valid for the current selection
+         * @method validSelection
+         * @param {String} uri
+         * @return {Boolean}
+         */
+        validSelection(uri: string): boolean;
+        /**
+         * In cases where we have just deleted something we typically want to change
+         * the selection to the parent node
+         * @method removeAndSelectParentNode
+         */
+        removeAndSelectParentNode(): void;
+        selectParentNode(): void;
+        /**
+         * Returns the view configuration key for the kind of selection
+         * for example based on the domain and the node type
+         * @method selectionViewConfigKey
+         * @return {String}
+         */
+        selectionViewConfigKey(): string;
+        /**
+         * Returns a configuration key for a node which is usually of the form
+         * domain/typeName or for folders with no type, domain/name/folder
+         * @method selectionConfigKey
+         * @param {String} prefix
+         * @return {String}
+         */
+        selectionConfigKey(prefix?: string): string;
+        moveIfViewInvalid(): boolean;
+        updateSelectionNode(node: NodeSelection): void;
+        /**
+         * Expand / collapse the current active node
+         * @method expandSelection
+         * @param {Boolean} flag
+         */
+        expandSelection(flag: any): void;
+        private matchesProperties(entries, properties);
+        hasInvokeRightsForName(objectName: string, ...methods: Array<string>): any;
+        hasInvokeRights(selection: NodeSelection, ...methods: Array<string>): boolean;
+        treeContainsDomainAndProperties(domainName: any, properties?: any): boolean;
+        private matches(folder, properties, propertiesCount);
+        hasDomainAndProperties(domainName: any, properties?: any, propertiesCount?: any): boolean;
+        findMBeanWithProperties(domainName: any, properties?: any, propertiesCount?: any): any;
+        findChildMBeanWithProperties(folder: any, properties?: any, propertiesCount?: any): any;
+        selectionHasDomainAndLastFolderName(objectName: string, lastName: string): boolean;
+        selectionHasDomain(domainName: string): boolean;
+        selectionHasDomainAndType(objectName: string, typeName: string): boolean;
+        /**
+         * Returns true if this workspace has any mbeans at all
+         */
+        hasMBeans(): boolean;
+        hasFabricMBean(): boolean;
+        isFabricFolder(): boolean;
+        isCamelContext(): boolean;
+        isCamelFolder(): boolean;
+        isEndpointsFolder(): boolean;
+        isEndpoint(): boolean;
+        isRoutesFolder(): boolean;
+        isRoute(): boolean;
+        isComponentsFolder(): boolean;
+        isComponent(): boolean;
+        isDataformatsFolder(): boolean;
+        isDataformat(): boolean;
+        isOsgiFolder(): boolean;
+        isKarafFolder(): boolean;
+        isOsgiCompendiumFolder(): boolean;
+    }
+}
+declare namespace Jmx {
+    /**
+     * Returns the Folder object for the given domain name and type name or null if it can not be found
+     * @method getMBeanTypeFolder
+     * @for Core
+     * @static
+     * @param {Workspace} workspace
+     * @param {String} domain
+     * @param {String} typeName}
+     * @return {Folder}
+     */
+    function getMBeanTypeFolder(workspace: Workspace, domain: string, typeName: string): Folder;
+    /**
+     * Returns the JMX objectName for the given jmx domain and type name
+     * @method getMBeanTypeObjectName
+     * @for Core
+     * @static
+     * @param {Workspace} workspace
+     * @param {String} domain
+     * @param {String} typeName
+     * @return {String}
+     */
+    function getMBeanTypeObjectName(workspace: Workspace, domain: string, typeName: string): string;
+    /**
+     * Creates a remote workspace given a remote jolokia for querying the JMX MBeans inside the jolokia
+     * @param remoteJolokia
+     * @param $location
+     * @param localStorage
+     * @return {Core.Workspace|Workspace}
+     */
+    function createRemoteWorkspace(remoteJolokia: any, $location: any, localStorage: any, $rootScope?: any, $compile?: any, $templateCache?: any, userDetails?: any, HawtioNav?: any): Workspace;
+}
+/**
+ * @module Jmx
+ */
+declare module Jmx {
+    var pluginName: string;
+    var log: Logging.Logger;
+    var currentProcessId: string;
+    var templatePath: string;
+    function getUrlForThing(jolokiaUrl: any, action: any, mbean: any, name: any): any;
+    function findLazyLoadingFunction(workspace: any, folder: any): any;
+    function registerLazyLoadHandler(domain: string, lazyLoaderFactory: (folder: Folder) => any): void;
+    function unregisterLazyLoadHandler(domain: string, lazyLoaderFactory: (folder: Folder) => any): void;
+    /**
+     * Registers a toolbar template for the given plugin name, jmxDomain.
+     * @method addAttributeToolBar
+     * @for Jmx
+     * @param {String} pluginName used so that we can later on remove this function when the plugin is removed
+     * @param {String} jmxDomain the JMX domain to avoid having to evaluate too many functions on each selection
+     * @param {Function} fn the function used to decide which attributes tool bar should be used for the given select
+     */
+    function addAttributeToolBar(pluginName: string, jmxDomain: string, fn: (NodeSelection) => string): void;
+    /**
+     * Try find a custom toolbar HTML template for the given selection or returns the default value
+     * @method getAttributeToolbar
+     * @for Jmx
+     * @param {Core.NodeSelection} node
+     * @param {String} defaultValue
+     */
+    function getAttributeToolBar(node: NodeSelection, defaultValue?: string): any;
+    function updateTreeSelectionFromURL($location: any, treeElement: any, activateIfNoneSelected?: boolean): void;
+    function updateTreeSelectionFromURLAndAutoSelect($location: any, treeElement: any, autoSelect: any, activateIfNoneSelected?: boolean): void;
+    function getUniqueTypeNames(children: any): string[];
+    function folderGetOrElse(folder: Folder, name: string): Folder;
+    /**
+     * Escape only '<' and '>' as opposed to Core.escapeHtml() and _.escape()
+     *
+     * @param {string} str string to be escaped
+     */
+    function escapeTagOnly(str: string): string;
+    function enableTree($scope: any, $location: ng.ILocationService, workspace: Workspace, treeElement: any, children: Array<NodeSelection>): void;
+}
+declare namespace Jmx {
+    function createDashboardLink(widgetType: any, widget: any): string;
+    function getWidgetType(widget: any): {
+        type: string;
+        icon: string;
+        route: string;
+        size_x: number;
+        size_y: number;
+        title: string;
+    };
+    var jmxWidgetTypes: {
+        type: string;
+        icon: string;
+        route: string;
+        size_x: number;
+        size_y: number;
+        title: string;
+    }[];
+    var jmxWidgets: ({
+        type: string;
+        title: string;
+        mbean: string;
+        attribute: string;
+        total: string;
+        terms: string;
+        remaining: string;
+    } | {
+        type: string;
+        title: string;
+        mbean: string;
+        total: string;
+        terms: string;
+        remaining: string;
+    } | {
+        type: string;
+        title: string;
+        mbean: string;
+        attribute: string;
+    })[];
+}
+declare namespace Jmx {
+    var _module: ng.IModule;
+    var DEFAULT_MAX_DEPTH: number;
+    var DEFAULT_MAX_COLLECTION_SIZE: number;
+}
+declare namespace Jmx {
+    var AreaChartController: ng.IModule;
+}
+declare namespace Jmx {
+}
+declare namespace Jmx {
+    var propertiesColumnDefs: {
+        field: string;
+        displayName: string;
+        cellTemplate: string;
+    }[];
+    var foldersColumnDefs: {
+        displayName: string;
+        cellTemplate: string;
+    }[];
+    var AttributesController: ng.IModule;
+}
+declare namespace Jmx {
+}
+declare namespace Jmx {
+}
+declare namespace Jmx {
+    var DonutChartController: ng.IModule;
+}
+declare namespace Jmx {
+}
+/**
+ * @module JVM
+ */
+declare module JVM {
+    var ConnectController: ng.IModule;
+}
+/**
+ * @module JVM
+ */
+declare module JVM {
+}
+declare module JVM {
+    var HeaderController: ng.IModule;
+}
+declare module JVM {
+}
+/**
+ * @module JVM
+ */
+declare module JVM {
+}
+/**
+ * @module JVM
+ */
+declare module JVM {
+}
+/**
+ * @module JVM
+ */
+declare module JVM {
+}
+/**
+ * @module Threads
+ * @main Threads
+ */
+declare module Threads {
+    var pluginName: string;
+    var templatePath: string;
+    var log: Logging.Logger;
+    var jmxDomain: string;
+    var mbeanType: string;
+    var mbean: string;
+    var _module: ng.IModule;
+}
+/**
+ * @module Threads
+ */
+declare module Threads {
+}
+declare namespace Jmx {
+    class HeaderController {
+        title: string;
+        constructor($rootScope: any);
+    }
+    const headerComponent: {
+        template: string;
+        controller: typeof HeaderController;
+    };
+}
+declare namespace Jmx {
+}
+declare namespace Jmx {
+    class Operation {
+        args: OperationArgument[];
+        description: string;
+        name: string;
+        simpleName: string;
+        constructor(method: string, args: OperationArgument[], description: string);
+        private static buildName(method, args);
+        private static buildSimpleName(name);
+    }
+    interface OperationArgument {
+        name: string;
+        type: string;
+        desc: string;
+    }
+}
+declare namespace Jmx {
+    class OperationsService {
+        private $q;
+        private jolokia;
+        private rbacACLMBean;
+        constructor($q: ng.IQService, jolokia: Jolokia.IJolokia, rbacACLMBean: ng.IPromise<string>);
+        getOperations(mbeanName: string): ng.IPromise<Operation[]>;
+        private loadOperations(mbeanName);
+        getOperation(mbeanName: string, operationName: any): ng.IPromise<Operation>;
+        executeOperation(mbeanName: string, operation: Operation, argValues?: any[]): ng.IPromise<string>;
+    }
+}
+declare namespace Jmx {
+    class OperationFormController {
+        private workspace;
+        private operationsService;
+        operation: any;
+        formFields: any;
+        editorMode: string;
+        operationFailed: boolean;
+        operationResult: string;
+        constructor(workspace: Workspace, operationsService: OperationsService);
+        private static buildHelpText(arg);
+        private static convertToHtmlInputType(javaType);
+        private static getDefaultValue(javaType);
+        execute(): void;
+        cancel(): void;
+    }
+    const operationFormComponent: {
+        bindings: {
+            operation: string;
+        };
+        templateUrl: string;
+        controller: typeof OperationFormController;
+    };
+}
+declare namespace Jmx {
+    class OperationsController {
+        private $scope;
+        private $location;
+        private workspace;
+        private jolokiaUrl;
+        private operationsService;
+        config: any;
+        actionButtons: any[];
+        menuActions: any[];
+        operations: Operation[];
+        constructor($scope: any, $location: any, workspace: Workspace, jolokiaUrl: any, operationsService: OperationsService);
+        $onInit(): void;
+        private configureListView();
+        private buildJolokiaUrl(operation);
+        private fetchOperations();
+    }
+    const operationsComponent: {
+        templateUrl: string;
+        controller: typeof OperationsController;
+    };
+}
+declare namespace Jmx {
+}
