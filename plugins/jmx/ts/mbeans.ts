@@ -12,7 +12,7 @@ namespace Jmx {
     };
   }]);
 
-  _module.controller("Jmx.MBeansController", ["$scope", "$location", "workspace", "$route", ($scope, $location: ng.ILocationService, workspace: Workspace, $route: ng.route.IRouteService) => {
+  _module.controller("Jmx.MBeansController", ["$scope", "$location", "workspace", "$route", ($scope, $location: ng.ILocationService, workspace: Workspace, $route: angular.route.IRouteService) => {
 
     $scope.num = 1;
 
