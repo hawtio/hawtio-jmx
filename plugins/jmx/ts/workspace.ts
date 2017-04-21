@@ -513,7 +513,6 @@ namespace Jmx {
       return _.startsWith(pathName, link);
     }
 
-
     /**
      * Returns true if the tab query parameter is active or the URL starts with the given path
      * @method isTopTabActive
@@ -523,7 +522,7 @@ namespace Jmx {
     public isTopTabActive(path:string):boolean {
       var tab = this.$location.search()['tab'];
       if (angular.isString(tab)) {
-        return tab.startsWith(path);
+        return _.startsWith(tab, path);
       }
       return this.isLinkActive(path);
     }

@@ -1377,7 +1377,7 @@ var Jmx;
         Workspace.prototype.isTopTabActive = function (path) {
             var tab = this.$location.search()['tab'];
             if (angular.isString(tab)) {
-                return tab.startsWith(path);
+                return _.startsWith(tab, path);
             }
             return this.isLinkActive(path);
         };
