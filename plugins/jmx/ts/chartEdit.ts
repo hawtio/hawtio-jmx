@@ -93,7 +93,7 @@ namespace Jmx {
       if (children) {
         children.forEach((mbeanNode) => {
           var mbean = mbeanNode.objectName;
-          var name = mbeanNode.title;
+          var name = mbeanNode.text;
           if (name && mbean) {
             mbeanCounter++;
             $scope.mbeans[name] = name;

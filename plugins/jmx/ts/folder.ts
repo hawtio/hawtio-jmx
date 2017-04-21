@@ -8,10 +8,10 @@ namespace Jmx {
    */
   export interface NodeSelection {
     /**
-     * @property title
+     * @property text
      * @type string
      */
-    title: string;
+    text: string;
     /**
      * @property key
      * @type string
@@ -111,8 +111,8 @@ namespace Jmx {
    * @uses NodeSelection
    */
   export class Folder implements NodeSelection {
-    constructor(public title:string) {
-      this.addClass = Core.escapeTreeCssStyles(title);
+    constructor(public text:string) {
+      this.addClass = Core.escapeTreeCssStyles(text);
     }
 
     id:string = null;
@@ -124,8 +124,11 @@ namespace Jmx {
       this.id = key;
     }
 
-    get text():string {
-      return this.title;
+    get title():string {
+      return this.text;
+    }
+    set title(title: string) {
+      this.text = title;
     }
 
     typeName:string = null;

@@ -6,7 +6,7 @@ namespace Jmx {
 
     var log:Logging.Logger = Logger.get("JMX");
 
-    $scope.title = workspace.selection ? workspace.selection.title : '';
+    $scope.title = workspace.selection ? workspace.selection.text : '';
     $scope.metrics = [];
     $scope.updateRate = 1000; //parseInt(localStorage['updateRate']);
 

@@ -520,7 +520,7 @@ namespace Jmx {
       }
       if (node) {
         $scope.lastKey = node.key;
-        $scope.title = node.title;
+        $scope.title = node.text;
       }
       Core.$apply($scope);
     }

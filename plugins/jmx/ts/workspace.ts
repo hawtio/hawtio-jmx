@@ -337,7 +337,7 @@ namespace Jmx {
           folder.entries = entries;
           folderNames.push(lastPath);
           this.configureFolder(folder, domainName, domainClass, folderNames, lastPath);
-          folder.title = Core.trimQuotes(lastPath);
+          folder.text = Core.trimQuotes(lastPath);
           folder.objectName = domainName + ":" + mbeanName;
           folder.mbean = mbean;
           folder.typeName = typeName;
@@ -637,7 +637,7 @@ namespace Jmx {
         key = prefix + selection.domain;
         var typeName = selection.typeName;
         if (!typeName) {
-          typeName = selection.title;
+          typeName = selection.text;
         }
         key += "/" + typeName;
         if (selection.isFolder()) {
@@ -894,7 +894,7 @@ namespace Jmx {
           var folders = node.folderNames;
           if (folders) {
             var last = _.last(folders);
-            return (isName(last) || isName(node.title)) && node.isFolder() && !node.objectName;
+            return (isName(last) || isName(node.text)) && node.isFolder() && !node.objectName;
           }
         }
       }
