@@ -25,6 +25,7 @@ namespace Jmx {
     $scope.filter = '';
     $scope.$watch('filter', (filter, previous) => {
       if (filter !== previous) {
+        // TODO: display a badge with the search result count
         search(filter);
       }
     });
@@ -62,6 +63,7 @@ namespace Jmx {
     };
 
     $scope.$on('$destroy', () => {
+      // TODO: clear search filter results
       // Bootstrap tree view leaks the node elements into the data structure
       // so let's clean this up when the user leaves the view
       const cleanTreeFolder = (node:Folder) => {
