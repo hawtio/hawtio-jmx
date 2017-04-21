@@ -173,10 +173,15 @@ div.tree-nav-layout .sidebar-pf .rg-right {
   flex: 0 0 auto;
   padding: 5px 10px;
 }
-.tree-nav-layout .tree-nav-sidebar-header .fa {
-  font-size: 1.5em;
-  cursor: pointer;
+.tree-nav-layout .tree-nav-sidebar-header .form-froup,
+.tree-nav-layout .tree-nav-sidebar-header .tree-nav-buttons {
+  display: inline-flex;
+  margin-left: 10px;
   vertical-align: middle;
+}
+.tree-nav-layout .tree-nav-sidebar-header .fa {
+  font-size: 1.2em;
+  cursor: pointer;
 }
 .tree-nav-layout .tree-nav-sidebar-header .fa:not(:last-of-type) {
   margin-right: 5px;
