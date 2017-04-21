@@ -4,11 +4,11 @@ namespace Jmx {
 
   _module.controller("Jmx.TreeHeaderController", ["$scope", ($scope) => {
     $scope.expandAll = () => {
-      Tree.expandAll("#jmxtree");
+      (<any>$('#jmxtree')).treeview('expandAll', { silent: true});
     };
 
     $scope.contractAll = () => {
-      Tree.contractAll("#jmxtree");
+      (<any>$('#jmxtree')).treeview('collapseAll', { silent: true});
     };
   }]);
 
