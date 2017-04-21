@@ -4,29 +4,29 @@ namespace Jmx {
 
   _module.controller("Jmx.TreeHeaderController", ["$scope", ($scope) => {
     $scope.expandAll = () => {
-      (<any>$('#jmxtree')).treeview('expandAll', { silent: true});
+      (<any>$('#jmxtree')).treeview('expandAll', { silent: true });
     };
 
     $scope.contractAll = () => {
-      (<any>$('#jmxtree')).treeview('collapseAll', { silent: true});
+      (<any>$('#jmxtree')).treeview('collapseAll', { silent: true });
     };
 
     const treeElement: any = $('#jmxtree');
-
-    $scope.filter = '';
-    $scope.$watch('filter', (filter, previous) => {
-      if (filter === previous) {
-        return;
-      }
-      // TODO: debounce events
-      treeElement.treeview('search', [
+    const search = _.debounce(
+      filter => treeElement.treeview('search', [
         filter,
         {
           ignoreCase: true,
           exactMatch: false,
           revealResults: true
         }
-      ]);
+      ]), 300, { leading: false, trailing: true });
+
+    $scope.filter = '';
+    $scope.$watch('filter', (filter, previous) => {
+      if (filter !== previous) {
+        search(filter);
+      }
     });
   }]);
 
