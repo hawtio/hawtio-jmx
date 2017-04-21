@@ -10,6 +10,24 @@ namespace Jmx {
     $scope.contractAll = () => {
       (<any>$('#jmxtree')).treeview('collapseAll', { silent: true});
     };
+
+    const treeElement: any = $('#jmxtree');
+
+    $scope.filter = '';
+    $scope.$watch('filter', (filter, previous) => {
+      if (filter === previous) {
+        return;
+      }
+      // TODO: debounce events
+      treeElement.treeview('search', [
+        filter,
+        {
+          ignoreCase: true,
+          exactMatch: false,
+          revealResults: true
+        }
+      ]);
+    });
   }]);
 
   _module.controller("Jmx.MBeansController", ["$scope", "$location", "workspace", "$route", ($scope, $location: ng.ILocationService, workspace: Workspace, $route: angular.route.IRouteService) => {
