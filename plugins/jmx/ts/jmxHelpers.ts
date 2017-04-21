@@ -272,7 +272,6 @@ module Jmx {
             log.debug("Lazy loading folder " + folder.title);
             var oldChildren = folder.children;
             plugin(workspace, folder, () => {
-              data.node.setLazyNodeStatus(DTNodeStatus_Ok);
               var newChildren = folder.children;
               if (newChildren !== oldChildren) {
                 data.node.removeChildren();
@@ -281,8 +280,6 @@ module Jmx {
                 });
               }
             });
-          } else {
-            data.node.setLazyNodeStatus(DTNodeStatus_Ok);
           }
         },
         onNodeExpanded: function(event, data:Folder) {
