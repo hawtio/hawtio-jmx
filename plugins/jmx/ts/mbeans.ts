@@ -63,7 +63,8 @@ namespace Jmx {
     };
 
     $scope.$on('$destroy', () => {
-      // TODO: clear search filter results
+      const tree = (<any>$('#jmxtree')).treeview(true);
+      tree.clearSearch();
       // Bootstrap tree view leaks the node elements into the data structure
       // so let's clean this up when the user leaves the view
       const cleanTreeFolder = (node:Folder) => {
@@ -72,8 +73,7 @@ namespace Jmx {
       };
       cleanTreeFolder($scope.tree);
       // Then call the tree clean-up method
-      const treeElement: any = $('#jmxtree');
-      treeElement.treeview('remove');
+      tree.remove();
     });
 
     $scope.$on('jmxTreeUpdated', $scope.populateTree);
