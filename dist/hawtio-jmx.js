@@ -2180,7 +2180,9 @@ var Jmx;
                 collapseIcon: 'fa fa-angle-down',
                 expandIcon: 'fa fa-angle-right',
                 nodeIcon: 'fa fa-folder',
-                highlightSearchResults: true
+                highlightSearchResults: true,
+                searchResultColor: '#b58100',
+                searchResultBackColor: '#fbeabc' // pf-gold-100
             });
         }
     }
