@@ -331,7 +331,7 @@ module Jmx {
           // }
           // return true;
         },*/
-        debugLevel: 9,
+        levels: 1,
         data: children,
         collapseIcon: 'fa fa-angle-down',
         expandIcon: 'fa fa-angle-right',
