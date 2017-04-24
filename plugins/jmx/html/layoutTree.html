@@ -9,7 +9,9 @@
             <label for="input-search" class="sr-only">Search Tree:</label>
             <input id="input-search" type="search" class="form-control" placeholder="Search tree:"
               ng-model="filter">
-            <button type="button" class="clear" aria-hidden="true">
+            <button type="button" class="clear" aria-hidden="true"
+              ng-hide="filter.length === 0"
+              ng-click="filter = ''">
               <span class="pficon pficon-close"></span>
             </button>
           </div>
