@@ -312,7 +312,6 @@ declare namespace Jmx {
         pluginUpdateCounter: any;
         treeWatchRegisterHandle: any;
         treeWatcherCounter: any;
-        treeElement: any;
         private treeFetched;
         mapData: {};
         private rootId;
@@ -424,12 +423,6 @@ declare namespace Jmx {
         selectionConfigKey(prefix?: string): string;
         moveIfViewInvalid(): boolean;
         updateSelectionNode(node: NodeSelection): void;
-        /**
-         * Expand / collapse the current active node
-         * @method expandSelection
-         * @param {Boolean} flag
-         */
-        expandSelection(flag: any): void;
         private matchesProperties(entries, properties);
         hasInvokeRightsForName(objectName: string, ...methods: Array<string>): any;
         hasInvokeRights(selection: NodeSelection, ...methods: Array<string>): boolean;

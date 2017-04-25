@@ -38,7 +38,6 @@ namespace Jmx {
     public pluginUpdateCounter = null;
     public treeWatchRegisterHandle = null;
     public treeWatcherCounter = null;
-    public treeElement = null;
     private treeFetched = false;
     // mapData allows to store arbitrary data on the workspace
     public mapData = {};
@@ -714,21 +713,6 @@ namespace Jmx {
           }
         }
       }*/
-    }
-
-    /**
-     * Expand / collapse the current active node
-     * @method expandSelection
-     * @param {Boolean} flag
-     */
-    public expandSelection(flag) {
-      var treeElement:any = this.treeElement;
-      if (treeElement && angular.isDefined(treeElement.treeview) && angular.isFunction(treeElement.treeview)) {
-        var node = treeElement.treeview('getSelected');
-        if (angular.isDefined(node)) {
-          node.expand(flag);
-        }
-      }
     }
 
     private matchesProperties(entries, properties) {

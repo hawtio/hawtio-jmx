@@ -931,7 +931,6 @@ var Jmx;
             this.pluginUpdateCounter = null;
             this.treeWatchRegisterHandle = null;
             this.treeWatcherCounter = null;
-            this.treeElement = null;
             this.treeFetched = false;
             // mapData allows to store arbitrary data on the workspace
             this.mapData = {};
@@ -1565,20 +1564,6 @@ var Jmx;
               }
             }*/
         };
-        /**
-         * Expand / collapse the current active node
-         * @method expandSelection
-         * @param {Boolean} flag
-         */
-        Workspace.prototype.expandSelection = function (flag) {
-            var treeElement = this.treeElement;
-            if (treeElement && angular.isDefined(treeElement.treeview) && angular.isFunction(treeElement.treeview)) {
-                var node = treeElement.treeview('getSelected');
-                if (angular.isDefined(node)) {
-                    node.expand(flag);
-                }
-            }
-        };
         Workspace.prototype.matchesProperties = function (entries, properties) {
             if (!entries)
                 return false;
@@ -2102,7 +2087,6 @@ var Jmx;
     Jmx.escapeTagOnly = escapeTagOnly;
     function enableTree($scope, $location, workspace, treeElement, children) {
         if (treeElement.length) {
-            workspace.treeElement = treeElement;
             treeElement.treeview({
                 /*
                  * The event handler called when a different node in the tree is selected

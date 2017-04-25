@@ -257,7 +257,6 @@ module Jmx {
 
   export function enableTree($scope, $location: ng.ILocationService, workspace: Workspace, treeElement, children: Array<NodeSelection>) {
     if (treeElement.length) {
-      workspace.treeElement = treeElement;
       treeElement.treeview({
         /*
          * The event handler called when a different node in the tree is selected
