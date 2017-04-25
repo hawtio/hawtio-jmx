@@ -3,24 +3,17 @@
 namespace Jmx {
 
   _module.controller("Jmx.TreeHeaderController", ["$scope", ($scope) => {
-    $scope.expandAll = () => {
-      (<any>$('#jmxtree')).treeview('expandAll', { silent: true });
-    };
+    // TODO: the tree should ideally be initialised synchronously
+    const tree = () => (<any>$('#jmxtree')).treeview(true);
 
-    $scope.contractAll = () => {
-      (<any>$('#jmxtree')).treeview('collapseAll', { silent: true });
-    };
+    $scope.expandAll = () => tree().expandAll({ silent: true });
+    $scope.contractAll = () => tree().collapseAll({ silent: true });
 
-    const treeElement: any = $('#jmxtree');
-    const search = _.debounce(
-      filter => treeElement.treeview('search', [
-        filter,
-        {
-          ignoreCase: true,
-          exactMatch: false,
-          revealResults: true
-        }
-      ]), 300, { leading: false, trailing: true });
+    const search = _.debounce(filter => tree().search(filter, {
+      ignoreCase: true,
+      exactMatch: false,
+      revealResults: true
+    }), 300, { leading: false, trailing: true });
 
     $scope.filter = '';
     $scope.$watch('filter', (filter, previous) => {
@@ -71,7 +64,7 @@ namespace Jmx {
           delete node['$el'];
           if (node.nodes) node.nodes.forEach(cleanTreeFolder);
       };
-      cleanTreeFolder($scope.tree);
+      cleanTreeFolder(workspace.tree);
       // Then call the tree clean-up method
       tree.remove();
     });
