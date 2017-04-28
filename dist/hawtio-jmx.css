@@ -183,6 +183,9 @@ div.tree-nav-layout .sidebar-pf .rg-right {
 .tree-nav-layout .tree-nav-sidebar-header .tree-nav-buttons .badge {
   margin-left: 0px;
   margin-right: 8px;
+  color: #b58100;
+  background-color: #fbeabc;
+  text-shadow: 1px 1px 0 rgba(255, 255, 255, 0.5);
 }
 .tree-nav-layout .tree-nav-sidebar-header .fa {
   font-size: 1.2em;
