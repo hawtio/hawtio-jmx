@@ -17,6 +17,7 @@
           </div>
         </div>
         <div class="form-group tree-nav-buttons">
+          <span class="badge" ng-show="filter.length > 0" style="font-size: 10px">{{result.length}}</span>
           <i class="fa fa-plus-square-o" title="Expand All" ng-click="expandAll()"></i>
           <i class="fa fa-minus-square-o" title="Collapse All" ng-click="contractAll()"></i>
         </div>

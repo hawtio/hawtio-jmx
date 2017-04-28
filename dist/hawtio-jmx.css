@@ -50,19 +50,6 @@ body {
   text-align: center;
 }
 
-#jvm-remote .list-group-item-container .form-horizontal {
-  margin: 10px 0;
-}
-#jvm-remote .list-group-item-container .form-horizontal > .form-group:last-child {
-  margin-bottom: 0;
-}
-#jvm-remote .dropdown-kebab-pf .btn-link {
-  padding-left: 10px;
-  padding-right: 10px;
-  margin-left: 0px;
-  margin-right: -10px;
-}
-
 .jmx-attributes-table th:nth-child(1) {
   width: 40%;
 }
@@ -189,8 +176,13 @@ div.tree-nav-layout .sidebar-pf .rg-right {
 .tree-nav-layout .tree-nav-sidebar-header .form-froup,
 .tree-nav-layout .tree-nav-sidebar-header .tree-nav-buttons {
   display: inline-flex;
-  margin-left: 10px;
+  margin-left: 8px;
   vertical-align: middle;
+}
+.tree-nav-layout .tree-nav-sidebar-header .form-froup .badge,
+.tree-nav-layout .tree-nav-sidebar-header .tree-nav-buttons .badge {
+  margin-left: 0px;
+  margin-right: 8px;
 }
 .tree-nav-layout .tree-nav-sidebar-header .fa {
   font-size: 1.2em;
@@ -247,6 +239,19 @@ div.tree-nav-layout .sidebar-pf .rg-right {
 }
 .jmx-operation-error {
   background-color: #ffe6e6;
+}
+
+#jvm-remote .list-group-item-container .form-horizontal {
+  margin: 10px 0;
+}
+#jvm-remote .list-group-item-container .form-horizontal > .form-group:last-child {
+  margin-bottom: 0;
+}
+#jvm-remote .dropdown-kebab-pf .btn-link {
+  padding-left: 10px;
+  padding-right: 10px;
+  margin-left: 0px;
+  margin-right: -10px;
 }
 
 @media screen and (max-width: 767px) {
