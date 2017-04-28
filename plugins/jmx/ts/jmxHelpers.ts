@@ -334,7 +334,7 @@ module Jmx {
         data: children,
         collapseIcon: 'fa fa-angle-down',
         expandIcon: 'fa fa-angle-right',
-        nodeIcon: 'fa fa-folder',
+        nodeIcon: 'pficon pficon-folder-close',
         highlightSearchResults: true,
         searchResultColor: '#b58100', // pf-gold-500
         searchResultBackColor: '#fbeabc' // pf-gold-100
