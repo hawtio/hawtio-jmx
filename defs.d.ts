@@ -496,7 +496,7 @@ declare module Jmx {
     var currentProcessId: string;
     var templatePath: string;
     function getUrlForThing(jolokiaUrl: any, action: any, mbean: any, name: any): any;
-    function findLazyLoadingFunction(workspace: any, folder: any): any;
+    function findLazyLoadingFunction(workspace: Workspace, folder: any): any;
     function registerLazyLoadHandler(domain: string, lazyLoaderFactory: (folder: Folder) => any): void;
     function unregisterLazyLoadHandler(domain: string, lazyLoaderFactory: (folder: Folder) => any): void;
     /**
@@ -517,7 +517,7 @@ declare module Jmx {
      */
     function getAttributeToolBar(node: NodeSelection, defaultValue?: string): any;
     function updateTreeSelectionFromURL($location: any, treeElement: any, activateIfNoneSelected?: boolean): void;
-    function updateTreeSelectionFromURLAndAutoSelect($location: any, treeElement: any, autoSelect: any, activateIfNoneSelected?: boolean): void;
+    function updateTreeSelectionFromURLAndAutoSelect($location: any, treeElement: any, autoSelect: (Folder) => Folder, activateIfNoneSelected?: boolean): void;
     function getUniqueTypeNames(children: any): string[];
     function folderGetOrElse(folder: Folder, name: string): Folder;
     /**
@@ -649,18 +649,6 @@ declare module Threads {
 declare module Threads {
 }
 declare namespace Jmx {
-    class HeaderController {
-        title: string;
-        constructor($rootScope: any);
-    }
-    const headerComponent: {
-        template: string;
-        controller: typeof HeaderController;
-    };
-}
-declare namespace Jmx {
-}
-declare namespace Jmx {
     class Operation {
         args: OperationArgument[];
         description: string;
@@ -732,6 +720,18 @@ declare namespace Jmx {
     const operationsComponent: {
         templateUrl: string;
         controller: typeof OperationsController;
+    };
+}
+declare namespace Jmx {
+}
+declare namespace Jmx {
+    class HeaderController {
+        title: string;
+        constructor($rootScope: any);
+    }
+    const headerComponent: {
+        template: string;
+        controller: typeof HeaderController;
     };
 }
 declare namespace Jmx {

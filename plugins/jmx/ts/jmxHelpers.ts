@@ -86,7 +86,7 @@ module Jmx {
 
   var attributesToolBars = {};
 
-  export function findLazyLoadingFunction(workspace, folder) {
+  export function findLazyLoadingFunction(workspace: Workspace, folder) {
     var factories = workspace.jmxTreeLazyLoadRegistry[folder.domain];
     var lazyFunction = null;
     if (factories && factories.length) {
@@ -166,44 +166,37 @@ module Jmx {
     return (answer) ? answer : defaultValue;
   }
 
-
   export function updateTreeSelectionFromURL($location, treeElement, activateIfNoneSelected = false) {
     updateTreeSelectionFromURLAndAutoSelect($location, treeElement, null, activateIfNoneSelected);
   }
 
-  export function updateTreeSelectionFromURLAndAutoSelect($location, treeElement, autoSelect, activateIfNoneSelected = false) {
-    var dtree = <any>treeElement.treeview(true);
-    if (dtree) {
-      var node = <any>null;
-      var key = $location.search()['nid'];
-      if (key) {
-        try {
-          node = <any>dtree.activateKey(key);
-        } catch (e) {
-          // tree not visible we suspect!
-        }
-      }
-      if (node) {
-        node.expand(true);
-      } else {
-        if (!treeElement.treeview('getSelected')) {
-          // lets expand the first node
-          var root = dtree.getRootNode();
-          var children = root ? root.getChildren() : null;
-          if (children && children.length) {
-            var first = children[0];
-            first.expand(true);
-            // invoke any auto select function, and use its result as new first, if any returned
-            if (autoSelect) {
-              var result = autoSelect(first);
-              if (result) {
-                first = result;
-              }
+  export function updateTreeSelectionFromURLAndAutoSelect($location, treeElement, autoSelect: (Folder) => Folder, activateIfNoneSelected = false) {
+    const tree = <any>treeElement.treeview(true);
+    let node: Folder;
+    var key = $location.search()['nid'];
+    if (key) {
+      node = tree.findNodes(`^${key}$`, 'id');
+    }
+    if (node) {
+      tree.revealNode(node, { silent: true });
+      tree.selectNode(node, { silent: true });
+      tree.expandNode(node, { levels: 1, silent: true });
+    } else {
+      if (tree.getSelected().length === 0) {
+        var children = tree.findNodes('^1$', 'level');
+        if (children.length > 0) {
+          var first = children[0];
+          // invoke any auto select function, and use its result as new first, if any returned
+          if (autoSelect) {
+            var result = autoSelect(first);
+            if (result) {
+              first = result;
             }
-            if (activateIfNoneSelected) {
-              first.expand();
-              first.activate();
-            }
+          }
+          if (activateIfNoneSelected) {
+            tree.revealNode(first, { silent: true });
+            tree.selectNode(first, { silent: true });
+            tree.expandNode(first, { levels: 1, silent: true });
           }
         }
       }
