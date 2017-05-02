@@ -2005,11 +2005,11 @@ var Jmx;
         // If there is a node id then select that one
         var key = $location.search()['nid'];
         if (key) {
-            node = tree.findNodes("^" + key + "$", 'id');
+            node = _.find(tree.getNodes(), { id: key });
         }
         // Else optionally select the first node if there is no selection
         if (!node && activateIfNoneSelected && tree.getSelected().length === 0) {
-            var children = tree.findNodes('^1$', 'level');
+            var children = _.takeWhile(tree.getNodes(), { level: 1 });
             if (children.length > 0) {
                 node = children[0];
                 // invoke any auto select function, and use its result as new first, if any returned
