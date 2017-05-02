@@ -184,6 +184,9 @@ div.tree-nav-layout .sidebar-pf .rg-right {
   margin-left: 0px;
   margin-right: 8px;
   margin-bottom: 4px;
+}
+.tree-nav-layout .tree-nav-sidebar-header .form-froup .badge.positive,
+.tree-nav-layout .tree-nav-sidebar-header .tree-nav-buttons .badge.positive {
   color: #b58100;
   background-color: #fbeabc;
   text-shadow: 1px 1px 0 rgba(255, 255, 255, 0.5);
