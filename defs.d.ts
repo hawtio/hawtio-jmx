@@ -517,7 +517,7 @@ declare module Jmx {
      */
     function getAttributeToolBar(node: NodeSelection, defaultValue?: string): any;
     function updateTreeSelectionFromURL($location: any, treeElement: any, activateIfNoneSelected?: boolean): void;
-    function updateTreeSelectionFromURLAndAutoSelect($location: any, treeElement: any, autoSelect: (Folder) => Folder, activateIfNoneSelected?: boolean): void;
+    function updateTreeSelectionFromURLAndAutoSelect($location: any, treeElement: any, autoSelect: (Folder) => NodeSelection, activateIfNoneSelected?: boolean): void;
     function getUniqueTypeNames(children: any): string[];
     function folderGetOrElse(folder: Folder, name: string): Folder;
     /**

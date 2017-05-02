@@ -170,9 +170,9 @@ module Jmx {
     updateTreeSelectionFromURLAndAutoSelect($location, treeElement, null, activateIfNoneSelected);
   }
 
-  export function updateTreeSelectionFromURLAndAutoSelect($location, treeElement, autoSelect: (Folder) => Folder, activateIfNoneSelected = false) {
+  export function updateTreeSelectionFromURLAndAutoSelect($location, treeElement, autoSelect: (Folder) => NodeSelection, activateIfNoneSelected = false) {
     const tree = treeElement.treeview(true);
-    let node: Folder;
+    let node: NodeSelection;
 
     // If there is a node id then select that one
     var key = $location.search()['nid'];
