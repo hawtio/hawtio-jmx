@@ -204,246 +204,6 @@ var Core;
     Core.createServerConnectionUrl = createServerConnectionUrl;
 })(Core || (Core = {}));
 /// <reference path="../../includes.ts"/>
-var Jmx;
-(function (Jmx) {
-    /**
-     * @class Folder
-     * @uses NodeSelection
-     */
-    var Folder = (function () {
-        function Folder(text) {
-            this.text = text;
-            this.id = null;
-            this.typeName = null;
-            this.nodes = [];
-            this.folderNames = [];
-            this.domain = null;
-            this.objectName = null;
-            this.map = {};
-            this.entries = {};
-            this.addClass = null;
-            this.parent = null;
-            this.isLazy = false;
-            this.icon = null;
-            this.tooltip = null;
-            this.entity = null;
-            this.version = null;
-            this.mbean = null;
-            this.expand = false;
-            this.addClass = Core.escapeTreeCssStyles(text);
-        }
-        Object.defineProperty(Folder.prototype, "key", {
-            get: function () {
-                return this.id;
-            },
-            set: function (key) {
-                this.id = key;
-            },
-            enumerable: true,
-            configurable: true
-        });
-        Object.defineProperty(Folder.prototype, "title", {
-            get: function () {
-                return this.text;
-            },
-            set: function (title) {
-                this.text = title;
-            },
-            enumerable: true,
-            configurable: true
-        });
-        Object.defineProperty(Folder.prototype, "children", {
-            get: function () {
-                return this.nodes;
-            },
-            set: function (items) {
-                this.nodes = items;
-            },
-            enumerable: true,
-            configurable: true
-        });
-        Object.defineProperty(Folder.prototype, "lazyLoad", {
-            get: function () {
-                return this.isLazy;
-            },
-            set: function (isLazy) {
-                this.isLazy = isLazy;
-            },
-            enumerable: true,
-            configurable: true
-        });
-        Object.defineProperty(Folder.prototype, "image", {
-            get: function () {
-                return this.icon;
-            },
-            enumerable: true,
-            configurable: true
-        });
-        Folder.prototype.get = function (key) {
-            return this.map[key];
-        };
-        Folder.prototype.isFolder = function () {
-            return this.nodes && this.nodes.length > 0;
-        };
-        /**
-         * Navigates the given paths and returns the value there or null if no value could be found
-         * @method navigate
-         * @for Folder
-         * @param {Array} paths
-         * @return {NodeSelection}
-         */
-        Folder.prototype.navigate = function () {
-            var paths = [];
-            for (var _i = 0; _i < arguments.length; _i++) {
-                paths[_i] = arguments[_i];
-            }
-            var node = this;
-            paths.forEach(function (path) {
-                if (node) {
-                    node = node.get(path);
-                }
-            });
-            return node;
-        };
-        Folder.prototype.hasEntry = function (key, value) {
-            var entries = this.entries;
-            if (entries) {
-                var actual = entries[key];
-                return actual && value === actual;
-            }
-            return false;
-        };
-        Folder.prototype.parentHasEntry = function (key, value) {
-            if (this.parent) {
-                return this.parent.hasEntry(key, value);
-            }
-            return false;
-        };
-        Folder.prototype.ancestorHasEntry = function (key, value) {
-            var parent = this.parent;
-            while (parent) {
-                if (parent.hasEntry(key, value))
-                    return true;
-                parent = parent.parent;
-            }
-            return false;
-        };
-        Folder.prototype.ancestorHasType = function (typeName) {
-            var parent = this.parent;
-            while (parent) {
-                if (typeName === parent.typeName)
-                    return true;
-                parent = parent.parent;
-            }
-            return false;
-        };
-        Folder.prototype.getOrElse = function (key, defaultValue) {
-            if (defaultValue === void 0) { defaultValue = new Folder(key); }
-            var answer = this.map[key];
-            if (!answer) {
-                answer = defaultValue;
-                this.map[key] = answer;
-                this.children.push(answer);
-                answer.parent = this;
-            }
-            return answer;
-        };
-        Folder.prototype.sortChildren = function (recursive) {
-            var children = this.children;
-            if (children) {
-                this.children = _.sortBy(children, "title");
-                if (recursive) {
-                    angular.forEach(children, function (child) { return child.sortChildren(recursive); });
-                }
-            }
-        };
-        Folder.prototype.moveChild = function (child) {
-            if (child && child.parent !== this) {
-                child.detach();
-                child.parent = this;
-                this.children.push(child);
-            }
-        };
-        Folder.prototype.insertBefore = function (child, referenceFolder) {
-            child.detach();
-            child.parent = this;
-            var idx = _.indexOf((this.children), referenceFolder);
-            if (idx >= 0) {
-                this.children.splice(idx, 0, child);
-            }
-        };
-        Folder.prototype.insertAfter = function (child, referenceFolder) {
-            child.detach();
-            child.parent = this;
-            var idx = _.indexOf((this.children), referenceFolder);
-            if (idx >= 0) {
-                this.children.splice(idx + 1, 0, child);
-            }
-        };
-        /**
-         * Removes this node from my parent if I have one
-         * @method detach
-         * @for Folder
-         */
-        Folder.prototype.detach = function () {
-            var _this = this;
-            var oldParent = this.parent;
-            if (oldParent) {
-                var oldParentChildren = oldParent.children;
-                if (oldParentChildren) {
-                    var idx = oldParentChildren.indexOf(this);
-                    if (idx < 0) {
-                        _.remove(oldParent.children, function (child) { return child.key === _this.key; });
-                    }
-                    else {
-                        oldParentChildren.splice(idx, 1);
-                    }
-                }
-                this.parent = null;
-            }
-        };
-        /**
-         * Searches this folder and all its descendants for the first folder to match the filter
-         * @method findDescendant
-         * @for Folder
-         * @param {Function} filter
-         * @return {Folder}
-         */
-        Folder.prototype.findDescendant = function (filter) {
-            if (filter(this)) {
-                return this;
-            }
-            var answer = null;
-            angular.forEach(this.children, function (child) {
-                if (!answer) {
-                    answer = child.findDescendant(filter);
-                }
-            });
-            return answer;
-        };
-        /**
-         * Searches this folder and all its ancestors for the first folder to match the filter
-         * @method findDescendant
-         * @for Folder
-         * @param {Function} filter
-         * @return {Folder}
-         */
-        Folder.prototype.findAncestor = function (filter) {
-            if (filter(this)) {
-                return this;
-            }
-            if (this.parent != null) {
-                return this.parent.findAncestor(filter);
-            }
-            else {
-                return null;
-            }
-        };
-        return Folder;
-    }());
-    Jmx.Folder = Folder;
-})(Jmx || (Jmx = {}));
-/// <reference path="../../includes.ts"/>
 /// <reference path="jvmHelpers.ts"/>
 /**
  * @module JVM
@@ -523,6 +283,251 @@ var JVM;
             preferencesRegistry.addTab("Jolokia", "plugins/jvm/html/jolokiaPreferences.html");
         }]);
     hawtioPluginLoader.addModule(JVM.pluginName);
+})(JVM || (JVM = {}));
+/// <reference path="../../includes.ts"/>
+/// <reference path="jvmPlugin.ts"/>
+/**
+ * @module JVM
+ */
+var JVM;
+(function (JVM) {
+    JVM.ConnectController = JVM._module.controller("JVM.ConnectController", ["$scope", "$location",
+        "localStorage", "workspace", "$http", "$timeout", function ($scope, $location, localStorage, workspace, $http, $timeout) {
+            JVM.configureScope($scope, $location, workspace);
+            $http.get('proxy').then(function (resp) {
+                if (resp.status === 200 && Core.isBlank(resp.data)) {
+                    $scope.disableProxy = false;
+                }
+                else {
+                    $scope.disableProxy = true;
+                }
+            });
+            var hasMBeans = false;
+            workspace.addNamedTreePostProcessor('ConnectTab', function (tree) {
+                hasMBeans = workspace && workspace.tree && workspace.tree.children && workspace.tree.children.length > 0;
+                $scope.disableProxy = !hasMBeans || Core.isChromeApp();
+                Core.$apply($scope);
+            });
+            // load connections
+            $scope.connections = Core.loadConnections();
+            $scope.connections.forEach(function (connection) { return connection['expanded'] = false; });
+            $scope.newConnection = function () {
+                var connection = Core.createConnectOptions({
+                    name: 'Untitled connection',
+                    scheme: 'http',
+                    host: 'localhost',
+                    path: 'jolokia',
+                    port: 8181,
+                    userName: '',
+                    password: '',
+                    expanded: true,
+                    showSecondaryActions: false
+                });
+                $scope.connections.unshift(connection);
+                $scope.saveConnections();
+            };
+            $scope.deleteConnection = function (connection) {
+                $scope.connections.splice($scope.connections.indexOf(connection), 1);
+                $scope.saveConnections();
+            };
+            $scope.saveConnections = function () {
+                Core.saveConnections($scope.connections);
+            };
+            $scope.toggleSecondaryActions = function (connection) {
+                connection.showSecondaryActions = !connection.showSecondaryActions;
+            };
+            $scope.hideSecondaryActions = function (connection) {
+                $timeout(function () { connection.showSecondaryActions = false; }, 200);
+            };
+            $scope.connect = function (connection) {
+                // connect to root by default as we do not want to show welcome page
+                connection.view = connection.view || '#/';
+                Core.connectToServer(localStorage, connection);
+            };
+            var autoconnect = $location.search();
+            if (typeof autoconnect != 'undefined' && typeof autoconnect.name != 'undefined') {
+                var conOpts = Core.createConnectOptions({
+                    scheme: autoconnect.scheme || 'http',
+                    host: autoconnect.host,
+                    path: autoconnect.path,
+                    port: autoconnect.port,
+                    userName: autoconnect.userName,
+                    password: autoconnect.password,
+                    name: autoconnect.name
+                });
+                $scope.connect(conOpts);
+                window.close();
+            }
+        }]);
+})(JVM || (JVM = {}));
+/// <reference path="../../includes.ts"/>
+/// <reference path="jvmPlugin.ts"/>
+/**
+ * @module JVM
+ */
+var JVM;
+(function (JVM) {
+    JVM._module.controller("JVM.DiscoveryController", ["$scope", "localStorage", "jolokia", function ($scope, localStorage, jolokia) {
+            $scope.discovering = true;
+            $scope.agents = undefined;
+            $scope.$watch('agents', function (newValue, oldValue) {
+                if (newValue !== oldValue) {
+                    $scope.selectedAgent = $scope.agents.find(function (a) { return a['selected']; });
+                }
+            }, true);
+            $scope.closePopover = function ($event) {
+                $($event.currentTarget).parents('.popover').prev().popover('hide');
+            };
+            function doConnect(agent) {
+                if (!agent.url) {
+                    Core.notification('warning', 'No URL available to connect to agent');
+                    return;
+                }
+                var options = Core.createConnectOptions();
+                options.name = agent.agent_description;
+                var urlObject = Core.parseUrl(agent.url);
+                angular.extend(options, urlObject);
+                options.userName = agent.username;
+                options.password = agent.password;
+                Core.connectToServer(localStorage, options);
+            }
+            ;
+            $scope.connectWithCredentials = function ($event, agent) {
+                $scope.closePopover($event);
+                doConnect(agent);
+            };
+            $scope.gotoServer = function ($event, agent) {
+                if (agent.secured) {
+                    $($event.currentTarget).popover('show');
+                }
+                else {
+                    doConnect(agent);
+                }
+            };
+            $scope.getElementId = function (agent) {
+                return agent.agent_id.dasherize().replace(/\./g, "-");
+            };
+            $scope.getLogo = function (agent) {
+                if (agent.server_product) {
+                    return JVM.logoRegistry[agent.server_product];
+                }
+                return JVM.logoRegistry['generic'];
+            };
+            $scope.filterMatches = function (agent) {
+                if (Core.isBlank($scope.filter)) {
+                    return true;
+                }
+                else {
+                    var needle = $scope.filter.toLowerCase();
+                    var haystack = angular.toJson(agent).toLowerCase();
+                    return haystack.indexOf(needle) !== 0;
+                }
+            };
+            $scope.getAgentIdClass = function (agent) {
+                if ($scope.hasName(agent)) {
+                    return "";
+                }
+                return "strong";
+            };
+            $scope.hasName = function (agent) {
+                if (agent.server_vendor && agent.server_product && agent.server_version) {
+                    return true;
+                }
+                return false;
+            };
+            $scope.render = function (response) {
+                $scope.discovering = false;
+                if (response) {
+                    var responseJson = angular.toJson(response, true);
+                    if ($scope.responseJson !== responseJson) {
+                        $scope.responseJson = responseJson;
+                        $scope.agents = response;
+                    }
+                }
+                Core.$apply($scope);
+            };
+            $scope.fetch = function () {
+                $scope.discovering = true;
+                // use 10 sec timeout
+                jolokia.execute('jolokia:type=Discovery', 'lookupAgentsWithTimeout(int)', 10 * 1000, Core.onSuccess($scope.render));
+            };
+            $scope.fetch();
+        }]);
+})(JVM || (JVM = {}));
+/// <reference path="jvmPlugin.ts"/>
+var JVM;
+(function (JVM) {
+    JVM.HeaderController = JVM._module.controller("JVM.HeaderController", ["$scope", "ConnectOptions", function ($scope, ConnectOptions) {
+            if (ConnectOptions) {
+                $scope.containerName = ConnectOptions.name || "";
+                if (ConnectOptions.returnTo) {
+                    $scope.goBack = function () {
+                        window.location.href = ConnectOptions.returnTo;
+                    };
+                }
+            }
+        }]);
+})(JVM || (JVM = {}));
+/// <reference path="../../includes.ts"/>
+/// <reference path="./jvmPlugin.ts"/>
+var JVM;
+(function (JVM) {
+    JVM._module.controller("JVM.JolokiaPreferences", ["$scope", "localStorage", "jolokiaParams", "$window", function ($scope, localStorage, jolokiaParams, $window) {
+            var config = {
+                properties: {
+                    updateRate: {
+                        type: 'number',
+                        description: 'The period between polls to jolokia to fetch JMX data',
+                        enum: {
+                            'Off': 0,
+                            '5 Seconds': '5000',
+                            '10 Seconds': '10000',
+                            '30 Seconds': '30000',
+                            '60 seconds': '60000'
+                        }
+                    },
+                    maxDepth: {
+                        type: 'number',
+                        description: 'The number of levels jolokia will marshal an object to json on the server side before returning'
+                    },
+                    maxCollectionSize: {
+                        type: 'number',
+                        description: 'The maximum number of elements in an array that jolokia will marshal in a response'
+                    }
+                }
+            };
+            $scope.entity = $scope;
+            $scope.config = config;
+            Core.initPreferenceScope($scope, localStorage, {
+                'updateRate': {
+                    'value': 5000,
+                    'post': function (newValue) {
+                        $scope.$emit('UpdateRate', newValue);
+                    }
+                },
+                'maxDepth': {
+                    'value': JVM.DEFAULT_MAX_DEPTH,
+                    'converter': parseInt,
+                    'formatter': parseInt,
+                    'post': function (newValue) {
+                        jolokiaParams.maxDepth = newValue;
+                        localStorage['jolokiaParams'] = angular.toJson(jolokiaParams);
+                    }
+                },
+                'maxCollectionSize': {
+                    'value': JVM.DEFAULT_MAX_COLLECTION_SIZE,
+                    'converter': parseInt,
+                    'formatter': parseInt,
+                    'post': function (newValue) {
+                        jolokiaParams.maxCollectionSize = newValue;
+                        localStorage['jolokiaParams'] = angular.toJson(jolokiaParams);
+                    }
+                }
+            });
+            $scope.reboot = function () {
+                $window.location.reload();
+            };
+        }]);
 })(JVM || (JVM = {}));
 /// <reference path="../../includes.ts"/>
 /// <reference path="jvmPlugin.ts"/>
@@ -895,6 +900,360 @@ var JVM;
             }
         }]);
 })(JVM || (JVM = {}));
+/// <reference path="jvmPlugin.ts"/>
+/**
+ * @module JVM
+ */
+var JVM;
+(function (JVM) {
+    JVM._module.controller("JVM.JVMsController", ["$scope", "$window", "$location", "localStorage", "workspace", "jolokia", "mbeanName", function ($scope, $window, $location, localStorage, workspace, jolokia, mbeanName) {
+            JVM.configureScope($scope, $location, workspace);
+            $scope.data = [];
+            $scope.deploying = false;
+            $scope.status = '';
+            $scope.initDone = false;
+            $scope.filter = '';
+            $scope.filterMatches = function (jvm) {
+                if (Core.isBlank($scope.filter)) {
+                    return true;
+                }
+                else {
+                    return jvm.alias.toLowerCase().has($scope.filter.toLowerCase());
+                }
+            };
+            $scope.fetch = function () {
+                jolokia.request({
+                    type: 'exec', mbean: mbeanName,
+                    operation: 'listLocalJVMs()',
+                    arguments: []
+                }, {
+                    success: render,
+                    error: function (response) {
+                        $scope.data = [];
+                        $scope.initDone = true;
+                        $scope.status = 'Could not discover local JVM processes: ' + response.error;
+                        Core.$apply($scope);
+                    }
+                });
+            };
+            $scope.stopAgent = function (pid) {
+                jolokia.request({
+                    type: 'exec', mbean: mbeanName,
+                    operation: 'stopAgent(java.lang.String)',
+                    arguments: [pid]
+                }, Core.onSuccess(function () {
+                    $scope.fetch();
+                }));
+            };
+            $scope.startAgent = function (pid) {
+                jolokia.request({
+                    type: 'exec', mbean: mbeanName,
+                    operation: 'startAgent(java.lang.String)',
+                    arguments: [pid]
+                }, Core.onSuccess(function () {
+                    $scope.fetch();
+                }));
+            };
+            $scope.connectTo = function (url, scheme, host, port, path) {
+                // we only need the port and path from the url, as we got the rest
+                var options = {};
+                options["scheme"] = scheme;
+                options["host"] = host;
+                options["port"] = port;
+                options["path"] = path;
+                // add empty username as we dont need login
+                options["userName"] = "";
+                options["password"] = "";
+                // connect to root by default as we do not want to show welcome page
+                options["view"] = "#/";
+                var con = Core.createConnectToServerOptions(options);
+                con.name = "local";
+                JVM.log.debug("Connecting to local JVM agent: " + url);
+                Core.connectToServer(localStorage, con);
+                Core.$apply($scope);
+            };
+            function render(response) {
+                $scope.initDone = true;
+                $scope.data = response.value;
+                if ($scope.data.length === 0) {
+                    $scope.status = 'Could not discover local JVM processes';
+                }
+                Core.$apply($scope);
+            }
+            $scope.fetch();
+        }]);
+})(JVM || (JVM = {}));
+/// <reference path="../../includes.ts"/>
+/// <reference path="./jvmPlugin.ts"/>
+/**
+ * @module JVM
+ */
+var JVM;
+(function (JVM) {
+    JVM._module.controller("JVM.NavController", ["$scope", "$location", "workspace", function ($scope, $location, workspace) {
+            JVM.configureScope($scope, $location, workspace);
+        }]);
+})(JVM || (JVM = {}));
+/// <reference path="../../includes.ts"/>
+/// <reference path="./jvmPlugin.ts"/>
+/**
+ * @module JVM
+ */
+var JVM;
+(function (JVM) {
+    JVM._module.controller("JVM.ResetController", ["$scope", "localStorage", function ($scope, localStorage) {
+            $scope.doClearConnectSettings = function () {
+                var doReset = function () {
+                    delete localStorage[JVM.connectControllerKey];
+                    delete localStorage[JVM.connectionSettingsKey];
+                    setTimeout(function () {
+                        window.location.reload();
+                    }, 10);
+                };
+                doReset();
+            };
+        }]);
+})(JVM || (JVM = {}));
+/// <reference path="../../includes.ts"/>
+var Jmx;
+(function (Jmx) {
+    /**
+     * @class Folder
+     * @uses NodeSelection
+     */
+    var Folder = (function () {
+        function Folder(text) {
+            this.text = text;
+            this.id = null;
+            this.typeName = null;
+            this.nodes = [];
+            this.folderNames = [];
+            this.domain = null;
+            this.objectName = null;
+            this.map = {};
+            this.entries = {};
+            this.addClass = null;
+            this.parent = null;
+            this.isLazy = false;
+            this.icon = null;
+            this.tooltip = null;
+            this.entity = null;
+            this.version = null;
+            this.mbean = null;
+            this.expand = false;
+            this.addClass = Core.escapeTreeCssStyles(text);
+        }
+        Object.defineProperty(Folder.prototype, "key", {
+            get: function () {
+                return this.id;
+            },
+            set: function (key) {
+                this.id = key;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(Folder.prototype, "title", {
+            get: function () {
+                return this.text;
+            },
+            set: function (title) {
+                this.text = title;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(Folder.prototype, "children", {
+            get: function () {
+                return this.nodes;
+            },
+            set: function (items) {
+                this.nodes = items;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(Folder.prototype, "lazyLoad", {
+            get: function () {
+                return this.isLazy;
+            },
+            set: function (isLazy) {
+                this.isLazy = isLazy;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(Folder.prototype, "image", {
+            get: function () {
+                return this.icon;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Folder.prototype.get = function (key) {
+            return this.map[key];
+        };
+        Folder.prototype.isFolder = function () {
+            return this.nodes && this.nodes.length > 0;
+        };
+        /**
+         * Navigates the given paths and returns the value there or null if no value could be found
+         * @method navigate
+         * @for Folder
+         * @param {Array} paths
+         * @return {NodeSelection}
+         */
+        Folder.prototype.navigate = function () {
+            var paths = [];
+            for (var _i = 0; _i < arguments.length; _i++) {
+                paths[_i] = arguments[_i];
+            }
+            var node = this;
+            paths.forEach(function (path) {
+                if (node) {
+                    node = node.get(path);
+                }
+            });
+            return node;
+        };
+        Folder.prototype.hasEntry = function (key, value) {
+            var entries = this.entries;
+            if (entries) {
+                var actual = entries[key];
+                return actual && value === actual;
+            }
+            return false;
+        };
+        Folder.prototype.parentHasEntry = function (key, value) {
+            if (this.parent) {
+                return this.parent.hasEntry(key, value);
+            }
+            return false;
+        };
+        Folder.prototype.ancestorHasEntry = function (key, value) {
+            var parent = this.parent;
+            while (parent) {
+                if (parent.hasEntry(key, value))
+                    return true;
+                parent = parent.parent;
+            }
+            return false;
+        };
+        Folder.prototype.ancestorHasType = function (typeName) {
+            var parent = this.parent;
+            while (parent) {
+                if (typeName === parent.typeName)
+                    return true;
+                parent = parent.parent;
+            }
+            return false;
+        };
+        Folder.prototype.getOrElse = function (key, defaultValue) {
+            if (defaultValue === void 0) { defaultValue = new Folder(key); }
+            var answer = this.map[key];
+            if (!answer) {
+                answer = defaultValue;
+                this.map[key] = answer;
+                this.children.push(answer);
+                answer.parent = this;
+            }
+            return answer;
+        };
+        Folder.prototype.sortChildren = function (recursive) {
+            var children = this.children;
+            if (children) {
+                this.children = _.sortBy(children, "title");
+                if (recursive) {
+                    angular.forEach(children, function (child) { return child.sortChildren(recursive); });
+                }
+            }
+        };
+        Folder.prototype.moveChild = function (child) {
+            if (child && child.parent !== this) {
+                child.detach();
+                child.parent = this;
+                this.children.push(child);
+            }
+        };
+        Folder.prototype.insertBefore = function (child, referenceFolder) {
+            child.detach();
+            child.parent = this;
+            var idx = _.indexOf((this.children), referenceFolder);
+            if (idx >= 0) {
+                this.children.splice(idx, 0, child);
+            }
+        };
+        Folder.prototype.insertAfter = function (child, referenceFolder) {
+            child.detach();
+            child.parent = this;
+            var idx = _.indexOf((this.children), referenceFolder);
+            if (idx >= 0) {
+                this.children.splice(idx + 1, 0, child);
+            }
+        };
+        /**
+         * Removes this node from my parent if I have one
+         * @method detach
+         * @for Folder
+         */
+        Folder.prototype.detach = function () {
+            var _this = this;
+            var oldParent = this.parent;
+            if (oldParent) {
+                var oldParentChildren = oldParent.children;
+                if (oldParentChildren) {
+                    var idx = oldParentChildren.indexOf(this);
+                    if (idx < 0) {
+                        _.remove(oldParent.children, function (child) { return child.key === _this.key; });
+                    }
+                    else {
+                        oldParentChildren.splice(idx, 1);
+                    }
+                }
+                this.parent = null;
+            }
+        };
+        /**
+         * Searches this folder and all its descendants for the first folder to match the filter
+         * @method findDescendant
+         * @for Folder
+         * @param {Function} filter
+         * @return {Folder}
+         */
+        Folder.prototype.findDescendant = function (filter) {
+            if (filter(this)) {
+                return this;
+            }
+            var answer = null;
+            angular.forEach(this.children, function (child) {
+                if (!answer) {
+                    answer = child.findDescendant(filter);
+                }
+            });
+            return answer;
+        };
+        /**
+         * Searches this folder and all its ancestors for the first folder to match the filter
+         * @method findDescendant
+         * @for Folder
+         * @param {Function} filter
+         * @return {Folder}
+         */
+        Folder.prototype.findAncestor = function (filter) {
+            if (filter(this)) {
+                return this;
+            }
+            if (this.parent != null) {
+                return this.parent.findAncestor(filter);
+            }
+            else {
+                return null;
+            }
+        };
+        return Folder;
+    }());
+    Jmx.Folder = Folder;
+})(Jmx || (Jmx = {}));
 /// <reference path="../../includes.ts"/>
 /// <reference path="jmxHelpers.ts"/>
 /// <reference path="../../jvm/ts/jolokiaService.ts"/>
@@ -3824,23 +4183,7 @@ var Jmx;
             });
         }]);
     Jmx._module.controller("Jmx.MBeansController", ["$scope", "$location", "workspace", "$route", function ($scope, $location, workspace, $route) {
-            $scope.num = 1;
-            $scope.$on("$routeChangeSuccess", function (event, current, previous) {
-                // lets do this asynchronously to avoid Error: $digest already in progress
-                setTimeout(updateSelectionFromURL, 50);
-            });
-            $scope.$on("$routeUpdate", function (ev, params) {
-                if (params && params.params && params.params.tab && params.params.tab.match(/notree$/)) {
-                    $route.reload();
-                }
-            });
-            $scope.select = function (node) {
-                $scope.workspace.updateSelectionNode(node);
-                Core.$apply($scope);
-            };
-            function updateSelectionFromURL() {
-                Jmx.updateTreeSelectionFromURL($location, $('#jmxtree'));
-            }
+            var updateSelectionFromURL = function () { return Jmx.updateTreeSelectionFromURL($location, $('#jmxtree')); };
             $scope.populateTree = function () {
                 var treeElement = $('#jmxtree');
                 $scope.tree = workspace.tree;
@@ -3865,365 +4208,6 @@ var Jmx;
             $scope.populateTree();
         }]);
 })(Jmx || (Jmx = {}));
-/// <reference path="../../includes.ts"/>
-/// <reference path="jvmPlugin.ts"/>
-/**
- * @module JVM
- */
-var JVM;
-(function (JVM) {
-    JVM.ConnectController = JVM._module.controller("JVM.ConnectController", ["$scope", "$location",
-        "localStorage", "workspace", "$http", "$timeout", function ($scope, $location, localStorage, workspace, $http, $timeout) {
-            JVM.configureScope($scope, $location, workspace);
-            $http.get('proxy').then(function (resp) {
-                if (resp.status === 200 && Core.isBlank(resp.data)) {
-                    $scope.disableProxy = false;
-                }
-                else {
-                    $scope.disableProxy = true;
-                }
-            });
-            var hasMBeans = false;
-            workspace.addNamedTreePostProcessor('ConnectTab', function (tree) {
-                hasMBeans = workspace && workspace.tree && workspace.tree.children && workspace.tree.children.length > 0;
-                $scope.disableProxy = !hasMBeans || Core.isChromeApp();
-                Core.$apply($scope);
-            });
-            // load connections
-            $scope.connections = Core.loadConnections();
-            $scope.connections.forEach(function (connection) { return connection['expanded'] = false; });
-            $scope.newConnection = function () {
-                var connection = Core.createConnectOptions({
-                    name: 'Untitled connection',
-                    scheme: 'http',
-                    host: 'localhost',
-                    path: 'jolokia',
-                    port: 8181,
-                    userName: '',
-                    password: '',
-                    expanded: true,
-                    showSecondaryActions: false
-                });
-                $scope.connections.unshift(connection);
-                $scope.saveConnections();
-            };
-            $scope.deleteConnection = function (connection) {
-                $scope.connections.splice($scope.connections.indexOf(connection), 1);
-                $scope.saveConnections();
-            };
-            $scope.saveConnections = function () {
-                Core.saveConnections($scope.connections);
-            };
-            $scope.toggleSecondaryActions = function (connection) {
-                connection.showSecondaryActions = !connection.showSecondaryActions;
-            };
-            $scope.hideSecondaryActions = function (connection) {
-                $timeout(function () { connection.showSecondaryActions = false; }, 200);
-            };
-            $scope.connect = function (connection) {
-                // connect to root by default as we do not want to show welcome page
-                connection.view = connection.view || '#/';
-                Core.connectToServer(localStorage, connection);
-            };
-            var autoconnect = $location.search();
-            if (typeof autoconnect != 'undefined' && typeof autoconnect.name != 'undefined') {
-                var conOpts = Core.createConnectOptions({
-                    scheme: autoconnect.scheme || 'http',
-                    host: autoconnect.host,
-                    path: autoconnect.path,
-                    port: autoconnect.port,
-                    userName: autoconnect.userName,
-                    password: autoconnect.password,
-                    name: autoconnect.name
-                });
-                $scope.connect(conOpts);
-                window.close();
-            }
-        }]);
-})(JVM || (JVM = {}));
-/// <reference path="../../includes.ts"/>
-/// <reference path="jvmPlugin.ts"/>
-/**
- * @module JVM
- */
-var JVM;
-(function (JVM) {
-    JVM._module.controller("JVM.DiscoveryController", ["$scope", "localStorage", "jolokia", function ($scope, localStorage, jolokia) {
-            $scope.discovering = true;
-            $scope.agents = undefined;
-            $scope.$watch('agents', function (newValue, oldValue) {
-                if (newValue !== oldValue) {
-                    $scope.selectedAgent = $scope.agents.find(function (a) { return a['selected']; });
-                }
-            }, true);
-            $scope.closePopover = function ($event) {
-                $($event.currentTarget).parents('.popover').prev().popover('hide');
-            };
-            function doConnect(agent) {
-                if (!agent.url) {
-                    Core.notification('warning', 'No URL available to connect to agent');
-                    return;
-                }
-                var options = Core.createConnectOptions();
-                options.name = agent.agent_description;
-                var urlObject = Core.parseUrl(agent.url);
-                angular.extend(options, urlObject);
-                options.userName = agent.username;
-                options.password = agent.password;
-                Core.connectToServer(localStorage, options);
-            }
-            ;
-            $scope.connectWithCredentials = function ($event, agent) {
-                $scope.closePopover($event);
-                doConnect(agent);
-            };
-            $scope.gotoServer = function ($event, agent) {
-                if (agent.secured) {
-                    $($event.currentTarget).popover('show');
-                }
-                else {
-                    doConnect(agent);
-                }
-            };
-            $scope.getElementId = function (agent) {
-                return agent.agent_id.dasherize().replace(/\./g, "-");
-            };
-            $scope.getLogo = function (agent) {
-                if (agent.server_product) {
-                    return JVM.logoRegistry[agent.server_product];
-                }
-                return JVM.logoRegistry['generic'];
-            };
-            $scope.filterMatches = function (agent) {
-                if (Core.isBlank($scope.filter)) {
-                    return true;
-                }
-                else {
-                    var needle = $scope.filter.toLowerCase();
-                    var haystack = angular.toJson(agent).toLowerCase();
-                    return haystack.indexOf(needle) !== 0;
-                }
-            };
-            $scope.getAgentIdClass = function (agent) {
-                if ($scope.hasName(agent)) {
-                    return "";
-                }
-                return "strong";
-            };
-            $scope.hasName = function (agent) {
-                if (agent.server_vendor && agent.server_product && agent.server_version) {
-                    return true;
-                }
-                return false;
-            };
-            $scope.render = function (response) {
-                $scope.discovering = false;
-                if (response) {
-                    var responseJson = angular.toJson(response, true);
-                    if ($scope.responseJson !== responseJson) {
-                        $scope.responseJson = responseJson;
-                        $scope.agents = response;
-                    }
-                }
-                Core.$apply($scope);
-            };
-            $scope.fetch = function () {
-                $scope.discovering = true;
-                // use 10 sec timeout
-                jolokia.execute('jolokia:type=Discovery', 'lookupAgentsWithTimeout(int)', 10 * 1000, Core.onSuccess($scope.render));
-            };
-            $scope.fetch();
-        }]);
-})(JVM || (JVM = {}));
-/// <reference path="jvmPlugin.ts"/>
-var JVM;
-(function (JVM) {
-    JVM.HeaderController = JVM._module.controller("JVM.HeaderController", ["$scope", "ConnectOptions", function ($scope, ConnectOptions) {
-            if (ConnectOptions) {
-                $scope.containerName = ConnectOptions.name || "";
-                if (ConnectOptions.returnTo) {
-                    $scope.goBack = function () {
-                        window.location.href = ConnectOptions.returnTo;
-                    };
-                }
-            }
-        }]);
-})(JVM || (JVM = {}));
-/// <reference path="../../includes.ts"/>
-/// <reference path="./jvmPlugin.ts"/>
-var JVM;
-(function (JVM) {
-    JVM._module.controller("JVM.JolokiaPreferences", ["$scope", "localStorage", "jolokiaParams", "$window", function ($scope, localStorage, jolokiaParams, $window) {
-            var config = {
-                properties: {
-                    updateRate: {
-                        type: 'number',
-                        description: 'The period between polls to jolokia to fetch JMX data',
-                        enum: {
-                            'Off': 0,
-                            '5 Seconds': '5000',
-                            '10 Seconds': '10000',
-                            '30 Seconds': '30000',
-                            '60 seconds': '60000'
-                        }
-                    },
-                    maxDepth: {
-                        type: 'number',
-                        description: 'The number of levels jolokia will marshal an object to json on the server side before returning'
-                    },
-                    maxCollectionSize: {
-                        type: 'number',
-                        description: 'The maximum number of elements in an array that jolokia will marshal in a response'
-                    }
-                }
-            };
-            $scope.entity = $scope;
-            $scope.config = config;
-            Core.initPreferenceScope($scope, localStorage, {
-                'updateRate': {
-                    'value': 5000,
-                    'post': function (newValue) {
-                        $scope.$emit('UpdateRate', newValue);
-                    }
-                },
-                'maxDepth': {
-                    'value': JVM.DEFAULT_MAX_DEPTH,
-                    'converter': parseInt,
-                    'formatter': parseInt,
-                    'post': function (newValue) {
-                        jolokiaParams.maxDepth = newValue;
-                        localStorage['jolokiaParams'] = angular.toJson(jolokiaParams);
-                    }
-                },
-                'maxCollectionSize': {
-                    'value': JVM.DEFAULT_MAX_COLLECTION_SIZE,
-                    'converter': parseInt,
-                    'formatter': parseInt,
-                    'post': function (newValue) {
-                        jolokiaParams.maxCollectionSize = newValue;
-                        localStorage['jolokiaParams'] = angular.toJson(jolokiaParams);
-                    }
-                }
-            });
-            $scope.reboot = function () {
-                $window.location.reload();
-            };
-        }]);
-})(JVM || (JVM = {}));
-/// <reference path="jvmPlugin.ts"/>
-/**
- * @module JVM
- */
-var JVM;
-(function (JVM) {
-    JVM._module.controller("JVM.JVMsController", ["$scope", "$window", "$location", "localStorage", "workspace", "jolokia", "mbeanName", function ($scope, $window, $location, localStorage, workspace, jolokia, mbeanName) {
-            JVM.configureScope($scope, $location, workspace);
-            $scope.data = [];
-            $scope.deploying = false;
-            $scope.status = '';
-            $scope.initDone = false;
-            $scope.filter = '';
-            $scope.filterMatches = function (jvm) {
-                if (Core.isBlank($scope.filter)) {
-                    return true;
-                }
-                else {
-                    return jvm.alias.toLowerCase().has($scope.filter.toLowerCase());
-                }
-            };
-            $scope.fetch = function () {
-                jolokia.request({
-                    type: 'exec', mbean: mbeanName,
-                    operation: 'listLocalJVMs()',
-                    arguments: []
-                }, {
-                    success: render,
-                    error: function (response) {
-                        $scope.data = [];
-                        $scope.initDone = true;
-                        $scope.status = 'Could not discover local JVM processes: ' + response.error;
-                        Core.$apply($scope);
-                    }
-                });
-            };
-            $scope.stopAgent = function (pid) {
-                jolokia.request({
-                    type: 'exec', mbean: mbeanName,
-                    operation: 'stopAgent(java.lang.String)',
-                    arguments: [pid]
-                }, Core.onSuccess(function () {
-                    $scope.fetch();
-                }));
-            };
-            $scope.startAgent = function (pid) {
-                jolokia.request({
-                    type: 'exec', mbean: mbeanName,
-                    operation: 'startAgent(java.lang.String)',
-                    arguments: [pid]
-                }, Core.onSuccess(function () {
-                    $scope.fetch();
-                }));
-            };
-            $scope.connectTo = function (url, scheme, host, port, path) {
-                // we only need the port and path from the url, as we got the rest
-                var options = {};
-                options["scheme"] = scheme;
-                options["host"] = host;
-                options["port"] = port;
-                options["path"] = path;
-                // add empty username as we dont need login
-                options["userName"] = "";
-                options["password"] = "";
-                // connect to root by default as we do not want to show welcome page
-                options["view"] = "#/";
-                var con = Core.createConnectToServerOptions(options);
-                con.name = "local";
-                JVM.log.debug("Connecting to local JVM agent: " + url);
-                Core.connectToServer(localStorage, con);
-                Core.$apply($scope);
-            };
-            function render(response) {
-                $scope.initDone = true;
-                $scope.data = response.value;
-                if ($scope.data.length === 0) {
-                    $scope.status = 'Could not discover local JVM processes';
-                }
-                Core.$apply($scope);
-            }
-            $scope.fetch();
-        }]);
-})(JVM || (JVM = {}));
-/// <reference path="../../includes.ts"/>
-/// <reference path="./jvmPlugin.ts"/>
-/**
- * @module JVM
- */
-var JVM;
-(function (JVM) {
-    JVM._module.controller("JVM.NavController", ["$scope", "$location", "workspace", function ($scope, $location, workspace) {
-            JVM.configureScope($scope, $location, workspace);
-        }]);
-})(JVM || (JVM = {}));
-/// <reference path="../../includes.ts"/>
-/// <reference path="./jvmPlugin.ts"/>
-/**
- * @module JVM
- */
-var JVM;
-(function (JVM) {
-    JVM._module.controller("JVM.ResetController", ["$scope", "localStorage", function ($scope, localStorage) {
-            $scope.doClearConnectSettings = function () {
-                var doReset = function () {
-                    delete localStorage[JVM.connectControllerKey];
-                    delete localStorage[JVM.connectionSettingsKey];
-                    setTimeout(function () {
-                        window.location.reload();
-                    }, 10);
-                };
-                doReset();
-            };
-        }]);
-})(JVM || (JVM = {}));
 /// <reference path="../../includes.ts" />
 /// <reference path="../../jmx/ts/workspace.ts" />
 /**
