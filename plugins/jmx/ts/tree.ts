@@ -29,7 +29,7 @@ namespace Jmx {
     });
   }]);
 
-  _module.controller("Jmx.MBeansController", ["$scope", "$location", "workspace", "$route", ($scope, $location: ng.ILocationService, workspace: Workspace, $route: angular.route.IRouteService) => {
+  _module.controller("Jmx.TreeController", ["$scope", "$location", "workspace", "$route", ($scope, $location: ng.ILocationService, workspace: Workspace, $route: angular.route.IRouteService) => {
 
     const updateSelectionFromURL = () => updateTreeSelectionFromURL($location, $('#jmxtree'));
 

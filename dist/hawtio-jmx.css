@@ -50,19 +50,6 @@ body {
   text-align: center;
 }
 
-#jvm-remote .list-group-item-container .form-horizontal {
-  margin: 10px 0;
-}
-#jvm-remote .list-group-item-container .form-horizontal > .form-group:last-child {
-  margin-bottom: 0;
-}
-#jvm-remote .dropdown-kebab-pf .btn-link {
-  padding-left: 10px;
-  padding-right: 10px;
-  margin-left: 0px;
-  margin-right: -10px;
-}
-
 .jmx-attributes-table th:nth-child(1) {
   width: 40%;
 }
@@ -262,6 +249,19 @@ div.tree-nav-layout .sidebar-pf .rg-right {
 }
 .jmx-operation-error {
   background-color: #ffe6e6;
+}
+
+#jvm-remote .list-group-item-container .form-horizontal {
+  margin: 10px 0;
+}
+#jvm-remote .list-group-item-container .form-horizontal > .form-group:last-child {
+  margin-bottom: 0;
+}
+#jvm-remote .dropdown-kebab-pf .btn-link {
+  padding-left: 10px;
+  padding-right: 10px;
+  margin-left: 0px;
+  margin-right: -10px;
 }
 
 @media screen and (max-width: 767px) {
