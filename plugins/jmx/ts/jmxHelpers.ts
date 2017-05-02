@@ -173,33 +173,33 @@ module Jmx {
   export function updateTreeSelectionFromURLAndAutoSelect($location, treeElement, autoSelect: (Folder) => Folder, activateIfNoneSelected = false) {
     const tree = <any>treeElement.treeview(true);
     let node: Folder;
+
+    // If there is a node id then select that one
     var key = $location.search()['nid'];
     if (key) {
       node = tree.findNodes(`^${key}$`, 'id');
     }
+
+    // Else optionally select the first node if there is no selection
+    if (!node && activateIfNoneSelected && tree.getSelected().length === 0) {
+      var children = tree.findNodes('^1$', 'level');
+      if (children.length > 0) {
+        node = children[0];
+        // invoke any auto select function, and use its result as new first, if any returned
+        if (autoSelect) {
+          var result = autoSelect(node);
+          if (result) {
+            node = result;
+          }
+        }
+      }
+    }
+
+    // Finally update the tree with the result node
     if (node) {
       tree.revealNode(node, { silent: true });
       tree.selectNode(node, { silent: true });
       tree.expandNode(node, { levels: 1, silent: true });
-    } else {
-      if (tree.getSelected().length === 0) {
-        var children = tree.findNodes('^1$', 'level');
-        if (children.length > 0) {
-          var first = children[0];
-          // invoke any auto select function, and use its result as new first, if any returned
-          if (autoSelect) {
-            var result = autoSelect(first);
-            if (result) {
-              first = result;
-            }
-          }
-          if (activateIfNoneSelected) {
-            tree.revealNode(first, { silent: true });
-            tree.selectNode(first, { silent: true });
-            tree.expandNode(first, { levels: 1, silent: true });
-          }
-        }
-      }
     }
   }
 

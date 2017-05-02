@@ -2002,34 +2002,30 @@ var Jmx;
         if (activateIfNoneSelected === void 0) { activateIfNoneSelected = false; }
         var tree = treeElement.treeview(true);
         var node;
+        // If there is a node id then select that one
         var key = $location.search()['nid'];
         if (key) {
             node = tree.findNodes("^" + key + "$", 'id');
         }
+        // Else optionally select the first node if there is no selection
+        if (!node && activateIfNoneSelected && tree.getSelected().length === 0) {
+            var children = tree.findNodes('^1$', 'level');
+            if (children.length > 0) {
+                node = children[0];
+                // invoke any auto select function, and use its result as new first, if any returned
+                if (autoSelect) {
+                    var result = autoSelect(node);
+                    if (result) {
+                        node = result;
+                    }
+                }
+            }
+        }
+        // Finally update the tree with the result node
         if (node) {
             tree.revealNode(node, { silent: true });
             tree.selectNode(node, { silent: true });
             tree.expandNode(node, { levels: 1, silent: true });
-        }
-        else {
-            if (tree.getSelected().length === 0) {
-                var children = tree.findNodes('^1$', 'level');
-                if (children.length > 0) {
-                    var first = children[0];
-                    // invoke any auto select function, and use its result as new first, if any returned
-                    if (autoSelect) {
-                        var result = autoSelect(first);
-                        if (result) {
-                            first = result;
-                        }
-                    }
-                    if (activateIfNoneSelected) {
-                        tree.revealNode(first, { silent: true });
-                        tree.selectNode(first, { silent: true });
-                        tree.expandNode(first, { levels: 1, silent: true });
-                    }
-                }
-            }
         }
     }
     Jmx.updateTreeSelectionFromURLAndAutoSelect = updateTreeSelectionFromURLAndAutoSelect;
@@ -4513,6 +4509,33 @@ var Threads;
             initFunc();
         }]);
 })(Threads || (Threads = {}));
+/// <reference path="../jmxPlugin.ts"/>
+var Jmx;
+(function (Jmx) {
+    var HeaderController = (function () {
+        HeaderController.$inject = ["$rootScope"];
+        function HeaderController($rootScope) {
+            'ngInject';
+            var _this = this;
+            $rootScope.$on('jmxTreeClicked', function (event, selectedNode) {
+                _this.title = selectedNode.title;
+            });
+        }
+        return HeaderController;
+    }());
+    Jmx.HeaderController = HeaderController;
+    Jmx.headerComponent = {
+        template: "<h1>{{$ctrl.title}}</h1>",
+        controller: HeaderController
+    };
+})(Jmx || (Jmx = {}));
+/// <reference path="header.component.ts"/>
+var Jmx;
+(function (Jmx) {
+    angular
+        .module('hawtio-jmx-common', [])
+        .component('jmxHeader', Jmx.headerComponent);
+})(Jmx || (Jmx = {}));
 var Jmx;
 (function (Jmx) {
     var Operation = (function () {
@@ -4789,33 +4812,6 @@ var Jmx;
         .component('operations', Jmx.operationsComponent)
         .component('operationForm', Jmx.operationFormComponent)
         .service('operationsService', Jmx.OperationsService);
-})(Jmx || (Jmx = {}));
-/// <reference path="../jmxPlugin.ts"/>
-var Jmx;
-(function (Jmx) {
-    var HeaderController = (function () {
-        HeaderController.$inject = ["$rootScope"];
-        function HeaderController($rootScope) {
-            'ngInject';
-            var _this = this;
-            $rootScope.$on('jmxTreeClicked', function (event, selectedNode) {
-                _this.title = selectedNode.title;
-            });
-        }
-        return HeaderController;
-    }());
-    Jmx.HeaderController = HeaderController;
-    Jmx.headerComponent = {
-        template: "<h1>{{$ctrl.title}}</h1>",
-        controller: HeaderController
-    };
-})(Jmx || (Jmx = {}));
-/// <reference path="header.component.ts"/>
-var Jmx;
-(function (Jmx) {
-    angular
-        .module('hawtio-jmx-common', [])
-        .component('jmxHeader', Jmx.headerComponent);
 })(Jmx || (Jmx = {}));
 
 angular.module('hawtio-jmx-templates', []).run(['$templateCache', function($templateCache) {$templateCache.put('plugins/jmx/html/areaChart.html','<div ng-controller="Jmx.AreaChartController">\n  <script type="text/ng-template" id="areaChart">\n    <fs-area bind="data" duration="250" interpolate="false" point-radius="5" width="width" height="height" label=""></fs-area>\n  </script>\n  <div compile="template"></div>\n</div>\n');
