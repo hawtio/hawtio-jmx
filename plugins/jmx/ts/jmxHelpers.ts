@@ -330,7 +330,8 @@ module Jmx {
         nodeIcon: 'pficon pficon-folder-close',
         highlightSearchResults: true,
         searchResultColor: '#b58100', // pf-gold-500
-        searchResultBackColor: '#fbeabc' // pf-gold-100
+        searchResultBackColor: '#fbeabc', // pf-gold-100
+        preventUnselect: true
       });
     }
   }
