@@ -211,6 +211,7 @@ div.tree-nav-layout .sidebar-pf .rg-right {
   margin-bottom: 5px;
 }
 .tree-nav-layout .tree-nav-sidebar-content.treeview .icon {
+  width: unset;
   font-size: 11px;
 }
 .tree-nav-main {
