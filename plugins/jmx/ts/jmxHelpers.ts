@@ -249,90 +249,85 @@ module Jmx {
   }
 
   export function enableTree($scope, $location: ng.ILocationService, workspace: Workspace, treeElement, children: Array<NodeSelection>) {
-    if (treeElement.length) {
-      treeElement.treeview({
-        /*
-         * The event handler called when a different node in the tree is selected
-         */
-        lazyLoad: function(event, data) {
-          var folder = data.node;
-          var plugin = <(workspace: Workspace, folder: Folder, func:() => void) => void> null;
-          if (folder) {
-            plugin = Jmx.findLazyLoadingFunction(workspace, folder);
-          }
-          if (plugin) {
-            log.debug("Lazy loading folder " + folder.title);
-            var oldChildren = folder.children;
-            plugin(workspace, folder, () => {
-              var newChildren = folder.children;
-              if (newChildren !== oldChildren) {
-                data.node.removeChildren();
-                angular.forEach(newChildren, newChild => {
-                  data.node.addChild(newChild);
-                });
-              }
-            });
-          }
-        },
-        onNodeExpanded: function(event, data:Folder) {
-          // reflect the "expand" status from dynatree in Folder structure
-          // this will also preserve expand status when redrawin tree!
-          // see "this.data = $.extend({}, $.ui.dynatree.nodedatadefaults, data);" in jquery.dynatree. "data" is Folder object
-          // const node = data.node;
-          data.expand = true;
-          // if (data.isFolder()) {
-          //   var parent = data.children[0].parent;
-          //   if (parent) {
-          //     parent.expand = true;
-          //   }
-          // }
-        },
-        onNodeSelected: function (event, data:Folder) {
-          workspace.updateSelectionNode(data);
-          Core.$apply($scope);
-        },
+    treeElement.treeview({
+      lazyLoad: function (event, data) {
+        var folder = data.node;
+        var plugin = <(workspace: Workspace, folder: Folder, func: () => void) => void>null;
+        if (folder) {
+          plugin = Jmx.findLazyLoadingFunction(workspace, folder);
+        }
+        if (plugin) {
+          log.debug("Lazy loading folder " + folder.title);
+          var oldChildren = folder.children;
+          plugin(workspace, folder, () => {
+            var newChildren = folder.children;
+            if (newChildren !== oldChildren) {
+              data.node.removeChildren();
+              angular.forEach(newChildren, newChild => {
+                data.node.addChild(newChild);
+              });
+            }
+          });
+        }
+      },
+      onNodeExpanded: function (event, data: Folder) {
+        // reflect the "expand" status from dynatree in Folder structure
+        // this will also preserve expand status when redrawin tree!
+        // see "this.data = $.extend({}, $.ui.dynatree.nodedatadefaults, data);" in jquery.dynatree. "data" is Folder object
+        // const node = data.node;
+        data.expand = true;
+        // if (data.isFolder()) {
+        //   var parent = data.children[0].parent;
+        //   if (parent) {
+        //     parent.expand = true;
+        //   }
+        // }
+      },
+      onNodeSelected: function (event, data: Folder) {
+        workspace.updateSelectionNode(data);
+        Core.$apply($scope);
+      },
 
-        /*onNodeSelected: function (event, data:Folder) {
-          console.log('onNodeSelected');
-          // const node = data.node;
-          console.log('test:', data);
-          // if (event["metaKey"]) {
-            event.preventDefault();
-            var url = $location.absUrl();
-            // if (node && node.data) {
-              // var key = node.data["key"];
-              const key = data.key;
-              if (key) {
-                var hash = $location.search();
-                hash["nid"] = key;
+      /*onNodeSelected: function (event, data:Folder) {
+        console.log('onNodeSelected');
+        // const node = data.node;
+        console.log('test:', data);
+        // if (event["metaKey"]) {
+          event.preventDefault();
+          var url = $location.absUrl();
+          // if (node && node.data) {
+            // var key = node.data["key"];
+            const key = data.key;
+            if (key) {
+              var hash = $location.search();
+              hash["nid"] = key;
 
-                // TODO this could maybe be a generic helper function?
-                // lets trim after the ?
-                var idx = url.indexOf('?');
-                if (idx <= 0) {
-                  url += "?";
-                } else {
-                  url = url.substring(0, idx + 1);
-                }
-                url += $.param(hash);
+              // TODO this could maybe be a generic helper function?
+              // lets trim after the ?
+              var idx = url.indexOf('?');
+              if (idx <= 0) {
+                url += "?";
+              } else {
+                url = url.substring(0, idx + 1);
               }
-            // }
-            window.open(url, '_blank');
-            window.focus();
-            return false;
+              url += $.param(hash);
+            }
           // }
-          // return true;
-        },*/
-        levels: 1,
-        data: children,
-        collapseIcon: 'fa fa-angle-down',
-        expandIcon: 'fa fa-angle-right',
-        nodeIcon: 'pficon pficon-folder-close',
-        highlightSearchResults: true,
-        searchResultColor: '#b58100', // pf-gold-500
-        searchResultBackColor: '#fbeabc', // pf-gold-100
-        preventUnselect: true
-      });
-    }
+          window.open(url, '_blank');
+          window.focus();
+          return false;
+        // }
+        // return true;
+      },*/
+      levels: 1,
+      data: children,
+      collapseIcon: 'fa fa-angle-down',
+      expandIcon: 'fa fa-angle-right',
+      nodeIcon: 'pficon pficon-folder-close',
+      highlightSearchResults: true,
+      searchResultColor: '#b58100', // pf-gold-500
+      searchResultBackColor: '#fbeabc', // pf-gold-100
+      preventUnselect: true
+    });
   }
 }
