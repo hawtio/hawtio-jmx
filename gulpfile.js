@@ -126,9 +126,9 @@ gulp.task('connect', ['watch'], function() {
   hawtio.setConfig({
     port: 2772,
     staticProxies: [{
-      port: 8282,
+      port: 8181,
       path: '/jolokia',
-      targetPath: '/hawtio/jolokia'
+      targetPath: '/jolokia'
     }],
     staticAssets: [{
       path: '/',

@@ -365,7 +365,8 @@ module Jmx {
         persist: false,
         debugLevel: 0,
         //children: $scope.workspace.tree.children
-        children: children
+        children: children,
+        imagePath: './'
       });
 
       if (redraw) {
