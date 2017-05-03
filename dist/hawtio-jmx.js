@@ -351,7 +351,7 @@ var Jmx;
         Folder.prototype.sortChildren = function (recursive) {
             var children = this.children;
             if (children) {
-                this.children = _.sortBy(children, "title");
+                this.children = _.sortBy(children, 'text');
                 if (recursive) {
                     angular.forEach(children, function (child) { return child.sortChildren(recursive); });
                 }

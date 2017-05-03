@@ -240,12 +240,12 @@ namespace Jmx {
       return answer;
     }
 
-    public sortChildren(recursive: boolean)  {
+    public sortChildren(recursive: boolean) {
       var children = this.children;
       if (children) {
-        this.children = _.sortBy(children, "title");
+        this.children = _.sortBy(children, 'text');
         if (recursive) {
-          angular.forEach(children, (child:Folder) => child.sortChildren(recursive));
+          angular.forEach(children, (child: Folder) => child.sortChildren(recursive));
         }
       }
     }
