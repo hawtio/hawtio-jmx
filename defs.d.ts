@@ -191,6 +191,7 @@ declare namespace Jmx {
         objectName: string;
         map: {};
         entries: {};
+        class: string;
         addClass: string;
         parent: Folder;
         isLazy: boolean;

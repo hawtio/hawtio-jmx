@@ -221,7 +221,7 @@ var Jmx;
             this.objectName = null;
             this.map = {};
             this.entries = {};
-            this.addClass = null;
+            this.class = null;
             this.parent = null;
             this.isLazy = false;
             this.icon = null;
@@ -258,6 +258,16 @@ var Jmx;
             },
             set: function (items) {
                 this.nodes = items;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(Folder.prototype, "addClass", {
+            get: function () {
+                return this.class;
+            },
+            set: function (clazz) {
+                this.class = clazz;
             },
             enumerable: true,
             configurable: true

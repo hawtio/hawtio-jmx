@@ -146,7 +146,15 @@ namespace Jmx {
     objectName:string = null;
     map = {};
     entries = {};
-    addClass:string = null;
+    class: string = null;
+
+    get addClass(): string {
+      return this.class;
+    }
+    set addClass(clazz: string) {
+      this.class = clazz;
+    }
+
     parent:Folder = null;
     isLazy:boolean = false;
 
