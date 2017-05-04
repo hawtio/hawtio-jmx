@@ -135,24 +135,14 @@ namespace Jmx {
     });
 
     const tab = nav.builder().id('jmx')
-                .title( () => 'JMX' )
-                .defaultPage({
-                  rank: 10,
-                  isValid: (yes, no) => {
-                    const name = 'JmxDefaultPage';
-                    workspace.addNamedTreePostProcessor(name, (tree) => {
-                      workspace.removeNamedTreePostProcessor(name);
-                      if (workspace.hasMBeans()) {
-                        yes();
-                      } else {
-                        no();
-                      }
-                    });
-                  }
-                })
-                .isValid( () => workspace.hasMBeans() )
-                .href( () => '/jmx' )
-                .build();
+      .title(() => 'JMX')
+      .defaultPage({
+        rank: 10,
+        isValid: (yes, no) => workspace.hasMBeans() ? yes() : no()
+      })
+      .isValid(() => workspace.hasMBeans())
+      .href(() => '/jmx')
+      .build();
     nav.add(tab);
 
   }]);
