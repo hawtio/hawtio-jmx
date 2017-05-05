@@ -26,22 +26,16 @@ namespace Jmx {
         showSelectBox: false,
         useExpandingRows: true
       };
-      this.actionButtons = [
+      this.menuActions = [
         {
-          name: 'Copy',
-          class: 'btn-copy',
-          title: 'Copy method name',
+          name: 'Copy method name',
           actionFn: (action, item) => {
-            let clipboard = new window.Clipboard('.btn-copy', {
-              text: function(trigger) {
-                return item.simpleName;
-              }
+            let clipboard = new window.Clipboard('.jmx-operations-list-view .dropdown-menu a', {
+              text: trigger => item.simpleName
             });
             setTimeout(() => clipboard.destroy(), 1000);
           }
-        }
-      ];
-      this.menuActions = [
+        },
         {
           name: 'Copy Jolokia URL',
           actionFn: (action, item) => {

@@ -633,6 +633,18 @@ declare module Threads {
 declare module Threads {
 }
 declare namespace Jmx {
+    class HeaderController {
+        title: string;
+        constructor($rootScope: any);
+    }
+    const headerComponent: {
+        template: string;
+        controller: typeof HeaderController;
+    };
+}
+declare namespace Jmx {
+}
+declare namespace Jmx {
     class Operation {
         args: OperationArgument[];
         description: string;
@@ -704,18 +716,6 @@ declare namespace Jmx {
     const operationsComponent: {
         templateUrl: string;
         controller: typeof OperationsController;
-    };
-}
-declare namespace Jmx {
-}
-declare namespace Jmx {
-    class HeaderController {
-        title: string;
-        constructor($rootScope: any);
-    }
-    const headerComponent: {
-        template: string;
-        controller: typeof HeaderController;
     };
 }
 declare namespace Jmx {
