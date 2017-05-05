@@ -554,7 +554,7 @@ namespace Jmx {
               var key = workspace.selectionConfigKey();
               $scope.gridOptions.gridKey = key;
               $scope.gridOptions.onClickRowHandlers = workspace.onClickRowHandlers;
-              var defaultDefs = workspace.attributeColumnDefs[key] || [];
+              var defaultDefs = _.clone(workspace.attributeColumnDefs[key]) || [];
               var defaultSize = defaultDefs.length;
               var map = {};
               angular.forEach(defaultDefs, (value, key) => {
@@ -588,9 +588,7 @@ namespace Jmx {
                 }
                 return def.field.localeCompare(def2.field);
               });
-              extraDefs.forEach(e => {
-                defaultDefs.push(e);
-              });
+              extraDefs.forEach(e => defaultDefs.push(e));
 
               if (extraDefs.length > 0) {
                 $scope.hasExtraColumns = true;
