@@ -500,23 +500,6 @@ declare module Jmx {
     function findLazyLoadingFunction(workspace: Workspace, folder: any): any;
     function registerLazyLoadHandler(domain: string, lazyLoaderFactory: (folder: Folder) => any): void;
     function unregisterLazyLoadHandler(domain: string, lazyLoaderFactory: (folder: Folder) => any): void;
-    /**
-     * Registers a toolbar template for the given plugin name, jmxDomain.
-     * @method addAttributeToolBar
-     * @for Jmx
-     * @param {String} pluginName used so that we can later on remove this function when the plugin is removed
-     * @param {String} jmxDomain the JMX domain to avoid having to evaluate too many functions on each selection
-     * @param {Function} fn the function used to decide which attributes tool bar should be used for the given select
-     */
-    function addAttributeToolBar(pluginName: string, jmxDomain: string, fn: (NodeSelection) => string): void;
-    /**
-     * Try find a custom toolbar HTML template for the given selection or returns the default value
-     * @method getAttributeToolbar
-     * @for Jmx
-     * @param {Core.NodeSelection} node
-     * @param {String} defaultValue
-     */
-    function getAttributeToolBar(node: NodeSelection, defaultValue?: string): any;
     function updateTreeSelectionFromURL($location: any, treeElement: any, activateIfNoneSelected?: boolean): void;
     function updateTreeSelectionFromURLAndAutoSelect($location: any, treeElement: any, autoSelect: (Folder) => NodeSelection, activateIfNoneSelected?: boolean): void;
     function getUniqueTypeNames(children: any): string[];
@@ -650,18 +633,6 @@ declare module Threads {
 declare module Threads {
 }
 declare namespace Jmx {
-    class HeaderController {
-        title: string;
-        constructor($rootScope: any);
-    }
-    const headerComponent: {
-        template: string;
-        controller: typeof HeaderController;
-    };
-}
-declare namespace Jmx {
-}
-declare namespace Jmx {
     class Operation {
         args: OperationArgument[];
         description: string;
@@ -733,6 +704,18 @@ declare namespace Jmx {
     const operationsComponent: {
         templateUrl: string;
         controller: typeof OperationsController;
+    };
+}
+declare namespace Jmx {
+}
+declare namespace Jmx {
+    class HeaderController {
+        title: string;
+        constructor($rootScope: any);
+    }
+    const headerComponent: {
+        template: string;
+        controller: typeof HeaderController;
     };
 }
 declare namespace Jmx {

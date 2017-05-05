@@ -349,25 +349,6 @@ namespace Jmx {
       $location.url(Jmx.createDashboardLink(type, widget));
     };
 
-    /*
-     * Returns the toolBar template HTML to use for the current selection
-     */
-    $scope.toolBarTemplate = () => {
-      // lets lookup the list of helpers by domain
-      var answer = Jmx.getAttributeToolBar(workspace.selection);
-
-      // TODO - maybe there's a better way to determine when to enable selections
-
-      /*
-       if (answer.startsWith("app/camel") && workspace.selection.children.length > 0) {
-       $scope.selectToggle.setSelect(true);
-       } else {
-       $scope.selectToggle.setSelect(false);
-       }
-       */
-      return answer;
-    };
-
     $scope.invokeSelectedMBeans = (operationName, completeFunction:() => any = null) => {
       var queries = [];
       angular.forEach($scope.selectedItems || [], (item) => {

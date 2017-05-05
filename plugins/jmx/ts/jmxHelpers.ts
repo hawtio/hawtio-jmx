@@ -121,51 +121,6 @@ module Jmx {
     }
   }
 
-  /**
-   * Registers a toolbar template for the given plugin name, jmxDomain.
-   * @method addAttributeToolBar
-   * @for Jmx
-   * @param {String} pluginName used so that we can later on remove this function when the plugin is removed
-   * @param {String} jmxDomain the JMX domain to avoid having to evaluate too many functions on each selection
-   * @param {Function} fn the function used to decide which attributes tool bar should be used for the given select
-   */
-  export function addAttributeToolBar(pluginName: string, jmxDomain: string, fn: (NodeSelection) => string) {
-    var array = attributesToolBars[jmxDomain];
-    if (!array) {
-      array = [];
-      attributesToolBars[jmxDomain] = array;
-    }
-    array.push(fn);
-  }
-
-  /**
-   * Try find a custom toolbar HTML template for the given selection or returns the default value
-   * @method getAttributeToolbar
-   * @for Jmx
-   * @param {Core.NodeSelection} node
-   * @param {String} defaultValue
-   */
-  export function getAttributeToolBar(node: NodeSelection, defaultValue?:string) {
-    if (!defaultValue) {
-      defaultValue = UrlHelpers.join(templatePath, 'attributeToolBar.html');
-    }
-    var answer = null;
-    var jmxDomain = (node) ? node.domain : null;
-    if (jmxDomain) {
-      var array = attributesToolBars[jmxDomain];
-      if (array) {
-        for (var i = 0; i < array.length; i++) {
-          var fn = array[i];
-          if (fn) {
-            answer = fn(node);
-            if (answer) break;
-          }
-        }
-      }
-    }
-    return (answer) ? answer : defaultValue;
-  }
-
   export function updateTreeSelectionFromURL($location, treeElement, activateIfNoneSelected = false) {
     updateTreeSelectionFromURLAndAutoSelect($location, treeElement, null, activateIfNoneSelected);
   }
