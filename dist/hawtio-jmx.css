@@ -219,6 +219,7 @@ div.tree-nav-layout .sidebar-pf .rg-right {
   display: flex;
   flex-direction: column;
   height: 100%;
+  overflow: auto;
 }
 .tree-nav-main h1 {
   margin-left: 20px;
