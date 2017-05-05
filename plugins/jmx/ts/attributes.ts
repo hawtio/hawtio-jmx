@@ -592,6 +592,10 @@ namespace Jmx {
                 defaultDefs.push(e);
               });
 
+              if (extraDefs.length > 0) {
+                $scope.hasExtraColumns = true;
+              }
+
               $scope.gridOptions.columnDefs = defaultDefs;
               $scope.gridOptions.enableRowClickSelection = true;
             }
