@@ -1,8 +1,14 @@
-<ul class="nav nav-tabs connected" ng-controller="JVM.NavController">
-  <li ng-repeat="link in breadcrumbs" ng-show="isValid(link)" ng-class='{active : isActive(link.href)}'>
-    <a ng-href="{{link.href}}{{hash}}" ng-bind-html="link.content"></a>
-  </li>
-</ul>
-<div class="row">
-  <div ng-view></div>
+<div class="jvm-nav-main">
+  <ul class="nav nav-tabs" ng-controller="JVM.NavController">
+    <li ng-class='{active : isActive("/jvm/connect")}'>
+        <a ng-href="/jvm/connect{{hash}}">Remote</a>
+    </li>
+    <li ng-class='{active : isActive("/jvm/local")}' ng-show="isLocalEnabled">
+      <a ng-href="/jvm/local{{hash}}">Local</a>
+    </li>
+    <li ng-class='{active : isActive("/jvm/discover")}' ng-show="isDiscoveryEnabled">
+        <a ng-href="/jvm/discover{{hash}}">Discover</a>
+    </li>
+  </ul>
+  <div class="contents" ng-view></div>
 </div>

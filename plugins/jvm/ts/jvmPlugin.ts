@@ -44,6 +44,8 @@ module JVM {
       $templateCache: ng.ITemplateCacheService,
       $compile) => {
 
+    viewRegistry['jvm'] = "plugins/jvm/html/layoutConnect.html";
+
     extensions.add('hawtio-header', ($scope) => {
       var template = $templateCache.get(UrlHelpers.join(templatePath, 'navbarHeaderExtension.html'));
       return $compile(template)($scope);
@@ -69,28 +71,10 @@ module JVM {
       });
     }
     var builder = nav.builder();
-    var remote = builder.id('jvm-remote')
-                  .href( () => '/jvm/connect' )
-                  .title( () => 'Remote' )
-                  .tooltip( () => 'To connect to a remote JVM')
-                  .build();
-    var local = builder.id('jvm-local')
-                  .href( () => '/jvm/local' )
-                  .title( () => 'Local' )
-                  .tooltip( () => 'To connect to a locale JVM')
-                  .show( () => hasLocalMBean(workspace) )
-                  .build();
-    var discover = builder.id('jvm-discover')
-                  .href( () => '/jvm/discover' )
-                  .title( () => 'Discover' )
-                  .tooltip( () => 'To discover JVMs in the network that has Jolokia agent running')
-                  .show( () => hasDiscoveryMBean(workspace) )
-                  .build();
     var tab = builder.id('jvm')
                   .href( () => '/jvm' )
                   .title( () => 'Connect' )
                   .isValid( () => ConnectOptions == null || ConnectOptions.name == null )
-                  .tabs(remote, local, discover)
                   .build();
     nav.add(tab);
     helpRegistry.addUserDoc('jvm', 'plugins/jvm/doc/help.md');

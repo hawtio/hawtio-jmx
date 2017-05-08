@@ -241,7 +241,6 @@ div.tree-nav-layout .sidebar-pf .rg-right {
   position: relative;
   padding-left: 20px;
   padding-right: 20px;
-  padding-top: 20px;
 }
 
 .jmx-operations-list-view .list-view-pf-stacked {
@@ -269,6 +268,25 @@ div.tree-nav-layout .sidebar-pf .rg-right {
   padding-right: 10px;
   margin-left: 0px;
   margin-right: -10px;
+}
+.jvm-nav-main {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: auto;
+}
+.jvm-nav-main .nav-tabs {
+  flex: 0 0 auto;
+  padding-top: 20px;
+  margin-left: 20px;
+  margin-right: 20px;
+}
+.jvm-nav-main .contents {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  position: relative;
+  padding-left: 20px;
+  padding-right: 20px;
 }
 
 @media screen and (max-width: 767px) {
