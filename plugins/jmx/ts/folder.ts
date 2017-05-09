@@ -104,6 +104,11 @@ namespace Jmx {
      * @return {NodeSelection}
      */
     findAncestor(filter): NodeSelection
+
+    /**
+     * @method detach
+     */
+    detach()
   }
 
   /**
@@ -258,7 +263,7 @@ namespace Jmx {
       }
     }
 
-    public moveChild(child: Folder) {
+    public moveChild(child: NodeSelection) {
       if (child && child.parent !== this) {
         child.detach();
         child.parent = this;
