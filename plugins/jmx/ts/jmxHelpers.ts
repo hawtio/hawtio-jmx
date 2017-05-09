@@ -173,10 +173,7 @@ module Jmx {
 
   export function folderGetOrElse(folder: Folder, name: string): Folder {
     if (folder) {
-      const child = folder.getOrElse(name);
-      if (child.isFolder()) {
-        return <Folder>child;
-      }
+      return folder.getOrElse(name);
     }
     return null;
   }

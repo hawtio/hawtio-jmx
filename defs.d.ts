@@ -198,9 +198,7 @@ declare namespace Jmx {
         folderNames: string[];
         domain: string;
         objectName: string;
-        map: {
-            [key: string]: NodeSelection;
-        };
+        private map;
         entries: {};
         class: string;
         addClass: string;
@@ -228,7 +226,7 @@ declare namespace Jmx {
         parentHasEntry(key: string, value: any): boolean;
         ancestorHasEntry(key: string, value: any): boolean;
         ancestorHasType(typeName: string): boolean;
-        getOrElse(key: string, defaultValue?: NodeSelection): NodeSelection;
+        getOrElse(key: string, defaultValue?: Folder): Folder;
         sortChildren(recursive: boolean): void;
         moveChild(child: NodeSelection): void;
         insertBefore(child: Folder, referenceFolder: Folder): void;

@@ -154,7 +154,7 @@ namespace Jmx {
     folderNames:string[] = [];
     domain:string = null;
     objectName:string = null;
-    map: { [key: string]: NodeSelection } = {};
+    private map: { [key: string]: Folder } = {};
     entries = {};
     class: string = null;
 
@@ -247,7 +247,7 @@ namespace Jmx {
       return false;
     }
 
-    public getOrElse(key: string, defaultValue: NodeSelection = new Folder(key)): NodeSelection {
+    public getOrElse(key: string, defaultValue: Folder = new Folder(key)): Folder {
       var answer = this.map[key];
       if (!answer) {
         answer = defaultValue;

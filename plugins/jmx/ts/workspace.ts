@@ -303,7 +303,7 @@ namespace Jmx {
           typeName = propValue;
           // if the type name value already exists in the root node
           // of the domain then lets move this property around too
-          if (domainFolder.map[propValue]) {
+          if (domainFolder.get(propValue)) {
             moveToFront = true;
           }
         }
