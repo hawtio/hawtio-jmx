@@ -22,6 +22,7 @@
   </div>
 </form>
 
-<pre class="jmx-operation-result" ng-class="{'jmx-operation-error': $ctrl.operationFailed}" ng-show="$ctrl.operationResult">
-  {{$ctrl.operationResult}}
-</pre>
+<div ng-show="$ctrl.operationResult">
+  <p>Result:</p>
+  <pre class="jmx-operation-result" ng-class="{'jmx-operation-error': $ctrl.operationFailed}">{{$ctrl.operationResult}}</pre>
+</div>
