@@ -173,10 +173,9 @@ module Jmx {
 
   export function folderGetOrElse(folder: Folder, name: string): Folder {
     if (folder) {
-      try {
-        return folder.getOrElse(name);
-      } catch (e) {
-        log.warn("Failed to find name " + name + " on folder " + folder);
+      const child = folder.getOrElse(name);
+      if (child.isFolder()) {
+        return <Folder>child;
       }
     }
     return null;
