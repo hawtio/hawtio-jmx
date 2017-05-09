@@ -13,6 +13,11 @@ namespace Jmx {
      */
     text: string;
     /**
+     * @property class
+     * @type string
+     */
+    class?: string;
+    /**
      * @property key
      * @type string
      * @optional
