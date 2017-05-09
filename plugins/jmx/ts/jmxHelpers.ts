@@ -156,6 +156,9 @@ module Jmx {
       tree.selectNode(node, { silent: true });
       tree.expandNode(node, { levels: 1, silent: true });
     }
+
+    // Word-around to avoid collapsed parent node on re-parenting
+    tree.getExpanded().forEach(node => tree.revealNode(node, { silent: true }));
   }
 
   export function getUniqueTypeNames(children) {
