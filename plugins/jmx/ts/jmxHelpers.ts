@@ -153,7 +153,7 @@ module Jmx {
     // Finally update the tree with the result node
     if (node) {
       tree.revealNode(node, { silent: true });
-      tree.selectNode(node, { silent: true });
+      tree.selectNode(node, { silent: false });
       tree.expandNode(node, { levels: 1, silent: true });
     }
 
