@@ -224,24 +224,10 @@ module Jmx {
           });
         }
       },
-      onNodeExpanded: function (event, data: Folder) {
-        // reflect the "expand" status from dynatree in Folder structure
-        // this will also preserve expand status when redrawin tree!
-        // see "this.data = $.extend({}, $.ui.dynatree.nodedatadefaults, data);" in jquery.dynatree. "data" is Folder object
-        // const node = data.node;
-        data.expand = true;
-        // if (data.isFolder()) {
-        //   var parent = data.children[0].parent;
-        //   if (parent) {
-        //     parent.expand = true;
-        //   }
-        // }
-      },
       onNodeSelected: function (event, data: Folder) {
         workspace.updateSelectionNode(data);
         Core.$apply($scope);
       },
-
       /*onNodeSelected: function (event, data:Folder) {
         console.log('onNodeSelected');
         // const node = data.node;
