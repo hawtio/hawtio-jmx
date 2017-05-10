@@ -121,8 +121,9 @@ namespace Jmx {
    * @uses NodeSelection
    */
   export class Folder implements NodeSelection {
+
     constructor(public text:string) {
-      this.addClass = Core.escapeTreeCssStyles(text);
+      this.class = Core.escapeTreeCssStyles(text);
     }
 
     id:string = null;
@@ -157,13 +158,6 @@ namespace Jmx {
     private map: { [key: string]: Folder } = {};
     entries = {};
     class: string = null;
-
-    get addClass(): string {
-      return this.class;
-    }
-    set addClass(clazz: string) {
-      this.class = clazz;
-    }
 
     parent:Folder = null;
     isLazy:boolean = false;

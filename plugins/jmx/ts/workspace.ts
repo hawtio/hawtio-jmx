@@ -385,7 +385,7 @@ namespace Jmx {
           classes += " " + domainClass + this.separator + kindName;
         }
       }
-      folder.addClass = Core.escapeTreeCssStyles(classes);
+      folder.class = Core.escapeTreeCssStyles(classes);
       return folder;
     }
 

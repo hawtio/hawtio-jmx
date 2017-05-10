@@ -201,7 +201,6 @@ declare namespace Jmx {
         private map;
         entries: {};
         class: string;
-        addClass: string;
         parent: Folder;
         isLazy: boolean;
         lazyLoad: boolean;
@@ -593,6 +592,24 @@ declare namespace Jmx {
 declare namespace Jmx {
 }
 /**
+ * @module Threads
+ * @main Threads
+ */
+declare module Threads {
+    var pluginName: string;
+    var templatePath: string;
+    var log: Logging.Logger;
+    var jmxDomain: string;
+    var mbeanType: string;
+    var mbean: string;
+    var _module: ng.IModule;
+}
+/**
+ * @module Threads
+ */
+declare module Threads {
+}
+/**
  * @module JVM
  */
 declare module JVM {
@@ -622,24 +639,6 @@ declare module JVM {
  * @module JVM
  */
 declare module JVM {
-}
-/**
- * @module Threads
- * @main Threads
- */
-declare module Threads {
-    var pluginName: string;
-    var templatePath: string;
-    var log: Logging.Logger;
-    var jmxDomain: string;
-    var mbeanType: string;
-    var mbean: string;
-    var _module: ng.IModule;
-}
-/**
- * @module Threads
- */
-declare module Threads {
 }
 declare namespace Jmx {
     class HeaderController {
