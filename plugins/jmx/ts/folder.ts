@@ -179,7 +179,6 @@ namespace Jmx {
     entity:any = null;
     version:string = null;
     mbean:Core.JMXMBean = null;
-    expand:boolean = false;
 
     get(key:string):NodeSelection {
       return this.map[key];

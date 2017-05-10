@@ -229,7 +229,6 @@ var Jmx;
             this.entity = null;
             this.version = null;
             this.mbean = null;
-            this.expand = false;
             this.class = Core.escapeTreeCssStyles(text);
         }
         Object.defineProperty(Folder.prototype, "key", {

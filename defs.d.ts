@@ -210,7 +210,6 @@ declare namespace Jmx {
         entity: any;
         version: string;
         mbean: Core.JMXMBean;
-        expand: boolean;
         get(key: string): NodeSelection;
         isFolder(): boolean;
         /**
