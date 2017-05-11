@@ -241,6 +241,7 @@ div.tree-nav-layout .sidebar-pf .rg-right {
   position: relative;
   padding-left: 20px;
   padding-right: 20px;
+  height: 100%;
 }
 
 .jmx-operations-list-view .list-view-pf-stacked {
