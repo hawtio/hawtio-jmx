@@ -224,8 +224,22 @@ module Jmx {
           });
         }
       },
-      onNodeSelected: function (event, data: Folder) {
-        workspace.updateSelectionNode(data);
+      onNodeSelected: function (event, node: Folder) {
+        // We need to clear any selected node state that may leave outside
+        // this tree element sub-graph so that the current selection is
+        // correctly taken into account when leaving for a wider tree graph,
+        // like when leaving the ActiveMQ or Camel trees to go to the JMX tree.
+        const clearSelection = n => {
+          if (n.state && n.id !== node.id) {
+            n.state.selected = false;
+          }
+          if (n.children) {
+            n.children.forEach(clearSelection);
+          }
+        };
+        clearSelection(workspace.tree);
+
+        workspace.updateSelectionNode(node);
         Core.$apply($scope);
       },
       /*onNodeSelected: function (event, data:Folder) {
