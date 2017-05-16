@@ -232,37 +232,6 @@ module Jmx {
         workspace.updateSelectionNode(node);
         Core.$apply($scope);
       },
-      /*onNodeSelected: function (event, data:Folder) {
-        console.log('onNodeSelected');
-        // const node = data.node;
-        console.log('test:', data);
-        // if (event["metaKey"]) {
-          event.preventDefault();
-          var url = $location.absUrl();
-          // if (node && node.data) {
-            // var key = node.data["key"];
-            const key = data.key;
-            if (key) {
-              var hash = $location.search();
-              hash["nid"] = key;
-
-              // TODO this could maybe be a generic helper function?
-              // lets trim after the ?
-              var idx = url.indexOf('?');
-              if (idx <= 0) {
-                url += "?";
-              } else {
-                url = url.substring(0, idx + 1);
-              }
-              url += $.param(hash);
-            }
-          // }
-          window.open(url, '_blank');
-          window.focus();
-          return false;
-        // }
-        // return true;
-      },*/
       levels: 1,
       data: children,
       collapseIcon: 'fa fa-angle-down',
