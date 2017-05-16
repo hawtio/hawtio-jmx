@@ -204,25 +204,15 @@ module Jmx {
 
   export function enableTree($scope, $location: ng.ILocationService, workspace: Workspace, treeElement, children: Array<NodeSelection>) {
     treeElement.treeview({
-      lazyLoad: function (event, data) {
-        var folder = data.node;
-        var plugin = <(workspace: Workspace, folder: Folder, func: () => void) => void>null;
-        if (folder) {
-          plugin = Jmx.findLazyLoadingFunction(workspace, folder);
-        }
+      lazyLoad: function (node: Folder, addNodes: (nodes: NodeSelection[]) => void) {
+        const plugin = <(workspace: Workspace, folder: Folder, onComplete: (children: NodeSelection[]) => void) => void>Jmx.findLazyLoadingFunction(workspace, node);
         if (plugin) {
-          log.debug("Lazy loading folder " + folder.title);
-          var oldChildren = folder.children;
-          plugin(workspace, folder, () => {
-            var newChildren = folder.children;
-            if (newChildren !== oldChildren) {
-              data.node.removeChildren();
-              angular.forEach(newChildren, newChild => {
-                data.node.addChild(newChild);
-              });
-            }
-          });
+          log.debug("Lazy loading folder " + node.text);
+          plugin(workspace, node, children => addNodes(children));
         }
+        // It seems to be required, as the lazyLoad property deletion done
+        // by the treeview component does not seem to work
+        node.lazyLoad = false;
       },
       onNodeSelected: function (event, node: Folder) {
         // We need to clear any selected node state that may leave outside

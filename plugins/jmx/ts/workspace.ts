@@ -411,14 +411,12 @@ namespace Jmx {
     }
 
     private enableLazyLoading(folder: Folder) {
-      var children = folder.children;
+      const children = folder.children;
       if (children && children.length) {
-        angular.forEach(children, (child:Folder) => {
-          this.enableLazyLoading(child);
-        })
+        angular.forEach(children, (child: Folder) => this.enableLazyLoading(child));
       } else {
         // we have no children so enable lazy loading if we have a custom loader registered
-        var lazyFunction = Jmx.findLazyLoadingFunction(this, folder);
+        const lazyFunction = Jmx.findLazyLoadingFunction(this, folder);
         if (lazyFunction) {
           folder.lazyLoad = true;
         }
