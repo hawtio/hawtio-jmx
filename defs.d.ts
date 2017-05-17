@@ -350,7 +350,14 @@ declare namespace Jmx {
         populateTree(response: any): void;
         private initFolder(folder, domain, folderNames);
         private populateDomainFolder(tree, domainName, domain);
+        /**
+         * Escape only '<' and '>' as opposed to Core.escapeHtml() and _.escape()
+         *
+         * @param {string} str string to be escaped
+        */
+        private escapeTagOnly(str);
         private populateMBeanFolder(domainFolder, domainClass, mbeanName, mbean);
+        private folderGetOrElse(folder, name);
         private splitMBeanProperty(property);
         private configureFolder(folder, domainName, domainClass, folderNames, path);
         private addFolderByDomain(folder, domainName, typeName, owner);
@@ -503,20 +510,12 @@ declare module Jmx {
     var log: Logging.Logger;
     var currentProcessId: string;
     var templatePath: string;
-    function getUrlForThing(jolokiaUrl: any, action: any, mbean: any, name: any): any;
     function findLazyLoadingFunction(workspace: Workspace, folder: any): any;
     function registerLazyLoadHandler(domain: string, lazyLoaderFactory: (folder: Folder) => any): void;
     function unregisterLazyLoadHandler(domain: string, lazyLoaderFactory: (folder: Folder) => any): void;
     function updateTreeSelectionFromURL($location: any, treeElement: any, activateIfNoneSelected?: boolean): void;
     function updateTreeSelectionFromURLAndAutoSelect($location: any, treeElement: any, autoSelect: (Folder) => NodeSelection, activateIfNoneSelected?: boolean): void;
     function getUniqueTypeNames(children: any): string[];
-    function folderGetOrElse(folder: Folder, name: string): Folder;
-    /**
-     * Escape only '<' and '>' as opposed to Core.escapeHtml() and _.escape()
-     *
-     * @param {string} str string to be escaped
-     */
-    function escapeTagOnly(str: string): string;
     function enableTree($scope: any, $location: ng.ILocationService, workspace: Workspace, treeElement: any, children: Array<NodeSelection>): void;
 }
 declare namespace Jmx {

@@ -76,16 +76,6 @@ module Jmx {
   export var currentProcessId = '';
   export var templatePath = 'plugins/jmx/html';
 
-  export function getUrlForThing(jolokiaUrl, action, mbean, name) {
-    var uri:any = new URI(jolokiaUrl);
-    uri.segment(action)
-      .segment(mbean)
-      .segment(name);
-    return uri.toString();
-  }
-
-  var attributesToolBars = {};
-
   export function findLazyLoadingFunction(workspace: Workspace, folder) {
     var factories = workspace.jmxTreeLazyLoadRegistry[folder.domain];
     var lazyFunction = null;
@@ -172,34 +162,6 @@ module Jmx {
     // only query if all the typenames are the same
     var typeNames = Object.keys(typeNameMap);
     return typeNames;
-  }
-
-  export function folderGetOrElse(folder: Folder, name: string): Folder {
-    if (folder) {
-      return folder.getOrElse(name);
-    }
-    return null;
-  }
-
-  /**
-   * Escape only '<' and '>' as opposed to Core.escapeHtml() and _.escape()
-   * 
-   * @param {string} str string to be escaped
-   */
-  export function escapeTagOnly(str: string): string {
-    var tagChars = {
-      "<": "&lt;",
-      ">": "&gt;"
-    };
-    if (!angular.isString(str)) {
-      return str;
-    }
-    var escaped = "";
-    for (var i = 0; i < str.length; i++) {
-      var c = str.charAt(i);
-      escaped += tagChars[c] || c;
-    }
-    return escaped;
   }
 
   export function enableTree($scope, $location: ng.ILocationService, workspace: Workspace, treeElement, children: Array<NodeSelection>) {

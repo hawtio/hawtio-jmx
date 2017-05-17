@@ -238,7 +238,7 @@ namespace Jmx {
       angular.forEach(domains, (domain, domainName) => {
         // domain name is displayed in the tree, so let's escape it here
         // Core.escapeHtml() and _.escape() cannot be used, as escaping '"' breaks Camel tree...
-        this.populateDomainFolder(newTree, Jmx.escapeTagOnly(domainName), domain);
+        this.populateDomainFolder(newTree, this.escapeTagOnly(domainName), domain);
       });
 
       newTree.sortChildren(true);
@@ -274,11 +274,32 @@ namespace Jmx {
     private populateDomainFolder(tree: Folder, domainName: string, domain: Core.JMXDomain): void {
       log.debug("JMX tree domain: " + domainName);
       var domainClass = Core.escapeDots(domainName);
-      var folder = Jmx.folderGetOrElse(tree, domainName);
+      var folder = this.folderGetOrElse(tree, domainName);
       this.initFolder(folder, domainName, [domainName]);
       angular.forEach(domain, (mbean, mbeanName) => {
         this.populateMBeanFolder(folder, domainClass, mbeanName, mbean);
       });
+    }
+
+    /**
+     * Escape only '<' and '>' as opposed to Core.escapeHtml() and _.escape()
+     * 
+     * @param {string} str string to be escaped
+    */
+    private escapeTagOnly(str: string): string {
+      var tagChars = {
+        "<": "&lt;",
+        ">": "&gt;"
+      };
+      if (!angular.isString(str)) {
+        return str;
+      }
+      var escaped = "";
+      for (var i = 0; i < str.length; i++) {
+        var c = str.charAt(i);
+        escaped += tagChars[c] || c;
+      }
+      return escaped;
     }
 
     private populateMBeanFolder(domainFolder: Folder, domainClass: string, mbeanName: string, mbean: Core.JMXMBean): void {
@@ -295,7 +316,7 @@ namespace Jmx {
         var propKey = kv[0];
         // mbean property value is displayed in the tree, so let's escape it here
         // Core.escapeHtml() and _.escape() cannot be used, as escaping '"' breaks Camel tree...
-        var propValue = Jmx.escapeTagOnly(kv[1] || propKey);
+        var propValue = this.escapeTagOnly(kv[1] || propKey);
         entries[propKey] = propValue;
         var moveToFront = false;
         var lowerKey = propKey.toLowerCase();
@@ -322,7 +343,7 @@ namespace Jmx {
       var folderNames = _.clone(domainFolder.folderNames);
       var lastPath = paths.pop();
       paths.forEach(path => {
-        folder = Jmx.folderGetOrElse(folder, path);
+        folder = this.folderGetOrElse(folder, path);
         if (folder) {
           folderNames.push(path);
           this.configureFolder(folder, domainName, domainClass, folderNames, path);
@@ -330,7 +351,7 @@ namespace Jmx {
       });
 
       if (folder) {
-        folder = Jmx.folderGetOrElse(folder, lastPath);
+        folder = this.folderGetOrElse(folder, lastPath);
         if (folder) {
           // lets add the various data into the folder
           folder.entries = entries;
@@ -351,6 +372,13 @@ namespace Jmx {
       } else {
         log.info("No folder found for last path: " + lastPath);
       }
+    }
+
+    private folderGetOrElse(folder: Folder, name: string): Folder {
+      if(folder) {
+        return folder.getOrElse(name);
+      }
+    return null;
     }
 
     private splitMBeanProperty(property: string): [string, string] {
