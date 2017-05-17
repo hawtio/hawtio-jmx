@@ -125,6 +125,7 @@ namespace Jmx {
       collapseIcon: 'fa fa-angle-down',
       expandIcon: 'fa fa-angle-right',
       nodeIcon: 'pficon pficon-folder-close',
+      showImage: true,
       highlightSearchResults: true,
       searchResultColor: '#b58100', // pf-gold-500
       searchResultBackColor: '#fbeabc', // pf-gold-100
