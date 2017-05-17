@@ -222,7 +222,7 @@ div.tree-nav-layout .sidebar-pf .rg-right {
   display: flex;
   flex-direction: column;
   height: 100%;
-  overflow: auto;
+  overflow: hidden;
 }
 .tree-nav-main h1 {
   overflow-wrap: break-word;
