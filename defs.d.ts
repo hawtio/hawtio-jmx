@@ -471,6 +471,10 @@ declare namespace Jmx {
     }
 }
 declare namespace Jmx {
+    var pluginName: string;
+    var log: Logging.Logger;
+    var currentProcessId: string;
+    var templatePath: string;
     /**
      * Returns the Folder object for the given domain name and type name or null if it can not be found
      * @method getMBeanTypeFolder
@@ -501,22 +505,6 @@ declare namespace Jmx {
      * @return {Core.Workspace|Workspace}
      */
     function createRemoteWorkspace(remoteJolokia: any, $location: any, localStorage: any, $rootScope?: any, $compile?: any, $templateCache?: any, userDetails?: any, HawtioNav?: any): Workspace;
-}
-/**
- * @module Jmx
- */
-declare module Jmx {
-    var pluginName: string;
-    var log: Logging.Logger;
-    var currentProcessId: string;
-    var templatePath: string;
-    function findLazyLoadingFunction(workspace: Workspace, folder: any): any;
-    function registerLazyLoadHandler(domain: string, lazyLoaderFactory: (folder: Folder) => any): void;
-    function unregisterLazyLoadHandler(domain: string, lazyLoaderFactory: (folder: Folder) => any): void;
-    function updateTreeSelectionFromURL($location: any, treeElement: any, activateIfNoneSelected?: boolean): void;
-    function updateTreeSelectionFromURLAndAutoSelect($location: any, treeElement: any, autoSelect: (Folder) => NodeSelection, activateIfNoneSelected?: boolean): void;
-    function getUniqueTypeNames(children: any): string[];
-    function enableTree($scope: any, $location: ng.ILocationService, workspace: Workspace, treeElement: any, children: Array<NodeSelection>): void;
 }
 declare namespace Jmx {
     function createDashboardLink(widgetType: any, widget: any): string;
@@ -588,6 +576,15 @@ declare namespace Jmx {
     var DonutChartController: ng.IModule;
 }
 declare namespace Jmx {
+}
+declare namespace Jmx {
+    function findLazyLoadingFunction(workspace: Workspace, folder: any): any;
+    function registerLazyLoadHandler(domain: string, lazyLoaderFactory: (folder: Folder) => any): void;
+    function unregisterLazyLoadHandler(domain: string, lazyLoaderFactory: (folder: Folder) => any): void;
+    function updateTreeSelectionFromURL($location: any, treeElement: any, activateIfNoneSelected?: boolean): void;
+    function updateTreeSelectionFromURLAndAutoSelect($location: any, treeElement: any, autoSelect: (Folder) => NodeSelection, activateIfNoneSelected?: boolean): void;
+    function getUniqueTypeNames(children: NodeSelection[]): string[];
+    function enableTree($scope: any, $location: ng.ILocationService, workspace: Workspace, treeElement: any, children: Array<NodeSelection>): void;
 }
 /**
  * @module JVM
