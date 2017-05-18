@@ -11,6 +11,7 @@ namespace Jmx {
     editorMode = 'text';
     operationFailed: boolean;
     operationResult: string;
+    isExecuting: boolean = false;
 
     constructor(private workspace: Workspace, private operationsService: OperationsService) {
       'ngInject';
@@ -65,16 +66,19 @@ namespace Jmx {
     }
 
     execute() {
+      this.isExecuting = true;
       let mbeanName = this.workspace.getSelectedMBeanName();
       let argValues = this.formFields.map(formField => formField.value);
       this.operationsService.executeOperation(mbeanName, this.operation, argValues)
         .then(result => {
           this.operationFailed = false;
           this.operationResult = result.trim();
+          this.isExecuting = false;
         })
         .catch(error => {
           this.operationFailed = true;
           this.operationResult = error.trim();
+          this.isExecuting = false;
         });
     }
 
