@@ -282,7 +282,7 @@ module Threads {
     function openModal() {
       if (!modalInstance) {
         modalInstance = $uibModal.open({
-          templateUrl: 'threadModalContent.html',
+          templateUrl: 'plugins/threads/html/thread-modal.html',
           scope: $scope,
           size: 'lg'
         });

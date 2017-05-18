@@ -684,6 +684,7 @@ declare namespace Jmx {
         editorMode: string;
         operationFailed: boolean;
         operationResult: string;
+        isExecuting: boolean;
         constructor(workspace: Workspace, operationsService: OperationsService);
         private static buildHelpText(arg);
         private static convertToHtmlInputType(javaType);

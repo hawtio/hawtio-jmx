@@ -17,7 +17,7 @@ module Threads {
 
   _module.config(["$routeProvider", ($routeProvider) => {
     $routeProvider.
-        when('/threads', {templateUrl: UrlHelpers.join(templatePath, 'index.html')});
+        when('/threads', {templateUrl: UrlHelpers.join(templatePath, 'threads.html')});
   }]);
 
   _module.run(["$templateCache", "workspace", "viewRegistry", "layoutFull", "helpRegistry", "HawtioNav",

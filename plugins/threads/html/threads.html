@@ -1,0 +1,73 @@
+<!--
+<div ng-controller="Threads.ToolbarController">
+
+  <div class="row row-monitor">
+    <div class="col-md-12">
+      <span ng-repeat="(name, value) in support track by $index" class="label" ng-class="{'label-success': value, 'label-default': !value}"
+        ng-click="maybeToggleMonitor(name, value)">
+          {{getMonitorName(name)}}
+        </span>
+    </div>
+  </div>
+
+</div>
+-->
+<div id="threads-page" class="table-view" ng-controller="Threads.ThreadsController">
+
+  <h1>Threads</h1>
+  
+  <!-- Toolbar -->
+  <div class="row toolbar-pf table-view-pf-toolbar">
+    <div class="col-sm-12">
+      <form class="toolbar-pf-actions search-pf">
+        <div class="form-group">
+          <label class="sr-only" for="state-filter">State</label>
+          <select id="state-filter" title="Filter by State..." ng-model="filters.state"
+                  ng-options="state.name for state in availableStates track by state.id">
+          </select>
+        </div>
+        <div class="form-group has-clear">
+          <div class="search-pf-input-group">
+            <label for="filterByKeyword" class="sr-only">Filter by name</label>
+            <input id="filterByKeyword" type="search" ng-model="filters.name" class="form-control"
+                   placeholder="Filter by name..." autocomplete="off">
+            <button type="button" class="clear" aria-hidden="true" ng-click="filters.name = ''">
+              <span class="pficon pficon-close"></span>
+            </button>
+          </div>
+        </div>
+      </form>
+      <div class="row toolbar-pf-results">
+        <div class="col-sm-12">
+          <h5>{{threads.length}} Results</h5>
+          <span ng-if="filters.state || filters.name">
+            <p>Active filters:</p>
+            <ul class="list-inline">
+              <li ng-show="filters.state">
+                <span class="label label-info">
+                  State: {{filters.state.name}}
+                  <a href="#" ng-click="filters.state = ''"><span class="pficon pficon-close"></span></a>
+                </span>
+              </li>
+              <li ng-show="filters.name">
+                <span class="label label-info">
+                  Name: {{filters.name}}
+                  <a href="#" ng-click="filters.name = ''"><span class="pficon pficon-close"></span></a>
+                </span>
+              </li>
+            </ul>
+            <p><a href="#" ng-click="filters.name = filters.state = ''">Clear All Filters</a></p>
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Table -->
+  <div class="row">
+    <div class="col-md-12">
+      <table class="table table-striped table-bordered table-hover dataTable" hawtio-simple-table="threadGridOptions"></table>
+    </div>
+  </div>
+
+</div>
