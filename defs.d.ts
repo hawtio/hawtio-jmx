@@ -70,6 +70,62 @@ declare module Core {
      */
     function createServerConnectionUrl(options: Core.ConnectOptions): string;
 }
+/**
+ * @module JVM
+ * @main JVM
+ */
+declare module JVM {
+    var windowJolokia: Jolokia.IJolokia;
+    var _module: ng.IModule;
+}
+/**
+ * @module JVM
+ */
+declare module JVM {
+    var ConnectController: ng.IModule;
+}
+/**
+ * @module JVM
+ */
+declare module JVM {
+}
+declare module JVM {
+    var HeaderController: ng.IModule;
+}
+declare module JVM {
+}
+/**
+ * @module JVM
+ */
+declare module JVM {
+    var skipJolokia: boolean;
+    var ConnectionName: string;
+    function getConnectionName(reset?: boolean): string;
+    function getConnectionOptions(): any;
+    function getJolokiaUrl(): any;
+    interface DummyJolokia extends Jolokia.IJolokia {
+        isDummy: boolean;
+        running: boolean;
+    }
+    var DEFAULT_MAX_DEPTH: number;
+    var DEFAULT_MAX_COLLECTION_SIZE: number;
+    function getBeforeSend(): (xhr: any) => void;
+}
+/**
+ * @module JVM
+ */
+declare module JVM {
+}
+/**
+ * @module JVM
+ */
+declare module JVM {
+}
+/**
+ * @module JVM
+ */
+declare module JVM {
+}
 declare namespace Jmx {
     /**
      * a NodeSelection interface so we can expose things like the objectName and the MBean's entries
@@ -258,31 +314,6 @@ declare namespace Jmx {
          */
         findAncestor(filter: (node: NodeSelection) => boolean): NodeSelection | null;
     }
-}
-/**
- * @module JVM
- * @main JVM
- */
-declare module JVM {
-    var windowJolokia: Jolokia.IJolokia;
-    var _module: ng.IModule;
-}
-/**
- * @module JVM
- */
-declare module JVM {
-    var skipJolokia: boolean;
-    var ConnectionName: string;
-    function getConnectionName(reset?: boolean): string;
-    function getConnectionOptions(): any;
-    function getJolokiaUrl(): any;
-    interface DummyJolokia extends Jolokia.IJolokia {
-        isDummy: boolean;
-        running: boolean;
-    }
-    var DEFAULT_MAX_DEPTH: number;
-    var DEFAULT_MAX_COLLECTION_SIZE: number;
-    function getBeforeSend(): (xhr: any) => void;
 }
 declare namespace Jmx {
     var tree: any;
@@ -609,37 +640,6 @@ declare module Threads {
  * @module Threads
  */
 declare module Threads {
-}
-/**
- * @module JVM
- */
-declare module JVM {
-    var ConnectController: ng.IModule;
-}
-/**
- * @module JVM
- */
-declare module JVM {
-}
-declare module JVM {
-    var HeaderController: ng.IModule;
-}
-declare module JVM {
-}
-/**
- * @module JVM
- */
-declare module JVM {
-}
-/**
- * @module JVM
- */
-declare module JVM {
-}
-/**
- * @module JVM
- */
-declare module JVM {
 }
 declare namespace Jmx {
     class HeaderController {
