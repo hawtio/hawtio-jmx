@@ -4,7 +4,7 @@
 
 namespace Jmx {
 
-  export function findLazyLoadingFunction(workspace: Workspace, folder) {
+  export function findLazyLoadingFunction(workspace: Workspace, folder): (workspace: Workspace, folder: Folder, onComplete: (children: NodeSelection[]) => void) => void {
     var factories = workspace.jmxTreeLazyLoadRegistry[folder.domain];
     var lazyFunction = null;
     if (factories && factories.length) {

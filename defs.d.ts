@@ -582,7 +582,7 @@ declare namespace Jmx {
     var DonutChartController: ng.IModule;
 }
 declare namespace Jmx {
-    function findLazyLoadingFunction(workspace: Workspace, folder: any): any;
+    function findLazyLoadingFunction(workspace: Workspace, folder: any): (workspace: Workspace, folder: Folder, onComplete: (children: NodeSelection[]) => void) => void;
     function registerLazyLoadHandler(domain: string, lazyLoaderFactory: (folder: Folder) => any): void;
     function unregisterLazyLoadHandler(domain: string, lazyLoaderFactory: (folder: Folder) => any): void;
     function updateTreeSelectionFromURL($location: any, treeElement: any, activateIfNoneSelected?: boolean): void;
