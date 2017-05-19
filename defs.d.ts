@@ -136,10 +136,11 @@ declare namespace Jmx {
          */
         parent?: NodeSelection;
         /**
-         * @method isFolder
-         * @return {boolean}
+         * @property icon
+         * @type string
+         * @optional
          */
-        isFolder?: () => boolean;
+        icon?: string;
         /**
          * @property version
          * @type string
@@ -152,6 +153,11 @@ declare namespace Jmx {
          * @return {NodeSelection}
          */
         get(key: string): NodeSelection;
+        /**
+         * @method isFolder
+         * @return {boolean}
+         */
+        isFolder(): boolean;
         /**
          * @method ancestorHasType
          * @param {String} typeName
