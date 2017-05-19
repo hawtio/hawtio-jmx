@@ -176,13 +176,13 @@ declare namespace Jmx {
          * @param {Function} filter
          * @return {NodeSelection}
          */
-        findDescendant(filter: any): NodeSelection;
+        findDescendant(filter: (node: NodeSelection) => boolean): NodeSelection | null;
         /**
          * @method findAncestor
          * @param {Function} filter
          * @return {NodeSelection}
          */
-        findAncestor(filter: any): NodeSelection;
+        findAncestor(filter: (node: NodeSelection) => boolean): NodeSelection | null;
         /**
          * @method detach
          */
@@ -248,7 +248,7 @@ declare namespace Jmx {
          * @param {Function} filter
          * @return {Folder}
          */
-        findDescendant(filter: any): any;
+        findDescendant(filter: (node: NodeSelection) => boolean): NodeSelection | null;
         /**
          * Searches this folder and all its ancestors for the first folder to match the filter
          * @method findDescendant
@@ -256,7 +256,7 @@ declare namespace Jmx {
          * @param {Function} filter
          * @return {Folder}
          */
-        findAncestor(filter: any): any;
+        findAncestor(filter: (node: NodeSelection) => boolean): NodeSelection | null;
     }
 }
 /**
@@ -582,8 +582,6 @@ declare namespace Jmx {
     var DonutChartController: ng.IModule;
 }
 declare namespace Jmx {
-}
-declare namespace Jmx {
     function findLazyLoadingFunction(workspace: Workspace, folder: any): any;
     function registerLazyLoadHandler(domain: string, lazyLoaderFactory: (folder: Folder) => any): void;
     function unregisterLazyLoadHandler(domain: string, lazyLoaderFactory: (folder: Folder) => any): void;
@@ -591,6 +589,8 @@ declare namespace Jmx {
     function updateTreeSelectionFromURLAndAutoSelect($location: any, treeElement: any, autoSelect: (Folder) => NodeSelection, activateIfNoneSelected?: boolean): void;
     function getUniqueTypeNames(children: NodeSelection[]): string[];
     function enableTree($scope: any, $location: ng.ILocationService, workspace: Workspace, treeElement: any, children: Array<NodeSelection>): void;
+}
+declare namespace Jmx {
 }
 /**
  * @module JVM

@@ -648,7 +648,6 @@ var JVM;
             }
         }
         catch (securityException) {
-            // ignore
         }
         return answer;
     }
@@ -1416,9 +1415,7 @@ var Jmx;
             log.debug("Location: ", this.$location);
             var nid = this.$location.search()['nid'];
             if (nid && this.tree) {
-                var answer = this.tree.findDescendant(function (node) {
-                    return nid === node.id;
-                });
+                var answer = this.tree.findDescendant(function (node) { return nid === node.key; });
                 if (!this.selection) {
                     this.selection = answer;
                 }
@@ -1676,11 +1673,9 @@ var Jmx;
                     return true;
                 }
                 else {
-                    // console.log("no hasMBean for " + objectName + " in tree " + tree);
                 }
             }
             else {
-                // console.log("workspace has no tree! returning false for hasMBean " + objectName);
             }
             return false;
         };
@@ -2123,7 +2118,6 @@ var Jmx;
                         Jmx.currentProcessId = jolokia.getAttribute('java.lang:type=Runtime', 'Name');
                     }
                     catch (e) {
-                        // ignore
                     }
                     if (Jmx.currentProcessId && Jmx.currentProcessId.indexOf("@") !== -1) {
                         Jmx.currentProcessId = "pid:" + Jmx.currentProcessId.split("@")[0];
@@ -2659,7 +2653,6 @@ var Jmx;
                                     $scope.mbeanIndex = {};
                                     $scope.mbeanRowCounter = 0;
                                     $scope.mbeanCount = mbeans.length;
-                                    //$scope.columnDefs = [];
                                 }
                             }
                             else {
@@ -2772,7 +2765,6 @@ var Jmx;
                             //console.log("Would have selected " + JSON.stringify($scope.selectedItems));
                             Core.$apply($scope);
                         }
-                        // if the last row, then fire an event
                     }
                     else {
                         console.log("No mbean name in request " + JSON.stringify(response.request));
@@ -3159,13 +3151,11 @@ var Jmx;
                     $scope.deregRouteChange();
                 }
                 catch (error) {
-                    // ignore
                 }
                 try {
                     $scope.dereg();
                 }
                 catch (error) {
-                    // ignore
                 }
                 $scope.reset();
             });
@@ -3512,59 +3502,6 @@ var Jmx;
             Core.register(jolokia, $scope, $scope.reqs, Core.onSuccess($scope.render));
         }]);
 })(Jmx || (Jmx = {}));
-/// <reference path="jmxPlugin.ts"/>
-var Jmx;
-(function (Jmx) {
-    Jmx._module.controller("Jmx.TreeHeaderController", ["$scope", function ($scope) {
-            // TODO: the tree should ideally be initialised synchronously
-            var tree = function () { return $('#jmxtree').treeview(true); };
-            $scope.expandAll = function () { return tree().expandAll({ silent: true }); };
-            $scope.contractAll = function () { return tree().collapseAll({ silent: true }); };
-            var search = _.debounce(function (filter) {
-                var result = tree().search(filter, {
-                    ignoreCase: true,
-                    exactMatch: false,
-                    revealResults: true
-                });
-                $scope.result.length = 0;
-                (_a = $scope.result).push.apply(_a, result);
-                Core.$apply($scope);
-                var _a;
-            }, 300, { leading: false, trailing: true });
-            $scope.filter = '';
-            $scope.result = [];
-            $scope.$watch('filter', function (filter, previous) {
-                if (filter !== previous) {
-                    search(filter);
-                }
-            });
-        }]);
-    Jmx._module.controller("Jmx.TreeController", ["$scope", "$location", "workspace", "$route", function ($scope, $location, workspace, $route) {
-            var updateSelectionFromURL = function () { return Jmx.updateTreeSelectionFromURL($location, $('#jmxtree')); };
-            $scope.populateTree = function () {
-                var treeElement = $('#jmxtree');
-                $scope.tree = workspace.tree;
-                Jmx.enableTree($scope, $location, workspace, treeElement, $scope.tree.children);
-                setTimeout(updateSelectionFromURL, 50);
-            };
-            $scope.$on('$destroy', function () {
-                var tree = $('#jmxtree').treeview(true);
-                tree.clearSearch();
-                // Bootstrap tree view leaks the node elements into the data structure
-                // so let's clean this up when the user leaves the view
-                var cleanTreeFolder = function (node) {
-                    delete node['$el'];
-                    if (node.nodes)
-                        node.nodes.forEach(cleanTreeFolder);
-                };
-                cleanTreeFolder(workspace.tree);
-                // Then call the tree clean-up method
-                tree.remove();
-            });
-            $scope.$on('jmxTreeUpdated', $scope.populateTree);
-            $scope.populateTree();
-        }]);
-})(Jmx || (Jmx = {}));
 /// <reference path="../../includes.ts"/>
 /// <reference path="folder.ts"/>
 /// <reference path="workspace.ts"/>
@@ -3696,6 +3633,60 @@ var Jmx;
         });
     }
     Jmx.enableTree = enableTree;
+})(Jmx || (Jmx = {}));
+/// <reference path="jmxPlugin.ts"/>
+/// <reference path="treeHelpers.ts"/>
+var Jmx;
+(function (Jmx) {
+    Jmx._module.controller("Jmx.TreeHeaderController", ["$scope", function ($scope) {
+            // TODO: the tree should ideally be initialised synchronously
+            var tree = function () { return $('#jmxtree').treeview(true); };
+            $scope.expandAll = function () { return tree().expandAll({ silent: true }); };
+            $scope.contractAll = function () { return tree().collapseAll({ silent: true }); };
+            var search = _.debounce(function (filter) {
+                var result = tree().search(filter, {
+                    ignoreCase: true,
+                    exactMatch: false,
+                    revealResults: true
+                });
+                $scope.result.length = 0;
+                (_a = $scope.result).push.apply(_a, result);
+                Core.$apply($scope);
+                var _a;
+            }, 300, { leading: false, trailing: true });
+            $scope.filter = '';
+            $scope.result = [];
+            $scope.$watch('filter', function (filter, previous) {
+                if (filter !== previous) {
+                    search(filter);
+                }
+            });
+        }]);
+    Jmx._module.controller("Jmx.TreeController", ["$scope", "$location", "workspace", "$route", function ($scope, $location, workspace, $route) {
+            var updateSelectionFromURL = function () { return Jmx.updateTreeSelectionFromURL($location, $('#jmxtree')); };
+            $scope.populateTree = function () {
+                var treeElement = $('#jmxtree');
+                $scope.tree = workspace.tree;
+                Jmx.enableTree($scope, $location, workspace, treeElement, $scope.tree.children);
+                setTimeout(updateSelectionFromURL, 50);
+            };
+            $scope.$on('$destroy', function () {
+                var tree = $('#jmxtree').treeview(true);
+                tree.clearSearch();
+                // Bootstrap tree view leaks the node elements into the data structure
+                // so let's clean this up when the user leaves the view
+                var cleanTreeFolder = function (node) {
+                    delete node['$el'];
+                    if (node.nodes)
+                        node.nodes.forEach(cleanTreeFolder);
+                };
+                cleanTreeFolder(workspace.tree);
+                // Then call the tree clean-up method
+                tree.remove();
+            });
+            $scope.$on('jmxTreeUpdated', $scope.populateTree);
+            $scope.populateTree();
+        }]);
 })(Jmx || (Jmx = {}));
 /// <reference path="../../includes.ts"/>
 /// <reference path="jvmPlugin.ts"/>

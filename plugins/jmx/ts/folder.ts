@@ -107,14 +107,14 @@ namespace Jmx {
      * @param {Function} filter
      * @return {NodeSelection}
      */
-    findDescendant(filter): NodeSelection
+    findDescendant(filter: (node: NodeSelection) => boolean): NodeSelection | null
 
     /**
      * @method findAncestor
      * @param {Function} filter
      * @return {NodeSelection}
      */
-    findAncestor(filter): NodeSelection
+    findAncestor(filter: (node: NodeSelection) => boolean): NodeSelection | null
 
     /**
      * @method detach
@@ -321,7 +321,7 @@ namespace Jmx {
      * @param {Function} filter
      * @return {Folder}
      */
-    public findDescendant(filter) {
+    public findDescendant(filter: (node: NodeSelection) => boolean): NodeSelection | null {
       if (filter(this)) {
         return this;
       }
@@ -341,7 +341,7 @@ namespace Jmx {
      * @param {Function} filter
      * @return {Folder}
      */
-    public findAncestor(filter) {
+    public findAncestor(filter: (node: NodeSelection) => boolean): NodeSelection | null {
       if (filter(this)) {
         return this;
       }

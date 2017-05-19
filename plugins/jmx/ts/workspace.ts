@@ -573,16 +573,14 @@ namespace Jmx {
       return null;
     }
 
-    public getSelectedMBean():NodeSelection {
+    public getSelectedMBean(): NodeSelection {
       if (this.selection) {
         return this.selection;
       }
       log.debug("Location: ", this.$location);
       var nid = this.$location.search()['nid'];
       if (nid && this.tree) {
-        var answer = this.tree.findDescendant((node) => {
-          return nid === node.id;
-        });
+        var answer = this.tree.findDescendant(node => nid === node.key);
         if (!this.selection) {
           this.selection = answer;
         }
