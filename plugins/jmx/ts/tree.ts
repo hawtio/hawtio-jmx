@@ -1,5 +1,5 @@
 /// <reference path="jmxPlugin.ts"/>
-
+/// <reference path="treeHelpers.ts"/>
 namespace Jmx {
 
   _module.controller("Jmx.TreeHeaderController", ["$scope", ($scope) => {
