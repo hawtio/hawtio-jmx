@@ -5,10 +5,10 @@ namespace Jmx {
   export class HeaderController {
     title: string;
 
-    constructor($rootScope) {
+    constructor($scope) {
       'ngInject';
-      $rootScope.$on('jmxTreeClicked', (event, selectedNode) => {
-        this.title = selectedNode.title;
+      $scope.$on('jmxTreeClicked', (event, selectedNode: NodeSelection) => {
+        this.title = selectedNode.text;
       });
     }
   }
