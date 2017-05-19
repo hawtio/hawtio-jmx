@@ -3617,6 +3617,9 @@ var Jmx;
                     }
                 };
                 clearSelection(workspace.tree);
+                // Expand one level down
+                treeElement.treeview('expandNode', [node, { levels: 1, silent: true }]);
+                // Update the workspace state
                 workspace.updateSelectionNode(node);
                 Core.$apply($scope);
             },
