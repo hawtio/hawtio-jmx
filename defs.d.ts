@@ -1,6 +1,7 @@
 /// <reference path="libs/hawtio-ui/defs.d.ts" />
 /// <reference path="libs/hawtio-forms/defs.d.ts" />
 /// <reference path="libs/hawtio-preferences/defs.d.ts" />
+/// <reference path="libs/hawtio-utilities/defs.d.ts" />
 declare module JVM {
     var rootPath: string;
     var templatePath: string;
@@ -258,6 +259,23 @@ declare namespace Jmx {
          */
         findAncestor(filter: (node: NodeSelection) => boolean): NodeSelection | null;
     }
+}
+declare namespace JVM {
+    function ConnectController($scope: any, $location: ng.ILocationService, localStorage: WindowLocalStorage, workspace: Jmx.Workspace, $uibModal: any, connectService: ConnectService): void;
+}
+declare namespace JVM {
+    class ConnectService {
+        private $q;
+        private jolokia;
+        constructor($q: ng.IQService, jolokia: Jolokia.IJolokia);
+        testConnection(connection: Core.ConnectOptions): ng.IPromise<boolean>;
+    }
+}
+declare namespace JVM {
+    function ConnectionUrlFilter(): (connection: Core.ConnectOptions) => string;
+}
+declare namespace JVM {
+    const ConnectModule: string;
 }
 /**
  * @module JVM
@@ -593,30 +611,6 @@ declare namespace Jmx {
 declare namespace Jmx {
 }
 /**
- * @module Threads
- * @main Threads
- */
-declare module Threads {
-    var pluginName: string;
-    var templatePath: string;
-    var log: Logging.Logger;
-    var jmxDomain: string;
-    var mbeanType: string;
-    var mbean: string;
-    var _module: ng.IModule;
-}
-/**
- * @module Threads
- */
-declare module Threads {
-}
-/**
- * @module JVM
- */
-declare module JVM {
-    var ConnectController: ng.IModule;
-}
-/**
  * @module JVM
  */
 declare module JVM {
@@ -640,6 +634,24 @@ declare module JVM {
  * @module JVM
  */
 declare module JVM {
+}
+/**
+ * @module Threads
+ * @main Threads
+ */
+declare module Threads {
+    var pluginName: string;
+    var templatePath: string;
+    var log: Logging.Logger;
+    var jmxDomain: string;
+    var mbeanType: string;
+    var mbean: string;
+    var _module: ng.IModule;
+}
+/**
+ * @module Threads
+ */
+declare module Threads {
 }
 declare namespace Jmx {
     class HeaderController {

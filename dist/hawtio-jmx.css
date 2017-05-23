@@ -258,18 +258,6 @@ div.tree-nav-layout .sidebar-pf .rg-right {
   background-color: #ffe6e6;
 }
 
-#jvm-remote .list-group-item-container .form-horizontal {
-  margin: 10px 0;
-}
-#jvm-remote .list-group-item-container .form-horizontal > .form-group:last-child {
-  margin-bottom: 0;
-}
-#jvm-remote .dropdown-kebab-pf .btn-link {
-  padding-left: 10px;
-  padding-right: 10px;
-  margin-left: 0px;
-  margin-right: -10px;
-}
 .jvm-nav-main {
   display: flex;
   flex-direction: column;
@@ -288,6 +276,14 @@ div.tree-nav-layout .sidebar-pf .rg-right {
   position: relative;
   padding-left: 20px;
   padding-right: 20px;
+}
+.jvm-connection-test-msg {
+  margin-left: 10px;
+  vertical-align: middle;
+}
+.jvm-connection-test-msg .pficon {
+  vertical-align: text-top;
+  font-size: medium;
 }
 
 @media screen and (max-width: 767px) {
