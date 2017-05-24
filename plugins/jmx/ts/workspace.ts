@@ -1,6 +1,5 @@
 /// <reference path="../../includes.ts"/>
 /// <reference path="jmxHelpers.ts"/>
-/// <reference path="../../jvm/ts/jolokiaService.ts"/>
 
 namespace Jmx {
 

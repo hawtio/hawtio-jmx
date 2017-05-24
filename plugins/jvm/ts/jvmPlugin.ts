@@ -1,6 +1,4 @@
 /// <reference path="../../includes.ts"/>
-/// <reference path="jvmHelpers.ts"/>
-/// <reference path="../../jmx/ts/workspace.ts"/>
 /// <reference path="connect/connect.module.ts"/>
 
 /**
