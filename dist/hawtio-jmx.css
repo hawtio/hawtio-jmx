@@ -285,6 +285,9 @@ div.tree-nav-layout .sidebar-pf .rg-right {
   vertical-align: text-top;
   font-size: medium;
 }
+.jvm-connection-form label.required-pf:after {
+  margin-right: -9px;
+}
 
 @media screen and (max-width: 767px) {
 }

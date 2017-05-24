@@ -260,30 +260,41 @@ declare namespace Jmx {
         findAncestor(filter: (node: NodeSelection) => boolean): NodeSelection | null;
     }
 }
-declare namespace JVM {
-    function ConnectController($scope: any, $location: ng.ILocationService, localStorage: WindowLocalStorage, workspace: Jmx.Workspace, $uibModal: any, connectService: ConnectService): void;
-}
-declare namespace JVM {
-    class ConnectService {
-        private $q;
-        private jolokia;
-        constructor($q: ng.IQService, jolokia: Jolokia.IJolokia);
-        testConnection(connection: Core.ConnectOptions): ng.IPromise<boolean>;
-    }
-}
-declare namespace JVM {
-    function ConnectionUrlFilter(): (connection: Core.ConnectOptions) => string;
-}
-declare namespace JVM {
-    const ConnectModule: string;
-}
-/**
- * @module JVM
- * @main JVM
- */
-declare module JVM {
-    var windowJolokia: Jolokia.IJolokia;
-    var _module: ng.IModule;
+declare namespace Jmx {
+    var pluginName: string;
+    var log: Logging.Logger;
+    var currentProcessId: string;
+    var templatePath: string;
+    /**
+     * Returns the Folder object for the given domain name and type name or null if it can not be found
+     * @method getMBeanTypeFolder
+     * @for Core
+     * @static
+     * @param {Workspace} workspace
+     * @param {String} domain
+     * @param {String} typeName}
+     * @return {Folder}
+     */
+    function getMBeanTypeFolder(workspace: Workspace, domain: string, typeName: string): Folder;
+    /**
+     * Returns the JMX objectName for the given jmx domain and type name
+     * @method getMBeanTypeObjectName
+     * @for Core
+     * @static
+     * @param {Workspace} workspace
+     * @param {String} domain
+     * @param {String} typeName
+     * @return {String}
+     */
+    function getMBeanTypeObjectName(workspace: Workspace, domain: string, typeName: string): string;
+    /**
+     * Creates a remote workspace given a remote jolokia for querying the JMX MBeans inside the jolokia
+     * @param remoteJolokia
+     * @param $location
+     * @param localStorage
+     * @return {Core.Workspace|Workspace}
+     */
+    function createRemoteWorkspace(remoteJolokia: any, $location: any, localStorage: any, $rootScope?: any, $compile?: any, $templateCache?: any, userDetails?: any, HawtioNav?: any): Workspace;
 }
 /**
  * @module JVM
@@ -494,41 +505,73 @@ declare namespace Jmx {
         isOsgiCompendiumFolder(): boolean;
     }
 }
-declare namespace Jmx {
+declare namespace JVM {
+    function ConnectController($scope: any, $location: ng.ILocationService, localStorage: WindowLocalStorage, workspace: Jmx.Workspace, $uibModal: any, connectService: ConnectService): void;
+}
+declare namespace JVM {
+    class ConnectService {
+        private $q;
+        private jolokia;
+        constructor($q: ng.IQService, jolokia: Jolokia.IJolokia);
+        testConnection(connection: Core.ConnectOptions): ng.IPromise<boolean>;
+    }
+}
+declare namespace JVM {
+    function ConnectionUrlFilter(): (connection: Core.ConnectOptions) => string;
+}
+declare namespace JVM {
+    const ConnectModule: string;
+}
+/**
+ * @module JVM
+ * @main JVM
+ */
+declare module JVM {
+    var windowJolokia: Jolokia.IJolokia;
+    var _module: ng.IModule;
+}
+/**
+ * @module JVM
+ */
+declare module JVM {
+}
+declare module JVM {
+    var HeaderController: ng.IModule;
+}
+declare module JVM {
+}
+/**
+ * @module JVM
+ */
+declare module JVM {
+}
+/**
+ * @module JVM
+ */
+declare module JVM {
+}
+/**
+ * @module JVM
+ */
+declare module JVM {
+}
+/**
+ * @module Threads
+ * @main Threads
+ */
+declare module Threads {
     var pluginName: string;
-    var log: Logging.Logger;
-    var currentProcessId: string;
     var templatePath: string;
-    /**
-     * Returns the Folder object for the given domain name and type name or null if it can not be found
-     * @method getMBeanTypeFolder
-     * @for Core
-     * @static
-     * @param {Workspace} workspace
-     * @param {String} domain
-     * @param {String} typeName}
-     * @return {Folder}
-     */
-    function getMBeanTypeFolder(workspace: Workspace, domain: string, typeName: string): Folder;
-    /**
-     * Returns the JMX objectName for the given jmx domain and type name
-     * @method getMBeanTypeObjectName
-     * @for Core
-     * @static
-     * @param {Workspace} workspace
-     * @param {String} domain
-     * @param {String} typeName
-     * @return {String}
-     */
-    function getMBeanTypeObjectName(workspace: Workspace, domain: string, typeName: string): string;
-    /**
-     * Creates a remote workspace given a remote jolokia for querying the JMX MBeans inside the jolokia
-     * @param remoteJolokia
-     * @param $location
-     * @param localStorage
-     * @return {Core.Workspace|Workspace}
-     */
-    function createRemoteWorkspace(remoteJolokia: any, $location: any, localStorage: any, $rootScope?: any, $compile?: any, $templateCache?: any, userDetails?: any, HawtioNav?: any): Workspace;
+    var log: Logging.Logger;
+    var jmxDomain: string;
+    var mbeanType: string;
+    var mbean: string;
+    var _module: ng.IModule;
+}
+/**
+ * @module Threads
+ */
+declare module Threads {
 }
 declare namespace Jmx {
     function createDashboardLink(widgetType: any, widget: any): string;
@@ -609,49 +652,6 @@ declare namespace Jmx {
     function enableTree($scope: any, $location: ng.ILocationService, workspace: Workspace, treeElement: any, children: Array<NodeSelection>): void;
 }
 declare namespace Jmx {
-}
-/**
- * @module JVM
- */
-declare module JVM {
-}
-declare module JVM {
-    var HeaderController: ng.IModule;
-}
-declare module JVM {
-}
-/**
- * @module JVM
- */
-declare module JVM {
-}
-/**
- * @module JVM
- */
-declare module JVM {
-}
-/**
- * @module JVM
- */
-declare module JVM {
-}
-/**
- * @module Threads
- * @main Threads
- */
-declare module Threads {
-    var pluginName: string;
-    var templatePath: string;
-    var log: Logging.Logger;
-    var jmxDomain: string;
-    var mbeanType: string;
-    var mbean: string;
-    var _module: ng.IModule;
-}
-/**
- * @module Threads
- */
-declare module Threads {
 }
 declare namespace Jmx {
     class HeaderController {
