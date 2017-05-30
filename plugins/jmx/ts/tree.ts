@@ -29,33 +29,31 @@ namespace Jmx {
     });
   }]);
 
-  _module.controller("Jmx.TreeController", ["$scope", "$location", "workspace", "$route", ($scope, $location: ng.ILocationService, workspace: Workspace, $route: angular.route.IRouteService) => {
-
-    const updateSelectionFromURL = () => updateTreeSelectionFromURL($location, $('#jmxtree'));
-
-    $scope.populateTree = () => {
-      var treeElement = $('#jmxtree');
-      $scope.tree = workspace.tree;
-      enableTree($scope, $location, workspace, treeElement, $scope.tree.children);
-      setTimeout(updateSelectionFromURL, 50);
-    };
+  _module.controller('Jmx.TreeController', ['$scope', '$location', 'workspace', '$route',
+    ($scope: ng.IScope, $location: ng.ILocationService, workspace: Workspace, $route: angular.route.IRouteService) => {
 
     $scope.$on('$destroy', () => {
       const tree = (<any>$('#jmxtree')).treeview(true);
       tree.clearSearch();
       // Bootstrap tree view leaks the node elements into the data structure
       // so let's clean this up when the user leaves the view
-      const cleanTreeFolder = (node:Folder) => {
-          delete node['$el'];
-          if (node.nodes) node.nodes.forEach(cleanTreeFolder);
+      const cleanTreeFolder = (node: Folder) => {
+        delete node['$el'];
+        if (node.nodes) node.nodes.forEach(cleanTreeFolder);
       };
       cleanTreeFolder(workspace.tree);
       // Then call the tree clean-up method
       tree.remove();
     });
 
-    $scope.$on('jmxTreeUpdated', $scope.populateTree);
+    const updateSelectionFromURL = () => updateTreeSelectionFromURL($location, $('#jmxtree'));
 
-    $scope.populateTree();
+    const populateTree = () => {
+      enableTree($scope, $location, workspace, $('#jmxtree'), workspace.tree.children);
+      setTimeout(updateSelectionFromURL, 50);
+    };
+
+    $scope.$on('jmxTreeUpdated', populateTree);
+    populateTree();
   }]);
 }
