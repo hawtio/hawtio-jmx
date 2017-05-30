@@ -380,7 +380,7 @@ namespace Jmx {
       }
     }
 
-    private configureFolder(folder: Folder, domainName: string, domainClass: string, folderNames: string[], path: string): Folder {
+    public configureFolder(folder: Folder, domainName: string, domainClass: string, folderNames: string[], path: string): Folder {
       this.initFolder(folder, domainName, _.clone(folderNames));
       this.keyToNodeMap[folder.key] = folder;
       var classes = "";

@@ -340,7 +340,7 @@ declare namespace Jmx {
         private populateMBeanFolder(domainFolder, domainClass, mbeanName, mbean);
         private folderGetOrElse(folder, name);
         private splitMBeanProperty(property);
-        private configureFolder(folder, domainName, domainClass, folderNames, path);
+        configureFolder(folder: Folder, domainName: string, domainClass: string, folderNames: string[], path: string): Folder;
         private addFolderByDomain(folder, domainName, typeName, owner);
         private enableLazyLoading(folder);
         /**
@@ -567,24 +567,6 @@ declare namespace Jmx {
 }
 declare namespace Jmx {
 }
-/**
- * @module Threads
- * @main Threads
- */
-declare module Threads {
-    var pluginName: string;
-    var templatePath: string;
-    var log: Logging.Logger;
-    var jmxDomain: string;
-    var mbeanType: string;
-    var mbean: string;
-    var _module: ng.IModule;
-}
-/**
- * @module Threads
- */
-declare module Threads {
-}
 declare namespace JVM {
     function ConnectController($scope: any, $location: ng.ILocationService, localStorage: WindowLocalStorage, workspace: Jmx.Workspace, $uibModal: any, connectService: ConnectService): void;
 }
@@ -651,6 +633,24 @@ declare module JVM {
  * @module JVM
  */
 declare module JVM {
+}
+/**
+ * @module Threads
+ * @main Threads
+ */
+declare module Threads {
+    var pluginName: string;
+    var templatePath: string;
+    var log: Logging.Logger;
+    var jmxDomain: string;
+    var mbeanType: string;
+    var mbean: string;
+    var _module: ng.IModule;
+}
+/**
+ * @module Threads
+ */
+declare module Threads {
 }
 declare namespace Jmx {
     class HeaderController {
