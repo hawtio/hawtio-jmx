@@ -56,18 +56,6 @@ namespace Jmx {
 
   }]);
 
-  _module.controller("Jmx.MBeanTreeController", ['$scope', 'workspace', ($scope, workspace) => {
-    $scope.node = {};
-    workspace.addNamedTreePostProcessor('MBeanTree', (tree: Folder) => {
-      angular.copy(tree, $scope.node);
-      $scope.node.open = true;
-      log.debug("got tree: ", $scope.node);
-    });
-    $scope.select = (node) => {
-      workspace.updateSelectionNode(node);
-    }
-  }]);
-
   _module.factory('rbacACLMBean', function() {
     return {
       then: function() {}
