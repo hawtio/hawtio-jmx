@@ -261,7 +261,6 @@ declare namespace Jmx {
     }
 }
 declare namespace Jmx {
-    var tree: any;
     /**
      * @class NavMenuItem
      */
@@ -568,6 +567,24 @@ declare namespace Jmx {
 }
 declare namespace Jmx {
 }
+/**
+ * @module Threads
+ * @main Threads
+ */
+declare module Threads {
+    var pluginName: string;
+    var templatePath: string;
+    var log: Logging.Logger;
+    var jmxDomain: string;
+    var mbeanType: string;
+    var mbean: string;
+    var _module: ng.IModule;
+}
+/**
+ * @module Threads
+ */
+declare module Threads {
+}
 declare namespace JVM {
     function ConnectController($scope: any, $location: ng.ILocationService, localStorage: WindowLocalStorage, workspace: Jmx.Workspace, $uibModal: any, connectService: ConnectService): void;
 }
@@ -634,24 +651,6 @@ declare module JVM {
  * @module JVM
  */
 declare module JVM {
-}
-/**
- * @module Threads
- * @main Threads
- */
-declare module Threads {
-    var pluginName: string;
-    var templatePath: string;
-    var log: Logging.Logger;
-    var jmxDomain: string;
-    var mbeanType: string;
-    var mbean: string;
-    var _module: ng.IModule;
-}
-/**
- * @module Threads
- */
-declare module Threads {
 }
 declare namespace Jmx {
     class HeaderController {

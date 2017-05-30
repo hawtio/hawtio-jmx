@@ -4,7 +4,6 @@
 namespace Jmx {
 
   var log:Logging.Logger = Logger.get("workspace");
-  export var tree:any = null;
 
   /**
    * @class NavMenuItem
@@ -118,31 +117,23 @@ namespace Jmx {
         }, 10);
         return;
       }
-      if (tree) {
-        setTimeout(() => {
-          workspace.treeFetched = true;
-          workspace.populateTree(tree);
-          tree = null;
-        }, 1);
-      } else {
-        var flags = {
-          ignoreErrors: true, 
-          error: (response) => {
-            workspace.treeFetched = true;
-            log.debug("Error fetching JMX tree: ", response);
-          }
-        };
-        log.debug("jolokia: ", this.jolokia);
-        this.jolokia.request({ 'type': 'list' }, Core.onSuccess((response) => {
-          if (response.value) {
-            this.jolokiaStatus.xhr = null;
-          }
-          workspace.treeFetched = true;
-          workspace.populateTree(response);
-        }, flags));
-      }
-    }
 
+      var flags = {
+        ignoreErrors: true,
+        error: (response) => {
+          workspace.treeFetched = true;
+          log.debug("Error fetching JMX tree: ", response);
+        }
+      };
+      log.debug("jolokia: ", this.jolokia);
+      this.jolokia.request({ 'type': 'list' }, Core.onSuccess((response) => {
+        if (response.value) {
+          this.jolokiaStatus.xhr = null;
+        }
+        workspace.treeFetched = true;
+        workspace.populateTree(response);
+      }, flags));
+    }
 
     /**
      * Adds a post processor of the tree to swizzle the tree metadata after loading
