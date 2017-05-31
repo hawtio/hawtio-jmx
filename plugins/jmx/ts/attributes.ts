@@ -18,7 +18,7 @@ namespace Jmx {
   export var foldersColumnDefs = [
     {
       displayName: 'Name',
-      cellTemplate: '<div class="ngCellText"><a href="{{row.entity.folderHref(row)}}"><i class="{{row.entity.folderIconClass(row)}}"></i> {{row.getProperty("title")}}</a></div>'
+      cellTemplate: '<div class="ngCellText"><a href="" ng-click="row.entity.gotoFolder(row)"><i class="{{row.entity.folderIconClass(row)}}"></i> {{row.getProperty("title")}}</a></div>'
     }
   ];
 
@@ -188,7 +188,7 @@ namespace Jmx {
       }
     };
 
-    $scope.onViewAttribute = (row) => {
+    function onViewAttribute(row) {
       if (!row.summary) {
         return;
       }
@@ -292,7 +292,7 @@ namespace Jmx {
       $scope.showAttributeDialog = true;
     };
 
-    $scope.getDashboardWidgets = (row) => {
+    function getDashboardWidgets(row) {
       var mbean = workspace.getSelectedMBeanName();
       if (!mbean) {
         return '';
@@ -372,34 +372,6 @@ namespace Jmx {
         };
         jolokia.request(queries, Core.onSuccess(callback, {error: callback}));
       }
-    };
-
-    $scope.folderHref = (row) => {
-      if (!row.getProperty) {
-        return "";
-      }
-      var key = row.getProperty("key");
-      if (key) {
-        return Core.url($location.path() + "?nid=" + key);
-      } else {
-        return "";
-      }
-    };
-
-    $scope.folderIconClass = (row) => {
-      // TODO lets ignore the classes property for now
-      // as we don't have an easy way to know if there is an icon defined for an icon or not
-      // and we want to make sure there always is an icon shown
-      /*
-       var classes = (row.getProperty("addClass") || "").trim();
-       if (classes) {
-       return classes;
-       }
-       */
-      if (!row.getProperty) {
-        return "";
-      }
-      return row.getProperty("objectName") ? "fa fa-cog" : "pficon pficon-folder-close";
     };
 
     function operationComplete() {
@@ -675,20 +647,38 @@ namespace Jmx {
     function addHandlerFunctions(data) {
       data.forEach((item) => {
         item['inDashboard'] = $scope.inDashboard;
-        item['getDashboardWidgets'] = () => {
-          return $scope.getDashboardWidgets(item);
-        };
-        item['onViewAttribute'] = () => {
-          $scope.onViewAttribute(item);
-        };
-        item['folderIconClass'] = (row) => {
-          return $scope.folderIconClass(row);
-        };
-        item['folderHref'] = (row) => {
-          return $scope.folderHref(row);
-        };
+        item['getDashboardWidgets'] = () => getDashboardWidgets(item);
+        item['onViewAttribute'] = () => onViewAttribute(item);
+        item['folderIconClass'] = row => folderIconClass(row);
+        item['gotoFolder'] = row => gotoFolder(row);
       });
     }
+
+    function folderIconClass(row) {
+      // TODO lets ignore the classes property for now
+      // as we don't have an easy way to know if there is an icon defined for an icon or not
+      // and we want to make sure there always is an icon shown
+      /*
+       var classes = (row.getProperty("addClass") || "").trim();
+       if (classes) {
+       return classes;
+       }
+       */
+      if (!row.getProperty) {
+        return '';
+      }
+      return row.getProperty('objectName') ? 'fa fa-cog' : 'pficon pficon-folder-close';
+    };
+
+    function gotoFolder(row) {
+      if (row.getProperty) {
+        const key = row.getProperty('key');
+        if (key) {
+          console.log('gotoFolder: ', key);
+          $location.search('nid', key);
+        }
+      }
+    };
 
     function unwrapObjectName(value) {
       if (!angular.isObject(value)) {
