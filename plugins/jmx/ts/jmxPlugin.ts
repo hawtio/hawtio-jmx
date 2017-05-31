@@ -25,13 +25,9 @@ namespace Jmx {
       .when('/jmx/widget/area', {templateUrl: UrlHelpers.join(templatePath, 'areaChart.html')});
   }]);
 
-  _module.factory('jmxWidgetTypes', () => {
-    return Jmx.jmxWidgetTypes;
-  });
+  _module.factory('jmxWidgetTypes', () => Jmx.jmxWidgetTypes);
 
-  _module.factory('jmxWidgets', () => {
-    return Jmx.jmxWidgets;
-  });
+  _module.factory('jmxWidgets', () => Jmx.jmxWidgets);
 
   // Create the workspace object used in all kinds of places
   _module.factory('workspace',["$location", "jmxTreeLazyLoadRegistry","$compile", "$templateCache", "localStorage", "jolokia", "jolokiaStatus", "$rootScope", "userDetails", "HawtioNav", ($location:ng.ILocationService,jmxTreeLazyLoadRegistry, $compile:ng.ICompileService,$templateCache:ng.ITemplateCacheService, localStorage:WindowLocalStorage, jolokia, jolokiaStatus, $rootScope, userDetails, HawtioNav) => {
@@ -43,13 +39,9 @@ namespace Jmx {
 
   _module.controller("Jmx.TabController", ["$scope", "$route", "$location", "layoutTree", "layoutFull", "viewRegistry", "workspace", ($scope, $route, $location: ng.ILocationService, layoutTree, layoutFull, viewRegistry, workspace: Workspace) => {
 
-    $scope.isTabActive = path => {
-      return _.startsWith($location.path(), path);
-    };
+    $scope.isTabActive = path => _.startsWith($location.path(), path);
 
-    $scope.goto = (path: string) => {
-      $location.path(path);
-    };
+    $scope.goto = (path: string) => $location.path(path);
 
     $scope.editChart = () => ($scope.isTabActive('jmx-chart') || $scope.isTabActive('jmx-edit-chart'))
       ? $scope.goto('/jmx/chartEdit', 'jmx-edit-chart') : false;
@@ -91,9 +83,7 @@ namespace Jmx {
     return answer;
   }]);
 
-  _module.factory('jmxTreeLazyLoadRegistry', () => {
-    return Core.lazyLoaders;
-  });
+  _module.factory('jmxTreeLazyLoadRegistry', () => Core.lazyLoaders);
 
   _module.run(["HawtioNav", "$location", "workspace", "viewRegistry", "layoutTree", "layoutFull", "jolokia", "helpRegistry", "pageTitle", "$templateCache", (nav: HawtioMainNav.Registry, $location: ng.ILocationService, workspace: Workspace, viewRegistry, layoutTree, layoutFull, jolokia, helpRegistry, pageTitle, $templateCache) => {
     log.debug('loaded');
