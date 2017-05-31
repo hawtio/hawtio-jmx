@@ -54,6 +54,8 @@ namespace Jmx {
     };
 
     $scope.$on('jmxTreeUpdated', populateTree);
+    $scope.$on('$routeChangeSuccess', updateSelectionFromURL);
+
     populateTree();
   }]);
 }
