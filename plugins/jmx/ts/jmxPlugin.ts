@@ -95,12 +95,6 @@ namespace Jmx {
     return Core.lazyLoaders;
   });
 
-  _module.controller('Jmx.EditChartNav', ['$scope', '$location', ($scope, $location) => {
-    $scope.valid = () => {
-      return $location.path().startsWith('/jmx/chart');
-    } 
-  }]);
-
   _module.run(["HawtioNav", "$location", "workspace", "viewRegistry", "layoutTree", "layoutFull", "jolokia", "helpRegistry", "pageTitle", "$templateCache", (nav: HawtioMainNav.Registry, $location: ng.ILocationService, workspace: Workspace, viewRegistry, layoutTree, layoutFull, jolokia, helpRegistry, pageTitle, $templateCache) => {
     log.debug('loaded');
 
