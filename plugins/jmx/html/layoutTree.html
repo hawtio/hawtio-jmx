@@ -27,8 +27,10 @@
       </form>
     </div>
 
-    <div id="jmxtree" class="tree-nav-sidebar-content treeview-pf-hover treeview-pf-select" ng-controller="Jmx.TreeController"></div>
-
+    <div class="tree-nav-sidebar-content" ng-controller="Jmx.TreeController">
+      <div class="spinner spinner-lg" ng-hide="treeFetched()"></div>
+      <div id="jmxtree" class="treeview-pf-hover treeview-pf-select"></div>
+    </div>
   </div>
 
   <div class="tree-nav-main">

@@ -301,7 +301,7 @@ declare namespace Jmx {
         pluginUpdateCounter: any;
         treeWatchRegisterHandle: any;
         treeWatcherCounter: any;
-        private treeFetched;
+        treeFetched: boolean;
         mapData: {};
         private rootId;
         private separator;

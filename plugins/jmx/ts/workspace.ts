@@ -36,7 +36,7 @@ namespace Jmx {
     public pluginUpdateCounter = null;
     public treeWatchRegisterHandle = null;
     public treeWatcherCounter = null;
-    private treeFetched = false;
+    public treeFetched = false;
     // mapData allows to store arbitrary data on the workspace
     public mapData = {};
 

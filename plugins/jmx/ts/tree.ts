@@ -30,7 +30,8 @@ namespace Jmx {
   }]);
 
   _module.controller('Jmx.TreeController', ['$scope', '$location', 'workspace', '$route',
-    ($scope: ng.IScope, $location: ng.ILocationService, workspace: Workspace, $route: angular.route.IRouteService) => {
+    ($scope, $location: ng.ILocationService, workspace: Workspace, $route: angular.route.IRouteService) => {
+    $scope.treeFetched = () => workspace.treeFetched;
 
     $scope.$on('$destroy', () => {
       const tree = (<any>$('#jmxtree')).treeview(true);

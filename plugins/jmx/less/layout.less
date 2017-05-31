@@ -4,6 +4,15 @@
   height: 100%;
   display: flex;
 
+  .spinner {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    z-index: 9999999999;
+    margin-left: -1.25 * @font-size-base;
+    margin-top: -1.25 * @font-size-base;
+  }
+
   .sidebar-pf {
     display: flex;
     flex-direction: column;
@@ -69,14 +78,15 @@
   .tree-nav-sidebar-content {
     flex: 1 1 auto;
     overflow-y: auto;
-    margin-left: 0;
-    margin-right: 0;
 
     ul {
       margin-bottom: 5px;
     }
 
-    &.treeview {
+    .treeview {
+      margin-left: 0;
+      margin-right: 0;
+
       .icon {
         width: unset;
         font-size: 11px;
