@@ -277,6 +277,9 @@ div.tree-nav-layout .sidebar-pf .rg-right {
   padding-left: 20px;
   padding-right: 20px;
 }
+.jvm-connection-list div.list-group-item-text {
+  overflow-wrap: break-word;
+}
 .jvm-connection-test-msg {
   margin-left: 10px;
   vertical-align: middle;
