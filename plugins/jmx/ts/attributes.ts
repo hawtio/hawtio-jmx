@@ -674,7 +674,6 @@ namespace Jmx {
       if (row.getProperty) {
         const key = row.getProperty('key');
         if (key) {
-          console.log('gotoFolder: ', key);
           $location.search('nid', key);
         }
       }
