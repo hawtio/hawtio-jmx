@@ -60,16 +60,10 @@ namespace Jmx {
       // lets do this asynchronously to avoid Error: $digest already in progress
       doRender();
     });
-    $scope.dereg = $scope.$watch('workspace.selection', function () {
-      if (workspace.moveIfViewInvalid()) return;
-      doRender();
-    });
 
     doRender();
 
-
     function render() {
-
       var node = workspace.selection || workspace.getSelectedMBean();
       if (node == null) {
         return;

@@ -65,8 +65,6 @@ namespace Jmx {
       $location.path("jmx/charts");
     };
 
-    $scope.$watch('workspace.selection', render);
-
     $scope.$on("$routeChangeSuccess", function (event, current, previous) {
       // lets do this asynchronously to avoid Error: $digest already in progress
       setTimeout(render, 50);

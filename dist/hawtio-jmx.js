@@ -2530,7 +2530,6 @@ var Jmx;
                 $location.search(search);
                 $location.path("jmx/charts");
             };
-            $scope.$watch('workspace.selection', render);
             $scope.$on("$routeChangeSuccess", function (event, current, previous) {
                 // lets do this asynchronously to avoid Error: $digest already in progress
                 setTimeout(render, 50);
@@ -2683,11 +2682,6 @@ var Jmx;
             var doRender = _.debounce(render, 200, { trailing: true });
             $scope.deregRouteChange = $scope.$on("$routeChangeSuccess", function (event, current, previous) {
                 // lets do this asynchronously to avoid Error: $digest already in progress
-                doRender();
-            });
-            $scope.dereg = $scope.$watch('workspace.selection', function () {
-                if (workspace.moveIfViewInvalid())
-                    return;
                 doRender();
             });
             doRender();
