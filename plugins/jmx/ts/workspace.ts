@@ -51,7 +51,6 @@ namespace Jmx {
       public $templateCache: ng.ITemplateCacheService,
       public localStorage: WindowLocalStorage,
       public $rootScope: ng.IRootScopeService,
-      public userDetails,
       public HawtioNav: HawtioMainNav.Registry) {
 
       // set defaults
@@ -89,8 +88,8 @@ namespace Jmx {
      * @return {Workspace}
      */
     public createChildWorkspace(location): Workspace {
-      var child = new Workspace(this.jolokia, this.jolokiaStatus, this.jmxTreeLazyLoadRegistry,
-              this.$location, this.$compile, this.$templateCache, this.localStorage, this.$rootScope, this.userDetails, this.HawtioNav);
+      const child = new Workspace(this.jolokia, this.jolokiaStatus, this.jmxTreeLazyLoadRegistry,
+        this.$location, this.$compile, this.$templateCache, this.localStorage, this.$rootScope, this.HawtioNav);
       // lets copy across all the properties just in case
       angular.forEach(this, (value, key) => child[key] = value);
       child.$location = location;

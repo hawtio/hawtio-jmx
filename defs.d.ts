@@ -283,7 +283,6 @@ declare namespace Jmx {
         $templateCache: ng.ITemplateCacheService;
         localStorage: WindowLocalStorage;
         $rootScope: ng.IRootScopeService;
-        userDetails: any;
         HawtioNav: HawtioMainNav.Registry;
         operationCounter: number;
         selection: NodeSelection;
@@ -304,7 +303,7 @@ declare namespace Jmx {
         mapData: {};
         private rootId;
         private separator;
-        constructor(jolokia: Jolokia.IJolokia, jolokiaStatus: any, jmxTreeLazyLoadRegistry: any, $location: ng.ILocationService, $compile: ng.ICompileService, $templateCache: ng.ITemplateCacheService, localStorage: WindowLocalStorage, $rootScope: ng.IRootScopeService, userDetails: any, HawtioNav: HawtioMainNav.Registry);
+        constructor(jolokia: Jolokia.IJolokia, jolokiaStatus: any, jmxTreeLazyLoadRegistry: any, $location: ng.ILocationService, $compile: ng.ICompileService, $templateCache: ng.ITemplateCacheService, localStorage: WindowLocalStorage, $rootScope: ng.IRootScopeService, HawtioNav: HawtioMainNav.Registry);
         /**
          * Creates a shallow copy child workspace with its own selection and location
          * @method createChildWorkspace
@@ -484,7 +483,7 @@ declare namespace Jmx {
      * @param localStorage
      * @return {Core.Workspace|Workspace}
      */
-    function createRemoteWorkspace(remoteJolokia: Jolokia.IJolokia, $location: ng.ILocationService, localStorage: WindowLocalStorage, $rootScope?: ng.IRootScopeService, $compile?: ng.ICompileService, $templateCache?: ng.ITemplateCacheService, userDetails?: any, HawtioNav?: HawtioMainNav.Registry): Workspace;
+    function createRemoteWorkspace(remoteJolokia: Jolokia.IJolokia, $location: ng.ILocationService, localStorage: WindowLocalStorage, $rootScope?: ng.IRootScopeService, $compile?: ng.ICompileService, $templateCache?: ng.ITemplateCacheService, HawtioNav?: HawtioMainNav.Registry): Workspace;
 }
 declare namespace Jmx {
     function createDashboardLink(widgetType: any, widget: any): string;

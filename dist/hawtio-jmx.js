@@ -444,7 +444,7 @@ var Jmx;
      * @class Workspace
      */
     var Workspace = (function () {
-        function Workspace(jolokia, jolokiaStatus, jmxTreeLazyLoadRegistry, $location, $compile, $templateCache, localStorage, $rootScope, userDetails, HawtioNav) {
+        function Workspace(jolokia, jolokiaStatus, jmxTreeLazyLoadRegistry, $location, $compile, $templateCache, localStorage, $rootScope, HawtioNav) {
             this.jolokia = jolokia;
             this.jolokiaStatus = jolokiaStatus;
             this.jmxTreeLazyLoadRegistry = jmxTreeLazyLoadRegistry;
@@ -453,7 +453,6 @@ var Jmx;
             this.$templateCache = $templateCache;
             this.localStorage = localStorage;
             this.$rootScope = $rootScope;
-            this.userDetails = userDetails;
             this.HawtioNav = HawtioNav;
             this.operationCounter = 0;
             this.tree = new Jmx.Folder('MBeans');
@@ -507,7 +506,7 @@ var Jmx;
          * @return {Workspace}
          */
         Workspace.prototype.createChildWorkspace = function (location) {
-            var child = new Workspace(this.jolokia, this.jolokiaStatus, this.jmxTreeLazyLoadRegistry, this.$location, this.$compile, this.$templateCache, this.localStorage, this.$rootScope, this.userDetails, this.HawtioNav);
+            var child = new Workspace(this.jolokia, this.jolokiaStatus, this.jmxTreeLazyLoadRegistry, this.$location, this.$compile, this.$templateCache, this.localStorage, this.$rootScope, this.HawtioNav);
             // lets copy across all the properties just in case
             angular.forEach(this, function (value, key) { return child[key] = value; });
             child.$location = location;
@@ -1435,11 +1434,10 @@ var Jmx;
      * @param localStorage
      * @return {Core.Workspace|Workspace}
      */
-    function createRemoteWorkspace(remoteJolokia, $location, localStorage, $rootScope, $compile, $templateCache, userDetails, HawtioNav) {
+    function createRemoteWorkspace(remoteJolokia, $location, localStorage, $rootScope, $compile, $templateCache, HawtioNav) {
         if ($rootScope === void 0) { $rootScope = null; }
         if ($compile === void 0) { $compile = null; }
         if ($templateCache === void 0) { $templateCache = null; }
-        if (userDetails === void 0) { userDetails = null; }
         if (HawtioNav === void 0) { HawtioNav = null; }
         // lets create a child workspace object for the remote container
         var jolokiaStatus = {
@@ -1447,7 +1445,7 @@ var Jmx;
         };
         // disable reload notifications
         var jmxTreeLazyLoadRegistry = Core.lazyLoaders;
-        var profileWorkspace = new Jmx.Workspace(remoteJolokia, jolokiaStatus, jmxTreeLazyLoadRegistry, $location, $compile, $templateCache, localStorage, $rootScope, userDetails, HawtioNav);
+        var profileWorkspace = new Jmx.Workspace(remoteJolokia, jolokiaStatus, jmxTreeLazyLoadRegistry, $location, $compile, $templateCache, localStorage, $rootScope, HawtioNav);
         Jmx.log.info("Loading the profile using jolokia: " + remoteJolokia);
         profileWorkspace.loadTree();
         return profileWorkspace;
@@ -1589,9 +1587,9 @@ var Jmx;
     Jmx._module.factory('jmxWidgets', function () { return Jmx.jmxWidgets; });
     // Create the workspace object used in all kinds of places
     Jmx._module.factory('workspace', ["$location", "jmxTreeLazyLoadRegistry", "$compile", "$templateCache", "localStorage", "jolokia", "jolokiaStatus", "$rootScope", "userDetails", "HawtioNav", function ($location, jmxTreeLazyLoadRegistry, $compile, $templateCache, localStorage, jolokia, jolokiaStatus, $rootScope, userDetails, HawtioNav) {
-            var answer = new Jmx.Workspace(jolokia, jolokiaStatus, jmxTreeLazyLoadRegistry, $location, $compile, $templateCache, localStorage, $rootScope, userDetails, HawtioNav);
-            answer.loadTree();
-            return answer;
+            var workspace = new Jmx.Workspace(jolokia, jolokiaStatus, jmxTreeLazyLoadRegistry, $location, $compile, $templateCache, localStorage, $rootScope, HawtioNav);
+            workspace.loadTree();
+            return workspace;
         }]);
     Jmx._module.controller("Jmx.TabController", ["$scope", "$route", "$location", "layoutTree", "layoutFull", "viewRegistry", "workspace", function ($scope, $route, $location, layoutTree, layoutFull, viewRegistry, workspace) {
             $scope.isTabActive = function (path) { return _.startsWith($location.path(), path); };

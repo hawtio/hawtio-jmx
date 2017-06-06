@@ -57,14 +57,14 @@ namespace Jmx {
    */
   export function createRemoteWorkspace(remoteJolokia: Jolokia.IJolokia, $location: ng.ILocationService,
     localStorage: WindowLocalStorage, $rootScope: ng.IRootScopeService = null, $compile: ng.ICompileService = null,
-    $templateCache: ng.ITemplateCacheService = null, userDetails = null, HawtioNav: HawtioMainNav.Registry = null) {
+    $templateCache: ng.ITemplateCacheService = null, HawtioNav: HawtioMainNav.Registry = null) {
     // lets create a child workspace object for the remote container
     var jolokiaStatus = {
       xhr: null
     };
     // disable reload notifications
     var jmxTreeLazyLoadRegistry = Core.lazyLoaders;
-    var profileWorkspace = new Workspace(remoteJolokia, jolokiaStatus, jmxTreeLazyLoadRegistry, $location, $compile, $templateCache, localStorage, $rootScope, userDetails, HawtioNav);
+    var profileWorkspace = new Workspace(remoteJolokia, jolokiaStatus, jmxTreeLazyLoadRegistry, $location, $compile, $templateCache, localStorage, $rootScope, HawtioNav);
 
     log.info("Loading the profile using jolokia: " + remoteJolokia);
     profileWorkspace.loadTree();
