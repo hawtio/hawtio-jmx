@@ -161,10 +161,8 @@ namespace Jmx {
     folderNames:string[] = [];
     domain:string = null;
     objectName:string = null;
-    private map: { [key: string]: Folder } = {};
     entries = {};
     class: string = null;
-
     parent:Folder = null;
     isLazy:boolean = false;
 
@@ -177,7 +175,7 @@ namespace Jmx {
 
     icon:string = null;
 
-    get image():string {
+    get image(): string {
       return this.icon;
     }
 
@@ -186,13 +184,14 @@ namespace Jmx {
     version:string = null;
     mbean:Core.JMXMBean = null;
 
-    get(key:string):NodeSelection {
-      return this.map[key];
+    get(key: string): NodeSelection {
+      return _.find(this.children, child => child.text === key);
     }
 
-    isFolder():boolean {
+    isFolder(): boolean {
       return this.nodes && this.nodes.length > 0;
     }
+
     /**
      * Navigates the given paths and returns the value there or null if no value could be found
      * @method navigate
@@ -200,8 +199,8 @@ namespace Jmx {
      * @param {Array} paths
      * @return {NodeSelection}
      */
-    public navigate(...paths:string[]):NodeSelection {
-      var node:NodeSelection = this;
+    public navigate(...paths: string[]): NodeSelection {
+      var node: NodeSelection = this;
       paths.forEach((path) => {
         if (node) {
           node = node.get(path);
@@ -210,7 +209,7 @@ namespace Jmx {
       return node;
     }
 
-    public hasEntry(key:string, value) {
+    public hasEntry(key: string, value) {
       var entries = this.entries;
       if (entries) {
         var actual = entries[key];
@@ -219,14 +218,14 @@ namespace Jmx {
       return false;
     }
 
-    public parentHasEntry(key:string, value) {
+    public parentHasEntry(key: string, value) {
       if (this.parent) {
         return this.parent.hasEntry(key, value);
       }
       return false;
     }
 
-    public ancestorHasEntry(key:string, value) {
+    public ancestorHasEntry(key: string, value) {
       var parent = this.parent;
       while (parent) {
         if (parent.hasEntry(key, value))
@@ -236,7 +235,7 @@ namespace Jmx {
       return false;
     }
 
-    public ancestorHasType(typeName:string) {
+    public ancestorHasType(typeName: string) {
       var parent = this.parent;
       while (parent) {
         if (typeName === parent.typeName)
@@ -247,14 +246,13 @@ namespace Jmx {
     }
 
     public getOrElse(key: string, defaultValue: Folder = new Folder(key)): Folder {
-      var answer = this.map[key];
+      let answer = this.get(key);
       if (!answer) {
         answer = defaultValue;
-        this.map[key] = answer;
         this.children.push(answer);
         answer.parent = this;
       }
-      return answer;
+      return answer as Folder;
     }
 
     public sortChildren(recursive: boolean) {
@@ -301,11 +299,11 @@ namespace Jmx {
     public detach() {
       var oldParent = this.parent;
       if (oldParent) {
-        var oldParentChildren = oldParent.children;
+        const oldParentChildren = oldParent.children;
         if (oldParentChildren) {
-          var idx = oldParentChildren.indexOf(this);
+          const idx = oldParentChildren.indexOf(this);
           if (idx < 0) {
-            _.remove(oldParent.children, (child) => child.key === this.key);
+            _.remove(oldParent.children, child => child.key === this.key);
           } else {
             oldParentChildren.splice(idx, 1);
           }
