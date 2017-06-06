@@ -244,11 +244,9 @@ namespace Jmx {
       this.maybeMonitorPlugins();
 
       var rootScope = this.$rootScope;
-      if (rootScope && rootScope.$broadcast) {
+      if (rootScope) {
         rootScope.$broadcast('jmxTreeUpdated');
         Core.$apply(rootScope);
-      } else {
-        console.log('rootScope: ', rootScope);
       }
     }
 

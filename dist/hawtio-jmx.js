@@ -645,12 +645,9 @@ var Jmx;
             });
             this.maybeMonitorPlugins();
             var rootScope = this.$rootScope;
-            if (rootScope && rootScope.$broadcast) {
+            if (rootScope) {
                 rootScope.$broadcast('jmxTreeUpdated');
                 Core.$apply(rootScope);
-            }
-            else {
-                console.log('rootScope: ', rootScope);
             }
         };
         Workspace.prototype.initFolder = function (folder, domain, folderNames) {
