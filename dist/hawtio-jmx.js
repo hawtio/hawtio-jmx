@@ -296,13 +296,7 @@ var Jmx;
             for (var _i = 0; _i < arguments.length; _i++) {
                 paths[_i] = arguments[_i];
             }
-            var node = this;
-            paths.forEach(function (path) {
-                if (node) {
-                    node = node.get(path);
-                }
-            });
-            return node;
+            return paths.reduce(function (node, path) { return node ? node.get(path) : null; }, this);
         };
         Folder.prototype.hasEntry = function (key, value) {
             var entries = this.entries;

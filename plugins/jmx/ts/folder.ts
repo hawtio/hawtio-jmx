@@ -200,13 +200,7 @@ namespace Jmx {
      * @return {NodeSelection}
      */
     public navigate(...paths: string[]): NodeSelection {
-      var node: NodeSelection = this;
-      paths.forEach((path) => {
-        if (node) {
-          node = node.get(path);
-        }
-      });
-      return node;
+      return paths.reduce((node, path) => node ? node.get(path) : null, this as NodeSelection);
     }
 
     public hasEntry(key: string, value) {
