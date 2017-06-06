@@ -43,16 +43,16 @@ namespace Jmx {
     private rootId = 'root';
     private separator = '-';
 
-    constructor(public jolokia,
-                public jolokiaStatus,
-                public jmxTreeLazyLoadRegistry,
-                public $location,
-                public $compile:ng.ICompileService,
-                public $templateCache:ng.ITemplateCacheService,
-                public localStorage:WindowLocalStorage,
-                public $rootScope,
-                public userDetails,
-                public HawtioNav:HawtioMainNav.Registry) {
+    constructor(public jolokia: Jolokia.IJolokia,
+      public jolokiaStatus,
+      public jmxTreeLazyLoadRegistry,
+      public $location: ng.ILocationService,
+      public $compile: ng.ICompileService,
+      public $templateCache: ng.ITemplateCacheService,
+      public localStorage: WindowLocalStorage,
+      public $rootScope: ng.IRootScopeService,
+      public userDetails,
+      public HawtioNav: HawtioMainNav.Registry) {
 
       // set defaults
       if (!('autoRefresh' in localStorage)) {
@@ -80,7 +80,6 @@ namespace Jmx {
 
         }
       };
-
     }
 
     /**
@@ -246,9 +245,11 @@ namespace Jmx {
       this.maybeMonitorPlugins();
 
       var rootScope = this.$rootScope;
-      if (rootScope) {
+      if (rootScope && rootScope.$broadcast) {
         rootScope.$broadcast('jmxTreeUpdated');
         Core.$apply(rootScope);
+      } else {
+        console.log('rootScope: ', rootScope);
       }
     }
 
