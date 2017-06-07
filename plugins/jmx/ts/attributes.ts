@@ -22,16 +22,11 @@ namespace Jmx {
     }
   ];
 
-  export var AttributesController = _module.controller("Jmx.AttributesController", ["$scope", "$element", "$location", "workspace", "jolokia", "jmxWidgets", "jmxWidgetTypes", "$templateCache", "localStorage", "$browser", ($scope,
-                                       $element,
-                                       $location,
-                                       workspace:Workspace,
-                                       jolokia,
-                                       jmxWidgets,
-                                       jmxWidgetTypes,
-                                       $templateCache,
-                                       localStorage,
-                                       $browser) => {
+  export var AttributesController = _module.controller("Jmx.AttributesController", ["$scope", "$element", "$location",
+    "workspace", "jolokia", "jmxWidgets", "jmxWidgetTypes", "$templateCache", "localStorage", "$browser", '$timeout',
+    ($scope, $element, $location, workspace:Workspace, jolokia, jmxWidgets, jmxWidgetTypes, $templateCache, localStorage,
+    $browser, $timeout) => {
+    
     $scope.searchText = '';
     $scope.nid = 'empty';
     $scope.selectedItems = [];
@@ -182,9 +177,10 @@ namespace Jmx {
       if (mbean) {
         jolokia.setAttribute(mbean, key, value,
           Core.onSuccess((response) => {
-              Core.notification("success", "Updated attribute " + key);
-            }
-          ));
+            $timeout(() => $scope.notification = {type: 'success', message: 'Updated successfully'}, 0);
+            $timeout(() => $scope.notification = null, 8000);
+          })
+        );
       }
     };
 

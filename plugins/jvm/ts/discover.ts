@@ -6,7 +6,8 @@
  */
 module JVM {
 
-  _module.controller("JVM.DiscoveryController", ["$scope", "localStorage", "jolokia", ($scope, localStorage, jolokia) => {
+  _module.controller("JVM.DiscoveryController", ["$scope", "$timeout", "localStorage", "jolokia",
+    ($scope, $timeout, localStorage, jolokia) => {
 
     $scope.discovering = true;
     $scope.agents = <any> undefined;
@@ -23,7 +24,8 @@ module JVM {
 
     function doConnect(agent) {
       if (!agent.url) {
-        Core.notification('warning', 'No URL available to connect to agent');
+        $timeout(() => $scope.notification = {type: 'warning', message: 'No URL available to connect to agent'}, 0);
+        $timeout(() => $scope.notification = null, 8000);
         return;
       }
       var options:Core.ConnectToServerOptions = Core.createConnectOptions();

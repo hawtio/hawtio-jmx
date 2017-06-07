@@ -1,5 +1,9 @@
 <div ng-controller="JVM.DiscoveryController">
 
+  <pf-toast-notification class="jvm-discover-toast-notification" ng-show="notification"
+    notification-type="{{notification.type}}" message="{{notification.message}}">
+  </pf-toast-notification>
+
   <h1>Discover</h1>
 
   <div class="row toolbar-pf">
