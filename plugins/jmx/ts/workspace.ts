@@ -22,7 +22,7 @@ namespace Jmx {
    */
   export class Workspace {
     public operationCounter = 0;
-    public selection:NodeSelection;
+    public selection: NodeSelection;
     public tree:Folder = new Folder('MBeans');
     public mbeanTypesToDomain = {};
     public mbeanServicesToDomain = {};
@@ -697,11 +697,10 @@ namespace Jmx {
     }
 
     public updateSelectionNode(node: NodeSelection) {
-      var originalSelection = this.selection;
-      this.selection = <NodeSelection> node;
+      this.selection = node;
       var key:string = null;
       if (node) {
-        key = node['key'];
+        key = node.key;
       }
       if (key) {
         var $location = this.$location;

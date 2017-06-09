@@ -1086,11 +1086,10 @@ var Jmx;
             }
         };
         Workspace.prototype.updateSelectionNode = function (node) {
-            var originalSelection = this.selection;
             this.selection = node;
             var key = null;
             if (node) {
-                key = node['key'];
+                key = node.key;
             }
             if (key) {
                 var $location = this.$location;
@@ -3101,7 +3100,7 @@ var Jmx;
             lazyLoad: function (node, addNodes) {
                 var plugin = Jmx.findLazyLoadingFunction(workspace, node);
                 if (plugin) {
-                    Jmx.log.debug("Lazy loading folder " + node.text);
+                    Jmx.log.debug('Lazy loading folder ', node.text);
                     plugin(workspace, node, function (children) { return addNodes(children); });
                 }
                 // It seems to be required, as the lazyLoad property deletion done
@@ -3128,7 +3127,9 @@ var Jmx;
                     treeElement.treeview('expandNode', [node, { levels: 1, silent: true }]);
                 }
                 // Update the workspace state
-                workspace.updateSelectionNode(node);
+                // The treeview component clones the node so let's lookup the original one
+                var selection = _.find(treeElement.treeview('getNodes'), { key: node.key });
+                workspace.updateSelectionNode(selection);
                 Core.$apply($scope);
             },
             levels: 1,

@@ -95,7 +95,7 @@ namespace Jmx {
       lazyLoad: function (node: Folder, addNodes: (nodes: NodeSelection[]) => void) {
         const plugin = <(workspace: Workspace, folder: Folder, onComplete: (children: NodeSelection[]) => void) => void>Jmx.findLazyLoadingFunction(workspace, node);
         if (plugin) {
-          log.debug("Lazy loading folder " + node.text);
+          log.debug('Lazy loading folder ', node.text);
           plugin(workspace, node, children => addNodes(children));
         }
         // It seems to be required, as the lazyLoad property deletion done
@@ -122,7 +122,9 @@ namespace Jmx {
           treeElement.treeview('expandNode', [node, { levels: 1, silent: true }]);
         }
         // Update the workspace state
-        workspace.updateSelectionNode(node);
+        // The treeview component clones the node so let's lookup the original one
+        const selection = _.find(treeElement.treeview('getNodes'), { key: node.key }) as Folder;
+        workspace.updateSelectionNode(selection);
         Core.$apply($scope);
       },
       levels: 1,
