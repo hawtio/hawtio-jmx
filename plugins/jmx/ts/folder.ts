@@ -270,7 +270,7 @@ namespace Jmx {
     public insertBefore(child: Folder, referenceFolder: Folder) {
       child.detach();
       child.parent = this;
-      var idx = _.indexOf(<Array<Folder>>(this.children), referenceFolder);
+      var idx = _.indexOf(this.children, referenceFolder);
       if (idx >= 0) {
         this.children.splice(idx, 0, child);
       }
@@ -279,7 +279,7 @@ namespace Jmx {
     public insertAfter(child: Folder, referenceFolder: Folder) {
       child.detach();
       child.parent = this;
-      var idx = _.indexOf(<Array<Folder>>(this.children), referenceFolder);
+      var idx = _.indexOf(this.children, referenceFolder);
       if (idx >= 0) {
         this.children.splice(idx + 1, 0, child);
       }
