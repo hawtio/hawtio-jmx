@@ -143,6 +143,12 @@ declare namespace Jmx {
          */
         icon?: string;
         /**
+         * @property image
+         * @type string
+         * @optional
+         */
+        image?: string;
+        /**
          * @property version
          * @type string
          * @optional
@@ -211,7 +217,7 @@ declare namespace Jmx {
         isLazy: boolean;
         lazyLoad: boolean;
         icon: string;
-        readonly image: string;
+        image: string;
         tooltip: string;
         entity: any;
         version: string;

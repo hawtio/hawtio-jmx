@@ -225,6 +225,7 @@ var Jmx;
             this.parent = null;
             this.isLazy = false;
             this.icon = null;
+            this.image = null;
             this.tooltip = null;
             this.entity = null;
             this.version = null;
@@ -267,13 +268,6 @@ var Jmx;
             },
             set: function (isLazy) {
                 this.isLazy = isLazy;
-            },
-            enumerable: true,
-            configurable: true
-        });
-        Object.defineProperty(Folder.prototype, "image", {
-            get: function () {
-                return this.icon;
             },
             enumerable: true,
             configurable: true

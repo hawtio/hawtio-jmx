@@ -72,6 +72,12 @@ namespace Jmx {
      */
     icon?: string;
     /**
+     * @property image
+     * @type string
+     * @optional
+     */
+    image?: string;
+    /**
      * @property version
      * @type string
      * @optional
@@ -174,11 +180,7 @@ namespace Jmx {
     }
 
     icon:string = null;
-
-    get image(): string {
-      return this.icon;
-    }
-
+    image:string = null;
     tooltip:string = null;
     entity:any = null;
     version:string = null;
