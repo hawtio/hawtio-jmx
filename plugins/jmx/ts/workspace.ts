@@ -435,6 +435,8 @@ namespace Jmx {
         const lazyFunction = Jmx.findLazyLoadingFunction(this, folder);
         if (lazyFunction) {
           folder.lazyLoad = true;
+        } else {
+          folder.icon = 'fa fa-cube';
         }
       }
     }
