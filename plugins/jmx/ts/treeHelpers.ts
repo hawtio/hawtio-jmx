@@ -122,8 +122,9 @@ namespace Jmx {
           treeElement.treeview('expandNode', [node, { levels: 1, silent: true }]);
         }
         // Update the workspace state
-        // The treeview component clones the node so let's lookup the original one
-        const selection = _.find(treeElement.treeview('getNodes'), { key: node.key }) as Folder;
+        // The treeview component clones the node passed with the event
+        // so let's lookup the original one
+        const selection = treeElement.treeview('getSelected')[0] as NodeSelection;
         workspace.updateSelectionNode(selection);
         Core.$apply($scope);
       },
