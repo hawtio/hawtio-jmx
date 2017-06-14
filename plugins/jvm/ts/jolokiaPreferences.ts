@@ -1,7 +1,6 @@
-/// <reference path="../../includes.ts"/>
 /// <reference path="./jvmPlugin.ts"/>
 
-module JVM {
+namespace JVM {
 
   _module.controller("JVM.JolokiaPreferences", ["$scope", "localStorage", "jolokiaParams", "$window", ($scope, localStorage, jolokiaParams, $window) => {
 

@@ -1,10 +1,6 @@
-/// <reference path="../../includes.ts"/>
 /// <reference path="jvmGlobals.ts"/>
 
-/**
- * @module JVM
- */
-module JVM {
+namespace JVM {
 
   /**
    * Adds common properties and functions to the scope

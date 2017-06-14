@@ -13,7 +13,7 @@ namespace Jmx {
     }
   }
 
-  export const headerComponent = {
+  export const headerComponent = <angular.IComponentOptions>{
     template: `<h1>{{$ctrl.title}}</h1>`,
     controller: HeaderController
   };

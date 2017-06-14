@@ -1,11 +1,6 @@
-/// <reference path="../../includes.ts"/>
 /// <reference path="connect/connect.module.ts"/>
 
-/**
- * @module JVM
- * @main JVM
- */
-module JVM {
+namespace JVM {
 
   export var windowJolokia:Jolokia.IJolokia = undefined;
 

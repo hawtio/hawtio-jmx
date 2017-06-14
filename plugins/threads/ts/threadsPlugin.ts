@@ -1,10 +1,6 @@
-/// <reference path="../../includes.ts" />
 /// <reference path="../../jmx/ts/workspace.ts" />
-/**
- * @module Threads
- * @main Threads
- */
-module Threads {
+
+namespace Threads {
 
   export var pluginName = 'threads';
   export var templatePath = 'plugins/threads/html/';

@@ -1,4 +1,3 @@
-/// <reference path="../../includes.ts"/>
 /// <reference path="../../jvm/ts/jvmHelpers.ts"/>
 /// <reference path="jmxHelpers.ts"/>
 /// <reference path="widgetRepository.ts"/>

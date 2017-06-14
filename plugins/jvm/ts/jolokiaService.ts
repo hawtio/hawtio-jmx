@@ -1,10 +1,6 @@
-/// <reference path="../../includes.ts"/>
 /// <reference path="jvmPlugin.ts"/>
 
-/**
- * @module JVM
- */
-module JVM {
+namespace JVM {
 
   var urlCandidates = ['/hawtio/jolokia', '/jolokia', 'jolokia'];
   var discoveredUrl = null;

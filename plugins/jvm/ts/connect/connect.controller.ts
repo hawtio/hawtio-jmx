@@ -1,4 +1,3 @@
-/// <reference path="../../../includes.ts"/>
 /// <reference path="../../../jmx/ts/workspace.ts"/>
 
 namespace JVM {

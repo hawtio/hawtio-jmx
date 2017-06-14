@@ -1,8 +1,7 @@
-/// <reference path="libs/hawtio-ui/defs.d.ts" />
-/// <reference path="libs/hawtio-forms/defs.d.ts" />
-/// <reference path="libs/hawtio-preferences/defs.d.ts" />
-/// <reference path="libs/hawtio-utilities/defs.d.ts" />
-declare module JVM {
+/// <reference types="utilities" />
+/// <reference types="angular" />
+/// <reference types="core-navigation" />
+declare namespace JVM {
     var rootPath: string;
     var templatePath: string;
     var pluginName: string;
@@ -16,10 +15,7 @@ declare module JVM {
         'generic': string;
     };
 }
-/**
- * @module JVM
- */
-declare module JVM {
+declare namespace JVM {
     /**
      * Adds common properties and functions to the scope
      * @method configureScope
@@ -532,12 +528,12 @@ declare namespace Jmx {
     })[];
 }
 declare namespace Jmx {
-    var _module: ng.IModule;
+    var _module: angular.IModule;
     var DEFAULT_MAX_DEPTH: number;
     var DEFAULT_MAX_COLLECTION_SIZE: number;
 }
 declare namespace Jmx {
-    var AreaChartController: ng.IModule;
+    var AreaChartController: angular.IModule;
 }
 declare namespace Jmx {
 }
@@ -551,14 +547,14 @@ declare namespace Jmx {
         displayName: string;
         cellTemplate: string;
     }[];
-    var AttributesController: ng.IModule;
+    var AttributesController: angular.IModule;
 }
 declare namespace Jmx {
 }
 declare namespace Jmx {
 }
 declare namespace Jmx {
-    var DonutChartController: ng.IModule;
+    var DonutChartController: angular.IModule;
 }
 declare namespace Jmx {
     function findLazyLoadingFunction(workspace: Workspace, folder: any): (workspace: Workspace, folder: Folder, onComplete: (children: NodeSelection[]) => void) => void;
@@ -588,28 +584,18 @@ declare namespace JVM {
 declare namespace JVM {
     const ConnectModule: string;
 }
-/**
- * @module JVM
- * @main JVM
- */
-declare module JVM {
+declare namespace JVM {
     var windowJolokia: Jolokia.IJolokia;
-    var _module: ng.IModule;
+    var _module: angular.IModule;
 }
-/**
- * @module JVM
- */
-declare module JVM {
+declare namespace JVM {
 }
 declare module JVM {
-    var HeaderController: ng.IModule;
+    var HeaderController: angular.IModule;
 }
-declare module JVM {
+declare namespace JVM {
 }
-/**
- * @module JVM
- */
-declare module JVM {
+declare namespace JVM {
     var skipJolokia: boolean;
     var ConnectionName: string;
     function getConnectionName(reset?: boolean): string;
@@ -628,28 +614,18 @@ declare module JVM {
  */
 declare module JVM {
 }
-/**
- * @module JVM
- */
-declare module JVM {
+declare namespace JVM {
 }
-/**
- * @module JVM
- */
-declare module JVM {
+declare namespace JVM {
 }
-/**
- * @module Threads
- * @main Threads
- */
-declare module Threads {
+declare namespace Threads {
     var pluginName: string;
     var templatePath: string;
     var log: Logging.Logger;
     var jmxDomain: string;
     var mbeanType: string;
     var mbean: string;
-    var _module: ng.IModule;
+    var _module: angular.IModule;
 }
 /**
  * @module Threads
@@ -661,10 +637,7 @@ declare namespace Jmx {
         title: string;
         constructor($scope: any);
     }
-    const headerComponent: {
-        template: string;
-        controller: typeof HeaderController;
-    };
+    const headerComponent: angular.IComponentOptions;
 }
 declare namespace Jmx {
 }
@@ -707,19 +680,14 @@ declare namespace Jmx {
         operationResult: string;
         isExecuting: boolean;
         constructor(workspace: Workspace, operationsService: OperationsService);
+        $onInit(): void;
         private static buildHelpText(arg);
         private static convertToHtmlInputType(javaType);
         private static getDefaultValue(javaType);
         execute(): void;
         cancel(): void;
     }
-    const operationFormComponent: {
-        bindings: {
-            operation: string;
-        };
-        templateUrl: string;
-        controller: typeof OperationFormController;
-    };
+    const operationFormComponent: angular.IComponentOptions;
 }
 declare namespace Jmx {
     class OperationsController {
@@ -738,10 +706,7 @@ declare namespace Jmx {
         private buildJolokiaUrl(operation);
         private fetchOperations();
     }
-    const operationsComponent: {
-        templateUrl: string;
-        controller: typeof OperationsController;
-    };
+    const operationsComponent: angular.IComponentOptions;
 }
 declare namespace Jmx {
 }

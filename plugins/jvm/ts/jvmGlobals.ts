@@ -1,6 +1,4 @@
-/// <reference path="../../includes.ts"/>
-
-module JVM {
+namespace JVM {
 
   export var rootPath = 'plugins/jvm';
   export var templatePath = UrlHelpers.join(rootPath, '/html');

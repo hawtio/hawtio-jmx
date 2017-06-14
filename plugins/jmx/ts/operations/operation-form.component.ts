@@ -15,6 +15,9 @@ namespace Jmx {
 
     constructor(private workspace: Workspace, private operationsService: OperationsService) {
       'ngInject';
+    }
+
+    $onInit() {
       this.formFields = this.operation.args.map(arg => ({
         label: arg.name,
         type: OperationFormController.convertToHtmlInputType(arg.type),
@@ -88,7 +91,7 @@ namespace Jmx {
 
   }
 
-  export const operationFormComponent = {
+  export const operationFormComponent = <angular.IComponentOptions>{
     bindings: {
       operation: '<'
     },

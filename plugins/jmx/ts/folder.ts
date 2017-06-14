@@ -1,5 +1,3 @@
-/// <reference path="../../includes.ts"/>
-
 namespace Jmx {
   /**
    * a NodeSelection interface so we can expose things like the objectName and the MBean's entries
