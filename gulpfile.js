@@ -7,7 +7,7 @@ var gulp = require('gulp'),
     s = require('underscore.string'),
     argv = require('yargs').argv,
     logger = require('js-logger'),
-    hawtio = require('hawtio-node-backend');
+    hawtio = require('@hawtio/node-backend');
 
 var plugins = gulpLoadPlugins({});
 
@@ -21,6 +21,7 @@ var config = {
   templateModule: 'hawtio-jmx-templates',
   dist: argv.out || './dist/',
   js: 'hawtio-jmx.js',
+  dts: 'hawtio-jmx.d.ts',
   css: 'hawtio-jmx.css',
   tsProject: plugins.typescript.createProject('tsconfig.json'),
   sourceMap: argv.sourcemap,
@@ -32,7 +33,6 @@ gulp.task('clean-defs', function() {
 });
 
 gulp.task('tsc', ['clean-defs'], function() {
-  var cwd = process.cwd();
   var tsResult = gulp.src(config.ts)
     .pipe(plugins.if(config.sourceMap, plugins.sourcemaps.init()))
     .pipe(config.tsProject());
@@ -43,7 +43,7 @@ gulp.task('tsc', ['clean-defs'], function() {
       .pipe(plugins.if(config.sourceMap, plugins.sourcemaps.write()))
       .pipe(gulp.dest('.')),
     tsResult.dts
-      .pipe(plugins.rename('hawtio-jmx.d.ts'))
+      .pipe(plugins.rename(config.dts))
       .pipe(gulp.dest(config.dist)));
 });
 

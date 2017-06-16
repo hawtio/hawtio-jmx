@@ -489,14 +489,7 @@ declare namespace Jmx {
 }
 declare namespace Jmx {
     function createDashboardLink(widgetType: any, widget: any): string;
-    function getWidgetType(widget: any): {
-        type: string;
-        icon: string;
-        route: string;
-        size_x: number;
-        size_y: number;
-        title: string;
-    };
+    function getWidgetType(widget: any): any;
     var jmxWidgetTypes: {
         type: string;
         icon: string;
