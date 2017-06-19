@@ -1,40 +1,49 @@
-## hawtio-jmx
+# hawtio-jmx
 
-This plugin provides JMX for hawtio
+This plugin provides JMX for hawtio.
 
-### Basic usage
+## Installation
 
-#### Running this plugin locally
+```
+yarn add @hawtio/jmx
+```
 
-First clone the source
+## Set up development environment
 
-    git clone https://github.com/hawtio/hawtio-jmx
-    cd hawtio-jmx
+### Clone the repository
 
-Next you'll need to [install NodeJS](http://nodejs.org/download/) and then install the default global npm dependencies:
+```
+git clone https://github.com/hawtio/hawtio-jmx
+cd hawtio-jmx
+```
 
-    npm install -g bower gulp slush slush-hawtio-javascript slush-hawtio-typescript typescript
+### Install development tools
 
-Then install all local nodejs packages and update bower dependencies via:
+* [Node.js](http://nodejs.org)
+* [Yarn](https://yarnpkg.com)
+* [gulp](http://gulpjs.com/)
 
-    npm install
-    bower update
+### Install project dependencies
 
-Then to run the web application:
+```
+yarn install:dev
+```
 
-    gulp
+### Run the web application
 
-#### Install the bower package
+```
+gulp
+```
 
-    bower install --save hawtio-jmx
+### Change the default proxy port
 
-#### Change the default proxy port
+To proxy to a local JVM running on a different port than `8282` specify the `--port` CLI arguement to gulp.
 
-To proxy to a local JVM running on a different port than `8282` specify the `--port` CLI arguement to gulp:
+```
+gulp --port=8181
+```
 
-    gulp --port=8181
-
-#### To test with hawtio v1.x
+### Test with hawtio v1.x
 
 When developing on hawtio-jmx you can run a JVM with the Java based hawtio 1.x web module. This allows the JMX plugin to have MBeans to work with.
 
@@ -51,7 +60,7 @@ To do so in another shell:
 
 Then when you run `gulp` then the hawtio-jmx web console will automatic detect the running JVM with hawtio 1.x and you have some MBeans to work with.
 
-#### Output build to a different directory
+### Output build to a different directory
 
 When developing this plugin in a dependent console you can change the output directory where the compiled `.js` and `.css` go.  Just use the `--out` flag to set a different output directory, for example:
 
@@ -59,7 +68,7 @@ When developing this plugin in a dependent console you can change the output dir
 
 Whenever the build completes the compiled `.js` file will be put into the target directory.  Don't forget to first do a `gulp build` without this flag before committing changes!
 
-#### Turn on source maps generation for debugging TypeScript
+### Turn on source maps generation for debugging TypeScript
 
 If you want to debug `.ts` using a browser developer tool such as Chrome DevTools, pass the `--sourcemap` flag to gulp:
 

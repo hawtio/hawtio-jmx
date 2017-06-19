@@ -8230,33 +8230,6 @@ var Threads;
             initFunc();
         }]);
 })(Threads || (Threads = {}));
-/// <reference path="../jmxPlugin.ts"/>
-var Jmx;
-(function (Jmx) {
-    var HeaderController = (function () {
-        HeaderController.$inject = ["$scope"];
-        function HeaderController($scope) {
-            'ngInject';
-            var _this = this;
-            $scope.$on('jmxTreeClicked', function (event, selectedNode) {
-                _this.title = selectedNode.text;
-            });
-        }
-        return HeaderController;
-    }());
-    Jmx.HeaderController = HeaderController;
-    Jmx.headerComponent = {
-        template: "<h1>{{$ctrl.title}}</h1>",
-        controller: HeaderController
-    };
-})(Jmx || (Jmx = {}));
-/// <reference path="header.component.ts"/>
-var Jmx;
-(function (Jmx) {
-    angular
-        .module('hawtio-jmx-common', [])
-        .component('jmxHeader', Jmx.headerComponent);
-})(Jmx || (Jmx = {}));
 var Jmx;
 (function (Jmx) {
     var Operation = (function () {
@@ -8533,6 +8506,33 @@ var Jmx;
         .component('operations', Jmx.operationsComponent)
         .component('operationForm', Jmx.operationFormComponent)
         .service('operationsService', Jmx.OperationsService);
+})(Jmx || (Jmx = {}));
+/// <reference path="../jmxPlugin.ts"/>
+var Jmx;
+(function (Jmx) {
+    var HeaderController = (function () {
+        HeaderController.$inject = ["$scope"];
+        function HeaderController($scope) {
+            'ngInject';
+            var _this = this;
+            $scope.$on('jmxTreeClicked', function (event, selectedNode) {
+                _this.title = selectedNode.text;
+            });
+        }
+        return HeaderController;
+    }());
+    Jmx.HeaderController = HeaderController;
+    Jmx.headerComponent = {
+        template: "<h1>{{$ctrl.title}}</h1>",
+        controller: HeaderController
+    };
+})(Jmx || (Jmx = {}));
+/// <reference path="header.component.ts"/>
+var Jmx;
+(function (Jmx) {
+    angular
+        .module('hawtio-jmx-common', [])
+        .component('jmxHeader', Jmx.headerComponent);
 })(Jmx || (Jmx = {}));
 
 angular.module('hawtio-jmx-templates', []).run(['$templateCache', function($templateCache) {$templateCache.put('plugins/jmx/html/areaChart.html','<div ng-controller="Jmx.AreaChartController">\n  <script type="text/ng-template" id="areaChart">\n    <fs-area bind="data" duration="250" interpolate="false" point-radius="5" width="width" height="height" label=""></fs-area>\n  </script>\n  <div compile="template"></div>\n</div>\n');
