@@ -11,7 +11,8 @@
     <div class="form-group" ng-class="{'has-error': model.errors.name}">
       <label class="col-sm-3 control-label required-pf" for="connection-name">Name</label>
       <div class="col-sm-8">
-        <input type="text" id="connection-name" class="form-control" name="name" ng-model="model.connection.name">
+        <input type="text" id="connection-name" class="form-control" name="name" ng-model="model.connection.name"
+          pf-focused="!model.connection.name">
         <span class="help-block" ng-show="model.errors.name">{{model.errors.name}}</span>
       </div>
     </div>

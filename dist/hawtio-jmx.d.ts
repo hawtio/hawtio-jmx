@@ -626,6 +626,15 @@ declare namespace Threads {
 declare module Threads {
 }
 declare namespace Jmx {
+    class HeaderController {
+        title: string;
+        constructor($scope: any);
+    }
+    const headerComponent: angular.IComponentOptions;
+}
+declare namespace Jmx {
+}
+declare namespace Jmx {
     class Operation {
         args: OperationArgument[];
         description: string;
@@ -691,15 +700,6 @@ declare namespace Jmx {
         private fetchOperations();
     }
     const operationsComponent: angular.IComponentOptions;
-}
-declare namespace Jmx {
-}
-declare namespace Jmx {
-    class HeaderController {
-        title: string;
-        constructor($scope: any);
-    }
-    const headerComponent: angular.IComponentOptions;
 }
 declare namespace Jmx {
 }

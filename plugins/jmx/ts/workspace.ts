@@ -161,7 +161,8 @@ namespace Jmx {
     public maybeMonitorPlugins() {
       if (this.treeContainsDomainAndProperties("hawtio", {type: "Registry"})) {
         if (this.pluginRegisterHandle === null) {
-          this.pluginRegisterHandle = this.jolokia.register(angular.bind(this, this.maybeUpdatePlugins), {
+          let callback = <(...response:Jolokia.IResponse[]) => void> angular.bind(this, this.maybeUpdatePlugins);
+          this.pluginRegisterHandle = this.jolokia.register(callback, {
             type: "read",
             mbean: "hawtio:type=Registry",
             attribute: "UpdateCounter"
@@ -178,7 +179,8 @@ namespace Jmx {
       // lets also listen to see if we have a JMX tree watcher
       if (this.treeContainsDomainAndProperties("hawtio", {type: "TreeWatcher"})) {
         if (this.treeWatchRegisterHandle === null) {
-          this.treeWatchRegisterHandle = this.jolokia.register(angular.bind(this, this.maybeReloadTree), {
+          let callback = <(...response:Jolokia.IResponse[]) => void> angular.bind(this, this.maybeReloadTree);
+          this.treeWatchRegisterHandle = this.jolokia.register(callback, {
             type: "read",
             mbean: "hawtio:type=TreeWatcher",
             attribute: "Counter"

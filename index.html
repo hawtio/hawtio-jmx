@@ -9,11 +9,11 @@
     <!-- CSS -->
     <!-- datatables -->
     <link rel="stylesheet" href="node_modules/datatables.net-dt/css/jquery.dataTables.css" />
-    <!-- bootstrap -->
-    <link rel="stylesheet" href="node_modules/bootstrap/dist/css/bootstrap.min.css" />
     <!-- patternfly -->
     <link rel="stylesheet" href="node_modules/patternfly/dist/css/patternfly.min.css">
     <link rel="stylesheet" href="node_modules/patternfly/dist/css/patternfly-additions.min.css">
+    <!-- angular-patternfly -->
+    <link rel="stylesheet" href="node_modules/angular-patternfly/dist/styles/angular-patternfly.min.css" />
     <!-- codemirror -->
     <link rel="stylesheet" href="node_modules/codemirror/lib/codemirror.css" />
     <!-- angular-resizable -->
@@ -30,6 +30,9 @@
     <!-- JAVASCRIPT -->
     <!-- jquery -->
     <script src="node_modules/jquery/dist/jquery.min.js"></script>
+    <!-- datatables -->
+    <script src="node_modules/datatables.net/js/jquery.dataTables.js"></script>
+    <script src="node_modules/datatables.net-select/js/dataTables.select.js"></script>
     <!-- bootstrap -->
     <script src="node_modules/bootstrap/dist/js/bootstrap.min.js"></script>
     <!-- patternfly -->
@@ -52,13 +55,11 @@
     <script src="node_modules/angular-animate/angular-animate.min.js"></script>
     <!-- angular-drag-and-drop-lists -->
     <script src="node_modules/angular-drag-and-drop-lists/angular-drag-and-drop-lists.min.js"></script>
-    <!-- angular-patternfly -->
-    <script src="node_modules/angular-patternfly/dist/angular-patternfly.min.js"></script>
-    <!-- datatables -->
-    <script src="node_modules/datatables.net/js/jquery.dataTables.js"></script>
-    <script src="node_modules/datatables.net-select/js/dataTables.select.js"></script>
+    <!-- angular-datatables -->
     <script src="node_modules/angular-datatables/dist/angular-datatables.min.js"></script>
     <script src="node_modules/angular-datatables/dist/plugins/select/angular-datatables.select.min.js"></script>    
+    <!-- angular-patternfly -->
+    <script src="node_modules/angular-patternfly/dist/angular-patternfly.js"></script>
     <!-- c3, d3 -->
     <script src="node_modules/c3/c3.min.js"></script>
     <script src="node_modules/d3/d3.min.js"></script>
@@ -111,6 +112,7 @@
     <!-- @hawtio/jmx -->
     <script src="dist/hawtio-jmx.js"></script>
   </head>
+
   <body>
     <nav class="navbar navbar-pf-vertical">
       <div class="navbar-header">
@@ -139,4 +141,5 @@
         ng-include src="viewPartial">
     </div>
   </body>
+
 </html>
