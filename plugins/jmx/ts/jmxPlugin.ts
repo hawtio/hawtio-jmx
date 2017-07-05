@@ -88,7 +88,7 @@ namespace Jmx {
 
     viewRegistry['jmx'] = layoutTree;
     viewRegistry['{ "tab": "notree" }'] = layoutFull;
-    helpRegistry.addUserDoc('jmx', 'app/jmx/doc/help.md');
+    helpRegistry.addUserDoc('jmx', 'plugins/jmx/doc/help.md');
 
     pageTitle.addTitleElement(():string => {
       if (Jmx.currentProcessId === '') {
