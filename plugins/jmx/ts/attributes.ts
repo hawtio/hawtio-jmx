@@ -140,21 +140,6 @@ namespace Jmx {
       pendingUpdate = setTimeout(updateTableContents, 500);
     });
 
-    $scope.$watch('workspace.selection', function () {
-      if (workspace.moveIfViewInvalid()) {
-        Core.unregister(jolokia, $scope);
-        return;
-      }
-      if (pendingUpdate) {
-        clearTimeout(pendingUpdate);
-      }
-      pendingUpdate = setTimeout(() => {
-        $scope.gridData = [];
-        Core.$apply($scope);
-        setTimeout(updateTableContents, 10);
-      }, 10);
-    });
-
     $scope.hasWidget = (row) => {
       return true;
     };
