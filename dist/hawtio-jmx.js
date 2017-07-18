@@ -5615,7 +5615,7 @@ var Jmx;
             cellTemplate: '<div class="ngCellText"><a href="" ng-click="row.entity.gotoFolder(row)"><i class="{{row.entity.folderIconClass(row)}}"></i> {{row.getProperty("title")}}</a></div>'
         }
     ];
-    Jmx.AttributesController = Jmx._module.controller("Jmx.AttributesController", ["$scope", "$element", "$location", "workspace", "jolokia", "jmxWidgets", "jmxWidgetTypes", "$templateCache", "localStorage", "$browser", function ($scope, $element, $location, workspace, jolokia, jmxWidgets, jmxWidgetTypes, $templateCache, localStorage, $browser) {
+    Jmx.AttributesController = Jmx._module.controller("Jmx.AttributesController", ["$scope", "$element", "$location", "workspace", "jolokia", "jmxWidgets", "jmxWidgetTypes", "$templateCache", "localStorage", "$browser", "$timeout", function ($scope, $element, $location, workspace, jolokia, jmxWidgets, jmxWidgetTypes, $templateCache, localStorage, $browser, $timeout) {
             $scope.searchText = '';
             $scope.nid = 'empty';
             $scope.selectedItems = [];
@@ -5697,25 +5697,14 @@ var Jmx;
             }
             $scope.nid = $location.search()['nid'];
             Jmx.log.debug("nid: ", $scope.nid);
-            pendingUpdate = setTimeout(updateTableContents, 50);
-            $scope.$on('jmxTreeUpdated', function () {
-                Core.unregister(jolokia, $scope);
-                if (pendingUpdate) {
-                    clearTimeout(pendingUpdate);
-                }
-                pendingUpdate = setTimeout(updateTableContents, 500);
-            });
-            var pendingUpdate = null;
+            var updateTable = _.debounce(updateTableContents, 50, { leading: false, trailing: true });
+            $scope.$on('jmxTreeUpdated', updateTable);
             $scope.$watch('gridOptions.filterOptions.filterText', function (newValue, oldValue) {
-                if (newValue === oldValue) {
-                    return;
+                if (newValue !== oldValue) {
+                    updateTable();
                 }
-                Core.unregister(jolokia, $scope);
-                if (pendingUpdate) {
-                    clearTimeout(pendingUpdate);
-                }
-                pendingUpdate = setTimeout(updateTableContents, 500);
             });
+            updateTable();
             $scope.hasWidget = function (row) {
                 return true;
             };

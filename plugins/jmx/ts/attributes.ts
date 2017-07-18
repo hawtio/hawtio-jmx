@@ -22,7 +22,7 @@ namespace Jmx {
     }
   ];
 
-  export var AttributesController = _module.controller("Jmx.AttributesController", ["$scope", "$element", "$location", "workspace", "jolokia", "jmxWidgets", "jmxWidgetTypes", "$templateCache", "localStorage", "$browser", ($scope,
+  export var AttributesController = _module.controller("Jmx.AttributesController", ["$scope", "$element", "$location", "workspace", "jolokia", "jmxWidgets", "jmxWidgetTypes", "$templateCache", "localStorage", "$browser", "$timeout", ($scope,
                                        $element,
                                        $location,
                                        workspace:Workspace,
@@ -31,7 +31,7 @@ namespace Jmx {
                                        jmxWidgetTypes,
                                        $templateCache,
                                        localStorage,
-                                       $browser) => {
+                                       $browser, $timeout) => {
     $scope.searchText = '';
     $scope.nid = 'empty';
     $scope.selectedItems = [];
@@ -120,28 +120,17 @@ namespace Jmx {
     $scope.nid = $location.search()['nid'];
     log.debug("nid: ", $scope.nid);
 
-    pendingUpdate = setTimeout(updateTableContents, 50);
+    const updateTable = _.debounce(updateTableContents, 50, { leading: false, trailing: true });
 
-    $scope.$on('jmxTreeUpdated', function () {
-      Core.unregister(jolokia, $scope);
-      if (pendingUpdate) {
-        clearTimeout(pendingUpdate);
-      }
-      pendingUpdate = setTimeout(updateTableContents, 500);
-    });
-
-    var pendingUpdate = null;
+    $scope.$on('jmxTreeUpdated', updateTable);
 
     $scope.$watch('gridOptions.filterOptions.filterText', (newValue, oldValue) => {
-      if (newValue === oldValue) {
-        return;
+      if (newValue !== oldValue) {
+        updateTable();
       }
-      Core.unregister(jolokia, $scope);
-      if (pendingUpdate) {
-        clearTimeout(pendingUpdate);
-      }
-      pendingUpdate = setTimeout(updateTableContents, 500);
     });
+
+    updateTable();
 
     $scope.hasWidget = (row) => {
       return true;
