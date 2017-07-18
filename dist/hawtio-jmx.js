@@ -5686,21 +5686,18 @@ var Jmx;
                     $scope.selectedItems = newValue;
                 }
             }, true);
-            $scope.$on("$routeChangeSuccess", function (event, current, previous) {
-                // lets do this asynchronously to avoid Error: $digest already in progress
-                // clear selection if we clicked the jmx nav bar button
-                // otherwise we may show data from Camel/ActiveMQ or other plugins that
-                // reuse the JMX plugin for showing tables (#884)
-                var currentUrl = $location.url();
-                if (currentUrl.endsWith("/jmx/attributes")) {
-                    Jmx.log.debug("Reset selection in JMX plugin");
-                    workspace.selection = null;
-                    $scope.lastKey = null;
-                }
-                $scope.nid = $location.search()['nid'];
-                Jmx.log.debug("nid: ", $scope.nid);
-                pendingUpdate = setTimeout(updateTableContents, 50);
-            });
+            // clear selection if we clicked the jmx nav bar button
+            // otherwise we may show data from Camel/ActiveMQ or other plugins that
+            // reuse the JMX plugin for showing tables (#884)
+            var currentUrl = $location.url();
+            if (currentUrl.endsWith("/jmx/attributes")) {
+                Jmx.log.debug("Reset selection in JMX plugin");
+                workspace.selection = null;
+                $scope.lastKey = null;
+            }
+            $scope.nid = $location.search()['nid'];
+            Jmx.log.debug("nid: ", $scope.nid);
+            pendingUpdate = setTimeout(updateTableContents, 50);
             $scope.$on('jmxTreeUpdated', function () {
                 Core.unregister(jolokia, $scope);
                 if (pendingUpdate) {
