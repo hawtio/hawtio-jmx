@@ -7038,7 +7038,7 @@ var Jmx;
                 setTimeout(updateSelectionFromURL, 50);
             };
             $scope.$on('jmxTreeUpdated', populateTree);
-            $scope.$on('$routeChangeSuccess', updateSelectionFromURL);
+            $scope.$on('$routeChangeStart', updateSelectionFromURL);
             populateTree();
         }]);
 })(Jmx || (Jmx = {}));
