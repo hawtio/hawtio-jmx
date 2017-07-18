@@ -5707,6 +5707,9 @@ var Jmx;
             });
             var pendingUpdate = null;
             $scope.$watch('gridOptions.filterOptions.filterText', function (newValue, oldValue) {
+                if (newValue === oldValue) {
+                    return;
+                }
                 Core.unregister(jolokia, $scope);
                 if (pendingUpdate) {
                     clearTimeout(pendingUpdate);

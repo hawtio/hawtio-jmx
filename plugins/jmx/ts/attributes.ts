@@ -133,6 +133,9 @@ namespace Jmx {
     var pendingUpdate = null;
 
     $scope.$watch('gridOptions.filterOptions.filterText', (newValue, oldValue) => {
+      if (newValue === oldValue) {
+        return;
+      }
       Core.unregister(jolokia, $scope);
       if (pendingUpdate) {
         clearTimeout(pendingUpdate);
