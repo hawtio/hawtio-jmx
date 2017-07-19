@@ -2,13 +2,17 @@
 /// <reference path="jmxHelpers.ts"/>
 /// <reference path="widgetRepository.ts"/>
 /// <reference path="workspace.ts"/>
+/// <reference path="common/common.module.ts"/>
+/// <reference path="dashboard/dashboard.module.ts"/>
+/// <reference path="operations/operations.module.ts"/>
 
 namespace Jmx {
 
   export var _module = angular.module(pluginName, [
-    'angularResizable',
-    'hawtio-jmx-common',
-    'hawtio-jmx-operations'
+    CommonModule,
+    DashboardModule,
+    OperationsModule,
+    'angularResizable'
   ]);
 
   _module.config(['HawtioNavBuilderProvider', "$routeProvider", (builder:HawtioMainNav.BuilderFactory, $routeProvider) => {
@@ -21,7 +25,8 @@ namespace Jmx {
       .when('/jmx/chartEdit', {templateUrl: UrlHelpers.join(templatePath, 'chartEdit.html')})
       .when('/jmx/help/:tabName', {templateUrl: 'app/core/html/help.html'})
       .when('/jmx/widget/donut', {templateUrl: UrlHelpers.join(templatePath, 'donutChart.html')})
-      .when('/jmx/widget/area', {templateUrl: UrlHelpers.join(templatePath, 'areaChart.html')});
+      .when('/jmx/widget/area', {templateUrl: UrlHelpers.join(templatePath, 'areaChart.html')})
+      .when('/jmx/dashboard', {template: '<dashboard></dashboard>'})
   }]);
 
   _module.factory('jmxWidgetTypes', () => Jmx.jmxWidgetTypes);

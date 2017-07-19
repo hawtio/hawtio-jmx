@@ -5,10 +5,11 @@
 
 namespace Jmx {
 
-  angular
+  export const OperationsModule = angular
     .module('hawtio-jmx-operations', [])
     .component('operations', operationsComponent)
     .component('operationForm', operationFormComponent)
-    .service('operationsService', OperationsService);
+    .service('operationsService', OperationsService)
+    .name;
 
 }

@@ -521,6 +521,127 @@ declare namespace Jmx {
     })[];
 }
 declare namespace Jmx {
+    class HeaderController {
+        title: string;
+        constructor($scope: any);
+    }
+    const headerComponent: angular.IComponentOptions;
+}
+declare namespace Jmx {
+    const CommonModule: string;
+}
+declare namespace Jmx {
+    class DashboardController {
+        private $sce;
+        private workspace;
+        private dashboardService;
+        dashboardUrl: string;
+        constructor($sce: ng.ISCEService, workspace: Workspace, dashboardService: DashboardService);
+        $onInit(): void;
+    }
+    const dashboardComponent: angular.IComponentOptions;
+}
+declare namespace Jmx {
+    class MetricsService {
+        private static METRICS;
+        getMetrics(type: string): any;
+    }
+}
+declare namespace Jmx {
+    class JmxInfo {
+        context: string;
+        type: string;
+        name: string;
+        id: string;
+        constructor(nodeSelection: NodeSelection);
+    }
+}
+declare namespace Jmx {
+    class DashboardService {
+        private $http;
+        private metricsService;
+        constructor($http: ng.IHttpService, metricsService: MetricsService);
+        configureGrafanaDashboard(nodeSelection: NodeSelection): angular.IPromise<angular.IHttpPromiseCallbackArg<{}>>;
+        private createDatasource;
+        private createDashboard;
+        private getDashboard;
+        private defineDashboard;
+    }
+}
+declare namespace Jmx {
+    const DashboardModule: string;
+}
+declare namespace Jmx {
+    class Operation {
+        args: OperationArgument[];
+        description: string;
+        name: string;
+        simpleName: string;
+        constructor(method: string, args: OperationArgument[], description: string);
+        private static buildName(method, args);
+        private static buildSimpleName(name);
+    }
+    interface OperationArgument {
+        name: string;
+        type: string;
+        desc: string;
+    }
+}
+declare namespace Jmx {
+    class OperationsService {
+        private $q;
+        private jolokia;
+        private rbacACLMBean;
+        constructor($q: ng.IQService, jolokia: Jolokia.IJolokia, rbacACLMBean: ng.IPromise<string>);
+        getOperations(mbeanName: string): ng.IPromise<Operation[]>;
+        private loadOperations(mbeanName);
+        getOperation(mbeanName: string, operationName: any): ng.IPromise<Operation>;
+        executeOperation(mbeanName: string, operation: Operation, argValues?: any[]): ng.IPromise<string>;
+    }
+}
+declare namespace Jmx {
+    class OperationsController {
+        private $scope;
+        private $location;
+        private workspace;
+        private jolokiaUrl;
+        private operationsService;
+        config: any;
+        actionButtons: any[];
+        menuActions: any[];
+        operations: Operation[];
+        constructor($scope: any, $location: any, workspace: Workspace, jolokiaUrl: any, operationsService: OperationsService);
+        $onInit(): void;
+        private configureListView();
+        private buildJolokiaUrl(operation);
+        private fetchOperations();
+    }
+    const operationsComponent: angular.IComponentOptions;
+}
+declare namespace Jmx {
+    class OperationFormController {
+        private workspace;
+        private operationsService;
+        operation: any;
+        formFields: any;
+        editorMode: string;
+        operationFailed: boolean;
+        operationResult: string;
+        isExecuting: boolean;
+        constructor(workspace: Workspace, operationsService: OperationsService);
+        $onInit(): void;
+        private static buildHelpText(arg);
+        private static convertToHtmlInputType(javaType);
+        private static getDefaultValue(javaType);
+        execute(): void;
+        cancel(): void;
+    }
+    const operationFormComponent: angular.IComponentOptions;
+}
+declare namespace Jmx {
+    const OperationsModule: string;
+}
+declare namespace Jmx {
     var _module: angular.IModule;
     var DEFAULT_MAX_DEPTH: number;
     var DEFAULT_MAX_COLLECTION_SIZE: number;
@@ -624,82 +745,4 @@ declare namespace Threads {
  * @module Threads
  */
 declare module Threads {
-}
-declare namespace Jmx {
-    class HeaderController {
-        title: string;
-        constructor($scope: any);
-    }
-    const headerComponent: angular.IComponentOptions;
-}
-declare namespace Jmx {
-}
-declare namespace Jmx {
-    class Operation {
-        args: OperationArgument[];
-        description: string;
-        name: string;
-        simpleName: string;
-        constructor(method: string, args: OperationArgument[], description: string);
-        private static buildName(method, args);
-        private static buildSimpleName(name);
-    }
-    interface OperationArgument {
-        name: string;
-        type: string;
-        desc: string;
-    }
-}
-declare namespace Jmx {
-    class OperationsService {
-        private $q;
-        private jolokia;
-        private rbacACLMBean;
-        constructor($q: ng.IQService, jolokia: Jolokia.IJolokia, rbacACLMBean: ng.IPromise<string>);
-        getOperations(mbeanName: string): ng.IPromise<Operation[]>;
-        private loadOperations(mbeanName);
-        getOperation(mbeanName: string, operationName: any): ng.IPromise<Operation>;
-        executeOperation(mbeanName: string, operation: Operation, argValues?: any[]): ng.IPromise<string>;
-    }
-}
-declare namespace Jmx {
-    class OperationFormController {
-        private workspace;
-        private operationsService;
-        operation: any;
-        formFields: any;
-        editorMode: string;
-        operationFailed: boolean;
-        operationResult: string;
-        isExecuting: boolean;
-        constructor(workspace: Workspace, operationsService: OperationsService);
-        $onInit(): void;
-        private static buildHelpText(arg);
-        private static convertToHtmlInputType(javaType);
-        private static getDefaultValue(javaType);
-        execute(): void;
-        cancel(): void;
-    }
-    const operationFormComponent: angular.IComponentOptions;
-}
-declare namespace Jmx {
-    class OperationsController {
-        private $scope;
-        private $location;
-        private workspace;
-        private jolokiaUrl;
-        private operationsService;
-        config: any;
-        actionButtons: any[];
-        menuActions: any[];
-        operations: Operation[];
-        constructor($scope: any, $location: any, workspace: Workspace, jolokiaUrl: any, operationsService: OperationsService);
-        $onInit(): void;
-        private configureListView();
-        private buildJolokiaUrl(operation);
-        private fetchOperations();
-    }
-    const operationsComponent: angular.IComponentOptions;
-}
-declare namespace Jmx {
 }
