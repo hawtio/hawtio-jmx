@@ -16,7 +16,7 @@ namespace Jmx {
         this.dashboardService.configureGrafanaDashboard(nodeSelection)
           .then(response => {
             let slug = response.data['meta']['slug'];
-            let url = `http://localhost:3000/dashboard/db/${slug}?orgId=1&kiosk=1`;
+            let url = `http://localhost:3000/dashboard/db/${slug}?orgId=1&kiosk=1&theme=light`;
             this.dashboardUrl = this.$sce.trustAsResourceUrl(url);
           })
           .catch(response => console.error(response));

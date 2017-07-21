@@ -13,7 +13,7 @@ namespace Jmx {
       this.context = nodeSelection.entries.context;
       this.name = nodeSelection.entries.name.replace(/"/g, '');
       this.type = nodeSelection.entries.type;
-      this.id = `${this.context}-${this.type}-${this.name}`;
+      this.id = `${this.context}-${this.type}-${this.name.replace(/\W/g, '')}`;
     }
     
   }

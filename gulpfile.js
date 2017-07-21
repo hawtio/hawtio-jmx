@@ -102,11 +102,18 @@ gulp.task('connect', ['watch'], function() {
   hawtio.setConfig({
     logLevel: config.logLevel,
     port: 2772,
-    staticProxies: [{
-      port: config.proxyPort,
-      path: '/jolokia',
-      targetPath: config.targetPath
-    }],
+    staticProxies: [
+      {
+        port: config.proxyPort,
+        path: '/jolokia',
+        targetPath: config.targetPath
+      },
+      {
+        port: 3000,
+        path: '/grafana',
+        targetPath: '/'
+      }
+    ],
     staticAssets: [{
       path: '/',
       dir: '.'
