@@ -1,13 +1,13 @@
 <div class="jvm-nav-main">
   <ul class="nav nav-tabs" ng-controller="JVM.NavController">
     <li ng-class='{active : isActive("/jvm/connect")}'>
-        <a ng-href="/jvm/connect{{hash}}">Remote</a>
+        <a ng-href="#" ng-click="goto('/jvm/connect')">Remote</a>
     </li>
     <li ng-class='{active : isActive("/jvm/local")}' ng-show="isLocalEnabled">
-      <a ng-href="/jvm/local{{hash}}">Local</a>
+      <a ng-href="#" ng-click="goto('/jvm/local')">Local</a>
     </li>
     <li ng-class='{active : isActive("/jvm/discover")}' ng-show="isDiscoveryEnabled">
-        <a ng-href="/jvm/discover{{hash}}">Discover</a>
+        <a ng-href="#" ng-click="goto('/jvm/discover')">Discover</a>
     </li>
   </ul>
   <div class="contents" ng-view></div>

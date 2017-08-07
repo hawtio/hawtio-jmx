@@ -26,6 +26,9 @@ namespace JVM {
       return JVM.hasLocalMBean(workspace);
     };
 
+    $scope.goto = (path) => {
+      $location.path(path);
+    };
   }
 
   export function hasLocalMBean(workspace) {
