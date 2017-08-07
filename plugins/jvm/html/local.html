@@ -1,17 +1,28 @@
 <div ng-controller="JVM.JVMsController">
 
-  <div class="row">
-    <div class="pull-right">
-      <button class="btn" ng-click="fetch()" title="Refresh"><i class="fa fa-refresh"></i></button>
-    </div>
-    <div class="pull-right">
-      <input class="search-query" type="text" ng-model="filter" placeholder="Filter...">
+  <h1>Local</h1>
+
+  <div class="row toolbar-pf">
+    <div class="col-sm-12">
+      <form class="toolbar-pf-actions">
+        <div class="form-group">
+          <input type="text" class="form-control" ng-model="filter" placeholder="Filter..." autocomplete="off">
+        </div>
+        <div class="form-group">
+          <button class="btn btn-default" ng-click="fetch()" title="Refresh"><i class="fa fa-refresh"></i> Refresh</button>
+        </div>
+      </form>
     </div>
   </div>
 
   <div ng-hide="initDone">
-    <div class="alert alert-info">
-      <i class="fa fa-spinner icon-spin"></i> Please wait, discovering local JVM processes ...
+    <div class="spinner spinner-lg loading-page"></div>
+    <div class="row">
+      <div class="col-sm-12">
+        <div class="loading-message">
+          Please wait, discovering local JVM processes ...
+        </div>
+      </div>
     </div>
   </div>
 
