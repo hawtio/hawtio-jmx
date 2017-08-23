@@ -103,16 +103,8 @@ module Threads {
     }
 
     function filterChange(filters: any[]) {
-      keepOnlyLatestStateFilter(filters);
       applyFilters(filters);
       updateResultCount();
-    }
-
-    function keepOnlyLatestStateFilter(filters: any[]) {
-      let numStateFilters = filters.reduce((sum, filter) => filter.id === 'state' ? sum + 1 : sum, 0);
-      if (numStateFilters > 1) {
-        filters.splice(_.findIndex(filters, ['id', 'state']), 1);
-      }
     }
 
     function applyFilters(filters: any[]) {

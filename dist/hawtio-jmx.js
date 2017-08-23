@@ -8062,15 +8062,8 @@ var Threads;
                 });
             }
             function filterChange(filters) {
-                keepOnlyLatestStateFilter(filters);
                 applyFilters(filters);
                 updateResultCount();
-            }
-            function keepOnlyLatestStateFilter(filters) {
-                var numStateFilters = filters.reduce(function (sum, filter) { return filter.id === 'state' ? sum + 1 : sum; }, 0);
-                if (numStateFilters > 1) {
-                    filters.splice(_.findIndex(filters, ['id', 'state']), 1);
-                }
             }
             function applyFilters(filters) {
                 var filteredThreads = allThreads;
