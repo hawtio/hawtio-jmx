@@ -149,8 +149,8 @@
     "@types/angular" "*"
 
 "@types/angular@*", "@types/angular@~1.6.18":
-  version "1.6.28"
-  resolved "https://registry.yarnpkg.com/@types/angular/-/angular-1.6.28.tgz#e85d62c72c5fbd408b463cd2c9d24f75cc6bec98"
+  version "1.6.30"
+  resolved "https://registry.yarnpkg.com/@types/angular/-/angular-1.6.30.tgz#929a00da226a48c54431aa33a41d0cae60ccc386"
 
 "@types/clipboard@~1.5.34":
   version "1.5.34"
@@ -169,16 +169,16 @@
   resolved "https://registry.yarnpkg.com/@types/js-beautify/-/js-beautify-0.0.30.tgz#82ffbeb2c2dec592f1d04169e926912eeed567ec"
 
 "@types/lodash@~4.14.65", "@types/lodash@~4.14.67":
-  version "4.14.72"
-  resolved "https://registry.yarnpkg.com/@types/lodash/-/lodash-4.14.72.tgz#f090cf6eb1fee1647a0efa1ebe18b0b78ed551c6"
+  version "4.14.74"
+  resolved "https://registry.yarnpkg.com/@types/lodash/-/lodash-4.14.74.tgz#ac3bd8db988e7f7038e5d22bd76a7ba13f876168"
 
 "@types/marked@0.0.28":
   version "0.0.28"
   resolved "https://registry.yarnpkg.com/@types/marked/-/marked-0.0.28.tgz#44ba754e9fa51432583e8eb30a7c4dd249b52faa"
 
 "@types/node@^7.0.31":
-  version "7.0.39"
-  resolved "https://registry.yarnpkg.com/@types/node/-/node-7.0.39.tgz#8aced4196387038113f6f9aa4014ab4c51edab3c"
+  version "7.0.42"
+  resolved "https://registry.yarnpkg.com/@types/node/-/node-7.0.42.tgz#051ff1cdbd1e1b7523ba425bc388147483344dbf"
 
 "@types/urijs@~1.15.32", "@types/urijs@~1.15.33":
   version "1.15.34"
@@ -257,9 +257,9 @@ angular-file-upload@~2.5.0:
   version "2.5.0"
   resolved "https://registry.yarnpkg.com/angular-file-upload/-/angular-file-upload-2.5.0.tgz#0f53c93fbc70ed8ba8340a9a289ba64b680e2167"
 
-angular-patternfly@~4.3.0:
-  version "4.3.4"
-  resolved "https://registry.yarnpkg.com/angular-patternfly/-/angular-patternfly-4.3.4.tgz#e600cf5ebca3314b5fe63c003ee67b47b18e99b3"
+angular-patternfly@~4.5.0:
+  version "4.5.2"
+  resolved "https://registry.yarnpkg.com/angular-patternfly/-/angular-patternfly-4.5.2.tgz#6ca43b75a8b228643e95320474882f67d179bfde"
   dependencies:
     angular "1.5.*"
     angular-animate "1.5.*"
@@ -285,12 +285,12 @@ angular-resizable@~1.2.0:
   resolved "https://registry.yarnpkg.com/angular-resizable/-/angular-resizable-1.2.0.tgz#9dd29af008f8b54abfc051bd269a8f0b4fe43f1a"
 
 angular-route@~1.6.4:
-  version "1.6.5"
-  resolved "https://registry.yarnpkg.com/angular-route/-/angular-route-1.6.5.tgz#af45593299f55874d0261018adb11520a3817d2a"
+  version "1.6.6"
+  resolved "https://registry.yarnpkg.com/angular-route/-/angular-route-1.6.6.tgz#8c11748aa195c717b1b615a7e746442bfc7c61f4"
 
 angular-sanitize@1.5.*, angular-sanitize@~1.6.4:
-  version "1.6.5"
-  resolved "https://registry.yarnpkg.com/angular-sanitize/-/angular-sanitize-1.6.5.tgz#b5625a817afad2ba58c333e98eef169a1c6f517a"
+  version "1.6.6"
+  resolved "https://registry.yarnpkg.com/angular-sanitize/-/angular-sanitize-1.6.6.tgz#0fd065a19931517fbece66596d325d72b6e06041"
 
 angular-svg-base-fix@2.0.0:
   version "2.0.0"
@@ -301,8 +301,8 @@ angular-ui-bootstrap@2.3.x, angular-ui-bootstrap@~2.5.0:
   resolved "https://registry.yarnpkg.com/angular-ui-bootstrap/-/angular-ui-bootstrap-2.5.0.tgz#2facefb915386655dc5f44150258032517236d01"
 
 angular@1.5.*, angular@>=1.3.0, angular@~1.6.4:
-  version "1.6.5"
-  resolved "https://registry.yarnpkg.com/angular/-/angular-1.6.5.tgz#37f788eebec5ce2e3fa02b17bbcb2a231576a0d6"
+  version "1.6.6"
+  resolved "https://registry.yarnpkg.com/angular/-/angular-1.6.6.tgz#fd5a3cfb437ce382d854ee01120797978527cb64"
 
 angularjs-datatables@^0.5.7:
   version "0.5.7"
@@ -542,8 +542,8 @@ bytes@1, bytes@2.1.0, bytes@2.2.0, bytes@2.4.0:
   resolved "https://registry.yarnpkg.com/bytes/-/bytes-2.4.0.tgz#7d97196f9d5baf7f6935e25985549edd2a6c2339"
 
 c3@~0.4.11:
-  version "0.4.15"
-  resolved "https://registry.yarnpkg.com/c3/-/c3-0.4.15.tgz#747c47b33739d0f92bf4b5ddcce2bffff4fd4a31"
+  version "0.4.17"
+  resolved "https://registry.yarnpkg.com/c3/-/c3-0.4.17.tgz#718b3e489fd70fe061a4ad7ffcdad36bd409ef68"
   dependencies:
     d3 "~3.5.0"
 
@@ -885,7 +885,7 @@ dateformat@1.0.2-1.2.3, dateformat@^1.0.11, dateformat@^2.0.0:
   version "2.0.0"
   resolved "https://registry.yarnpkg.com/dateformat/-/dateformat-2.0.0.tgz#2743e3abb5c3fc2462e527dca445e04e9f4dee17"
 
-debug-fabulous@0.1.X:
+debug-fabulous@>=0.1.1:
   version "0.1.1"
   resolved "https://registry.yarnpkg.com/debug-fabulous/-/debug-fabulous-0.1.1.tgz#1b970878c9fa4fbd1c88306eab323c830c58f1d6"
   dependencies:
@@ -982,12 +982,13 @@ ecc-jsbn@~0.1.1:
     jsbn "~0.1.0"
 
 editorconfig@^0.13.2:
-  version "0.13.2"
-  resolved "https://registry.yarnpkg.com/editorconfig/-/editorconfig-0.13.2.tgz#8e57926d9ee69ab6cb999f027c2171467acceb35"
+  version "0.13.3"
+  resolved "https://registry.yarnpkg.com/editorconfig/-/editorconfig-0.13.3.tgz#e5219e587951d60958fd94ea9a9a008cdeff1b34"
   dependencies:
     bluebird "^3.0.5"
     commander "^2.9.0"
     lru-cache "^3.2.0"
+    semver "^5.1.0"
     sigmund "^1.0.1"
 
 ee-first@1.1.1:
@@ -1040,8 +1041,8 @@ errorhandler@~1.4.2:
     escape-html "~1.0.3"
 
 es5-ext@^0.10.13, es5-ext@^0.10.14, es5-ext@^0.10.9, es5-ext@~0.10.14, es5-ext@~0.10.2:
-  version "0.10.26"
-  resolved "https://registry.yarnpkg.com/es5-ext/-/es5-ext-0.10.26.tgz#51b2128a531b70c4f6764093a73cbebb82186372"
+  version "0.10.29"
+  resolved "https://registry.yarnpkg.com/es5-ext/-/es5-ext-0.10.29.tgz#768eb2dfc4957bcf35fa0568f193ab71ede53fd8"
   dependencies:
     es6-iterator "2"
     es6-symbol "~3.1"
@@ -1666,15 +1667,15 @@ gulp-replace@^0.6.1:
     replacestream "^4.0.0"
 
 gulp-sourcemaps@1.6.0, gulp-sourcemaps@^2.4.1:
-  version "2.6.0"
-  resolved "https://registry.yarnpkg.com/gulp-sourcemaps/-/gulp-sourcemaps-2.6.0.tgz#7ccce899a8a3bfca1593a3348d0fbf41dd3f51e5"
+  version "2.6.1"
+  resolved "https://registry.yarnpkg.com/gulp-sourcemaps/-/gulp-sourcemaps-2.6.1.tgz#833a4e28f0b8f4661075032cd782417f7cd8fb0b"
   dependencies:
     "@gulp-sourcemaps/identity-map" "1.X"
     "@gulp-sourcemaps/map-sources" "1.X"
     acorn "4.X"
     convert-source-map "1.X"
     css "2.X"
-    debug-fabulous "0.1.X"
+    debug-fabulous ">=0.1.1"
     detect-newline "2.X"
     graceful-fs "4.X"
     source-map "0.X"
@@ -1683,8 +1684,8 @@ gulp-sourcemaps@1.6.0, gulp-sourcemaps@^2.4.1:
     vinyl "1.X"
 
 gulp-typescript@^3.0.0:
-  version "3.2.1"
-  resolved "https://registry.yarnpkg.com/gulp-typescript/-/gulp-typescript-3.2.1.tgz#52cd77e9c6844e3b9a8bddd88e884ceb46a5db79"
+  version "3.2.2"
+  resolved "https://registry.yarnpkg.com/gulp-typescript/-/gulp-typescript-3.2.2.tgz#b7e5e1d3cb35f772e53e604026601826e2be77fc"
   dependencies:
     gulp-util "~3.0.7"
     source-map "~0.5.3"
@@ -1998,7 +1999,7 @@ isexe@^2.0.0:
   version "2.0.0"
   resolved "https://registry.yarnpkg.com/isexe/-/isexe-2.0.0.tgz#e8fbf374dc556ff8947a10dcb0572d633f2cfa10"
 
-isobject@^2.0.0, isobject@^2.1.0, isobject@^3.0.0, isobject@^3.0.1:
+isobject@^2.0.0, isobject@^3.0.0, isobject@^3.0.1:
   version "3.0.1"
   resolved "https://registry.yarnpkg.com/isobject/-/isobject-3.0.1.tgz#4e431e92b11a9731636aa1f9c8d1ccbcfdab78df"
 
@@ -2031,8 +2032,8 @@ js-beautify@~1.6.14:
     nopt "~3.0.1"
 
 js-logger@^1.3.0, js-logger@~1.3.0:
-  version "1.3.0"
-  resolved "https://registry.yarnpkg.com/js-logger/-/js-logger-1.3.0.tgz#de1a1143242710f7ce4da20408348a2a93ebf34d"
+  version "1.4.1"
+  resolved "https://registry.yarnpkg.com/js-logger/-/js-logger-1.4.1.tgz#f0230dc5e84e120f213d6e5a6b767a913d290335"
 
 js-yaml@^3.3.0, js-yaml@~2.0.5:
   version "3.9.1"
@@ -2571,10 +2572,10 @@ object.omit@^2.0.0:
     is-extendable "^0.1.1"
 
 object.pick@^1.2.0:
-  version "1.2.0"
-  resolved "https://registry.yarnpkg.com/object.pick/-/object.pick-1.2.0.tgz#b5392bee9782da6d9fb7d6afaf539779f1234c2b"
+  version "1.3.0"
+  resolved "https://registry.yarnpkg.com/object.pick/-/object.pick-1.3.0.tgz#87a10ac4c1694bd2e1cbf53591a66141fb5dd747"
   dependencies:
-    isobject "^2.1.0"
+    isobject "^3.0.1"
 
 on-finished@~2.3.0:
   version "2.3.0"
@@ -2916,8 +2917,8 @@ regex-cache@^0.4.2:
     is-primitive "^2.0.0"
 
 remove-trailing-separator@^1.0.1:
-  version "1.0.2"
-  resolved "https://registry.yarnpkg.com/remove-trailing-separator/-/remove-trailing-separator-1.0.2.tgz#69b062d978727ad14dc6b56ba4ab772fd8d70511"
+  version "1.1.0"
+  resolved "https://registry.yarnpkg.com/remove-trailing-separator/-/remove-trailing-separator-1.1.0.tgz#c24bce2a283adad5bc3f58e0d48249b92379d8ef"
 
 repeat-element@^1.1.2:
   version "1.1.2"
@@ -3036,7 +3037,7 @@ select@^1.1.2:
   version "1.1.2"
   resolved "https://registry.yarnpkg.com/select/-/select-1.1.2.tgz#0e7350acdec80b1108528786ec1d4418d11b396d"
 
-"semver@2 || 3 || 4 || 5", semver@^4.1.0, semver@^5.3.0:
+"semver@2 || 3 || 4 || 5", semver@^4.1.0, semver@^5.1.0, semver@^5.3.0:
   version "4.3.6"
   resolved "https://registry.yarnpkg.com/semver/-/semver-4.3.6.tgz#300bc6e0e86374f7ba61068b5b1ecd57fc6532da"
 
@@ -3145,8 +3146,8 @@ source-map-url@~0.3.0:
   resolved "https://registry.yarnpkg.com/source-map-url/-/source-map-url-0.3.0.tgz#7ecaf13b57bcd09da8a40c5d269db33799d4aaf9"
 
 source-map@0.X, source-map@^0.1.38, source-map@^0.5.1, source-map@^0.5.3, source-map@^0.5.6, source-map@~0.5.1, source-map@~0.5.3:
-  version "0.5.6"
-  resolved "https://registry.yarnpkg.com/source-map/-/source-map-0.5.6.tgz#75ce38f52bf0733c5a7f0c118d81334a2bb5f412"
+  version "0.5.7"
+  resolved "https://registry.yarnpkg.com/source-map/-/source-map-0.5.7.tgz#8a039d2d1021d22d1ea14c80d8ea468ba2ef3fcc"
 
 sparkles@^1.0.0:
   version "1.0.0"
@@ -3340,8 +3341,8 @@ timers-ext@0.1:
     next-tick "1"
 
 tiny-emitter@^2.0.0:
-  version "2.0.1"
-  resolved "https://registry.yarnpkg.com/tiny-emitter/-/tiny-emitter-2.0.1.tgz#e65919d91e488e2a78f7ebe827a56c6b188d51af"
+  version "2.0.2"
+  resolved "https://registry.yarnpkg.com/tiny-emitter/-/tiny-emitter-2.0.2.tgz#82d27468aca5ade8e5fd1e6d22b57dd43ebdfb7c"
 
 tiny-lr@^0.2.1, tiny-lr@^1.0.5:
   version "1.0.5"
@@ -3396,8 +3397,8 @@ type-is@~1.6.10, type-is@~1.6.15, type-is@~1.6.6:
     mime-types "~2.1.15"
 
 typescript@^2.4.1:
-  version "2.4.2"
-  resolved "https://registry.yarnpkg.com/typescript/-/typescript-2.4.2.tgz#f8395f85d459276067c988aa41837a8f82870844"
+  version "2.5.1"
+  resolved "https://registry.yarnpkg.com/typescript/-/typescript-2.5.1.tgz#ce7cc93ada3de19475cc9d17e3adea7aee1832aa"
 
 uglify-js@^2.8.22:
   version "2.8.29"
@@ -3446,8 +3447,8 @@ unpipe@1.0.0, unpipe@~1.0.0:
   resolved "https://registry.yarnpkg.com/unpipe/-/unpipe-1.0.0.tgz#b2bf4ee8514aae6165b4817829d21b2ef49904ec"
 
 urijs@^1.18.10, urijs@~1.18.10:
-  version "1.18.11"
-  resolved "https://registry.yarnpkg.com/urijs/-/urijs-1.18.11.tgz#6d9a31427d35569c745d7fdfbd59974bb31d9e59"
+  version "1.18.12"
+  resolved "https://registry.yarnpkg.com/urijs/-/urijs-1.18.12.tgz#f04d91e1fabb29c16fc842f9a14ee8ddc3fda64e"
 
 urix@^0.1.0, urix@~0.1.0:
   version "0.1.0"

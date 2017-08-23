@@ -8,14 +8,6 @@
     colummns="tableColumns" items="filteredThreads" action-buttons="tableActionButtons">
   </pf-table-view>
 
-  <script type="text/ng-template" id="threadName.html">
-    <span class="table-cell-truncated" title="{{value}}">{{value}}</span>
-  </script>
-
-  <script type="text/ng-template" id="yesNo.html">
-    <span ng-class="{'fa fa-circle': value}" aria-hidden="true"></span>
-  </script>
-
   <script type="text/ng-template" id="threadModalContent.html">
     <div class="modal-header">
       <button type="button" class="close" aria-label="Close" ng-click="$close()">

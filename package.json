@@ -14,7 +14,7 @@
     "@hawtio/forms": "~3.0.0",
     "@hawtio/preferences": "~3.0.8",
     "@hawtio/ui": "~3.0.28",
-    "angular-patternfly": "~4.3.0",
+    "angular-patternfly": "~4.5.0",
     "angular-resizable": "~1.2.0",
     "patternfly-bootstrap-treeview": "~2.1.1"
   },
@@ -55,8 +55,8 @@
   "flat": true,
   "resolutions": {
     "jquery": "2.2.4",
-    "angular": "1.6.5",
-    "angular-sanitize": "1.6.5",
+    "angular": "1.6.6",
+    "angular-sanitize": "1.6.6",
     "angular-ui-bootstrap": "2.5.0",
     "bootstrap-select": "1.12.4",
     "@types/jquery": "2.0.48",
@@ -64,7 +64,7 @@
     "moment": "2.18.1",
     "event-stream": "3.3.4",
     "gulp-concat": "2.6.1",
-    "gulp-sourcemaps": "2.6.0",
+    "gulp-sourcemaps": "2.6.1",
     "underscore.string": "3.3.4",
     "yargs": "8.0.2",
     "lodash": "4.17.4",
@@ -139,7 +139,7 @@
     "strip-bom": "1.0.0",
     "ordered-read-streams": "0.1.0",
     "unique-stream": "1.0.0",
-    "source-map": "0.5.6",
+    "source-map": "0.5.7",
     "read-pkg-up": "2.0.0",
     "camelcase": "4.1.0",
     "find-up": "2.1.0",
@@ -154,6 +154,7 @@
     "acorn": "4.0.13",
     "sprintf-js": "1.1.1",
     "string-width": "2.1.1",
-    "is-fullwidth-code-point": "2.0.0"
+    "is-fullwidth-code-point": "2.0.0",
+    "js-logger": "1.4.1"
   }
 }

@@ -48,13 +48,37 @@ module Threads {
     };
 
     $scope.tableColumns = [
-      { header: 'ID', itemField: 'threadId' },
-      { header: 'State', itemField: 'threadState' },
-      { header: 'Name', itemField: 'threadName', htmlTemplate: 'threadName.html' },
-      { header: 'Waited Time', itemField: 'waitedTime' },
-      { header: 'Blocked Time', itemField: 'blockedTime' },
-      { header: 'Native', itemField: 'inNative', htmlTemplate: 'yesNo.html' },
-      { header: 'Suspended', itemField: 'suspended', htmlTemplate: 'yesNo.html' }
+      { 
+        header: 'ID',
+        itemField: 'threadId'
+      },
+      { 
+        header: 'State',
+        itemField: 'threadState'
+      },
+      { 
+        header: 'Name',
+        itemField: 'threadName',
+        templateFn: value => `<span class="table-cell-truncated" title="${value}" ng-click="hello()">${value}</span>`
+      },
+      { 
+        header: 'Waited Time',
+        itemField: 'waitedTime'
+      },
+      { 
+        header: 'Blocked Time',
+        itemField: 'blockedTime'
+      },
+      { 
+        header: 'Native',
+        itemField: 'inNative',
+        templateFn: value => value ? '<span class="fa fa-circle" aria-hidden="true"></span>' : ''
+      },
+      { 
+        header: 'Suspended',
+        itemField: 'suspended',
+        templateFn: value => value ? '<span class="fa fa-circle" aria-hidden="true"></span>' : ''
+      }
     ];
 
     $scope.tableItems = null;
