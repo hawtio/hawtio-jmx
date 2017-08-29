@@ -13,7 +13,7 @@ module JVM {
 
     $scope.$watch('agents', (newValue, oldValue) => {
       if (newValue !== oldValue) {
-        $scope.selectedAgent = $scope.agents.find((a) => a['selected']);
+        $scope.selectedAgent = _.find($scope.agents, a => a['selected']);
       }
     }, true);
 

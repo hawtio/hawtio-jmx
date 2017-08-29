@@ -3,5 +3,5 @@
  * @module Jmx
  */
 declare module Jmx {
-    var DonutChartController: ng.IModule;
+    var DonutChartController: any;
 }

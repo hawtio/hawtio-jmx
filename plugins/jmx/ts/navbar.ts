@@ -98,7 +98,7 @@ module Jmx {
       if (!tabs) {
         return "Loading...";
       }
-      var tab = tabs.find(function(nav) {
+      var tab = _.find(tabs, function(nav) {
         return $scope.isActive(nav);
       });
       return tab ? tab['content'] : "";

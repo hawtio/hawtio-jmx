@@ -93,7 +93,7 @@ module Jmx {
 
   _module.controller('Jmx.EditChartNav', ['$scope', '$location', ($scope, $location) => {
     $scope.valid = () => {
-      return $location.path().startsWith('/jmx/chart');
+      return _.startsWith($location.path(), '/jmx/chart');
     } 
   }]);
 

@@ -483,9 +483,9 @@ module Jmx {
               // so the column menu has a nice sorted list instead of random ordering
               extraDefs = extraDefs.sort((def, def2) => {
                 // make sure _id is last
-                if (def.field.startsWith('_')) {
+                if (_.startsWith(def.field, '_')) {
                   return 1;
-                } else if (def2.field.startsWith('_')) {
+                } else if (_.startsWith(def2.field, '_')) {
                   return -1;
                 }
                 return def.field.localeCompare(def2.field);
@@ -531,7 +531,7 @@ module Jmx {
           angular.forEach(data, (value, key) => {
             if (showAllAttributes || includePropertyValue(key, value)) {
               // always skip keys which start with _
-              if (!key.startsWith("_")) {
+              if (!_.startsWith(key, "_")) {
                 // lets format the ObjectName nicely dealing with objects with
                 // nested object names or arrays of object names
                 if (key === "ObjectName") {
@@ -672,7 +672,7 @@ module Jmx {
     function asJsonSchemaType(typeName, id) {
       if (typeName) {
         var lower = typeName.toLowerCase();
-        if (lower.startsWith("int") || lower === "long" || lower === "short" || lower === "byte" || lower.endsWith("int")) {
+        if (_.startsWith(lower, "int") || lower === "long" || lower === "short" || lower === "byte" || _.endsWith(lower, "int")) {
           return "integer";
         }
         if (lower === "double" || lower === "float" || lower === "bigdecimal") {

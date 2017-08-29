@@ -3,5 +3,5 @@
  * @module Core
  */
 declare module Jmx {
-    var ViewController: ng.IModule;
+    var ViewController: any;
 }

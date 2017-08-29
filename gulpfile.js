@@ -21,25 +21,13 @@ var config = {
   dist: argv.out || './dist/',
   js: pkg.name + '.js',
   css: pkg.name + '.css',
-  tsProject: plugins.typescript.createProject({
-    target: 'ES5',
-    module: 'commonjs',
-    declarationFiles: true,
-    noExternalResolve: false
-  })
+  tsProject: plugins.typescript.createProject('tsconfig.json')
 };
 
 gulp.task('bower', function() {
   return gulp.src('index.html')
     .pipe(wiredep({}))
     .pipe(gulp.dest('.'));
-});
-
-/** Adjust the reference path of any typescript-built plugin this project depends on */
-gulp.task('path-adjust', function() {
-  return gulp.src('libs/**/includes.d.ts')
-    .pipe(plugins.replace(/"\.\.\/libs/gm, '"../../../libs'))
-    .pipe(gulp.dest('libs'));
 });
 
 gulp.task('clean-defs', function() {
@@ -49,12 +37,7 @@ gulp.task('clean-defs', function() {
 gulp.task('tsc', ['clean-defs'], function() {
   var cwd = process.cwd();
   var tsResult = gulp.src(config.ts)
-    .pipe(plugins.typescript(config.tsProject))
-    .on('error', plugins.notify.onError({
-      onLast: true,
-      message: '<%= error.message %>',
-      title: 'Typescript compilation error'
-    }));
+    .pipe(config.tsProject());
 
     return eventStream.merge(
       tsResult.js
@@ -75,11 +58,6 @@ gulp.task('less', function () {
   return gulp.src(config.less)
     .pipe(plugins.less({
       paths: [ path.join(__dirname, 'less', 'includes') ]
-    }))
-    .on('error', plugins.notify.onError({
-      onLast: true,
-      message: '<%= error.message %>',
-      title: 'less file compilation error'
     }))
     .pipe(plugins.concat(config.css))
     .pipe(gulp.dest(config.dist));
@@ -128,7 +106,7 @@ gulp.task('connect', ['watch'], function() {
     staticProxies: [{
       port: 8181,
       path: '/jolokia',
-      targetPath: '/jolokia'
+      targetPath: 'hawtio/jolokia'
     }],
     staticAssets: [{
       path: '/',
@@ -207,9 +185,9 @@ gulp.task('embed-images', ['concat'], function() {
   .pipe(gulp.dest(config.dist));
 });
 
-gulp.task('build', ['bower', 'path-adjust', 'tsc', 'less', 'template', 'concat', 'clean']);
+gulp.task('build', ['tsc', 'less', 'template', 'concat', 'clean']);
 
-gulp.task('default', ['connect']);
+gulp.task('default', ['bower', 'connect']);
 
 
 

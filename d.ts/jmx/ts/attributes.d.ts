@@ -13,5 +13,5 @@ declare module Jmx {
         displayName: string;
         cellTemplate: string;
     }[];
-    var AttributesController: ng.IModule;
+    var AttributesController: any;
 }

@@ -4,5 +4,5 @@
  * @module JVM
  */
 declare module JVM {
-    var ConnectController: ng.IModule;
+    var ConnectController: any;
 }

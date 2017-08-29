@@ -31,7 +31,7 @@ module Jmx {
               log.debug("Invalid RegExp " + text + " for viewRegistry value: " + value);
             }
           } else {
-            if (path.startsWith(key)) {
+            if (_.startsWith(path, key)) {
               answer = value;
             }
           }

@@ -28,7 +28,7 @@ declare module Core {
      * @param {String} password
      * @return {Object}
      */
-    function createJolokia(url: string, username: string, password: string): Jolokia.IJolokia;
+    function createJolokia(url: string, username: string, password: string): any;
     function getRecentConnections(localStorage: any): any;
     function addRecentConnection(localStorage: any, name: any): void;
     function removeRecentConnection(localStorage: any, name: any): void;

@@ -222,13 +222,14 @@ module Core {
       if (this.treeWatcherCounter !== counter) {
         this.treeWatcherCounter = counter;
         var workspace = this;
-        function wrapInValue(response) {
-          var wrapper = {
-            value: response
-          };
-          workspace.populateTree(wrapper);
-        }
-        this.jolokia.list(null, onSuccess(wrapInValue, {ignoreErrors: true, maxDepth: 2}));
+        this.jolokia.list(null, 
+          onSuccess(function(response) {
+            var wrapper = {
+              value: response
+            };
+            workspace.populateTree(wrapper);
+          },
+          {ignoreErrors: true, maxDepth: 2}));
       }
     }
 
@@ -407,7 +408,7 @@ module Core {
       this.tree = tree;
 
       var processors = this.treePostProcessors;
-      _.forIn(processors, (fn, key) => {
+      _.forIn(processors, (fn: (tree:any) => void, key) => {
         log.debug("Running tree post processor: ", key);
         fn(tree);
       });
@@ -457,11 +458,11 @@ module Core {
      */
     public getActiveTab() {
       var workspace = this;
-      return this.topLevelTabs.find((tab) => {
-        if (!angular.isDefined(tab.isActive)) {
-          return workspace.isLinkActive(tab.href());
+      return _.find(this.topLevelTabs, tab => {
+        if (!angular.isDefined(tab['isActive'])) {
+          return workspace.isLinkActive(tab['href']());
         } else {
-          return tab.isActive(workspace);
+          return tab['isActive'](workspace);
         }
       });
     }
@@ -533,7 +534,7 @@ module Core {
     public isTopTabActive(path:string):boolean {
       var tab = this.$location.search()['tab'];
       if (angular.isString(tab)) {
-        return tab.startsWith(path);
+        return _.startsWith(tab, path);
       }
       return this.isLinkActive(path);
     }
@@ -714,7 +715,7 @@ module Core {
             defaultPath = "#/jmx/help";
           }
           log.info("moving the URL to be " + defaultPath);
-          if (defaultPath.startsWith("#")) {
+          if (_.startsWith(defaultPath, "#")) {
             defaultPath = defaultPath.substring(1);
           }
           this.$location.path(defaultPath);
@@ -930,11 +931,11 @@ module Core {
       if (folder) {
         var children = folder.children;
         if (children) {
-          var answer = children.find(node => this.matches(node, properties, propertiesCount));
+          var answer = _.find(children, node => this.matches(node, properties, propertiesCount));
           if (answer) {
             return answer;
           }
-          return children.map(node => workspace.findChildMBeanWithProperties(node, properties, propertiesCount)).find(node => node);
+          _.find(children.map(node => workspace.findChildMBeanWithProperties(node, properties, propertiesCount)), node => node);
         }
       }
       return null;

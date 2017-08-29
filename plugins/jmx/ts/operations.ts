@@ -94,9 +94,7 @@ module Jmx {
       log.debug("onSubmit: json:", json);
       log.debug("$scope.item.args: ", $scope.item.args);
       angular.forEach(json, (value, key) => {
-        $scope.item.args.find((arg) => {
-          return arg['name'] === key;
-        }).value = value;
+        _.find($scope.item.args, {'name': key})['value'] = value;
       });
       $scope.execute();
     };
