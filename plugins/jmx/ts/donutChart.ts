@@ -85,18 +85,14 @@ namespace Jmx {
 
       var freeTerm = null;
       if ($scope.remainder && $scope.remainder !== "-") {
-        freeTerm = $scope.data.terms.find((term:any) => {
-          return term.term === $scope.remainder;
-        });
+        freeTerm = _.find($scope.data.terms, term => term.term === $scope.remainder);
       }
 
       if (!$scope.attribute) {
         if (response.request.attribute === $scope.total) {
           $scope.data.total = response.value;
         } else {
-          var term = $scope.data.terms.find((term:any) => {
-            return term.term === response.request.attribute;
-          });
+          var term = _.find($scope.data.terms, term => term.term === response.request.attribute);
           if (term) {
             term.count = response.value;
           }

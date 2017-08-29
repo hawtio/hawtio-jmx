@@ -463,7 +463,7 @@ namespace Jmx {
      */
     public getActiveTab() {
       var workspace = this;
-      return this.topLevelTabs.find((tab) => {
+      return _.find(this.topLevelTabs, tab => {
         if (!angular.isDefined(tab.isActive)) {
           return workspace.isLinkActive(tab.href());
         } else {
@@ -688,7 +688,7 @@ namespace Jmx {
             defaultPath = "#/jmx/help";
           }
           log.info("moving the URL to be " + defaultPath);
-          if (defaultPath.startsWith("#")) {
+          if (_.startsWith(defaultPath, "#")) {
             defaultPath = defaultPath.substring(1);
           }
           this.$location.path(defaultPath);
@@ -871,11 +871,11 @@ namespace Jmx {
       if (folder) {
         var children = folder.children;
         if (children) {
-          var answer = children.find(node => this.matches(node, properties, propertiesCount));
+          var answer = _.find(children, node => this.matches(node, properties, propertiesCount));
           if (answer) {
             return answer;
           }
-          return children.map(node => workspace.findChildMBeanWithProperties(node, properties, propertiesCount)).find(node => node);
+          return _.find(children.map(node => workspace.findChildMBeanWithProperties(node, properties, propertiesCount)), node => node);
         }
       }
       return null;

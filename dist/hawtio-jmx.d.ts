@@ -560,6 +560,31 @@ declare namespace Jmx {
 }
 declare namespace Jmx {
 }
+declare namespace Threads {
+    var pluginName: string;
+    var templatePath: string;
+    var log: Logging.Logger;
+    var jmxDomain: string;
+    var mbeanType: string;
+    var mbean: string;
+    var _module: angular.IModule;
+}
+declare module Threads {
+    class ThreadsService {
+        private $q;
+        private jolokia;
+        private static STATE_LABELS;
+        constructor($q: angular.IQService, jolokia: Jolokia.IJolokia);
+        getThreads(): angular.IPromise<any[]>;
+    }
+}
+declare module Threads {
+}
+/**
+ * @module Threads
+ */
+declare module Threads {
+}
 declare namespace JVM {
     function ConnectController($scope: any, $location: ng.ILocationService, localStorage: WindowLocalStorage, workspace: Jmx.Workspace, $uibModal: any, connectService: ConnectService): void;
 }
@@ -610,31 +635,6 @@ declare module JVM {
 declare namespace JVM {
 }
 declare namespace JVM {
-}
-declare namespace Threads {
-    var pluginName: string;
-    var templatePath: string;
-    var log: Logging.Logger;
-    var jmxDomain: string;
-    var mbeanType: string;
-    var mbean: string;
-    var _module: angular.IModule;
-}
-declare module Threads {
-    class ThreadsService {
-        private $q;
-        private jolokia;
-        private static STATE_LABELS;
-        constructor($q: angular.IQService, jolokia: Jolokia.IJolokia);
-        getThreads(): angular.IPromise<any[]>;
-    }
-}
-declare module Threads {
-}
-/**
- * @module Threads
- */
-declare module Threads {
 }
 declare namespace Jmx {
     class HeaderController {

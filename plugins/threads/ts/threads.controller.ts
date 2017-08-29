@@ -120,7 +120,7 @@ module Threads {
     }
     
     function viewDetails(action, item) {
-      $scope.thread = $scope.filteredThreads.find(thread => thread.threadId === item.threadId);
+      $scope.thread = _.find($scope.filteredThreads, thread => thread.threadId === item.threadId);
       openModal();
     }
 
