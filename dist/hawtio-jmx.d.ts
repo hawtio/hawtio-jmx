@@ -702,7 +702,7 @@ declare namespace Jmx {
         actionButtons: any[];
         menuActions: any[];
         operations: Operation[];
-        constructor($scope: any, $location: any, workspace: Workspace, jolokiaUrl: any, operationsService: OperationsService);
+        constructor($scope: any, $location: any, workspace: Workspace, jolokiaUrl: string, operationsService: OperationsService);
         $onInit(): void;
         private configureListView();
         private buildJolokiaUrl(operation);

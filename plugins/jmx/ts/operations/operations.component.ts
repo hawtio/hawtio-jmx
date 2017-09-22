@@ -11,7 +11,7 @@ namespace Jmx {
     menuActions: any[];
     operations: Operation[];
 
-    constructor(private $scope, private $location, private workspace: Workspace, private jolokiaUrl,
+    constructor(private $scope, private $location, private workspace: Workspace, private jolokiaUrl: string,
       private operationsService: OperationsService) {
       'ngInject';
     }
@@ -49,7 +49,7 @@ namespace Jmx {
     }
 
     private buildJolokiaUrl(operation) {
-      return this.jolokiaUrl + '/exec/' + this.workspace.getSelectedMBeanName() + '/' + operation.simpleName;
+      return `${ this.jolokiaUrl }/exec/${ this.workspace.getSelectedMBeanName() }/${ operation.simpleName }`;
     }
 
     private fetchOperations() {

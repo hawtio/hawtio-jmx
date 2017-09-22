@@ -5552,7 +5552,7 @@ var Jmx;
             cellTemplate: '<div class="ngCellText"><a href="" ng-click="row.entity.gotoFolder(row)"><i class="{{row.entity.folderIconClass(row)}}"></i> {{row.getProperty("title")}}</a></div>'
         }
     ];
-    Jmx.AttributesController = Jmx._module.controller("Jmx.AttributesController", ["$scope", "$element", "$location", "workspace", "jolokia", "jmxWidgets", "jmxWidgetTypes", "$templateCache", "localStorage", "$browser", "$timeout", function ($scope, $element, $location, workspace, jolokia, jmxWidgets, jmxWidgetTypes, $templateCache, localStorage, $browser, $timeout) {
+    Jmx.AttributesController = Jmx._module.controller("Jmx.AttributesController", ["$scope", "$element", "$location", "workspace", "jolokia", "jolokiaUrl", "jmxWidgets", "jmxWidgetTypes", "$templateCache", "localStorage", "$browser", "$timeout", function ($scope, $element, $location, workspace, jolokia, jolokiaUrl, jmxWidgets, jmxWidgetTypes, $templateCache, localStorage, $browser, $timeout) {
             $scope.searchText = '';
             $scope.nid = 'empty';
             $scope.selectedItems = [];
@@ -5672,8 +5672,7 @@ var Jmx;
                 $scope.entity["key"] = row.key;
                 $scope.entity["description"] = row.attrDesc;
                 $scope.entity["type"] = row.type;
-                var url = $location.protocol() + "://" + $location.host() + ":" + $location.port() + $browser.baseHref();
-                $scope.entity["jolokia"] = url + localStorage["url"] + "/read/" + workspace.getSelectedMBeanName() + "/" + $scope.entity["key"];
+                $scope.entity["jolokia"] = buildJolokiaUrl(row.key);
                 $scope.entity["rw"] = row.rw;
                 var type = asJsonSchemaType(row.type, row.key);
                 var readOnly = !row.rw;
@@ -5752,7 +5751,9 @@ var Jmx;
                 }
                 $scope.showAttributeDialog = true;
             }
-            ;
+            function buildJolokiaUrl(attribute) {
+                return jolokiaUrl + "/read/" + workspace.getSelectedMBeanName() + "/" + attribute;
+            }
             function getDashboardWidgets(row) {
                 var mbean = workspace.getSelectedMBeanName();
                 if (!mbean) {
@@ -5780,7 +5781,6 @@ var Jmx;
                 });
                 return rc.join() + "&nbsp;";
             }
-            ;
             $scope.addChartToDashboard = function (row, widgetType) {
                 var mbean = workspace.getSelectedMBeanName();
                 var candidates = jmxWidgets.filter(function (widget) {
@@ -7683,8 +7683,6 @@ var JVM;
                 };
                 var jolokia = new Jolokia(jolokiaParams);
                 jolokia.stop();
-                // TODO this should really go away, need to track down any remaining spots where this is used
-                //localStorage['url'] = jolokiaUrl;
                 if ('updateRate' in localStorage) {
                     if (localStorage['updateRate'] > 0) {
                         jolokia.start(localStorage['updateRate']);
@@ -8569,7 +8567,7 @@ var Jmx;
             ];
         };
         OperationsController.prototype.buildJolokiaUrl = function (operation) {
-            return this.jolokiaUrl + '/exec/' + this.workspace.getSelectedMBeanName() + '/' + operation.simpleName;
+            return this.jolokiaUrl + "/exec/" + this.workspace.getSelectedMBeanName() + "/" + operation.simpleName;
         };
         OperationsController.prototype.fetchOperations = function () {
             var _this = this;

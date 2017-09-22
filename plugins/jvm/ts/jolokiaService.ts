@@ -212,7 +212,9 @@ namespace JVM {
   export var DEFAULT_MAX_DEPTH = 7;
   export var DEFAULT_MAX_COLLECTION_SIZE = 500;
 
-  _module.factory('jolokiaParams', ["jolokiaUrl", "localStorage", (jolokiaUrl, localStorage) => {
+  _module.factory('jolokiaParams', ["jolokiaUrl", "localStorage", (
+      jolokiaUrl: string,
+      localStorage: WindowLocalStorage) => {
     var answer = {
       canonicalNaming: false,
       ignoreErrors: true,
@@ -255,7 +257,17 @@ namespace JVM {
     }
   }
 
-  _module.factory('jolokia',["$location", "localStorage", "jolokiaStatus", "$rootScope", "userDetails", "jolokiaParams", "jolokiaUrl", "ConnectOptions", "HawtioDashboard", "$uibModal", ($location:ng.ILocationService, localStorage, jolokiaStatus, $rootScope, userDetails:Core.UserDetails, jolokiaParams, jolokiaUrl, connectionOptions, dash, $uibModal):Jolokia.IJolokia => {
+  _module.factory('jolokia',["$location", "localStorage", "jolokiaStatus", "$rootScope", "userDetails", "jolokiaParams", "jolokiaUrl", "ConnectOptions", "HawtioDashboard", "$uibModal", (
+      $location: ng.ILocationService,
+      localStorage: WindowLocalStorage,
+      jolokiaStatus,
+      $rootScope,
+      userDetails: Core.UserDetails,
+      jolokiaParams,
+      jolokiaUrl: string,
+      connectionOptions,
+      dash,
+      $uibModal): Jolokia.IJolokia => {
 
     if (dash.inDashboard && windowJolokia) {
       return windowJolokia;
@@ -263,8 +275,8 @@ namespace JVM {
 
     if (jolokiaUrl) {
       // pass basic auth credentials down to jolokia if set
-      var username:String = null;
-      var password:String = null;
+      var username: String = null;
+      var password: String = null;
 
       if (connectionOptions.userName && connectionOptions.password) {
         username = connectionOptions.userName;
@@ -329,9 +341,6 @@ namespace JVM {
 
       var jolokia = <any> new Jolokia(jolokiaParams);
       jolokia.stop();
-
-      // TODO this should really go away, need to track down any remaining spots where this is used
-      //localStorage['url'] = jolokiaUrl;
 
       if ('updateRate' in localStorage) {
         if (localStorage['updateRate'] > 0) {

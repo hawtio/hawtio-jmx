@@ -22,16 +22,20 @@ namespace Jmx {
     }
   ];
 
-  export var AttributesController = _module.controller("Jmx.AttributesController", ["$scope", "$element", "$location", "workspace", "jolokia", "jmxWidgets", "jmxWidgetTypes", "$templateCache", "localStorage", "$browser", "$timeout", ($scope,
-                                       $element,
-                                       $location,
-                                       workspace:Workspace,
-                                       jolokia,
-                                       jmxWidgets,
-                                       jmxWidgetTypes,
-                                       $templateCache,
-                                       localStorage,
-                                       $browser, $timeout) => {
+  export var AttributesController = _module.controller("Jmx.AttributesController", ["$scope", "$element", "$location", "workspace", "jolokia", "jolokiaUrl", "jmxWidgets", "jmxWidgetTypes", "$templateCache", "localStorage", "$browser", "$timeout", (
+      $scope,
+      $element,
+      $location: ng.ILocationService,
+      workspace: Workspace,
+      jolokia: Jolokia.IJolokia,
+      jolokiaUrl: string,
+      jmxWidgets,
+      jmxWidgetTypes,
+      $templateCache: ng.ITemplateCacheService,
+      localStorage: WindowLocalStorage,
+      $browser,
+      $timeout) => {
+
     $scope.searchText = '';
     $scope.nid = 'empty';
     $scope.selectedItems = [];
@@ -171,8 +175,7 @@ namespace Jmx {
       $scope.entity["description"] = row.attrDesc;
       $scope.entity["type"] = row.type;
 
-      var url = $location.protocol() + "://" + $location.host() + ":" + $location.port() + $browser.baseHref();
-      $scope.entity["jolokia"] = url + localStorage["url"] + "/read/" + workspace.getSelectedMBeanName() + "/" + $scope.entity["key"] ;
+      $scope.entity["jolokia"] = buildJolokiaUrl(row.key);
       $scope.entity["rw"] = row.rw;
       var type = asJsonSchemaType(row.type, row.key);
       var readOnly = !row.rw;
@@ -263,7 +266,11 @@ namespace Jmx {
       }
 
       $scope.showAttributeDialog = true;
-    };
+    }
+
+    function buildJolokiaUrl(attribute) {
+      return `${ jolokiaUrl }/read/${ workspace.getSelectedMBeanName() }/${ attribute }`;
+    }
 
     function getDashboardWidgets(row) {
       var mbean = workspace.getSelectedMBeanName();
@@ -297,7 +304,7 @@ namespace Jmx {
 
       });
       return rc.join() + "&nbsp;";
-    };
+    }
 
     $scope.addChartToDashboard = (row, widgetType) => {
       var mbean = workspace.getSelectedMBeanName();
