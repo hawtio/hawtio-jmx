@@ -5752,7 +5752,8 @@ var Jmx;
                 $scope.showAttributeDialog = true;
             }
             function buildJolokiaUrl(attribute) {
-                return jolokiaUrl + "/read/" + workspace.getSelectedMBeanName() + "/" + attribute;
+                var mbeanName = Core.escapeMBean(workspace.getSelectedMBeanName());
+                return jolokiaUrl + "/read/" + mbeanName + "/" + attribute;
             }
             function getDashboardWidgets(row) {
                 var mbean = workspace.getSelectedMBeanName();
@@ -8567,7 +8568,8 @@ var Jmx;
             ];
         };
         OperationsController.prototype.buildJolokiaUrl = function (operation) {
-            return this.jolokiaUrl + "/exec/" + this.workspace.getSelectedMBeanName() + "/" + operation.simpleName;
+            var mbeanName = Core.escapeMBean(this.workspace.getSelectedMBeanName());
+            return this.jolokiaUrl + "/exec/" + mbeanName + "/" + operation.simpleName;
         };
         OperationsController.prototype.fetchOperations = function () {
             var _this = this;

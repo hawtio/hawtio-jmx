@@ -127,9 +127,9 @@
     lodash "~4.17.4"
     marked "~0.3.6"
 
-"@hawtio/utilities@~3.0.8":
-  version "3.0.11"
-  resolved "https://registry.yarnpkg.com/@hawtio/utilities/-/utilities-3.0.11.tgz#7ff61915946f6b935a155937eb7ebc3e3921902b"
+"@hawtio/utilities@^3.0.14", "@hawtio/utilities@~3.0.8":
+  version "3.0.14"
+  resolved "https://registry.yarnpkg.com/@hawtio/utilities/-/utilities-3.0.14.tgz#db6a08f49d86b4697016cf2d23ad5b8d356938c9"
   dependencies:
     "@hawtio/core" "~3.0.9"
     "@hawtio/core-dts" "~3.0.11"
@@ -258,8 +258,8 @@ angular-file-upload@~2.5.0:
   resolved "https://registry.yarnpkg.com/angular-file-upload/-/angular-file-upload-2.5.0.tgz#0f53c93fbc70ed8ba8340a9a289ba64b680e2167"
 
 angular-patternfly@~4.5.0:
-  version "4.5.2"
-  resolved "https://registry.yarnpkg.com/angular-patternfly/-/angular-patternfly-4.5.2.tgz#6ca43b75a8b228643e95320474882f67d179bfde"
+  version "4.5.6"
+  resolved "https://registry.yarnpkg.com/angular-patternfly/-/angular-patternfly-4.5.6.tgz#d59f1ab6ff0eef13dd6d89f1772b234fa31b8589"
   dependencies:
     angular "1.5.*"
     angular-animate "1.5.*"
@@ -3397,8 +3397,8 @@ type-is@~1.6.10, type-is@~1.6.15, type-is@~1.6.6:
     mime-types "~2.1.15"
 
 typescript@^2.4.1:
-  version "2.5.1"
-  resolved "https://registry.yarnpkg.com/typescript/-/typescript-2.5.1.tgz#ce7cc93ada3de19475cc9d17e3adea7aee1832aa"
+  version "2.5.2"
+  resolved "https://registry.yarnpkg.com/typescript/-/typescript-2.5.2.tgz#038a95f7d9bbb420b1bf35ba31d4c5c1dd3ffe34"
 
 uglify-js@^2.8.22:
   version "2.8.29"

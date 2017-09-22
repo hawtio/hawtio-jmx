@@ -48,8 +48,9 @@ namespace Jmx {
       ];
     }
 
-    private buildJolokiaUrl(operation) {
-      return `${ this.jolokiaUrl }/exec/${ this.workspace.getSelectedMBeanName() }/${ operation.simpleName }`;
+    private buildJolokiaUrl(operation: Operation): string {
+      let mbeanName = Core.escapeMBean(this.workspace.getSelectedMBeanName());
+      return `${ this.jolokiaUrl }/exec/${ mbeanName }/${ operation.simpleName }`;
     }
 
     private fetchOperations() {

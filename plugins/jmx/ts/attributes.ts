@@ -268,8 +268,9 @@ namespace Jmx {
       $scope.showAttributeDialog = true;
     }
 
-    function buildJolokiaUrl(attribute) {
-      return `${ jolokiaUrl }/read/${ workspace.getSelectedMBeanName() }/${ attribute }`;
+    function buildJolokiaUrl(attribute): string {
+      let mbeanName = Core.escapeMBean(workspace.getSelectedMBeanName());
+      return `${ jolokiaUrl }/read/${ mbeanName }/${ attribute }`;
     }
 
     function getDashboardWidgets(row) {

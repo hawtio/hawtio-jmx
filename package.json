@@ -14,6 +14,7 @@
     "@hawtio/forms": "~3.0.0",
     "@hawtio/preferences": "~3.0.8",
     "@hawtio/ui": "~3.0.28",
+    "@hawtio/utilities": "^3.0.14",
     "angular-patternfly": "~4.5.0",
     "angular-resizable": "~1.2.0",
     "patternfly-bootstrap-treeview": "~2.1.1"
