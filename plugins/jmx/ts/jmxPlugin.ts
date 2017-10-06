@@ -2,13 +2,17 @@
 /// <reference path="jmxHelpers.ts"/>
 /// <reference path="widgetRepository.ts"/>
 /// <reference path="workspace.ts"/>
+/// <reference path="common/common.module.ts"/>
+/// <reference path="operations/operations.module.ts"/>
+/// <reference path="tree/tree.module.ts"/>
 
 namespace Jmx {
 
   export var _module = angular.module(pluginName, [
     'angularResizable',
-    'hawtio-jmx-common',
-    'hawtio-jmx-operations'
+    commonModule,
+    operationsModule,
+    treeModule
   ]);
 
   _module.config(['HawtioNavBuilderProvider', "$routeProvider", (builder:HawtioMainNav.BuilderFactory, $routeProvider) => {
@@ -33,17 +37,6 @@ namespace Jmx {
     const workspace = new Workspace(jolokia, jolokiaStatus, jmxTreeLazyLoadRegistry, $location, $compile, $templateCache, localStorage, $rootScope, HawtioNav);
     workspace.loadTree();
     return workspace;
-  }]);
-
-  _module.controller("Jmx.TabController", ["$scope", "$route", "$location", "layoutTree", "layoutFull", "viewRegistry", "workspace", ($scope, $route, $location: ng.ILocationService, layoutTree, layoutFull, viewRegistry, workspace: Workspace) => {
-
-    $scope.isTabActive = path => _.startsWith($location.path(), path);
-
-    $scope.goto = (path: string) => $location.path(path);
-
-    $scope.editChart = () => ($scope.isTabActive('jmx-chart') || $scope.isTabActive('jmx-edit-chart'))
-      ? $scope.goto('/jmx/chartEdit', 'jmx-edit-chart') : false;
-
   }]);
 
   _module.factory('rbacACLMBean', function() {
@@ -83,14 +76,25 @@ namespace Jmx {
 
   _module.factory('jmxTreeLazyLoadRegistry', () => Core.lazyLoaders);
 
-  _module.run(["HawtioNav", "$location", "workspace", "viewRegistry", "layoutTree", "layoutFull", "jolokia", "helpRegistry", "pageTitle", "$templateCache", (nav: HawtioMainNav.Registry, $location: ng.ILocationService, workspace: Workspace, viewRegistry, layoutTree, layoutFull, jolokia, helpRegistry, pageTitle, $templateCache) => {
+  _module.run(["HawtioNav", "$location", "workspace", "viewRegistry", "layoutTree", "layoutFull", "jolokia", "helpRegistry", "pageTitle", "$templateCache", (
+      nav: HawtioMainNav.Registry,
+      $location: ng.ILocationService,
+      workspace: Workspace,
+      viewRegistry,
+      layoutTree: string,
+      layoutFull,
+      jolokia: Jolokia.IJolokia,
+      helpRegistry,
+      pageTitle,
+      $templateCache: ng.ITemplateCacheService) => {
+
     log.debug('loaded');
 
     viewRegistry['jmx'] = layoutTree;
     viewRegistry['{ "tab": "notree" }'] = layoutFull;
     helpRegistry.addUserDoc('jmx', 'plugins/jmx/doc/help.md');
 
-    pageTitle.addTitleElement(():string => {
+    pageTitle.addTitleElement(() => {
       if (Jmx.currentProcessId === '') {
         try {
           Jmx.currentProcessId = jolokia.getAttribute('java.lang:type=Runtime', 'Name');

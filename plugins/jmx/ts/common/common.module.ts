@@ -2,8 +2,9 @@
 
 namespace Jmx {
 
-  angular
+  export const commonModule = angular
     .module('hawtio-jmx-common', [])
-    .component('jmxHeader', headerComponent);
+    .component('jmxHeader', headerComponent)
+    .name;
 
 }

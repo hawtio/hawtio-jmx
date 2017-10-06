@@ -1,0 +1,11 @@
+<ul class="nav nav-tabs">
+  <li ng-class="{active: $ctrl.isTabActive('/jmx/attributes')}">
+    <a href="#" ng-click="$ctrl.goto('/jmx/attributes')">Attributes</a>
+  </li>
+  <li ng-class="{active: $ctrl.isTabActive('/jmx/operations')}">
+    <a href="#" ng-click="$ctrl.goto('/jmx/operations')">Operations</a>
+  </li>
+  <li ng-class="{active: $ctrl.isTabActive('/jmx/charts')}">
+    <a href="#" ng-click="$ctrl.goto('/jmx/charts')">Chart</a>
+  </li>
+</ul>
