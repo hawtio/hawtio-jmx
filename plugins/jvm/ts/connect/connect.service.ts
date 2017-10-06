@@ -10,9 +10,10 @@ namespace JVM {
 
     testConnection(connection: Core.ConnectOptions): ng.IPromise<boolean> {
       return this.$q((resolve, reject) => {
-        let url = Core.createServerConnectionUrl(connection);
-        let jolokia = new Jolokia(url);
-        jolokia.version({
+        this.jolokia.version({
+          url: Core.createServerConnectionUrl(connection),
+          username: connection.userName.toString(),
+          password: connection.password.toString(),
           success: response => {
             resolve(true);
           },
