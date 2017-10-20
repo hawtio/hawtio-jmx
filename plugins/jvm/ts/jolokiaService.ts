@@ -121,11 +121,11 @@ namespace JVM {
     return ConnectionName;
   }
 
-  export function getConnectionOptions():any {
+  export function getConnectionOptions(): Core.ConnectOptions {
     var name = getConnectionName();
     if (Core.isBlank(name)) {
       // this will fail any if (ConnectOptions) check
-      return false;
+      return null;
     }
     var answer = Core.getConnectOptions(name);
     // search for passed credentials when connecting to remote server
@@ -193,7 +193,7 @@ namespace JVM {
     };
   }]);
 
-  _module.service('ConnectOptions', [():any => {
+  _module.service('ConnectOptions', [(): Core.ConnectOptions => {
     return getConnectionOptions();
   }]);
 
@@ -235,18 +235,18 @@ namespace JVM {
     // Just set Authorization for now...
     var headers = ['Authorization'];
     var connectionOptions = getConnectionOptions();
-    if (connectionOptions.token) {
+    if (connectionOptions['token']) {
       log.debug("Setting authorization header to token");
       return (xhr) => {
         headers.forEach((header) => {
-          xhr.setRequestHeader(header, 'Bearer ' + connectionOptions.token);
+          xhr.setRequestHeader(header, 'Bearer ' + connectionOptions['token']);
         });
       };
-    } else if (connectionOptions.username && connectionOptions.password) {
+    } else if (connectionOptions.userName && connectionOptions.password) {
         log.debug("Setting authorization header to username/password");
         return (xhr) => {
           headers.forEach((header) => {
-            xhr.setRequestHeader(header, Core.getBasicAuthHeader(<string>connectionOptions.username, <string>connectionOptions.password));
+            xhr.setRequestHeader(header, Core.getBasicAuthHeader(<string>connectionOptions.userName, <string>connectionOptions.password));
           });
         };
     } else {
