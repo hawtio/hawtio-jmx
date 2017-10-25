@@ -7933,7 +7933,7 @@ var JVM;
         else {
             jolokiaURI = new URI(UrlHelpers.join(documentBase, answer));
         }
-        if (!ConnectOptions.jolokiaUrl) {
+        if (!ConnectOptions || !ConnectOptions.jolokiaUrl) {
             if (!jolokiaURI.protocol()) {
                 jolokiaURI.protocol(windowURI.protocol());
             }
@@ -7991,7 +7991,7 @@ var JVM;
         // Just set Authorization for now...
         var headers = ['Authorization'];
         var connectionOptions = getConnectionOptions();
-        if (connectionOptions['token']) {
+        if (connectionOptions && connectionOptions['token']) {
             JVM.log.debug("Setting authorization header to token");
             return function (xhr) {
                 headers.forEach(function (header) {
@@ -7999,7 +7999,7 @@ var JVM;
                 });
             };
         }
-        else if (connectionOptions.userName && connectionOptions.password) {
+        else if (connectionOptions && connectionOptions.userName && connectionOptions.password) {
             JVM.log.debug("Setting authorization header to username/password");
             return function (xhr) {
                 headers.forEach(function (header) {

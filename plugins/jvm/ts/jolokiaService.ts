@@ -166,7 +166,7 @@ namespace JVM {
     } else {
       jolokiaURI = new URI(UrlHelpers.join(documentBase, answer));
     }
-    if (!ConnectOptions.jolokiaUrl) {
+    if (!ConnectOptions || !ConnectOptions.jolokiaUrl) {
       if (!jolokiaURI.protocol()) {
         jolokiaURI.protocol(windowURI.protocol());
       }
@@ -235,14 +235,14 @@ namespace JVM {
     // Just set Authorization for now...
     var headers = ['Authorization'];
     var connectionOptions = getConnectionOptions();
-    if (connectionOptions['token']) {
+    if (connectionOptions && connectionOptions['token']) {
       log.debug("Setting authorization header to token");
       return (xhr) => {
         headers.forEach((header) => {
           xhr.setRequestHeader(header, 'Bearer ' + connectionOptions['token']);
         });
       };
-    } else if (connectionOptions.userName && connectionOptions.password) {
+    } else if (connectionOptions && connectionOptions.userName && connectionOptions.password) {
         log.debug("Setting authorization header to username/password");
         return (xhr) => {
           headers.forEach((header) => {
