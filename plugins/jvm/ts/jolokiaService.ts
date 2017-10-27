@@ -218,9 +218,10 @@ namespace JVM {
     var answer = {
       canonicalNaming: false,
       ignoreErrors: true,
-      mimeType: 'application/json',
+      maxCollectionSize: DEFAULT_MAX_COLLECTION_SIZE,
       maxDepth: DEFAULT_MAX_DEPTH,
-      maxCollectionSize: DEFAULT_MAX_COLLECTION_SIZE
+      method: 'post',
+      mimeType: 'application/json'
     };
     if ('jolokiaParams' in localStorage) {
       answer = angular.fromJson(localStorage['jolokiaParams']);

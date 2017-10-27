@@ -7974,9 +7974,10 @@ var JVM;
             var answer = {
                 canonicalNaming: false,
                 ignoreErrors: true,
-                mimeType: 'application/json',
+                maxCollectionSize: JVM.DEFAULT_MAX_COLLECTION_SIZE,
                 maxDepth: JVM.DEFAULT_MAX_DEPTH,
-                maxCollectionSize: JVM.DEFAULT_MAX_COLLECTION_SIZE
+                method: 'post',
+                mimeType: 'application/json'
             };
             if ('jolokiaParams' in localStorage) {
                 answer = angular.fromJson(localStorage['jolokiaParams']);
