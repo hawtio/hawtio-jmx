@@ -36,7 +36,7 @@ namespace Jmx {
 
     // TODO: the tree should ideally be initialised synchronously
     private tree(): any {
-      return (<any>$('#jmxtree')).treeview(true);
+      return ($('#jmxtree') as any).treeview(true);
     }
 
     expandAll(): any {
@@ -60,7 +60,7 @@ namespace Jmx {
 
     $onInit(): void {
       this.$scope.$on('$destroy', () => {
-        const tree = (<any>$('#jmxtree')).treeview(true);
+        const tree = ($('#jmxtree') as any).treeview(true);
         tree.clearSearch();
         // Bootstrap tree view leaks the node elements into the data structure
         // so let's clean this up when the user leaves the view
