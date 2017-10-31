@@ -4,7 +4,7 @@
 namespace Jmx {
 
   export const headerComponent: angular.IComponentOptions = {
-    template: `<h1>{{$ctrl.title}}</h1>`,
+    templateUrl: 'plugins/jmx/html/common/header.html',
     controller: HeaderController
   };
 
