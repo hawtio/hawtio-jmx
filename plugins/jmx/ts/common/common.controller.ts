@@ -4,11 +4,13 @@ namespace Jmx {
 
   export class HeaderController {
     title: string;
+    objectName: string;
 
     constructor($scope) {
       'ngInject';
       $scope.$on('jmxTreeClicked', (event, selectedNode: NodeSelection) => {
         this.title = selectedNode.text;
+        this.objectName = selectedNode.objectName;
       });
     }
   }
