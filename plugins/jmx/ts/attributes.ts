@@ -2,27 +2,43 @@
 
 namespace Jmx {
 
-  export var propertiesColumnDefs = [
+  export let propertiesColumnDefs = [
     {
       field: 'name',
       displayName: 'Attribute',
-      cellTemplate: '<div class="ngCellText" title="{{row.entity.attrDesc}}" ' +
-        'data-placement="bottom"><div ng-show="!inDashboard" class="inline" compile="row.entity.getDashboardWidgets()"></div><a href="" ng-click="row.entity.onViewAttribute()">{{row.entity.name}}</a></div>'},
+      cellTemplate: `
+        <div class="ngCellText" title="{{row.entity.attrDesc}}" data-placement="bottom">
+          <div ng-show="!inDashboard" class="inline" compile="row.entity.getDashboardWidgets()"></div>
+          <a href="" ng-click="row.entity.onViewAttribute()">{{row.entity.name}}</a>
+        </div>
+      `
+    },
     {
       field: 'value',
       displayName: 'Value',
-      cellTemplate: '<div class="ngCellText mouse-pointer" ng-click="row.entity.onViewAttribute()" title="{{row.entity.tooltip}}" ng-bind-html="row.entity.summary"></div>'
+      cellTemplate: `
+        <div class="ngCellText mouse-pointer"
+             ng-click="row.entity.onViewAttribute()"
+             title="{{row.entity.tooltip}}"
+             ng-bind-html="row.entity.summary"></div>
+      `
     }
   ];
 
-  export var foldersColumnDefs = [
+  export let foldersColumnDefs = [
     {
       displayName: 'Name',
-      cellTemplate: '<div class="ngCellText"><a href="" ng-click="row.entity.gotoFolder(row)"><i class="{{row.entity.folderIconClass(row)}}"></i> {{row.getProperty("title")}}</a></div>'
+      cellTemplate: `
+        <div class="ngCellText">
+          <a href="" ng-click="row.entity.gotoFolder(row)">
+            <i class="{{row.entity.folderIconClass(row)}}"></i> {{row.getProperty("title")}}
+          </a>
+        </div>
+      `
     }
   ];
 
-  export var AttributesController = _module.controller("Jmx.AttributesController", ["$scope", "$element", "$location", "workspace", "jolokia", "jolokiaUrl", "jmxWidgets", "jmxWidgetTypes", "$templateCache", "localStorage", "$browser", "$timeout", (
+  export let AttributesController = _module.controller("Jmx.AttributesController", ["$scope", "$element", "$location", "workspace", "jolokia", "jolokiaUrl", "jmxWidgets", "jmxWidgetTypes", "$templateCache", "localStorage", "$browser", "$timeout", (
       $scope,
       $element,
       $location: ng.ILocationService,
@@ -34,7 +50,7 @@ namespace Jmx {
       $templateCache: ng.ITemplateCacheService,
       localStorage: WindowLocalStorage,
       $browser,
-      $timeout) => {
+      $timeout: ng.ITimeoutService) => {
 
     $scope.searchText = '';
     $scope.nid = 'empty';
@@ -58,7 +74,7 @@ namespace Jmx {
       }
     });
 
-    var attributeSchemaBasic = {
+    const attributeSchemaBasic = {
       properties: {
         'key': {
           type: 'string',
@@ -101,21 +117,20 @@ namespace Jmx {
       columnDefs: propertiesColumnDefs
     };
 
-    $scope.$watch(function($scope) {
-      return $scope.gridOptions.selectedItems.map(function(item) {
-        return item.key || item;
-      });
-    }, (newValue, oldValue) => {
-      if (newValue !== oldValue) {
-        log.debug("Selected items: ", newValue);
-        $scope.selectedItems = newValue;
-      }
-    }, true);
+    $scope.$watch(
+      (scope) => scope.gridOptions.selectedItems.map((item) => item.key || item),
+      (newValue, oldValue) => {
+        if (newValue !== oldValue) {
+          log.debug("Selected items:", newValue);
+          $scope.selectedItems = newValue;
+        }
+      },
+      true);
 
     // clear selection if we clicked the jmx nav bar button
     // otherwise we may show data from Camel/ActiveMQ or other plugins that
     // reuse the JMX plugin for showing tables (#884)
-    var currentUrl = $location.url();
+    let currentUrl = $location.url();
     if (_.endsWith(currentUrl, "/jmx/attributes")) {
       log.debug("Reset selection in JMX plugin");
       workspace.selection = null;
@@ -124,7 +139,7 @@ namespace Jmx {
     $scope.nid = $location.search()['nid'];
     log.debug("nid: ", $scope.nid);
 
-    const updateTable = _.debounce(updateTableContents, 50, { leading: false, trailing: true });
+    let updateTable = _.debounce(updateTableContents, 50, { leading: false, trailing: true });
 
     $scope.$on('jmxTreeUpdated', updateTable);
 
@@ -136,18 +151,14 @@ namespace Jmx {
 
     updateTable();
 
-    $scope.hasWidget = (row) => {
-      return true;
-    };
-
     $scope.onCancelAttribute = () => {
       // clear entity
       $scope.entity = {};
     };
 
     $scope.onUpdateAttribute = () => {
-      var value = $scope.entity["attrValueEdit"];
-      var key = $scope.entity["key"];
+      let value = $scope.entity["attrValueEdit"];
+      let key = $scope.entity["key"];
 
       // clear entity
       $scope.entity = {};
@@ -155,39 +166,37 @@ namespace Jmx {
       // TODO: check if value changed
 
       // update the attribute on the mbean
-      var mbean = workspace.getSelectedMBeanName();
+      let mbean = workspace.getSelectedMBeanName();
       if (mbean) {
         jolokia.setAttribute(mbean, key, value,
           Core.onSuccess((response) => {
-              Core.notification("success", "Updated attribute " + key);
-            }
-          ));
+            Core.notification("success", "Updated attribute " + key);
+          }));
       }
     };
 
-    function onViewAttribute(row) {
+    function onViewAttribute(row: any): void {
       if (!row.summary) {
         return;
       }
       // create entity and populate it with data from the selected row
-      $scope.entity = {};
-      $scope.entity["key"] = row.key;
-      $scope.entity["description"] = row.attrDesc;
-      $scope.entity["type"] = row.type;
-
-      $scope.entity["jolokia"] = buildJolokiaUrl(row.key);
-      $scope.entity["rw"] = row.rw;
-      var type = asJsonSchemaType(row.type, row.key);
-      var readOnly = !row.rw;
+      $scope.entity = {
+        key: row.key,
+        description: row.attrDesc,
+        type: row.type,
+        jolokia: buildJolokiaUrl(row.key),
+        rw: row.rw
+      };
 
       // calculate a textare with X number of rows that usually fit the value to display
-      var len = row.summary.length;
-      var rows = (len / 40) + 1;
+      let len = row.summary.length;
+      let rows = (len / 40) + 1;
       if (rows > 10) {
         // cap at most 10 rows to not make the dialog too large
         rows = 10;
       }
 
+      let readOnly = !row.rw;
       if (readOnly) {
         // if the value is empty its a &nbsp; as we need this for the table to allow us to click on the empty row
         if (row.summary === '&nbsp;') {
@@ -195,37 +204,7 @@ namespace Jmx {
         } else {
           $scope.entity["attrValueView"] = row.summary;
         }
-
-        // clone from the basic schema to the new schema we create on-the-fly
-        // this is needed as the dialog have problems if reusing the schema, and changing the schema afterwards
-        // so its safer to create a new schema according to our needs
-        $scope.attributeSchemaView = {};
-        for (var i in attributeSchemaBasic) {
-          $scope.attributeSchemaView[i] = attributeSchemaBasic[i];
-        }
-
-        // and add the new attrValue which is dynamic computed
-        $scope.attributeSchemaView.properties.attrValueView = {
-          description: 'Value',
-          label: "Value",
-          type: 'string',
-          formTemplate: "<textarea class='form-control' rows='" + rows + "' readonly='true'></textarea>"
-        };
-        $scope.attributeSchemaView.properties.copyAttrValueViewToClipboard = {
-          label: '&nbsp;',
-          type: 'string',
-          formTemplate: `
-            <button class="btn btn-sm btn-default btn-clipboard pull-right" data-clipboard-text="{{entity.attrValueView}}"
-                    title="Copy value to clipboard" aria-label="Copy value to clipboard">
-              <i class="fa fa-clipboard" aria-hidden="true"></i>
-            </button>          
-          `
-        };
-        // just to be safe, then delete not needed part of the schema
-        if ($scope.attributeSchemaView) {
-          delete $scope.attributeSchemaView.properties.attrValueEdit;
-          delete $scope.attributeSchemaView.properties.copyAttrValueEditToClipboard;
-        }
+        initAttributeSchemaView($scope, rows);
       } else {
         // if the value is empty its a &nbsp; as we need this for the table to allow us to click on the empty row
         if (row.summary === '&nbsp;') {
@@ -233,36 +212,7 @@ namespace Jmx {
         } else {
           $scope.entity["attrValueEdit"] = row.summary;
         }
-
-        // clone from the basic schema to the new schema we create on-the-fly
-        // this is needed as the dialog have problems if reusing the schema, and changing the schema afterwards
-        // so its safer to create a new schema according to our needs
-        $scope.attributeSchemaEdit = {};
-        for (var i in attributeSchemaBasic) {
-          $scope.attributeSchemaEdit[i] = attributeSchemaBasic[i];
-        }
-        // and add the new attrValue which is dynamic computed
-        $scope.attributeSchemaEdit.properties.attrValueEdit = {
-          description: 'Value',
-          label: "Value",
-          type: 'string',
-          formTemplate: "<textarea class='form-control' rows='" + rows + "'></textarea>"
-        };
-        $scope.attributeSchemaEdit.properties.copyAttrValueEditToClipboard = {
-          label: '&nbsp;',
-          type: 'string',
-          formTemplate: `
-            <button class="btn btn-sm btn-default btn-clipboard pull-right" data-clipboard-text="{{entity.attrValueEdit}}"
-                    title="Copy value to clipboard" aria-label="Copy value to clipboard">
-              <i class="fa fa-clipboard" aria-hidden="true"></i>
-            </button>          
-          `
-        };
-        // just to be safe, then delete not needed part of the schema
-        if ($scope.attributeSchemaEdit) {
-          delete $scope.attributeSchemaEdit.properties.attrValueView;
-          delete $scope.attributeSchemaEdit.properties.copyAttrValueViewToClipboard;
-        }
+        initAttributeSchemaEdit($scope, rows);
       }
 
       $scope.showAttributeDialog = true;
@@ -270,88 +220,94 @@ namespace Jmx {
 
     function buildJolokiaUrl(attribute): string {
       let mbeanName = Core.escapeMBean(workspace.getSelectedMBeanName());
-      return `${ jolokiaUrl }/read/${ mbeanName }/${ attribute }`;
+      return `${jolokiaUrl}/read/${mbeanName}/${attribute}`;
     }
 
-    function getDashboardWidgets(row) {
-      var mbean = workspace.getSelectedMBeanName();
-      if (!mbean) {
-        return '';
+    function initAttributeSchemaView($scope, rows: number): void {
+      // clone from the basic schema to the new schema we create on-the-fly
+      // this is needed as the dialog have problems if reusing the schema, and changing the schema afterwards
+      // so its safer to create a new schema according to our needs
+      $scope.attributeSchemaView = {};
+      for (let i in attributeSchemaBasic) {
+        $scope.attributeSchemaView[i] = attributeSchemaBasic[i];
       }
-      var potentialCandidates = _.filter(jmxWidgets, (widget:any) => {
-        return mbean === widget.mbean;
-      });
-
-      if (potentialCandidates.length === 0) {
-        return '';
-      }
-
-      potentialCandidates = _.filter(potentialCandidates, (widget:any) => {
-        return widget.attribute === row.key || widget.total === row.key;
-      });
-
-      if (potentialCandidates.length === 0) {
-        return '';
-      }
-
-      row.addChartToDashboard = (type) => {
-        $scope.addChartToDashboard(row, type);
+      // and add the new attrValue which is dynamic computed
+      $scope.attributeSchemaView.properties.attrValueView = {
+        description: 'Value',
+        label: "Value",
+        type: 'string',
+        formTemplate: `<textarea class='form-control' rows='${rows}' readonly='true'></textarea>`
       };
-
-      var rc = [];
-      potentialCandidates.forEach((widget) => {
-        var widgetType = Jmx.getWidgetType(widget);
-        rc.push("<i class=\"" + widgetType['icon'] + " clickable\" title=\"" + widgetType['title'] + "\" ng-click=\"row.entity.addChartToDashboard('" + widgetType['type'] + "')\"></i>");
-
-      });
-      return rc.join() + "&nbsp;";
+      $scope.attributeSchemaView.properties.copyAttrValueViewToClipboard = {
+        label: '&nbsp;',
+        type: 'string',
+        formTemplate: `
+          <button class="btn btn-sm btn-default btn-clipboard pull-right" data-clipboard-text="{{entity.attrValueView}}"
+                  title="Copy value to clipboard" aria-label="Copy value to clipboard">
+            <i class="fa fa-clipboard" aria-hidden="true"></i>
+          </button>
+        `
+      };
+      // just to be safe, then delete not needed part of the schema
+      if ($scope.attributeSchemaView) {
+        delete $scope.attributeSchemaView.properties.attrValueEdit;
+        delete $scope.attributeSchemaView.properties.copyAttrValueEditToClipboard;
+      }
     }
 
-    $scope.addChartToDashboard = (row, widgetType) => {
-      var mbean = workspace.getSelectedMBeanName();
-      var candidates = jmxWidgets.filter((widget) => {
-        return mbean === widget.mbean;
-      });
+    function initAttributeSchemaEdit($scope, rows: number): void {
+      // clone from the basic schema to the new schema we create on-the-fly
+      // this is needed as the dialog have problems if reusing the schema, and changing the schema afterwards
+      // so its safer to create a new schema according to our needs
+      $scope.attributeSchemaEdit = {};
+      for (let i in attributeSchemaBasic) {
+        $scope.attributeSchemaEdit[i] = attributeSchemaBasic[i];
+      }
+      // and add the new attrValue which is dynamic computed
+      $scope.attributeSchemaEdit.properties.attrValueEdit = {
+        description: 'Value',
+        label: "Value",
+        type: 'string',
+        formTemplate: `<textarea class='form-control' rows='${rows}'></textarea>`
+      };
+      $scope.attributeSchemaEdit.properties.copyAttrValueEditToClipboard = {
+        label: '&nbsp;',
+        type: 'string',
+        formTemplate: `
+          <button class="btn btn-sm btn-default btn-clipboard pull-right" data-clipboard-text="{{entity.attrValueEdit}}"
+                  title="Copy value to clipboard" aria-label="Copy value to clipboard">
+            <i class="fa fa-clipboard" aria-hidden="true"></i>
+          </button>
+        `
+      };
+      // just to be safe, then delete not needed part of the schema
+      if ($scope.attributeSchemaEdit) {
+        delete $scope.attributeSchemaEdit.properties.attrValueView;
+        delete $scope.attributeSchemaEdit.properties.copyAttrValueViewToClipboard;
+      }
+    }
 
-      candidates = candidates.filter((widget) => {
-        return widget.attribute === row.key || widget.total === row.key;
-      });
-
-      candidates = candidates.filter((widget) => {
-        return widget.type === widgetType;
-      });
-
-      // hmmm, we really should only have one result...
-      var widget = _.first(candidates);
-      var type = getWidgetType(widget);
-
-      //console.log("widgetType: ", type, " widget: ", widget);
-
-      $location.url(Jmx.createDashboardLink(type, widget));
-    };
-
-    $scope.invokeSelectedMBeans = (operationName, completeFunction:() => any = null) => {
-      var queries = [];
+    $scope.invokeSelectedMBeans = (operationName, completeFunction: () => any = null) => {
+      let queries = [];
       angular.forEach($scope.selectedItems || [], (item) => {
-        var mbean = item["_id"];
+        let mbean = item["_id"];
         if (mbean) {
-          var opName = operationName;
+          let opName = operationName;
           if (angular.isFunction(operationName)) {
             opName = operationName(item);
           }
-          //console.log("Invoking operation " + opName + " on " + mbean);
-          queries.push({type: "exec", operation: opName, mbean: mbean});
+          queries.push({ type: "exec", operation: opName, mbean: mbean });
         }
       });
       if (queries.length) {
-        var callback = () => {
+        let callback = () => {
           if (completeFunction) {
             completeFunction();
           } else {
             operationComplete();
           }
         };
-        jolokia.request(queries, Core.onSuccess(callback, {error: callback}));
+        jolokia.request(queries, Core.onSuccess(callback, { error: callback }));
       }
     };
 
@@ -365,26 +321,26 @@ namespace Jmx {
 
       $scope.gridData = [];
       $scope.mbeanIndex = null;
-      var mbean = workspace.getSelectedMBeanName();
-      var request = <any>null;
-      var node = workspace.selection;
+      let mbean = workspace.getSelectedMBeanName();
+      let request = null;
+      let node = workspace.selection;
       if (node === null || angular.isUndefined(node) || node.key !== $scope.lastKey) {
         // cache attributes info, so we know if the attribute is read-only or read-write, and also the attribute description
         $scope.attributesInfoCache = null;
 
-        if(mbean == null) {
+        if (mbean == null) {
           // in case of refresh
-          var _key = $location.search()['nid'];
-          var _node = workspace.keyToNodeMap[_key];
+          let _key = $location.search()['nid'];
+          let _node = workspace.keyToNodeMap[_key];
           if (_node) {
             mbean = _node.objectName;
           }
         }
 
         if (mbean) {
-          var asQuery = (node) => {
-            var path = Core.escapeMBeanPath(node);
-            var query = {
+          let asQuery = (node) => {
+            let path = Core.escapeMBeanPath(node);
+            let query = {
               type: "LIST",
               method: "post",
               path: path,
@@ -392,7 +348,7 @@ namespace Jmx {
             };
             return query;
           };
-          var infoQuery = asQuery(mbean);
+          let infoQuery = asQuery(mbean);
           jolokia.request(infoQuery, Core.onSuccess((response) => {
             $scope.attributesInfoCache = response.value;
             log.debug("Updated attributes info cache for mbean " + mbean);
@@ -412,17 +368,17 @@ namespace Jmx {
           $scope.gridOptions.enableRowClickSelection = true;
         }
         // lets query each child's details
-        var children = node.children;
+        let children = node.children;
         if (children) {
-          var childNodes = children.map((child) => child.objectName);
-          var mbeans = childNodes.filter((mbean) => FilterHelpers.search(mbean, $scope.gridOptions.filterOptions.filterText));
-          var maxFolderSize = localStorage["jmxMaxFolderSize"];
+          let childNodes = children.map((child) => child.objectName);
+          let mbeans = childNodes.filter((mbean) => FilterHelpers.search(mbean, $scope.gridOptions.filterOptions.filterText));
+          let maxFolderSize = localStorage["jmxMaxFolderSize"];
           mbeans = mbeans.slice(0, maxFolderSize);
           if (mbeans) {
-            var typeNames = Jmx.getUniqueTypeNames(children);
+            let typeNames = Jmx.getUniqueTypeNames(children);
             if (typeNames.length <= 1) {
-              var query = mbeans.map((mbean) => {
-                return { type: "READ", mbean: mbean, ignoreErrors: true};
+              let query = mbeans.map((mbean) => {
+                return { type: "READ", mbean: mbean, ignoreErrors: true };
               });
               if (query.length > 0) {
                 request = query;
@@ -431,7 +387,6 @@ namespace Jmx {
                 $scope.mbeanIndex = {};
                 $scope.mbeanRowCounter = 0;
                 $scope.mbeanCount = mbeans.length;
-                //$scope.columnDefs = [];
               }
             } else {
               console.log("Too many type names " + typeNames);
@@ -439,8 +394,7 @@ namespace Jmx {
           }
         }
       }
-      //var callback = Core.onSuccess(render, { error: render });
-      var callback = Core.onSuccess(render);
+      let callback = Core.onSuccess(render);
       if (request) {
         $scope.request = request;
         Core.register(jolokia, $scope, request, callback);
@@ -460,9 +414,9 @@ namespace Jmx {
     }
 
     function render(response) {
-      var data = response.value;
-      var mbeanIndex = $scope.mbeanIndex;
-      var mbean = response.request['mbean'];
+      let data = response.value;
+      let mbeanIndex = $scope.mbeanIndex;
+      let mbean = response.request['mbean'];
 
       if (mbean) {
         // lets store the mbean in the row for later
@@ -471,7 +425,7 @@ namespace Jmx {
       if (mbeanIndex) {
         if (mbean) {
 
-          var idx = mbeanIndex[mbean];
+          let idx = mbeanIndex[mbean];
           if (!angular.isDefined(idx)) {
             idx = $scope.mbeanRowCounter;
             mbeanIndex[mbean] = idx;
@@ -485,20 +439,20 @@ namespace Jmx {
             if (!$scope.gridOptions.columnDefs.length) {
               // lets update the column definitions based on any configured defaults
 
-              var key = workspace.selectionConfigKey();
+              let key = workspace.selectionConfigKey();
               $scope.gridOptions.gridKey = key;
               $scope.gridOptions.onClickRowHandlers = workspace.onClickRowHandlers;
-              var defaultDefs = _.clone(workspace.attributeColumnDefs[key]) || [];
-              var defaultSize = defaultDefs.length;
-              var map = {};
+              let defaultDefs = _.clone(workspace.attributeColumnDefs[key]) || [];
+              let defaultSize = defaultDefs.length;
+              let map = {};
               angular.forEach(defaultDefs, (value, key) => {
-                var field = value.field;
+                let field = value.field;
                 if (field) {
                   map[field] = value
                 }
               });
 
-              var extraDefs = [];
+              let extraDefs = [];
               angular.forEach(data, (value, key) => {
                 if (includePropertyValue(key, value)) {
                   if (!map[key]) {
@@ -542,10 +496,10 @@ namespace Jmx {
           $scope.gridData[idx] = data;
           addHandlerFunctions($scope.gridData);
 
-          var count = $scope.mbeanCount;
+          let count = $scope.mbeanCount;
           if (!count || idx + 1 >= count) {
             // only cause a refresh on the last row
-            var newSelections = $scope.selectedIndices.map((idx) => $scope.gridData[idx]).filter((row) => row);
+            let newSelections = $scope.selectedIndices.map((idx) => $scope.gridData[idx]).filter((row) => row);
             $scope.selectedItems.splice(0, $scope.selectedItems.length);
             $scope.selectedItems.push.apply($scope.selectedItems, newSelections);
             //console.log("Would have selected " + JSON.stringify($scope.selectedItems));
@@ -558,9 +512,9 @@ namespace Jmx {
       } else {
         $scope.gridOptions.columnDefs = propertiesColumnDefs;
         $scope.gridOptions.enableRowClickSelection = false;
-        var showAllAttributes = true;
+        let showAllAttributes = true;
         if (angular.isObject(data)) {
-          var properties = Array();
+          let properties = Array();
           angular.forEach(data, (value, key) => {
             if (showAllAttributes || includePropertyValue(key, value)) {
               // always skip keys which start with _
@@ -577,8 +531,8 @@ namespace Jmx {
                   });
                 }
                 // the value must be string as the sorting/filtering of the table relies on that
-                var type = lookupAttributeType(key);
-                var data = {
+                let type = lookupAttributeType(key);
+                let data = {
                   key: key,
                   name: Core.humanizeValue(key),
                   value: maskReadError(Core.safeNullAsString(value, type))
@@ -592,7 +546,7 @@ namespace Jmx {
           if (!_.some(properties, (p) => {
             return p['key'] === 'ObjectName';
           })) {
-            var objectName = {
+            let objectName = {
               key: "ObjectName",
               name: "Object Name",
               value: mbean
@@ -614,8 +568,8 @@ namespace Jmx {
       if (typeof value !== 'string') {
         return value;
       }
-      var forbidden = /^ERROR: Reading attribute .+ \(class java\.lang\.SecurityException\)$/;
-      var unsupported = /^ERROR: java\.lang\.UnsupportedOperationException: .+ \(class javax\.management\.RuntimeMBeanException\)$/;
+      let forbidden = /^ERROR: Reading attribute .+ \(class java\.lang\.SecurityException\)$/;
+      let unsupported = /^ERROR: java\.lang\.UnsupportedOperationException: .+ \(class javax\.management\.RuntimeMBeanException\)$/;
       if (value.match(forbidden)) {
         return "**********";
       } else if (value.match(unsupported)) {
@@ -630,17 +584,66 @@ namespace Jmx {
         item['inDashboard'] = $scope.inDashboard;
         item['getDashboardWidgets'] = () => getDashboardWidgets(item);
         item['onViewAttribute'] = () => onViewAttribute(item);
-        item['folderIconClass'] = row => folderIconClass(row);
-        item['gotoFolder'] = row => gotoFolder(row);
+        item['folderIconClass'] = (row) => folderIconClass(row);
+        item['gotoFolder'] = (row) => gotoFolder(row);
       });
     }
 
-    function folderIconClass(row) {
+    function getDashboardWidgets(row: any): string {
+      let mbean = workspace.getSelectedMBeanName();
+      if (!mbean) {
+        return '';
+      }
+      let potentialCandidates = _.filter(jmxWidgets, (widget: any) => {
+        return mbean === widget.mbean;
+      });
+
+      if (potentialCandidates.length === 0) {
+        return '';
+      }
+
+      potentialCandidates = _.filter(potentialCandidates, (widget: any) => {
+        return widget.attribute === row.key || widget.total === row.key;
+      });
+
+      if (potentialCandidates.length === 0) {
+        return '';
+      }
+
+      row.addChartToDashboard = (type) => $scope.addChartToDashboard(row, type);
+
+      let rc = [];
+      potentialCandidates.forEach((widget) => {
+        let widgetType = Jmx.getWidgetType(widget);
+        rc.push(`
+              <i class="${widgetType['icon']} clickable"
+                 title="${widgetType['title']}"
+                 ng-click="row.entity.addChartToDashboard('${widgetType['type']}')"></i>
+            `);
+      });
+      return rc.join() + "&nbsp;";
+    }
+
+    $scope.addChartToDashboard = (row, widgetType) => {
+      let mbean = workspace.getSelectedMBeanName();
+      let candidates = jmxWidgets
+        .filter((widget: any) => mbean === widget.mbean)
+        .filter((widget: any) => widget.attribute === row.key || widget.total === row.key)
+        .filter((widget: any) => widget.type === widgetType);
+
+      // hmmm, we really should only have one result...
+      let widget = _.first(candidates);
+      let type = getWidgetType(widget);
+
+      $location.url(Jmx.createDashboardLink(type, widget));
+    };
+
+    function folderIconClass(row: any): string {
       // TODO lets ignore the classes property for now
       // as we don't have an easy way to know if there is an icon defined for an icon or not
       // and we want to make sure there always is an icon shown
       /*
-       var classes = (row.getProperty("addClass") || "").trim();
+       let classes = (row.getProperty("addClass") || "").trim();
        if (classes) {
        return classes;
        }
@@ -649,22 +652,22 @@ namespace Jmx {
         return '';
       }
       return row.getProperty('objectName') ? 'fa fa-cog' : 'pficon pficon-folder-close';
-    };
+    }
 
-    function gotoFolder(row) {
+    function gotoFolder(row: any): void {
       if (row.getProperty) {
-        const key = row.getProperty('key');
+        let key = row.getProperty('key');
         if (key) {
           $location.search('nid', key);
         }
       }
-    };
+    }
 
     function unwrapObjectName(value) {
       if (!angular.isObject(value)) {
         return value;
       }
-      var keys = Object.keys(value);
+      let keys = Object.keys(value);
       if (keys.length === 1 && keys[0] === "objectName") {
         return value["objectName"];
       }
@@ -672,24 +675,23 @@ namespace Jmx {
     }
 
     function generateSummaryAndDetail(key, data) {
-      var value = Core.escapeHtml(data.value);
+      let value = Core.escapeHtml(data.value);
       if (!angular.isArray(value) && angular.isObject(value)) {
-        var detailHtml = "<table class='table table-striped'>";
-        var summary = "";
-        var object = value;
-        var keys = Object.keys(value).sort();
+        let detailHtml = "<table class='table table-striped'>";
+        let summary = "";
+        let object = value;
+        let keys = Object.keys(value).sort();
         angular.forEach(keys, (key) => {
-          var value = object[key];
-          detailHtml += "<tr><td>"
-            + Core.humanizeValue(key) + "</td><td>" + value + "</td></tr>";
-          summary += "" + Core.humanizeValue(key) + ": " + value + "  "
+          let value = object[key];
+          detailHtml += `<tr><td>${Core.humanizeValue(key)}</td><td>${value}</td></tr>`;
+          summary += `${Core.humanizeValue(key)}: ${value}  `;
         });
         detailHtml += "</table>";
         data.summary = summary;
         data.detailHtml = detailHtml;
         data.tooltip = summary;
       } else {
-        var text = value;
+        let text = value;
         // if the text is empty then use a no-break-space so the table allows us to click on the row,
         // otherwise if the text is empty, then you cannot click on the row
         if (text === '') {
@@ -698,13 +700,11 @@ namespace Jmx {
         } else {
           data.tooltip = text;
         }
-        data.summary = "" + text + "";
-        data.detailHtml = "<pre>" + text + "</pre>";
+        data.summary = `${text}`;
+        data.detailHtml = `<pre>${text}</pre>`;
         if (angular.isArray(value)) {
-          var html = "<ul>";
-          angular.forEach(value, (item) => {
-            html += "<li>" + item + "</li>";
-          });
+          let html = "<ul>";
+          angular.forEach(value, (item) => html += `<li>${item}</li>`);
           html += "</ul>";
           data.detailHtml = html;
         }
@@ -715,7 +715,7 @@ namespace Jmx {
       data.attrDesc = data.name;
       data.type = "string";
       if ($scope.attributesInfoCache != null && 'attr' in $scope.attributesInfoCache) {
-        var info = $scope.attributesInfoCache.attr[key];
+        let info = $scope.attributesInfoCache.attr[key];
         if (angular.isDefined(info)) {
           data.rw = info.rw;
           data.attrDesc = info.desc;
@@ -726,7 +726,7 @@ namespace Jmx {
 
     function lookupAttributeType(key) {
       if ($scope.attributesInfoCache != null && 'attr' in $scope.attributesInfoCache) {
-        var info = $scope.attributesInfoCache.attr[key];
+        let info = $scope.attributesInfoCache.attr[key];
         if (angular.isDefined(info)) {
           return info.type;
         }
@@ -734,28 +734,8 @@ namespace Jmx {
       return null;
     }
 
-    function includePropertyValue(key:string, value) {
+    function includePropertyValue(key: string, value) {
       return !angular.isObject(value);
-    }
-
-    function asJsonSchemaType(typeName, id) {
-      if (typeName) {
-        var lower = typeName.toLowerCase();
-        if (_.startsWith(lower, "int") || lower === "long" || lower === "short" || lower === "byte" || _.endsWith(lower, "int")) {
-          return "integer";
-        }
-        if (lower === "double" || lower === "float" || lower === "bigdecimal") {
-          return "number";
-        }
-        if (lower === "boolean" || lower === "java.lang.boolean") {
-          return "boolean";
-        }
-        if (lower === "string" || lower === "java.lang.String") {
-          return "string";
-        }
-      }
-      // fallback as string
-      return "string";
     }
 
   }]);
