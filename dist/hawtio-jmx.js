@@ -5406,6 +5406,7 @@ var Jmx;
             var _this = this;
             $scope.$on('jmxTreeClicked', function (event, selectedNode) {
                 _this.title = selectedNode.text;
+                _this.objectName = selectedNode.objectName;
             });
         }
         return HeaderController;
@@ -5447,7 +5448,7 @@ var Jmx;
 var Jmx;
 (function (Jmx) {
     Jmx.headerComponent = {
-        template: "<h1>{{$ctrl.title}}</h1>",
+        templateUrl: 'plugins/jmx/html/common/header.html',
         controller: Jmx.HeaderController
     };
     Jmx.tabComponent = {
@@ -5632,9 +5633,13 @@ var Jmx;
         return OperationsController;
     }());
     Jmx.OperationsController = OperationsController;
+})(Jmx || (Jmx = {}));
+/// <reference path="operations.controller.ts"/>
+var Jmx;
+(function (Jmx) {
     Jmx.operationsComponent = {
         templateUrl: 'plugins/jmx/html/operations.html',
-        controller: OperationsController
+        controller: Jmx.OperationsController
     };
 })(Jmx || (Jmx = {}));
 /// <reference path="../workspace.ts"/>
@@ -6135,19 +6140,18 @@ var Jmx;
         {
             field: 'name',
             displayName: 'Attribute',
-            cellTemplate: '<div class="ngCellText" title="{{row.entity.attrDesc}}" ' +
-                'data-placement="bottom"><div ng-show="!inDashboard" class="inline" compile="row.entity.getDashboardWidgets()"></div><a href="" ng-click="row.entity.onViewAttribute()">{{row.entity.name}}</a></div>'
+            cellTemplate: "\n        <div class=\"ngCellText\" title=\"{{row.entity.attrDesc}}\" data-placement=\"bottom\">\n          <div ng-show=\"!inDashboard\" class=\"inline\" compile=\"row.entity.getDashboardWidgets()\"></div>\n          <a href=\"\" ng-click=\"row.entity.onViewAttribute()\">{{row.entity.name}}</a>\n        </div>\n      "
         },
         {
             field: 'value',
             displayName: 'Value',
-            cellTemplate: '<div class="ngCellText mouse-pointer" ng-click="row.entity.onViewAttribute()" title="{{row.entity.tooltip}}" ng-bind-html="row.entity.summary"></div>'
+            cellTemplate: "\n        <div class=\"ngCellText mouse-pointer\"\n             ng-click=\"row.entity.onViewAttribute()\"\n             title=\"{{row.entity.tooltip}}\"\n             ng-bind-html=\"row.entity.summary\"></div>\n      "
         }
     ];
     Jmx.foldersColumnDefs = [
         {
             displayName: 'Name',
-            cellTemplate: '<div class="ngCellText"><a href="" ng-click="row.entity.gotoFolder(row)"><i class="{{row.entity.folderIconClass(row)}}"></i> {{row.getProperty("title")}}</a></div>'
+            cellTemplate: "\n        <div class=\"ngCellText\">\n          <a href=\"\" ng-click=\"row.entity.gotoFolder(row)\">\n            <i class=\"{{row.entity.folderIconClass(row)}}\"></i> {{row.getProperty(\"title\")}}\n          </a>\n        </div>\n      "
         }
     ];
     Jmx.AttributesController = Jmx._module.controller("Jmx.AttributesController", ["$scope", "$element", "$location", "workspace", "jolokia", "jolokiaUrl", "jmxWidgets", "jmxWidgetTypes", "$templateCache", "localStorage", "$browser", "$timeout", function ($scope, $element, $location, workspace, jolokia, jolokiaUrl, jmxWidgets, jmxWidgetTypes, $templateCache, localStorage, $browser, $timeout) {
@@ -6211,13 +6215,9 @@ var Jmx;
                 data: 'gridData',
                 columnDefs: Jmx.propertiesColumnDefs
             };
-            $scope.$watch(function ($scope) {
-                return $scope.gridOptions.selectedItems.map(function (item) {
-                    return item.key || item;
-                });
-            }, function (newValue, oldValue) {
+            $scope.$watch(function (scope) { return scope.gridOptions.selectedItems.map(function (item) { return item.key || item; }); }, function (newValue, oldValue) {
                 if (newValue !== oldValue) {
-                    Jmx.log.debug("Selected items: ", newValue);
+                    Jmx.log.debug("Selected items:", newValue);
                     $scope.selectedItems = newValue;
                 }
             }, true);
@@ -6240,9 +6240,6 @@ var Jmx;
                 }
             });
             updateTable();
-            $scope.hasWidget = function (row) {
-                return true;
-            };
             $scope.onCancelAttribute = function () {
                 // clear entity
                 $scope.entity = {};
@@ -6266,14 +6263,13 @@ var Jmx;
                     return;
                 }
                 // create entity and populate it with data from the selected row
-                $scope.entity = {};
-                $scope.entity["key"] = row.key;
-                $scope.entity["description"] = row.attrDesc;
-                $scope.entity["type"] = row.type;
-                $scope.entity["jolokia"] = buildJolokiaUrl(row.key);
-                $scope.entity["rw"] = row.rw;
-                var type = asJsonSchemaType(row.type, row.key);
-                var readOnly = !row.rw;
+                $scope.entity = {
+                    key: row.key,
+                    description: row.attrDesc,
+                    type: row.type,
+                    jolokia: buildJolokiaUrl(row.key),
+                    rw: row.rw
+                };
                 // calculate a textare with X number of rows that usually fit the value to display
                 var len = row.summary.length;
                 var rows = (len / 40) + 1;
@@ -6281,6 +6277,7 @@ var Jmx;
                     // cap at most 10 rows to not make the dialog too large
                     rows = 10;
                 }
+                var readOnly = !row.rw;
                 if (readOnly) {
                     // if the value is empty its a &nbsp; as we need this for the table to allow us to click on the empty row
                     if (row.summary === '&nbsp;') {
@@ -6289,30 +6286,7 @@ var Jmx;
                     else {
                         $scope.entity["attrValueView"] = row.summary;
                     }
-                    // clone from the basic schema to the new schema we create on-the-fly
-                    // this is needed as the dialog have problems if reusing the schema, and changing the schema afterwards
-                    // so its safer to create a new schema according to our needs
-                    $scope.attributeSchemaView = {};
-                    for (var i in attributeSchemaBasic) {
-                        $scope.attributeSchemaView[i] = attributeSchemaBasic[i];
-                    }
-                    // and add the new attrValue which is dynamic computed
-                    $scope.attributeSchemaView.properties.attrValueView = {
-                        description: 'Value',
-                        label: "Value",
-                        type: 'string',
-                        formTemplate: "<textarea class='form-control' rows='" + rows + "' readonly='true'></textarea>"
-                    };
-                    $scope.attributeSchemaView.properties.copyAttrValueViewToClipboard = {
-                        label: '&nbsp;',
-                        type: 'string',
-                        formTemplate: "\n            <button class=\"btn btn-sm btn-default btn-clipboard pull-right\" data-clipboard-text=\"{{entity.attrValueView}}\"\n                    title=\"Copy value to clipboard\" aria-label=\"Copy value to clipboard\">\n              <i class=\"fa fa-clipboard\" aria-hidden=\"true\"></i>\n            </button>          \n          "
-                    };
-                    // just to be safe, then delete not needed part of the schema
-                    if ($scope.attributeSchemaView) {
-                        delete $scope.attributeSchemaView.properties.attrValueEdit;
-                        delete $scope.attributeSchemaView.properties.copyAttrValueEditToClipboard;
-                    }
+                    initAttributeSchemaView($scope, rows);
                 }
                 else {
                     // if the value is empty its a &nbsp; as we need this for the table to allow us to click on the empty row
@@ -6322,30 +6296,7 @@ var Jmx;
                     else {
                         $scope.entity["attrValueEdit"] = row.summary;
                     }
-                    // clone from the basic schema to the new schema we create on-the-fly
-                    // this is needed as the dialog have problems if reusing the schema, and changing the schema afterwards
-                    // so its safer to create a new schema according to our needs
-                    $scope.attributeSchemaEdit = {};
-                    for (var i in attributeSchemaBasic) {
-                        $scope.attributeSchemaEdit[i] = attributeSchemaBasic[i];
-                    }
-                    // and add the new attrValue which is dynamic computed
-                    $scope.attributeSchemaEdit.properties.attrValueEdit = {
-                        description: 'Value',
-                        label: "Value",
-                        type: 'string',
-                        formTemplate: "<textarea class='form-control' rows='" + rows + "'></textarea>"
-                    };
-                    $scope.attributeSchemaEdit.properties.copyAttrValueEditToClipboard = {
-                        label: '&nbsp;',
-                        type: 'string',
-                        formTemplate: "\n            <button class=\"btn btn-sm btn-default btn-clipboard pull-right\" data-clipboard-text=\"{{entity.attrValueEdit}}\"\n                    title=\"Copy value to clipboard\" aria-label=\"Copy value to clipboard\">\n              <i class=\"fa fa-clipboard\" aria-hidden=\"true\"></i>\n            </button>          \n          "
-                    };
-                    // just to be safe, then delete not needed part of the schema
-                    if ($scope.attributeSchemaEdit) {
-                        delete $scope.attributeSchemaEdit.properties.attrValueView;
-                        delete $scope.attributeSchemaEdit.properties.copyAttrValueViewToClipboard;
-                    }
+                    initAttributeSchemaEdit($scope, rows);
                 }
                 $scope.showAttributeDialog = true;
             }
@@ -6353,50 +6304,58 @@ var Jmx;
                 var mbeanName = Core.escapeMBean(workspace.getSelectedMBeanName());
                 return jolokiaUrl + "/read/" + mbeanName + "/" + attribute;
             }
-            function getDashboardWidgets(row) {
-                var mbean = workspace.getSelectedMBeanName();
-                if (!mbean) {
-                    return '';
+            function initAttributeSchemaView($scope, rows) {
+                // clone from the basic schema to the new schema we create on-the-fly
+                // this is needed as the dialog have problems if reusing the schema, and changing the schema afterwards
+                // so its safer to create a new schema according to our needs
+                $scope.attributeSchemaView = {};
+                for (var i in attributeSchemaBasic) {
+                    $scope.attributeSchemaView[i] = attributeSchemaBasic[i];
                 }
-                var potentialCandidates = _.filter(jmxWidgets, function (widget) {
-                    return mbean === widget.mbean;
-                });
-                if (potentialCandidates.length === 0) {
-                    return '';
-                }
-                potentialCandidates = _.filter(potentialCandidates, function (widget) {
-                    return widget.attribute === row.key || widget.total === row.key;
-                });
-                if (potentialCandidates.length === 0) {
-                    return '';
-                }
-                row.addChartToDashboard = function (type) {
-                    $scope.addChartToDashboard(row, type);
+                // and add the new attrValue which is dynamic computed
+                $scope.attributeSchemaView.properties.attrValueView = {
+                    description: 'Value',
+                    label: "Value",
+                    type: 'string',
+                    formTemplate: "<textarea class='form-control' rows='" + rows + "' readonly='true'></textarea>"
                 };
-                var rc = [];
-                potentialCandidates.forEach(function (widget) {
-                    var widgetType = Jmx.getWidgetType(widget);
-                    rc.push("<i class=\"" + widgetType['icon'] + " clickable\" title=\"" + widgetType['title'] + "\" ng-click=\"row.entity.addChartToDashboard('" + widgetType['type'] + "')\"></i>");
-                });
-                return rc.join() + "&nbsp;";
+                $scope.attributeSchemaView.properties.copyAttrValueViewToClipboard = {
+                    label: '&nbsp;',
+                    type: 'string',
+                    formTemplate: "\n          <button class=\"btn btn-sm btn-default btn-clipboard pull-right\" data-clipboard-text=\"{{entity.attrValueView}}\"\n                  title=\"Copy value to clipboard\" aria-label=\"Copy value to clipboard\">\n            <i class=\"fa fa-clipboard\" aria-hidden=\"true\"></i>\n          </button>\n        "
+                };
+                // just to be safe, then delete not needed part of the schema
+                if ($scope.attributeSchemaView) {
+                    delete $scope.attributeSchemaView.properties.attrValueEdit;
+                    delete $scope.attributeSchemaView.properties.copyAttrValueEditToClipboard;
+                }
             }
-            $scope.addChartToDashboard = function (row, widgetType) {
-                var mbean = workspace.getSelectedMBeanName();
-                var candidates = jmxWidgets.filter(function (widget) {
-                    return mbean === widget.mbean;
-                });
-                candidates = candidates.filter(function (widget) {
-                    return widget.attribute === row.key || widget.total === row.key;
-                });
-                candidates = candidates.filter(function (widget) {
-                    return widget.type === widgetType;
-                });
-                // hmmm, we really should only have one result...
-                var widget = _.first(candidates);
-                var type = Jmx.getWidgetType(widget);
-                //console.log("widgetType: ", type, " widget: ", widget);
-                $location.url(Jmx.createDashboardLink(type, widget));
-            };
+            function initAttributeSchemaEdit($scope, rows) {
+                // clone from the basic schema to the new schema we create on-the-fly
+                // this is needed as the dialog have problems if reusing the schema, and changing the schema afterwards
+                // so its safer to create a new schema according to our needs
+                $scope.attributeSchemaEdit = {};
+                for (var i in attributeSchemaBasic) {
+                    $scope.attributeSchemaEdit[i] = attributeSchemaBasic[i];
+                }
+                // and add the new attrValue which is dynamic computed
+                $scope.attributeSchemaEdit.properties.attrValueEdit = {
+                    description: 'Value',
+                    label: "Value",
+                    type: 'string',
+                    formTemplate: "<textarea class='form-control' rows='" + rows + "'></textarea>"
+                };
+                $scope.attributeSchemaEdit.properties.copyAttrValueEditToClipboard = {
+                    label: '&nbsp;',
+                    type: 'string',
+                    formTemplate: "\n          <button class=\"btn btn-sm btn-default btn-clipboard pull-right\" data-clipboard-text=\"{{entity.attrValueEdit}}\"\n                  title=\"Copy value to clipboard\" aria-label=\"Copy value to clipboard\">\n            <i class=\"fa fa-clipboard\" aria-hidden=\"true\"></i>\n          </button>\n        "
+                };
+                // just to be safe, then delete not needed part of the schema
+                if ($scope.attributeSchemaEdit) {
+                    delete $scope.attributeSchemaEdit.properties.attrValueView;
+                    delete $scope.attributeSchemaEdit.properties.copyAttrValueViewToClipboard;
+                }
+            }
             $scope.invokeSelectedMBeans = function (operationName, completeFunction) {
                 if (completeFunction === void 0) { completeFunction = null; }
                 var queries = [];
@@ -6407,7 +6366,6 @@ var Jmx;
                         if (angular.isFunction(operationName)) {
                             opName = operationName(item);
                         }
-                        //console.log("Invoking operation " + opName + " on " + mbean);
                         queries.push({ type: "exec", operation: opName, mbean: mbean });
                     }
                 });
@@ -6494,7 +6452,6 @@ var Jmx;
                                     $scope.mbeanIndex = {};
                                     $scope.mbeanRowCounter = 0;
                                     $scope.mbeanCount = mbeans.length;
-                                    //$scope.columnDefs = [];
                                 }
                             }
                             else {
@@ -6503,7 +6460,6 @@ var Jmx;
                         }
                     }
                 }
-                //var callback = Core.onSuccess(render, { error: render });
                 var callback = Core.onSuccess(render);
                 if (request) {
                     $scope.request = request;
@@ -6548,30 +6504,30 @@ var Jmx;
                                 var key = workspace.selectionConfigKey();
                                 $scope.gridOptions.gridKey = key;
                                 $scope.gridOptions.onClickRowHandlers = workspace.onClickRowHandlers;
-                                var defaultDefs = _.clone(workspace.attributeColumnDefs[key]) || [];
-                                var defaultSize = defaultDefs.length;
-                                var map = {};
-                                angular.forEach(defaultDefs, function (value, key) {
+                                var defaultDefs_1 = _.clone(workspace.attributeColumnDefs[key]) || [];
+                                var defaultSize_1 = defaultDefs_1.length;
+                                var map_1 = {};
+                                angular.forEach(defaultDefs_1, function (value, key) {
                                     var field = value.field;
                                     if (field) {
-                                        map[field] = value;
+                                        map_1[field] = value;
                                     }
                                 });
-                                var extraDefs = [];
+                                var extraDefs_1 = [];
                                 angular.forEach(data, function (value, key) {
                                     if (includePropertyValue(key, value)) {
-                                        if (!map[key]) {
-                                            extraDefs.push({
+                                        if (!map_1[key]) {
+                                            extraDefs_1.push({
                                                 field: key,
                                                 displayName: key === '_id' ? 'Object name' : Core.humanizeValue(key),
-                                                visible: defaultSize === 0
+                                                visible: defaultSize_1 === 0
                                             });
                                         }
                                     }
                                 });
                                 // the additional columns (which are not pre-configured), should be sorted
                                 // so the column menu has a nice sorted list instead of random ordering
-                                extraDefs = extraDefs.sort(function (def, def2) {
+                                extraDefs_1 = extraDefs_1.sort(function (def, def2) {
                                     // make sure _id is last
                                     if (_.startsWith(def.field, '_')) {
                                         return 1;
@@ -6581,11 +6537,11 @@ var Jmx;
                                     }
                                     return def.field.localeCompare(def2.field);
                                 });
-                                extraDefs.forEach(function (e) { return defaultDefs.push(e); });
-                                if (extraDefs.length > 0) {
+                                extraDefs_1.forEach(function (e) { return defaultDefs_1.push(e); });
+                                if (extraDefs_1.length > 0) {
                                     $scope.hasExtraColumns = true;
                                 }
-                                $scope.gridOptions.columnDefs = defaultDefs;
+                                $scope.gridOptions.columnDefs = defaultDefs_1;
                                 $scope.gridOptions.enableRowClickSelection = true;
                             }
                         }
@@ -6616,11 +6572,11 @@ var Jmx;
                 else {
                     $scope.gridOptions.columnDefs = Jmx.propertiesColumnDefs;
                     $scope.gridOptions.enableRowClickSelection = false;
-                    var showAllAttributes = true;
+                    var showAllAttributes_1 = true;
                     if (angular.isObject(data)) {
-                        var properties = Array();
+                        var properties_1 = Array();
                         angular.forEach(data, function (value, key) {
-                            if (showAllAttributes || includePropertyValue(key, value)) {
+                            if (showAllAttributes_1 || includePropertyValue(key, value)) {
                                 // always skip keys which start with _
                                 if (!_.startsWith(key, "_")) {
                                     // lets format the ObjectName nicely dealing with objects with
@@ -6636,17 +6592,17 @@ var Jmx;
                                     }
                                     // the value must be string as the sorting/filtering of the table relies on that
                                     var type = lookupAttributeType(key);
-                                    var data = {
+                                    var data_1 = {
                                         key: key,
                                         name: Core.humanizeValue(key),
                                         value: maskReadError(Core.safeNullAsString(value, type))
                                     };
-                                    generateSummaryAndDetail(key, data);
-                                    properties.push(data);
+                                    generateSummaryAndDetail(key, data_1);
+                                    properties_1.push(data_1);
                                 }
                             }
                         });
-                        if (!_.some(properties, function (p) {
+                        if (!_.some(properties_1, function (p) {
                             return p['key'] === 'ObjectName';
                         })) {
                             var objectName = {
@@ -6655,11 +6611,11 @@ var Jmx;
                                 value: mbean
                             };
                             generateSummaryAndDetail(objectName.key, objectName);
-                            properties.push(objectName);
+                            properties_1.push(objectName);
                         }
-                        properties = _.sortBy(properties, 'name');
+                        properties_1 = _.sortBy(properties_1, 'name');
                         $scope.selectedItems = [data];
-                        data = properties;
+                        data = properties_1;
                     }
                     $scope.gridData = data;
                     addHandlerFunctions($scope.gridData);
@@ -6691,12 +6647,48 @@ var Jmx;
                     item['gotoFolder'] = function (row) { return gotoFolder(row); };
                 });
             }
+            function getDashboardWidgets(row) {
+                var mbean = workspace.getSelectedMBeanName();
+                if (!mbean) {
+                    return '';
+                }
+                var potentialCandidates = _.filter(jmxWidgets, function (widget) {
+                    return mbean === widget.mbean;
+                });
+                if (potentialCandidates.length === 0) {
+                    return '';
+                }
+                potentialCandidates = _.filter(potentialCandidates, function (widget) {
+                    return widget.attribute === row.key || widget.total === row.key;
+                });
+                if (potentialCandidates.length === 0) {
+                    return '';
+                }
+                row.addChartToDashboard = function (type) { return $scope.addChartToDashboard(row, type); };
+                var rc = [];
+                potentialCandidates.forEach(function (widget) {
+                    var widgetType = Jmx.getWidgetType(widget);
+                    rc.push("\n              <i class=\"" + widgetType['icon'] + " clickable\"\n                 title=\"" + widgetType['title'] + "\"\n                 ng-click=\"row.entity.addChartToDashboard('" + widgetType['type'] + "')\"></i>\n            ");
+                });
+                return rc.join() + "&nbsp;";
+            }
+            $scope.addChartToDashboard = function (row, widgetType) {
+                var mbean = workspace.getSelectedMBeanName();
+                var candidates = jmxWidgets
+                    .filter(function (widget) { return mbean === widget.mbean; })
+                    .filter(function (widget) { return widget.attribute === row.key || widget.total === row.key; })
+                    .filter(function (widget) { return widget.type === widgetType; });
+                // hmmm, we really should only have one result...
+                var widget = _.first(candidates);
+                var type = Jmx.getWidgetType(widget);
+                $location.url(Jmx.createDashboardLink(type, widget));
+            };
             function folderIconClass(row) {
                 // TODO lets ignore the classes property for now
                 // as we don't have an easy way to know if there is an icon defined for an icon or not
                 // and we want to make sure there always is an icon shown
                 /*
-                 var classes = (row.getProperty("addClass") || "").trim();
+                 let classes = (row.getProperty("addClass") || "").trim();
                  if (classes) {
                  return classes;
                  }
@@ -6706,7 +6698,6 @@ var Jmx;
                 }
                 return row.getProperty('objectName') ? 'fa fa-cog' : 'pficon pficon-folder-close';
             }
-            ;
             function gotoFolder(row) {
                 if (row.getProperty) {
                     var key = row.getProperty('key');
@@ -6715,7 +6706,6 @@ var Jmx;
                     }
                 }
             }
-            ;
             function unwrapObjectName(value) {
                 if (!angular.isObject(value)) {
                     return value;
@@ -6729,20 +6719,19 @@ var Jmx;
             function generateSummaryAndDetail(key, data) {
                 var value = Core.escapeHtml(data.value);
                 if (!angular.isArray(value) && angular.isObject(value)) {
-                    var detailHtml = "<table class='table table-striped'>";
-                    var summary = "";
-                    var object = value;
+                    var detailHtml_1 = "<table class='table table-striped'>";
+                    var summary_1 = "";
+                    var object_1 = value;
                     var keys = Object.keys(value).sort();
                     angular.forEach(keys, function (key) {
-                        var value = object[key];
-                        detailHtml += "<tr><td>"
-                            + Core.humanizeValue(key) + "</td><td>" + value + "</td></tr>";
-                        summary += "" + Core.humanizeValue(key) + ": " + value + "  ";
+                        var value = object_1[key];
+                        detailHtml_1 += "<tr><td>" + Core.humanizeValue(key) + "</td><td>" + value + "</td></tr>";
+                        summary_1 += Core.humanizeValue(key) + ": " + value + "  ";
                     });
-                    detailHtml += "</table>";
-                    data.summary = summary;
-                    data.detailHtml = detailHtml;
-                    data.tooltip = summary;
+                    detailHtml_1 += "</table>";
+                    data.summary = summary_1;
+                    data.detailHtml = detailHtml_1;
+                    data.tooltip = summary_1;
                 }
                 else {
                     var text = value;
@@ -6755,15 +6744,13 @@ var Jmx;
                     else {
                         data.tooltip = text;
                     }
-                    data.summary = "" + text + "";
+                    data.summary = "" + text;
                     data.detailHtml = "<pre>" + text + "</pre>";
                     if (angular.isArray(value)) {
-                        var html = "<ul>";
-                        angular.forEach(value, function (item) {
-                            html += "<li>" + item + "</li>";
-                        });
-                        html += "</ul>";
-                        data.detailHtml = html;
+                        var html_1 = "<ul>";
+                        angular.forEach(value, function (item) { return html_1 += "<li>" + item + "</li>"; });
+                        html_1 += "</ul>";
+                        data.detailHtml = html_1;
                     }
                 }
                 // enrich the data with information if the attribute is read-only/read-write, and the JMX attribute description (if any)
@@ -6790,25 +6777,6 @@ var Jmx;
             }
             function includePropertyValue(key, value) {
                 return !angular.isObject(value);
-            }
-            function asJsonSchemaType(typeName, id) {
-                if (typeName) {
-                    var lower = typeName.toLowerCase();
-                    if (_.startsWith(lower, "int") || lower === "long" || lower === "short" || lower === "byte" || _.endsWith(lower, "int")) {
-                        return "integer";
-                    }
-                    if (lower === "double" || lower === "float" || lower === "bigdecimal") {
-                        return "number";
-                    }
-                    if (lower === "boolean" || lower === "java.lang.boolean") {
-                        return "boolean";
-                    }
-                    if (lower === "string" || lower === "java.lang.String") {
-                        return "string";
-                    }
-                }
-                // fallback as string
-                return "string";
             }
         }]);
 })(Jmx || (Jmx = {}));
@@ -8699,15 +8667,7 @@ var Threads;
         }]);
 })(Threads || (Threads = {}));
 
-angular.module('hawtio-jmx-templates', []).run(['$templateCache', function($templateCache) {$templateCache.put('plugins/jmx/html/areaChart.html','<div ng-controller="Jmx.AreaChartController">\n  <script type="text/ng-template" id="areaChart">\n    <fs-area bind="data" duration="250" interpolate="false" point-radius="5" width="width" height="height" label=""></fs-area>\n  </script>\n  <div compile="template"></div>\n</div>\n');
-$templateCache.put('plugins/jmx/html/attributes.html','<script type="text/ng-template" id="gridTemplate">\n  <table class="table table-striped table-bordered table-hover jmx-attributes-table"\n    ng-class="{\'ht-table-extra-columns\': hasExtraColumns}"\n    hawtio-simple-table="gridOptions">\n  </table>\n</script>\n\n<div class="table-view" ng-controller="Jmx.AttributesController">\n\n  <h2>Attributes</h2>\n  \n  <div ng-if="gridData.length > 0">\n    <div compile="attributes"></div>\n  </div>\n\n  <!-- modal dialog to show/edit the attribute -->\n  <div hawtio-confirm-dialog="showAttributeDialog" ok-button-text="Update"\n       show-ok-button="{{entity.rw ? \'true\' : \'false\'}}" on-ok="onUpdateAttribute()" on-cancel="onCancelAttribute()"\n       cancel-button-text="Close" title="Attribute: {{entity.key}}" optional-size="lg">\n    <div class="dialog-body">\n      <!-- have a form for view and another for edit -->\n      <div simple-form ng-hide="!entity.rw" name="attributeEditor" mode="edit" entity=\'entity\' data=\'attributeSchemaEdit\'></div>\n      <div simple-form ng-hide="entity.rw" name="attributeViewer" mode="view" entity=\'entity\' data=\'attributeSchemaView\'></div>\n    </div>\n  </div>\n\n</div>\n');
-$templateCache.put('plugins/jmx/html/chartEdit.html','<div ng-controller="Jmx.ChartEditController">\n  <form>\n    <fieldset>\n      <div class="control-group" ng-show="canEditChart()">\n        <input type="submit" class="btn" value="View Chart" ng-click="viewChart()"\n               ng-disabled="!selectedAttributes.length && !selectedMBeans.length"/>\n      </div>\n      <div class="control-group">\n        <table class="table">\n          <thead>\n          <tr>\n            <th ng-show="showAttributes()">Attributes</th>\n            <th ng-show="showElements()">Elements</th>\n          </tr>\n          </thead>\n          <tbody>\n          <tr>\n            <td ng-show="showAttributes()">\n              <select id="attributes" size="20" multiple ng-multiple="true" ng-model="selectedAttributes"\n                      ng-options="name | humanize for (name, value) in metrics"></select>\n            </td>\n            <td ng-show="showElements()">\n              <select id="mbeans" size="20" multiple ng-multiple="true" ng-model="selectedMBeans"\n                      ng-options="name for (name, value) in mbeans"></select>\n            </td>\n          </tr>\n          </tbody>\n        </table>\n\n        <div class="alert" ng-show="!canEditChart()">\n          <button type="button" class="close" data-dismiss="alert">\xD7</button>\n          <strong>No numeric metrics available!</strong> Try select another item to chart on.\n        </div>\n      </div>\n    </fieldset>\n  </form>\n</div>\n');
-$templateCache.put('plugins/jmx/html/charts.html','<div ng-controller="Jmx.ChartController">\n  <h2>Chart</h2>\n  <div ng-switch="errorMessage()">\n    <div ng-switch-when="metrics">No valid metrics to show for this mbean.</div>\n    <div ng-switch-when="updateRate">Charts aren\'t available when the update rate is set to "No refreshes", go to the <a ng-href="#/preferences{{hash}}">Preferences</a> panel and set a refresh rate to enable charts</div>\n    <div id="charts"></div>\n  </div>\n</div>\n');
-$templateCache.put('plugins/jmx/html/donutChart.html','<div ng-controller="Jmx.DonutChartController">\n  <script type="text/ng-template" id="donut">\n    <fs-donut bind="data" outer-radius="200" inner-radius="75"></fs-donut>\n  </script>\n  <div compile="template"></div>\n</div>\n');
-$templateCache.put('plugins/jmx/html/layoutTree.html','<div class="tree-nav-layout">\n  <div class="sidebar-pf sidebar-pf-left" resizable r-directions="[\'right\']">\n    <tree-header></tree-header>\n    <tree></tree>\n  </div>\n  <div class="tree-nav-main">\n    <jmx-header></jmx-header>\n    <tab></tab>\n    <div class="contents" ng-view></div>\n  </div>\n</div>\n');
-$templateCache.put('plugins/jmx/html/operation-form.html','<p ng-hide="$ctrl.operation.args.length">\n  This JMX operation requires no arguments. Click the \'Execute\' button to invoke the operation.\n</p>\n<p ng-show="$ctrl.operation.args.length">\n  This JMX operation requires some parameters. Fill in the fields below and click the \'Execute\' button\n  to invoke the operation.\n</p>\n\n<form class="form-horizontal" ng-submit="$ctrl.execute()">\n  <div class="form-group" ng-repeat="formField in $ctrl.formFields">\n    <label class="col-sm-2 control-label" for="{{formField.label}}">{{formField.label}}</label>\n    <div class="col-sm-10">\n      <input type="{{formField.type}}" id="{{formField.label}}" ng-class="{\'form-control\': formField.type !== \'checkbox\'}"\n        ng-model="formField.value">\n      <span class="help-block">{{formField.helpText}}</span>\n    </div>\n  </div>\n  <div class="form-group">\n    <div ng-class="{\'col-sm-offset-2 col-sm-10\': $ctrl.operation.args.length, \'col-sm-12\': !$ctrl.operation.args.length}">\n      <button type="submit" class="btn btn-primary" ng-disabled="$ctrl.isExecuting">Execute</button>\n    </div>\n  </div>\n</form>\n\n<div ng-show="$ctrl.operationResult">\n  <p>Result:</p>\n  <pre class="jmx-operation-result" ng-class="{\'jmx-operation-error\': $ctrl.operationFailed}">{{$ctrl.operationResult}}</pre>\n</div>\n');
-$templateCache.put('plugins/jmx/html/operations.html','<h2>Operations</h2>\n<p ng-if="$ctrl.operations.length === 0">\n  This MBean has no JMX operations.\n</p>\n<div ng-if="$ctrl.operations.length > 0">\n  <p>\n    This MBean supports the following JMX operations. Expand an item in the list to invoke that operation.\n  </p>\n  <pf-list-view class="jmx-operations-list-view" items="$ctrl.operations" config="$ctrl.config"\n    menu-actions="$ctrl.menuActions">\n    <div class="list-view-pf-stacked">\n      <div class="list-group-item-heading">\n        {{item.simpleName}}\n      </div>\n      <div class="list-group-item-text">\n        {{item.description}}\n      </div>\n    </div>\n    <list-expanded-content>\n      <operation-form operation="$parent.item"></operation-form>\n    </list-expanded-content>\n  </pf-list-view>\n</div>\n');
-$templateCache.put('plugins/jvm/html/connect-delete-warning.html','<div class="modal-header">\n  <button type="button" class="close" aria-label="Close" ng-click="$dismiss()">\n    <span class="pficon pficon-close" aria-hidden="true"></span>\n  </button>\n  <h4>Are you sure?</h4>\n</div>\n<div class="modal-body">\n  <p>You are about to delete this connection.</p>\n</div>\n<div class="modal-footer">\n  <button type="button" class="btn btn-default" ng-click="$dismiss()">Cancel</button>\n  <button type="button" class="btn btn-danger" ng-click="$close()">Delete</button>\n</div>\n');
+angular.module('hawtio-jmx-templates', []).run(['$templateCache', function($templateCache) {$templateCache.put('plugins/jvm/html/connect-delete-warning.html','<div class="modal-header">\n  <button type="button" class="close" aria-label="Close" ng-click="$dismiss()">\n    <span class="pficon pficon-close" aria-hidden="true"></span>\n  </button>\n  <h4>Are you sure?</h4>\n</div>\n<div class="modal-body">\n  <p>You are about to delete this connection.</p>\n</div>\n<div class="modal-footer">\n  <button type="button" class="btn btn-default" ng-click="$dismiss()">Cancel</button>\n  <button type="button" class="btn btn-danger" ng-click="$close()">Delete</button>\n</div>\n');
 $templateCache.put('plugins/jvm/html/connect-edit.html','<div class="modal-header">\n  <button type="button" class="close" aria-label="Close" ng-click="$dismiss()">\n    <span class="pficon pficon-close" aria-hidden="true"></span>\n  </button>\n  <h4 class="modal-title" ng-show="!model.name">Add Connection</h4>\n  <h4 class="modal-title" ng-show="model.name">Edit Connection</h4>\n</div>\n<form name="connectForm" class="form-horizontal jvm-connection-form" ng-submit="saveConnection(model)">\n  <div class="modal-body">\n    <p class="fields-status-pf">The fields marked with <span class="required-pf">*</span> are required.</p>\n    <div class="form-group" ng-class="{\'has-error\': model.errors.name}">\n      <label class="col-sm-3 control-label required-pf" for="connection-name">Name</label>\n      <div class="col-sm-8">\n        <input type="text" id="connection-name" class="form-control" name="name" ng-model="model.connection.name"\n          pf-focused="!model.connection.name">\n        <span class="help-block" ng-show="model.errors.name">{{model.errors.name}}</span>\n      </div>\n    </div>\n    <div class="form-group">\n      <label class="col-sm-3 control-label required-pf" for="connection-scheme">Scheme</label>\n      <div class="col-sm-8">\n        <select id="connection-scheme" class="form-control" name="scheme" ng-model="model.connection.scheme">\n            <option>http</option>\n            <option>https</option>\n          </select>\n      </div>\n    </div>\n    <div class="form-group" ng-class="{\'has-error\': model.errors.host}">\n      <label class="col-sm-3 control-label required-pf" for="connection-host">Host</label>\n      <div class="col-sm-8">\n        <input type="text" id="connection-host" class="form-control" name="host" ng-model="model.connection.host">\n        <span class="help-block" ng-show="model.errors.host">{{model.errors.host}}</span>\n      </div>\n    </div>\n    <div class="form-group">\n      <label class="col-sm-3 control-label" for="connection-port">Port</label>\n      <div class="col-sm-8">\n        <input type="number" id="connection-port" class="form-control" name="port" ng-model="model.connection.port">\n      </div>\n    </div>\n    <div class="form-group">\n      <label class="col-sm-3 control-label" for="connection-path">Path</label>\n      <div class="col-sm-8">\n        <input type="text" id="connection-path" class="form-control" name="path" ng-model="model.connection.path">\n      </div>\n    </div>\n    <div class="form-group">\n      <label class="col-sm-3 control-label" for="connection-path">Username</label>\n      <div class="col-sm-8">\n        <input type="text" id="connection-username" class="form-control" name="userName" ng-model="model.connection.userName">\n      </div>\n    </div>\n    <div class="form-group">\n      <label class="col-sm-3 control-label" for="connection-path">Password</label>\n      <div class="col-sm-8">\n        <input type="text" id="connection-password" class="form-control" name="password" ng-model="model.connection.password">\n      </div>\n    </div>\n    <div class="form-group">\n      <div class="col-sm-offset-3 col-sm-8">\n        <button type="button" class="btn btn-default" ng-click="testConnection(model.connection)">Test Connection</button>\n        <span class="jvm-connection-test-msg" ng-show="model.showConnectionTestResult">\n            <span ng-show="model.connectionValid">\n              <span class="pficon pficon-ok"></span> Connected successfully\n        </span>\n        <span ng-show="!model.connectionValid">\n              <span class="pficon pficon-warning-triangle-o"></span> Connection failed\n        </span>\n        </span>\n      </div>\n    </div>\n  </div>\n  <div class="modal-footer">\n    <button type="button" class="btn btn-default" ng-click="$dismiss()">Cancel</button>\n    <button type="submit" class="btn btn-primary" ng-show="!model.connection.name">Add</button>\n    <button type="submit" class="btn btn-primary" ng-show="model.connection.name">Save</button>\n  </div>\n</form>');
 $templateCache.put('plugins/jvm/html/connect.html','<div ng-controller="ConnectController">\n\n  <h1>Remote</h1>\n\n  <div class="row">\n    <div class="col-md-7">\n      <div class="toolbar-pf">\n        <form class="toolbar-pf-actions" ng-submit="addConnection()">\n          <div class="form-group">\n            <button type="button" class="btn btn-default" ng-click="showAddConnectionModal()">\n              Add connection\n            </button>\n          </div>\n        </form>\n      </div>\n      <pf-list-view class="jvm-connection-list"\n        items="connections" config="config" action-buttons="actionButtons" menu-actions="actionDropDown">\n        <div class="list-view-pf-description">\n          <div class="list-group-item-heading">\n            {{item.name}}\n          </div>\n          <div class="list-group-item-text">\n            {{item | connectionUrl}}\n          </div>\n        </div>\n      </pf-list-view>\n    </div>\n    <div class="col-md-5">\n      <div class="panel panel-default">\n        <div class="panel-heading">\n          <h3 class="panel-title">Instructions</h3>\n        </div>\n        <div class="panel-body">\n          <p>\n            This page allows you to connect to remote processes which <strong>already have a\n            <a href="http://jolokia.org/" target="_blank">jolokia agent</a> running inside them</strong>. You will need to\n            know the host name, port and path of the jolokia agent to be able to connect.\n          </p>\n          <p>\n            If the process you wish to connect to does not have a jolokia agent inside, please refer to the\n            <a href="http://jolokia.org/agent.html" target="_blank">jolokia documentation</a> for how to add a JVM, servlet\n            or OSGi based agent inside it.\n          </p>\n          <p>\n            If you are using <a href="http://fabric8.io/" target="_blank">Fabric8</a>,\n            <a href="http://www.jboss.org/products/fuse" target="_blank">JBoss Fuse</a>, or <a href="http://activemq.apache.org"\n              target="_blank">Apache ActiveMQ</a>; then a jolokia agent is included by default (use context path of jolokia\n            agent, usually\n            <code>jolokia</code>). Or you can always just deploy hawtio inside the process (which includes the jolokia agent,\n            use Jolokia servlet mapping inside hawtio context path, usually <code>hawtio/jolokia</code>).\n          </p>\n          <p ng-show="hasLocalMBean()">\n            Use the <strong><a href="#/jvm/local">Local Tab</a></strong> to connect to processes locally on this machine\n            (which will install a jolokia agent automatically if required).\n          </p>\n          <p ng-show="!hasLocalMBean()">\n            The <strong>Local Tab</strong> is not currently enabled or visible because either the server side\n            <strong>hawtio-local-jvm-mbean plugin</strong> is not installed or this JVM cannot find the\n            <strong>com.sun.tools.attach.VirtualMachine</strong> API usually found in the <strong>tools.jar</strong>. Please\n            see the <a href="http://hawt.io/faq/index.html" target="_blank">FAQ entry</a> for more details.\n          </p>\n        </div>\n      </div>\n    </div>\n  </div>\n</div>\n');
 $templateCache.put('plugins/jvm/html/discover.html','<div ng-controller="JVM.DiscoveryController">\n\n  <h1>Discover</h1>\n\n  <div class="row toolbar-pf">\n    <div class="col-sm-12">\n      <form class="toolbar-pf-actions">\n        <div class="form-group">\n          <input type="text" class="form-control" ng-model="filter" placeholder="Filter..." autocomplete="off">\n        </div>\n        <div class="form-group">\n          <button class="btn btn-default" ng-click="fetch()" title="Refresh"><i class="fa fa-refresh"></i> Refresh</button>\n        </div>\n      </form>\n    </div>\n  </div>\n\n  <div ng-if="discovering">\n    <div class="spinner spinner-lg loading-page"></div>\n    <div class="row">\n      <div class="col-sm-12">\n        <div class="loading-message">\n          Please wait, discovering agents ...\n        </div>\n      </div>\n    </div>\n  </div>\n\n  <div class="row main-content">\n    <div class="col-sm-12">\n      <div ng-show="!discovering">\n        <div class="loading-message" ng-show="agents.length === 0">\n          No agents discovered.\n        </div>\n        <div ng-show="agents.length > 0">\n          <ul class="discovery zebra-list">\n            <li ng-repeat="agent in agents track by $index" ng-show="filterMatches(agent)">\n\n              <div class="inline-block">\n                <img ng-src="{{getLogo(agent)}}">\n              </div>\n\n              <div class="inline-block">\n                <p ng-hide="!hasName(agent)">\n                <span class="strong"\n                      ng-show="agent.server_vendor">\n                  {{agent.server_vendor}} {{_.startCase(agent.server_product)}} {{agent.server_version}}\n                </span>\n                </p>\n              <span ng-class="getAgentIdClass(agent)">\n                <strong ng-show="hasName(agent)">Agent ID: </strong>{{agent.agent_id}}<br/>\n                <strong ng-show="hasName(agent)">Agent Version: </strong><span ng-hide="hasName(agent)"> Version: </span>{{agent.agent_version}}</span><br/>\n                <strong ng-show="hasName(agent)">Agent Description: </strong><span\n                  ng-hide="hasName(agent)"> Description: </span>{{agent.agent_description}}</span><br/>\n\n                <p ng-hide="!agent.url"><strong>Agent URL: </strong><a ng-href="{{agent.url}}"\n                                                                      target="_blank">{{agent.url}}</a>\n                </p>\n              </div>\n\n              <div class="inline-block lock" ng-show="agent.secured">\n                <i class="fa fa-lock" title="A valid username and password will be required to connect"></i>\n              </div>\n\n              <div class="inline-block" ng-hide="!agent.url">\n                <div class="connect-button"\n                    ng-click="gotoServer($event, agent)"\n                    hawtio-template-popover\n                    content="authPrompt"\n                    trigger="manual"\n                    placement="auto"\n                    data-title="Please enter your username and password">\n                  <i ng-show="agent.url" class="icon-play-circle"></i>\n                </div>\n              </div>\n\n            </li>\n          </ul>\n        </div>\n      </div>\n    </div>\n  </div>\n\n  <script type="text/ng-template" id="authPrompt">\n    <div class="auth-form">\n      <form name="authForm">\n        <input type="text"\n                class="input-sm"\n                placeholder="Username..."\n                ng-model="agent.username"\n                required>\n        <input type="password"\n                class="input-sm"\n                placeholder="Password..."\n                ng-model="agent.password"\n                required>\n        <button ng-disabled="!authForm.$valid"\n                ng-click="connectWithCredentials($event, agent)"\n                class="btn btn-success">\n          <i class="fa fa-share"></i> Connect\n        </button>\n        <button class="btn" ng-click="closePopover($event)"><i class="fa fa-remove"></i></button>\n      </form>\n    </div>\n  </script>\n\n</div>\n');
@@ -8717,7 +8677,16 @@ $templateCache.put('plugins/jvm/html/layoutConnect.html','<div class="jvm-nav-ma
 $templateCache.put('plugins/jvm/html/local.html','<div ng-controller="JVM.JVMsController">\n\n  <h1>Local</h1>\n\n  <div class="row toolbar-pf">\n    <div class="col-sm-12">\n      <form class="toolbar-pf-actions">\n        <div class="form-group">\n          <input type="text" class="form-control" ng-model="filter" placeholder="Filter..." autocomplete="off">\n        </div>\n        <div class="form-group">\n          <button class="btn btn-default" ng-click="fetch()" title="Refresh"><i class="fa fa-refresh"></i> Refresh</button>\n        </div>\n      </form>\n    </div>\n  </div>\n\n  <div ng-hide="initDone">\n    <div class="spinner spinner-lg loading-page"></div>\n    <div class="row">\n      <div class="col-sm-12">\n        <div class="loading-message">\n          Please wait, discovering local JVM processes ...\n        </div>\n      </div>\n    </div>\n  </div>\n\n  <div ng-hide=\'data.length > 0\' class=\'row\'>\n    {{status}}\n  </div>\n\n  <div ng-show=\'data.length > 0\' class="row">\n    <table class=\'centered table table-bordered table-condensed table-striped\'>\n      <thead>\n      <tr>\n        <th style="width: 70px">PID</th>\n        <th>Name</th>\n        <th style="width: 300px">Agent URL</th>\n        <th style="width: 50px"></th>\n      </tr>\n      </thead>\n      <tbody>\n      <tr ng-repeat="jvm in data track by $index" ng-show="filterMatches(jvm)">\n        <td>{{jvm.id}}</td>\n        <td title="{{jvm.displayName}}">{{jvm.alias}}</td>\n        <td><a href=\'\' title="Connect to this agent"\n               ng-click="connectTo(jvm.url, jvm.scheme, jvm.hostname, jvm.port, jvm.path)">{{jvm.agentUrl}}</a></td>\n        <td>\n          <a class=\'btn control-button\' href="" title="Stop agent" ng-show="jvm.agentUrl"\n             ng-click="stopAgent(jvm.id)"><i class="fa fa-off"></i></a>\n          <a class=\'btn control-button\' href="" title="Start agent" ng-hide="jvm.agentUrl"\n             ng-click="startAgent(jvm.id)"><i class="icon-play-circle"></i></a>\n        </td>\n      </tr>\n\n      </tbody>\n    </table>\n\n  </div>\n\n\n</div>\n');
 $templateCache.put('plugins/jvm/html/navbarHeaderExtension.html','<style>\n  .navbar-header-hawtio-jvm {\n    float: left;\n    margin: 0;\n  }\n\n  .navbar-header-hawtio-jvm h4 {\n    color: white;\n    margin: 0px;\n  }\n\n  .navbar-header-hawtio-jvm li {\n    list-style-type: none;\n    display: inline-block;\n    margin-right: 10px;\n    margin-top: 4px;\n  }\n</style>\n<ul class="navbar-header-hawtio-jvm" ng-controller="JVM.HeaderController">\n  <li ng-show="containerName"><h4 ng-bind="containerName"></h4></li>\n  <li ng-show="goBack"><strong><a href="" ng-click="goBack()">Back</a></strong></li>\n</ul>\n');
 $templateCache.put('plugins/jvm/html/reset.html','<div ng-controller="JVM.ResetController">\n  <form class="form-horizontal">\n    <fieldset>\n      <div class="form-group">\n        <label class="col-sm-2 control-label">\n          <strong>\n            <span class="pficon pficon-warning-triangle-o"></span> Clear saved connections\n          </strong>\n        </label>\n        <div class="col-sm-10">\n          <button class="btn btn-danger" ng-click="doClearConnectSettings()">Clear saved connections</button>\n          <span class="help-block">Wipe all saved connection settings stored by {{branding.appName}} in your browser\'s local storage</span>\n        </div>\n      </div>\n    </fieldset>\n  </form>\n</div>\n\n');
+$templateCache.put('plugins/jmx/html/areaChart.html','<div ng-controller="Jmx.AreaChartController">\n  <script type="text/ng-template" id="areaChart">\n    <fs-area bind="data" duration="250" interpolate="false" point-radius="5" width="width" height="height" label=""></fs-area>\n  </script>\n  <div compile="template"></div>\n</div>\n');
+$templateCache.put('plugins/jmx/html/attributes.html','<script type="text/ng-template" id="gridTemplate">\n  <table class="table table-striped table-bordered table-hover jmx-attributes-table"\n    ng-class="{\'ht-table-extra-columns\': hasExtraColumns}"\n    hawtio-simple-table="gridOptions">\n  </table>\n</script>\n\n<div class="table-view" ng-controller="Jmx.AttributesController">\n\n  <h2>Attributes</h2>\n  \n  <div ng-if="gridData.length > 0">\n    <div compile="attributes"></div>\n  </div>\n\n  <!-- modal dialog to show/edit the attribute -->\n  <div hawtio-confirm-dialog="showAttributeDialog" ok-button-text="Update"\n       show-ok-button="{{entity.rw ? \'true\' : \'false\'}}" on-ok="onUpdateAttribute()" on-cancel="onCancelAttribute()"\n       cancel-button-text="Close" title="Attribute: {{entity.key}}" optional-size="lg">\n    <div class="dialog-body">\n      <!-- have a form for view and another for edit -->\n      <div simple-form ng-hide="!entity.rw" name="attributeEditor" mode="edit" entity=\'entity\' data=\'attributeSchemaEdit\'></div>\n      <div simple-form ng-hide="entity.rw" name="attributeViewer" mode="view" entity=\'entity\' data=\'attributeSchemaView\'></div>\n    </div>\n  </div>\n\n</div>\n');
+$templateCache.put('plugins/jmx/html/chartEdit.html','<div ng-controller="Jmx.ChartEditController">\n  <form>\n    <fieldset>\n      <div class="control-group" ng-show="canEditChart()">\n        <input type="submit" class="btn" value="View Chart" ng-click="viewChart()"\n               ng-disabled="!selectedAttributes.length && !selectedMBeans.length"/>\n      </div>\n      <div class="control-group">\n        <table class="table">\n          <thead>\n          <tr>\n            <th ng-show="showAttributes()">Attributes</th>\n            <th ng-show="showElements()">Elements</th>\n          </tr>\n          </thead>\n          <tbody>\n          <tr>\n            <td ng-show="showAttributes()">\n              <select id="attributes" size="20" multiple ng-multiple="true" ng-model="selectedAttributes"\n                      ng-options="name | humanize for (name, value) in metrics"></select>\n            </td>\n            <td ng-show="showElements()">\n              <select id="mbeans" size="20" multiple ng-multiple="true" ng-model="selectedMBeans"\n                      ng-options="name for (name, value) in mbeans"></select>\n            </td>\n          </tr>\n          </tbody>\n        </table>\n\n        <div class="alert" ng-show="!canEditChart()">\n          <button type="button" class="close" data-dismiss="alert">\xD7</button>\n          <strong>No numeric metrics available!</strong> Try select another item to chart on.\n        </div>\n      </div>\n    </fieldset>\n  </form>\n</div>\n');
+$templateCache.put('plugins/jmx/html/charts.html','<div ng-controller="Jmx.ChartController">\n  <h2>Chart</h2>\n  <div ng-switch="errorMessage()">\n    <div ng-switch-when="metrics">No valid metrics to show for this mbean.</div>\n    <div ng-switch-when="updateRate">Charts aren\'t available when the update rate is set to "No refreshes", go to the <a ng-href="#/preferences{{hash}}">Preferences</a> panel and set a refresh rate to enable charts</div>\n    <div id="charts"></div>\n  </div>\n</div>\n');
+$templateCache.put('plugins/jmx/html/donutChart.html','<div ng-controller="Jmx.DonutChartController">\n  <script type="text/ng-template" id="donut">\n    <fs-donut bind="data" outer-radius="200" inner-radius="75"></fs-donut>\n  </script>\n  <div compile="template"></div>\n</div>\n');
+$templateCache.put('plugins/jmx/html/layoutTree.html','<div class="tree-nav-layout">\n  <div class="sidebar-pf sidebar-pf-left" resizable r-directions="[\'right\']">\n    <tree-header></tree-header>\n    <tree></tree>\n  </div>\n  <div class="tree-nav-main">\n    <jmx-header></jmx-header>\n    <tab></tab>\n    <div class="contents" ng-view></div>\n  </div>\n</div>\n');
+$templateCache.put('plugins/jmx/html/operation-form.html','<p ng-hide="$ctrl.operation.args.length">\n  This JMX operation requires no arguments. Click the \'Execute\' button to invoke the operation.\n</p>\n<p ng-show="$ctrl.operation.args.length">\n  This JMX operation requires some parameters. Fill in the fields below and click the \'Execute\' button\n  to invoke the operation.\n</p>\n\n<form class="form-horizontal" ng-submit="$ctrl.execute()">\n  <div class="form-group" ng-repeat="formField in $ctrl.formFields">\n    <label class="col-sm-2 control-label" for="{{formField.label}}">{{formField.label}}</label>\n    <div class="col-sm-10">\n      <input type="{{formField.type}}" id="{{formField.label}}" ng-class="{\'form-control\': formField.type !== \'checkbox\'}"\n        ng-model="formField.value">\n      <span class="help-block">{{formField.helpText}}</span>\n    </div>\n  </div>\n  <div class="form-group">\n    <div ng-class="{\'col-sm-offset-2 col-sm-10\': $ctrl.operation.args.length, \'col-sm-12\': !$ctrl.operation.args.length}">\n      <button type="submit" class="btn btn-primary" ng-disabled="$ctrl.isExecuting">Execute</button>\n    </div>\n  </div>\n</form>\n\n<div ng-show="$ctrl.operationResult">\n  <p>Result:</p>\n  <pre class="jmx-operation-result" ng-class="{\'jmx-operation-error\': $ctrl.operationFailed}">{{$ctrl.operationResult}}</pre>\n</div>\n');
+$templateCache.put('plugins/jmx/html/operations.html','<h2>Operations</h2>\n<p ng-if="$ctrl.operations.length === 0">\n  This MBean has no JMX operations.\n</p>\n<div ng-if="$ctrl.operations.length > 0">\n  <p>\n    This MBean supports the following JMX operations. Expand an item in the list to invoke that operation.\n  </p>\n  <pf-list-view class="jmx-operations-list-view" items="$ctrl.operations" config="$ctrl.config"\n    menu-actions="$ctrl.menuActions">\n    <div class="list-view-pf-stacked">\n      <div class="list-group-item-heading">\n        {{item.simpleName}}\n      </div>\n      <div class="list-group-item-text">\n        {{item.description}}\n      </div>\n    </div>\n    <list-expanded-content>\n      <operation-form operation="$parent.item"></operation-form>\n    </list-expanded-content>\n  </pf-list-view>\n</div>\n');
 $templateCache.put('plugins/threads/html/threads.html','<div id="threads-page" class="table-view" ng-controller="ThreadsController">\n\n  <h1>Threads</h1>\n\n  <pf-toolbar config="toolbarConfig"></pf-toolbar>\n\n  <pf-table-view class="threads-table" config="tableConfig" dt-options="tableDtOptions"\n    colummns="tableColumns" items="filteredThreads" action-buttons="tableActionButtons">\n  </pf-table-view>\n\n  <script type="text/ng-template" id="threadModalContent.html">\n    <div class="modal-header">\n      <button type="button" class="close" aria-label="Close" ng-click="$close()">\n        <span class="pficon pficon-close" aria-hidden="true"></span>\n      </button>\n      <h4 class="modal-title">Thread</h4>\n    </div>\n    <div class="modal-body">\n      <div class="row">\n        <div class="col-md-12">\n          <dl class="dl-horizontal">\n            <dt>ID</dt>\n            <dd>{{thread.threadId}}</dd>\n            <dt>Name</dt>\n            <dd>{{thread.threadName}}</dd>\n            <dt>Waited Count</dt>\n            <dd>{{thread.waitedCount}}</dd>\n            <dt>Waited Time</dt>\n            <dd>{{thread.waitedTime}} ms</dd>\n            <dt>Blocked Count</dt>\n            <dd>{{thread.blockedCount}}</dd>\n            <dt>Blocked Time</dt>\n            <dd>{{thread.blockedTime}} ms</dd>\n            <div ng-show="thread.lockInfo != null">\n              <dt>Lock Name</dt>\n              <dd>{{thread.lockName}}</dd>\n              <dt>Lock Class Name</dt>\n              <dd>{{thread.lockInfo.className}}</dd>\n              <dt>Lock Identity Hash Code</dt>\n              <dd>{{thread.lockInfo.identityHashCode}}</dd>\n            </div>\n            <div ng-show="thread.lockOwnerId > 0">\n              <dt>Waiting for lock owned by</dt>\n              <dd><a href="" ng-click="selectThreadById(thread.lockOwnerId)">{{thread.lockOwnerId}} - {{thread.lockOwnerName}}</a></dd>\n            </div>\n            <div ng-show="thread.lockedSynchronizers.length > 0">\n              <dt>Locked Synchronizers</dt>\n              <dd>\n                <ol class="list-unstyled">\n                  <li ng-repeat="synchronizer in thread.lockedSynchronizers">\n                    <span title="Class Name">{{synchronizer.className}}</span> -\n                    <span title="Identity Hash Code">{{synchronizer.identityHashCode}}</span>\n                  </li>\n                </ol>\n              </dd>\n            </div>\n          </dl>\n        </div>\n      </div>\n      <div class="row" ng-show="thread.lockedMonitors.length > 0">\n        <div class="col-md-12">\n          <dl>\n            <dt>Locked Monitors</dt>\n            <dd>\n              <ol class="zebra-list">\n                <li ng-repeat="monitor in thread.lockedMonitors">\n                  Frame: <strong>{{monitor.lockedStackDepth}}</strong>\n                  <span class="green">{{monitor.lockedStackFrame.className}}</span>\n                  <span class="bold">.</span>\n                  <span class="blue bold">{{monitor.lockedStackFrame.methodName}}</span>\n                  &nbsp;({{monitor.lockedStackFrame.fileName}}<span ng-show="frame.lineNumber > 0">:{{monitor.lockedStackFrame.lineNumber}}</span>)\n                  <span class="orange" ng-show="monitor.lockedStackFrame.nativeMethod">(Native)</span>\n                </li>\n              </ol>\n            </dd>\n          </dl>\n        </div>\n      </div>\n      <div class="row">\n        <div class="col-md-12">\n          <dl>\n            <dt>Stack Trace</dt>\n            <dd>\n              <ol class="zebra-list">\n                <li ng-repeat="frame in thread.stackTrace">\n                  <span class="green">{{frame.className}}</span>\n                  <span class="bold">.</span>\n                  <span class="blue bold">{{frame.methodName}}</span>\n                  &nbsp;({{frame.fileName}}<span ng-show="frame.lineNumber > 0">:{{frame.lineNumber}}</span>)\n                  <span class="orange" ng-show="frame.nativeMethod">(Native)</span>\n                </li>\n              </ol>\n            </dd>\n          </dl>            \n        </div>\n      </div>\n    </div>\n  </script>\n\n</div>\n');
+$templateCache.put('plugins/jmx/html/common/header.html','<div class="jmx-header">\n  <h1>\n    {{$ctrl.title}}\n    <small class="text-muted">{{$ctrl.objectName}}</small>\n  </h1>\n</div>\n');
 $templateCache.put('plugins/jmx/html/common/tab.html','<ul class="nav nav-tabs">\n  <li ng-class="{active: $ctrl.isTabActive(\'/jmx/attributes\')}">\n    <a href="#" ng-click="$ctrl.goto(\'/jmx/attributes\')">Attributes</a>\n  </li>\n  <li ng-class="{active: $ctrl.isTabActive(\'/jmx/operations\')}">\n    <a href="#" ng-click="$ctrl.goto(\'/jmx/operations\')">Operations</a>\n  </li>\n  <li ng-class="{active: $ctrl.isTabActive(\'/jmx/charts\')}">\n    <a href="#" ng-click="$ctrl.goto(\'/jmx/charts\')">Chart</a>\n  </li>\n</ul>\n');
 $templateCache.put('plugins/jmx/html/tree/content.html','<div class="tree-nav-sidebar-content">\n  <div class="spinner spinner-lg" ng-hide="$ctrl.treeFetched()"></div>\n  <div id="jmxtree" class="treeview-pf-hover treeview-pf-select"></div>\n</div>\n');
 $templateCache.put('plugins/jmx/html/tree/header.html','<div class="tree-nav-sidebar-header">\n  <form role="form" class="search-pf has-button">\n    <div class="form-group has-clear">\n      <div class="search-pf-input-group">\n        <label for="input-search" class="sr-only">Search Tree:</label>\n        <input id="input-search" type="search" class="form-control" placeholder="Search tree:"\n          ng-model="$ctrl.filter">\n        <button type="button" class="clear" aria-hidden="true"\n          ng-hide="$ctrl.filter.length === 0"\n          ng-click="$ctrl.filter = \'\'">\n          <span class="pficon pficon-close"></span>\n        </button>\n      </div>\n    </div>\n    <div class="form-group tree-nav-buttons">\n      <span class="badge" ng-class="{positive: $ctrl.result.length > 0}"\n        ng-show="$ctrl.filter.length > 0">\n        {{$ctrl.result.length}}\n      </span>\n      <i class="fa fa-plus-square-o" title="Expand All" ng-click="$ctrl.expandAll()"></i>\n      <i class="fa fa-minus-square-o" title="Collapse All" ng-click="$ctrl.contractAll()"></i>\n    </div>\n  </form>\n</div>\n');

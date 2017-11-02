@@ -524,6 +524,7 @@ declare namespace Jmx {
 declare namespace Jmx {
     class HeaderController {
         title: string;
+        objectName: string;
         constructor($scope: any);
     }
     class TabController {
@@ -592,6 +593,8 @@ declare namespace Jmx {
         private buildJolokiaUrl(operation);
         private fetchOperations();
     }
+}
+declare namespace Jmx {
     const operationsComponent: angular.IComponentOptions;
 }
 declare namespace Jmx {
@@ -666,16 +669,16 @@ declare namespace Jmx {
     var AreaChartController: angular.IModule;
 }
 declare namespace Jmx {
-    var propertiesColumnDefs: {
+    let propertiesColumnDefs: {
         field: string;
         displayName: string;
         cellTemplate: string;
     }[];
-    var foldersColumnDefs: {
+    let foldersColumnDefs: {
         displayName: string;
         cellTemplate: string;
     }[];
-    var AttributesController: angular.IModule;
+    let AttributesController: angular.IModule;
 }
 declare namespace Jmx {
 }
