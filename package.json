@@ -11,13 +11,12 @@
     "build": "gulp build"
   },
   "dependencies": {
-    "@hawtio/forms": "~3.0.0",
-    "@hawtio/preferences": "~3.0.8",
-    "@hawtio/ui": "~3.0.28",
-    "@hawtio/utilities": "^3.0.14",
-    "angular-patternfly": "~4.11.0",
-    "angular-resizable": "~1.2.0",
-    "patternfly-bootstrap-treeview": "~2.1.1"
+    "@hawtio/forms": "3.0.11",
+    "@hawtio/preferences": "3.0.10",
+    "@hawtio/utilities": "3.0.14",
+    "angular-patternfly": "4.12.1",
+    "angular-resizable": "1.2.0",
+    "patternfly-bootstrap-treeview": "2.1.5"
   },
   "devDependencies": {
     "@hawtio/node-backend": "^3.0.0",
