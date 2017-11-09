@@ -258,7 +258,8 @@ namespace JVM {
     }
   }
 
-  _module.factory('jolokia',["$location", "localStorage", "jolokiaStatus", "$rootScope", "userDetails", "jolokiaParams", "jolokiaUrl", "ConnectOptions", "HawtioDashboard", "$uibModal", (
+  _module.factory('jolokia', ["$location", "localStorage", "jolokiaStatus", "$rootScope", "userDetails",
+    "jolokiaParams", "jolokiaUrl", "ConnectOptions", "HawtioDashboard", "$uibModal", "$window", (
       $location: ng.ILocationService,
       localStorage: WindowLocalStorage,
       jolokiaStatus,
@@ -268,7 +269,8 @@ namespace JVM {
       jolokiaUrl: string,
       connectionOptions,
       dash,
-      $uibModal): Jolokia.IJolokia => {
+      $uibModal,
+      $window): Jolokia.IJolokia => {
 
     if (dash.inDashboard && windowJolokia) {
       return windowJolokia;
@@ -305,39 +307,42 @@ namespace JVM {
       var modal = null;
       jolokiaParams['ajaxError'] = jolokiaParams['ajaxError'] ? jolokiaParams['ajaxError'] : (xhr, textStatus, error) => {
         if (xhr.status === 401 || xhr.status === 403) {
-          userDetails.username = null;
-          userDetails.password = null;
-          delete userDetails.loginDetails;
-          if (window.opener && "passUserDetails" in window.opener) {
-            delete window.opener["passUserDetails"];
-          }
+
+          $window.location.href = 'auth/logout';
+
+          // userDetails.username = null;
+          // userDetails.password = null;
+          // delete userDetails.loginDetails;
+          // if (window.opener && "passUserDetails" in window.opener) {
+          //   delete window.opener["passUserDetails"];
+          // }
         } else {
           jolokiaStatus.xhr = xhr;
           if (!xhr.responseText && error) {
             xhr.responseText = error.stack;
           }
         }
-        if (!modal) {
-          modal = $uibModal.open({
-            templateUrl: UrlHelpers.join(templatePath, 'jolokiaError.html'),
-            controller: ['$scope', '$uibModalInstance', 'ConnectOptions', 'jolokia', ($scope, $uibModalInstance, ConnectOptions, jolokia) => {
-              jolokia.stop();
-              $scope.responseText = xhr.responseText;
-              $scope.ConnectOptions = ConnectOptions;
-              $scope.retry = () => {
-                modal = null;
-                $uibModalInstance.close();
-                jolokia.start();
-              }
-              $scope.goBack = () => {
-                if (ConnectOptions.returnTo) {
-                  window.location.href = ConnectOptions.returnTo;
-                }
-              }
-            }]
-          });
-          Core.$apply($rootScope);
-        }
+        // if (!modal) {
+        //   modal = $uibModal.open({
+        //     templateUrl: UrlHelpers.join(templatePath, 'jolokiaError.html'),
+        //     controller: ['$scope', '$uibModalInstance', 'ConnectOptions', 'jolokia', ($scope, $uibModalInstance, ConnectOptions, jolokia) => {
+        //       jolokia.stop();
+        //       $scope.responseText = xhr.responseText;
+        //       $scope.ConnectOptions = ConnectOptions;
+        //       $scope.retry = () => {
+        //         modal = null;
+        //         $uibModalInstance.close();
+        //         jolokia.start();
+        //       }
+        //       $scope.goBack = () => {
+        //         if (ConnectOptions.returnTo) {
+        //           window.location.href = ConnectOptions.returnTo;
+        //         }
+        //       }
+        //     }]
+        //   });
+        //   Core.$apply($rootScope);
+        // }
       };
 
       var jolokia = <any> new Jolokia(jolokiaParams);

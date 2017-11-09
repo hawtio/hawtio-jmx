@@ -108,7 +108,7 @@ gulp.task('connect', ['watch'], function() {
       targetPath: config.targetPath
     }],
     staticAssets: [{
-      path: '/',
+      path: '/hawtio/',
       dir: '.'
 
     }],
@@ -119,8 +119,11 @@ gulp.task('connect', ['watch'], function() {
   });
   hawtio.use('/', function(req, res, next) {
           var path = req.originalUrl;
-          // avoid returning these files, they should get pulled from js
-          if (s.startsWith(path, '/plugins/') && s.endsWith(path, 'html')) {
+          if (path === '/') {
+            res.writeHead(301, {Location: '/hawtio'});
+            res.end();
+          } else if (s.startsWith(path, '/plugins/') && s.endsWith(path, 'html')) {
+            // avoid returning these files, they should get pulled from js
             console.log("returning 404 for: ", path);
             res.statusCode = 404;
             res.end();
