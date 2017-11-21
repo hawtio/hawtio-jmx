@@ -40,9 +40,9 @@
     patternfly "~3.25.0"
     urijs "~1.18.10"
 
-"@hawtio/core@~3.0.10", "@hawtio/core@~3.0.4", "@hawtio/core@~3.0.9":
-  version "3.0.16"
-  resolved "https://registry.yarnpkg.com/@hawtio/core/-/core-3.0.16.tgz#7c02fea05191b97c67d9d0724069be14f9f4b0a2"
+"@hawtio/core@3.0.17", "@hawtio/core@~3.0.10", "@hawtio/core@~3.0.4", "@hawtio/core@~3.0.9":
+  version "3.0.17"
+  resolved "https://registry.yarnpkg.com/@hawtio/core/-/core-3.0.17.tgz#3527fec4477cfb84313c516a0e1b7454c1e2a0bb"
   dependencies:
     "@hawtio/core-dts" "~3.0.12"
     "@types/angular" "~1.6.18"
@@ -127,9 +127,9 @@
     lodash "~4.17.4"
     marked "~0.3.6"
 
-"@hawtio/utilities@3.0.14", "@hawtio/utilities@~3.0.8":
-  version "3.0.14"
-  resolved "https://registry.yarnpkg.com/@hawtio/utilities/-/utilities-3.0.14.tgz#db6a08f49d86b4697016cf2d23ad5b8d356938c9"
+"@hawtio/utilities@3.0.15", "@hawtio/utilities@~3.0.0", "@hawtio/utilities@~3.0.8":
+  version "3.0.15"
+  resolved "https://registry.yarnpkg.com/@hawtio/utilities/-/utilities-3.0.15.tgz#5897235705bed897fc1d7aec9001b0b9822ef86b"
   dependencies:
     "@hawtio/core" "~3.0.9"
     "@hawtio/core-dts" "~3.0.11"
@@ -148,9 +148,9 @@
   dependencies:
     "@types/angular" "*"
 
-"@types/angular@*", "@types/angular@~1.6.18":
-  version "1.6.30"
-  resolved "https://registry.yarnpkg.com/@types/angular/-/angular-1.6.30.tgz#929a00da226a48c54431aa33a41d0cae60ccc386"
+"@types/angular@*", "@types/angular@1.6.39", "@types/angular@~1.6.18":
+  version "1.6.39"
+  resolved "https://registry.yarnpkg.com/@types/angular/-/angular-1.6.39.tgz#0c34938fc546f360c14817686f2e453ebf22312f"
 
 "@types/clipboard@~1.5.34":
   version "1.5.34"
@@ -168,9 +168,9 @@
   version "0.0.30"
   resolved "https://registry.yarnpkg.com/@types/js-beautify/-/js-beautify-0.0.30.tgz#82ffbeb2c2dec592f1d04169e926912eeed567ec"
 
-"@types/lodash@~4.14.65", "@types/lodash@~4.14.67":
-  version "4.14.74"
-  resolved "https://registry.yarnpkg.com/@types/lodash/-/lodash-4.14.74.tgz#ac3bd8db988e7f7038e5d22bd76a7ba13f876168"
+"@types/lodash@4.14.85", "@types/lodash@~4.14.65", "@types/lodash@~4.14.67":
+  version "4.14.85"
+  resolved "https://registry.yarnpkg.com/@types/lodash/-/lodash-4.14.85.tgz#a16fbf942422f6eca5622b6910492c496c35069b"
 
 "@types/marked@0.0.28":
   version "0.0.28"

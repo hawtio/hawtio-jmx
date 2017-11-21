@@ -28,48 +28,51 @@
     <div class="form-group" ng-class="{'has-error': model.errors.host}">
       <label class="col-sm-3 control-label required-pf" for="connection-host">Host</label>
       <div class="col-sm-8">
-        <input type="text" id="connection-host" class="form-control" name="host" ng-model="model.connection.host">
+        <input type="text" id="connection-host" class="form-control" name="host" ng-model="model.connection.host" ng-change="">
         <span class="help-block" ng-show="model.errors.host">{{model.errors.host}}</span>
       </div>
     </div>
     <div class="form-group">
       <label class="col-sm-3 control-label" for="connection-port">Port</label>
       <div class="col-sm-8">
-        <input type="number" id="connection-port" class="form-control" name="port" ng-model="model.connection.port">
+        <input type="number" id="connection-port" class="form-control" name="port" ng-model="model.connection.port" ng-change="resetTestConnection()">
       </div>
     </div>
     <div class="form-group">
       <label class="col-sm-3 control-label" for="connection-path">Path</label>
       <div class="col-sm-8">
-        <input type="text" id="connection-path" class="form-control" name="path" ng-model="model.connection.path">
+        <input type="text" id="connection-path" class="form-control" name="path" ng-model="model.connection.path" ng-change="resetTestConnection()">
       </div>
     </div>
     <div class="form-group">
       <label class="col-sm-3 control-label" for="connection-path">Username</label>
       <div class="col-sm-8">
-        <input type="text" id="connection-username" class="form-control" name="userName" ng-model="model.connection.userName">
+        <input type="text" id="connection-username" class="form-control" name="userName" ng-model="model.connection.userName" ng-change="resetTestConnection()">
         <span class="help-block">Username is not saved</span>
       </div>
     </div>
     <div class="form-group">
       <label class="col-sm-3 control-label" for="connection-path">Password</label>
       <div class="col-sm-8">
-        <input type="text" id="connection-password" class="form-control" name="password" ng-model="model.connection.password">
+        <input type="password" id="connection-password" class="form-control" name="password" ng-model="model.connection.password" ng-change="resetTestConnection()">
         <span class="help-block">Password is not saved</span>
       </div>
     </div>
     <div class="form-group">
       <div class="col-sm-offset-3 col-sm-8">
-        <button type="button" class="btn btn-default" ng-click="testConnection(model.connection)">Test Connection</button>
+        <button type="button" class="btn btn-primary" ng-click="testConnection(model.connection)" ng-disabled="model.test.ok">
+          Test Connection
+        </button>
         <span class="jvm-connection-test-msg" ng-show="model.test.message">
-          <span class="pficon" ng-class="{'pficon-ok': model.test.ok, 'pficon-warning-triangle-o': !model.test.ok}"></span> {{model.test.message}}
+          <span class="pficon" ng-class="{'pficon-ok': model.test.ok, 'pficon-warning-triangle-o': !model.test.ok}"></span>
+          {{model.test.message}}
         </span>
       </div>
     </div>
   </div>
   <div class="modal-footer">
     <button type="button" class="btn btn-default" ng-click="$dismiss()">Cancel</button>
-    <button type="submit" class="btn btn-primary" ng-show="!model.connection.name">Add</button>
-    <button type="submit" class="btn btn-primary" ng-show="model.connection.name">Save</button>
+    <button type="submit" class="btn btn-primary" ng-show="!model.connection.name" ng-disabled="!model.test.ok">Add</button>
+    <button type="submit" class="btn btn-primary" ng-show="model.connection.name" ng-disabled="!model.test.ok">Save</button>
   </div>
 </form>

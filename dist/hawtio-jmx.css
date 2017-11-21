@@ -283,36 +283,6 @@ div.tree-nav-layout .sidebar-pf .rg-right {
   background-color: #ffe6e6;
 }
 
-@media screen and (max-width: 767px) {
-}
-@media (min-width: 768px) {
-}
-@media (min-width: 768px) {
-}
-@media (max-width: 767px) {
-}
-@media (min-width: 768px) {
-}
-@media (min-width: 768px) {
-}
-@media (max-width: 767px) {
-}
-@media (max-width: 767px) {
-}
-#threads-page .table tr td:nth-child(2) {
-  white-space: nowrap;
-}
-#threads-page .table tr td:nth-child(3) {
-  width: 300px;
-}
-#threads-page .table tr td:nth-child(3) span {
-  width: inherit;
-}
-#threads-page .table tr td:nth-child(6),
-#threads-page .table tr td:nth-child(7) {
-  text-align: center;
-}
-
 .jvm-nav-main {
   display: flex;
   flex-direction: column;
@@ -345,4 +315,34 @@ div.tree-nav-layout .sidebar-pf .rg-right {
 }
 .jvm-connection-form label.required-pf:after {
   margin-right: -9px;
+}
+
+@media screen and (max-width: 767px) {
+}
+@media (min-width: 768px) {
+}
+@media (min-width: 768px) {
+}
+@media (max-width: 767px) {
+}
+@media (min-width: 768px) {
+}
+@media (min-width: 768px) {
+}
+@media (max-width: 767px) {
+}
+@media (max-width: 767px) {
+}
+#threads-page .table tr td:nth-child(2) {
+  white-space: nowrap;
+}
+#threads-page .table tr td:nth-child(3) {
+  width: 300px;
+}
+#threads-page .table tr td:nth-child(3) span {
+  width: inherit;
+}
+#threads-page .table tr td:nth-child(6),
+#threads-page .table tr td:nth-child(7) {
+  text-align: center;
 }

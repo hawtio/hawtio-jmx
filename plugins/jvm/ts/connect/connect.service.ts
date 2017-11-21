@@ -22,6 +22,9 @@ namespace JVM {
           success: response => {
             resolve('Connected successfully');
           },
+          error: response => {
+            reject('Connection failed');
+          },
           ajaxError: response => {
             reject(response.status === 403 ? 'Incorrect username or password' : 'Connection failed');
           }

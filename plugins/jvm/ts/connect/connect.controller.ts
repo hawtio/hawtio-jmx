@@ -75,6 +75,10 @@ namespace JVM {
       let errors = validateConnectionForm(connection);
       
       if (Object.keys(errors).length === 0) {
+        // connection is secure if username has a value
+        connection.secure = connection.userName !== null && connection.userName.trim() !== '';
+          
+        // save connection without username and password values
         connection.userName = '';
         connection.password = '';
         
@@ -97,12 +101,17 @@ namespace JVM {
         .then(successMesssage => {
           $scope.model.test.ok = true;
           $scope.model.test.message = successMesssage;
-        })
+      })
         .catch(errorMesssage => {
           $scope.model.test.ok = false;
           $scope.model.test.message = errorMesssage;
         });
     };
+
+    $scope.resetTestConnection = function() {
+      $scope.model.test.ok = false;
+      $scope.model.test.message = null;
+    }
 
     function deleteConnection(action, connection: Core.ConnectOptions) {
       $uibModal.open({
@@ -125,18 +134,16 @@ namespace JVM {
     }
 
     function connect(action, connection: Core.ConnectOptions) {
-      connectService.testConnection(connection)
-      .then(successMesssage => {
-        connectService.connect(connection);
-      })
-      .catch(errorMesssage => {
+      if (connection.secure) {
         $scope.connection = angular.extend({}, connection);
         modalInstance = $uibModal.open({
           templateUrl: 'plugins/jvm/html/connect-login.html',
           scope: $scope
         });
-      });
-    };
+      } else {
+        connectService.connect(connection);
+      }
+    }
 
     $scope.login = function(connection: Core.ConnectOptions) {
       if ($scope.credentialsOk) {
