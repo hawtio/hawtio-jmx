@@ -5,15 +5,9 @@ namespace JVM {
     var urlCandidates = ['/hawtio/jolokia', '/jolokia', 'jolokia'];
     var discoveredUrl = null;
   
-    export var skipJolokia = false;
-  
     hawtioPluginLoader.registerPreBootstrapTask({
       name: 'JvmParseLocation',
       task: (next) => {
-        if (skipJolokia) {
-          next();
-          return;
-        }
         var uri = new URI();
         var query = uri.query(true);
         log.debug("query: ", query);
@@ -58,6 +52,7 @@ namespace JVM {
           next();
           return;
         }
+
         function maybeCheckNext(candidates) {
           if (candidates.length === 0) {
             next();
@@ -65,6 +60,7 @@ namespace JVM {
             checkNext(candidates.pop());
           }
         }
+        
         function checkNext(url) {
           log.debug("trying URL: ", url);
           $.ajax(url).always((data, statusText, jqXHR) => {
@@ -96,11 +92,11 @@ namespace JVM {
             }
           });
         }
+        
         checkNext(urlCandidates.pop());
       }
     });
-  
-  
+    
     export var ConnectionName:string = null;
   
     export function getConnectionName(reset = false) {
@@ -130,9 +126,9 @@ namespace JVM {
       var answer = Core.getConnectOptions(name);
       // search for passed credentials when connecting to remote server
       try {
-        if (window.opener && "passUserDetails" in window.opener) {
-          answer.userName = window.opener["passUserDetails"].username;
-          answer.password = window.opener["passUserDetails"].password;
+        if (window['credentials']) {
+          answer.userName = window['credentials'].username;
+          answer.password = window['credentials'].password;
         }
       } catch (securityException) {
         // ignore
@@ -141,9 +137,6 @@ namespace JVM {
     }
   
     export function getJolokiaUrl() {
-      if (skipJolokia) {
-        return false;
-      }
       var answer = undefined;
       var ConnectOptions = getConnectionOptions();
       var documentBase = HawtioCore.documentBase();
@@ -272,34 +265,9 @@ namespace JVM {
         $uibModal,
         $window): Jolokia.IJolokia => {
   
-      if (dash.inDashboard && windowJolokia) {
-        return windowJolokia;
-      }
-  
+      let jolokia = null;
+
       if (jolokiaUrl) {
-        // pass basic auth credentials down to jolokia if set
-        var username: String = null;
-        var password: String = null;
-  
-        if (connectionOptions.userName && connectionOptions.password) {
-          username = connectionOptions.userName;
-          password = connectionOptions.password;
-          userDetails.username = username;
-          userDetails.password = password;
-        } else if (angular.isDefined(userDetails) &&
-            angular.isDefined(userDetails.username) &&
-            angular.isDefined(userDetails.password)) {
-          username = userDetails.username;
-          password = userDetails.password;
-        } else {
-          // lets see if they are passed in via request parameter...
-          var search = $location.search();
-          username = search["_user"];
-          password = search["_pwd"];
-          if (angular.isArray(username)) username = username[0];
-          if (angular.isArray(password)) password = password[0];
-        }
-  
         $.ajaxSetup({
           beforeSend: getBeforeSend()
         });
@@ -307,45 +275,16 @@ namespace JVM {
         var modal = null;
         jolokiaParams['ajaxError'] = jolokiaParams['ajaxError'] ? jolokiaParams['ajaxError'] : (xhr, textStatus, error) => {
           if (xhr.status === 401 || xhr.status === 403) {
-  
             $window.location.href = 'auth/logout';
-  
-            // userDetails.username = null;
-            // userDetails.password = null;
-            // delete userDetails.loginDetails;
-            // if (window.opener && "passUserDetails" in window.opener) {
-            //   delete window.opener["passUserDetails"];
-            // }
           } else {
             jolokiaStatus.xhr = xhr;
             if (!xhr.responseText && error) {
               xhr.responseText = error.stack;
             }
           }
-          // if (!modal) {
-          //   modal = $uibModal.open({
-          //     templateUrl: UrlHelpers.join(templatePath, 'jolokiaError.html'),
-          //     controller: ['$scope', '$uibModalInstance', 'ConnectOptions', 'jolokia', ($scope, $uibModalInstance, ConnectOptions, jolokia) => {
-          //       jolokia.stop();
-          //       $scope.responseText = xhr.responseText;
-          //       $scope.ConnectOptions = ConnectOptions;
-          //       $scope.retry = () => {
-          //         modal = null;
-          //         $uibModalInstance.close();
-          //         jolokia.start();
-          //       }
-          //       $scope.goBack = () => {
-          //         if (ConnectOptions.returnTo) {
-          //           window.location.href = ConnectOptions.returnTo;
-          //         }
-          //       }
-          //     }]
-          //   });
-          //   Core.$apply($rootScope);
-          // }
         };
   
-        var jolokia = <any> new Jolokia(jolokiaParams);
+        jolokia = <any> new Jolokia(jolokiaParams);
         jolokia.stop();
   
         if ('updateRate' in localStorage) {
@@ -353,10 +292,9 @@ namespace JVM {
             jolokia.start(localStorage['updateRate']);
           }
         }
-        windowJolokia = jolokia;
-        return jolokia;
       } else {
-        var answer = <DummyJolokia> {
+        // empty jolokia that returns nothing
+        jolokia = <DummyJolokia> {
           isDummy: true,
           running: false,
           request: (req:any, opts?:Jolokia.IParams) => null,
@@ -368,19 +306,17 @@ namespace JVM {
           version: (opts?) => <Jolokia.IVersion>null,
           execute: (mbean, operation, ...args) => null,
           start: (period) => {
-            answer.running = true;
+            jolokia.running = true;
           },
           stop: () => {
-            answer.running = false;
+            jolokia.running = false;
           },
-          isRunning: () => answer.running,
+          isRunning: () => jolokia.running,
           jobs: () => []
-  
         };
-        windowJolokia = answer;
-        // empty jolokia that returns nothing
-        return answer;
       }
+
+      return jolokia;
     }]);
   
   }

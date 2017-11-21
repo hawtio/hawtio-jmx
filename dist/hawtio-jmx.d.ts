@@ -693,8 +693,10 @@ declare namespace JVM {
 declare namespace JVM {
     class ConnectService {
         private $q;
-        constructor($q: ng.IQService);
-        testConnection(connection: Core.ConnectOptions): ng.IPromise<boolean>;
+        private $window;
+        constructor($q: ng.IQService, $window: ng.IWindowService);
+        testConnection(connection: Core.ConnectOptions): ng.IPromise<string>;
+        connect(connection: Core.ConnectToServerOptions): void;
     }
 }
 declare namespace JVM {
@@ -715,7 +717,6 @@ declare module JVM {
 declare namespace JVM {
 }
 declare namespace JVM {
-    var skipJolokia: boolean;
     var ConnectionName: string;
     function getConnectionName(reset?: boolean): string;
     function getConnectionOptions(): Core.ConnectOptions;

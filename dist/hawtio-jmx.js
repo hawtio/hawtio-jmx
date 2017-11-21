@@ -7356,8 +7356,7 @@ var JVM;
             $scope.model = {
                 connection: connection,
                 errors: {},
-                showConnectionTestResult: false,
-                connectionValid: false,
+                test: { ok: false, message: null },
                 originalConnection: originalConnection,
                 isAddAction: function () {
                     return this.originalConnection === null;
@@ -7385,13 +7384,17 @@ var JVM;
         }
         ;
         $scope.saveConnection = function (model) {
-            var errors = validateConnectionForm(model.connection);
+            var connection = model.connection;
+            var originalConnection = model.originalConnection;
+            var errors = validateConnectionForm(connection);
             if (Object.keys(errors).length === 0) {
+                connection.userName = '';
+                connection.password = '';
                 if (model.isAddAction()) {
-                    $scope.connections.unshift(model.connection);
+                    $scope.connections.unshift(connection);
                 }
                 else {
-                    angular.extend(model.originalConnection, model.connection);
+                    angular.extend(originalConnection, connection);
                 }
                 Core.saveConnections($scope.connections);
                 modalInstance.close();
@@ -7402,13 +7405,17 @@ var JVM;
         };
         $scope.testConnection = function (connection) {
             connectService.testConnection(connection)
-                .then(function (result) {
-                $scope.model.showConnectionTestResult = true;
-                $scope.model.connectionValid = result;
+                .then(function (successMesssage) {
+                $scope.model.test.ok = true;
+                $scope.model.test.message = successMesssage;
+            })
+                .catch(function (errorMesssage) {
+                $scope.model.test.ok = false;
+                $scope.model.test.message = errorMesssage;
             });
         };
         function deleteConnection(action, connection) {
-            var modalInstance = $uibModal.open({
+            $uibModal.open({
                 templateUrl: 'plugins/jvm/html/connect-delete-warning.html'
             })
                 .result.then(function () {
@@ -7427,11 +7434,37 @@ var JVM;
             return errors;
         }
         function connect(action, connection) {
-            // connect to root by default as we do not want to show welcome page
-            connection.view = connection.view || '/';
-            Core.connectToServer(localStorage, connection);
+            connectService.testConnection(connection)
+                .then(function (successMesssage) {
+                connectService.connect(connection);
+            })
+                .catch(function (errorMesssage) {
+                $scope.connection = angular.extend({}, connection);
+                modalInstance = $uibModal.open({
+                    templateUrl: 'plugins/jvm/html/connect-login.html',
+                    scope: $scope
+                });
+            });
         }
         ;
+        $scope.login = function (connection) {
+            if ($scope.credentialsOk) {
+                connectService.connect(connection);
+                modalInstance.close();
+            }
+            else {
+                $scope.showErrorMessage = true;
+            }
+        };
+        $scope.checkCredentials = function (connection) {
+            connectService.testConnection(connection)
+                .then(function (successMesssage) {
+                $scope.credentialsOk = true;
+            })
+                .catch(function (errorMesssage) {
+                $scope.credentialsOk = false;
+            });
+        };
         var autoconnect = $location.search();
         if (typeof autoconnect != 'undefined' && typeof autoconnect.name != 'undefined') {
             var conOpts = Core.createConnectOptions({
@@ -7454,27 +7487,42 @@ var JVM;
 var JVM;
 (function (JVM) {
     var ConnectService = /** @class */ (function () {
-        ConnectService.$inject = ["$q"];
-        function ConnectService($q) {
+        ConnectService.$inject = ["$q", "$window"];
+        function ConnectService($q, $window) {
             'ngInject';
             this.$q = $q;
+            this.$window = $window;
         }
         ConnectService.prototype.testConnection = function (connection) {
             return this.$q(function (resolve, reject) {
-                new Jolokia().version({
+                new Jolokia({
                     url: Core.createServerConnectionUrl(connection),
+                    method: 'post',
+                    mimeType: 'application/json',
                     username: connection.userName ? connection.userName.toString() : '',
                     password: connection.password ? connection.password.toString() : '',
+                }).request({
+                    type: 'version'
+                }, {
                     success: function (response) {
-                        resolve(true);
+                        resolve('Connected successfully');
                     },
                     ajaxError: function (response) {
-                        resolve(false);
+                        reject(response.status === 403 ? 'Incorrect username or password' : 'Connection failed');
                     }
                 });
             });
         };
         ;
+        ConnectService.prototype.connect = function (connection) {
+            JVM.log.debug("Connecting with options: ", StringHelpers.toString(connection));
+            var url = URI('').search({ con: connection.name }).toString();
+            var newWindow = this.$window.open(url);
+            newWindow['credentials'] = {
+                username: connection.userName,
+                password: connection.password
+            };
+        };
         return ConnectService;
     }());
     JVM.ConnectService = ConnectService;
@@ -7735,14 +7783,9 @@ var JVM;
 (function (JVM) {
     var urlCandidates = ['/hawtio/jolokia', '/jolokia', 'jolokia'];
     var discoveredUrl = null;
-    JVM.skipJolokia = false;
     hawtioPluginLoader.registerPreBootstrapTask({
         name: 'JvmParseLocation',
         task: function (next) {
-            if (JVM.skipJolokia) {
-                next();
-                return;
-            }
             var uri = new URI();
             var query = uri.query(true);
             JVM.log.debug("query: ", query);
@@ -7862,9 +7905,9 @@ var JVM;
         var answer = Core.getConnectOptions(name);
         // search for passed credentials when connecting to remote server
         try {
-            if (window.opener && "passUserDetails" in window.opener) {
-                answer.userName = window.opener["passUserDetails"].username;
-                answer.password = window.opener["passUserDetails"].password;
+            if (window['credentials']) {
+                answer.userName = window['credentials'].username;
+                answer.password = window['credentials'].password;
             }
         }
         catch (securityException) {
@@ -7874,9 +7917,6 @@ var JVM;
     }
     JVM.getConnectionOptions = getConnectionOptions;
     function getJolokiaUrl() {
-        if (JVM.skipJolokia) {
-            return false;
-        }
         var answer = undefined;
         var ConnectOptions = getConnectionOptions();
         var documentBase = HawtioCore.documentBase();
@@ -7985,35 +8025,8 @@ var JVM;
     JVM.getBeforeSend = getBeforeSend;
     JVM._module.factory('jolokia', ["$location", "localStorage", "jolokiaStatus", "$rootScope", "userDetails",
         "jolokiaParams", "jolokiaUrl", "ConnectOptions", "HawtioDashboard", "$uibModal", "$window", function ($location, localStorage, jolokiaStatus, $rootScope, userDetails, jolokiaParams, jolokiaUrl, connectionOptions, dash, $uibModal, $window) {
-            if (dash.inDashboard && JVM.windowJolokia) {
-                return JVM.windowJolokia;
-            }
+            var jolokia = null;
             if (jolokiaUrl) {
-                // pass basic auth credentials down to jolokia if set
-                var username = null;
-                var password = null;
-                if (connectionOptions.userName && connectionOptions.password) {
-                    username = connectionOptions.userName;
-                    password = connectionOptions.password;
-                    userDetails.username = username;
-                    userDetails.password = password;
-                }
-                else if (angular.isDefined(userDetails) &&
-                    angular.isDefined(userDetails.username) &&
-                    angular.isDefined(userDetails.password)) {
-                    username = userDetails.username;
-                    password = userDetails.password;
-                }
-                else {
-                    // lets see if they are passed in via request parameter...
-                    var search = $location.search();
-                    username = search["_user"];
-                    password = search["_pwd"];
-                    if (angular.isArray(username))
-                        username = username[0];
-                    if (angular.isArray(password))
-                        password = password[0];
-                }
                 $.ajaxSetup({
                     beforeSend: getBeforeSend()
                 });
@@ -8021,12 +8034,6 @@ var JVM;
                 jolokiaParams['ajaxError'] = jolokiaParams['ajaxError'] ? jolokiaParams['ajaxError'] : function (xhr, textStatus, error) {
                     if (xhr.status === 401 || xhr.status === 403) {
                         $window.location.href = 'auth/logout';
-                        // userDetails.username = null;
-                        // userDetails.password = null;
-                        // delete userDetails.loginDetails;
-                        // if (window.opener && "passUserDetails" in window.opener) {
-                        //   delete window.opener["passUserDetails"];
-                        // }
                     }
                     else {
                         jolokiaStatus.xhr = xhr;
@@ -8034,40 +8041,18 @@ var JVM;
                             xhr.responseText = error.stack;
                         }
                     }
-                    // if (!modal) {
-                    //   modal = $uibModal.open({
-                    //     templateUrl: UrlHelpers.join(templatePath, 'jolokiaError.html'),
-                    //     controller: ['$scope', '$uibModalInstance', 'ConnectOptions', 'jolokia', ($scope, $uibModalInstance, ConnectOptions, jolokia) => {
-                    //       jolokia.stop();
-                    //       $scope.responseText = xhr.responseText;
-                    //       $scope.ConnectOptions = ConnectOptions;
-                    //       $scope.retry = () => {
-                    //         modal = null;
-                    //         $uibModalInstance.close();
-                    //         jolokia.start();
-                    //       }
-                    //       $scope.goBack = () => {
-                    //         if (ConnectOptions.returnTo) {
-                    //           window.location.href = ConnectOptions.returnTo;
-                    //         }
-                    //       }
-                    //     }]
-                    //   });
-                    //   Core.$apply($rootScope);
-                    // }
                 };
-                var jolokia = new Jolokia(jolokiaParams);
+                jolokia = new Jolokia(jolokiaParams);
                 jolokia.stop();
                 if ('updateRate' in localStorage) {
                     if (localStorage['updateRate'] > 0) {
                         jolokia.start(localStorage['updateRate']);
                     }
                 }
-                JVM.windowJolokia = jolokia;
-                return jolokia;
             }
             else {
-                var answer = {
+                // empty jolokia that returns nothing
+                jolokia = {
                     isDummy: true,
                     running: false,
                     request: function (req, opts) { return null; },
@@ -8085,18 +8070,16 @@ var JVM;
                         return null;
                     },
                     start: function (period) {
-                        answer.running = true;
+                        jolokia.running = true;
                     },
                     stop: function () {
-                        answer.running = false;
+                        jolokia.running = false;
                     },
-                    isRunning: function () { return answer.running; },
+                    isRunning: function () { return jolokia.running; },
                     jobs: function () { return []; }
                 };
-                JVM.windowJolokia = answer;
-                // empty jolokia that returns nothing
-                return answer;
             }
+            return jolokia;
         }]);
 })(JVM || (JVM = {}));
 /// <reference path="jvmPlugin.ts"/>
@@ -8678,7 +8661,8 @@ $templateCache.put('plugins/jmx/html/layoutTree.html','<div class="tree-nav-layo
 $templateCache.put('plugins/jmx/html/operation-form.html','<p ng-hide="$ctrl.operation.args.length">\n  This JMX operation requires no arguments. Click the \'Execute\' button to invoke the operation.\n</p>\n<p ng-show="$ctrl.operation.args.length">\n  This JMX operation requires some parameters. Fill in the fields below and click the \'Execute\' button\n  to invoke the operation.\n</p>\n\n<form class="form-horizontal" ng-submit="$ctrl.execute()">\n  <div class="form-group" ng-repeat="formField in $ctrl.formFields">\n    <label class="col-sm-2 control-label" for="{{formField.label}}">{{formField.label}}</label>\n    <div class="col-sm-10">\n      <input type="{{formField.type}}" id="{{formField.label}}" ng-class="{\'form-control\': formField.type !== \'checkbox\'}"\n        ng-model="formField.value">\n      <span class="help-block">{{formField.helpText}}</span>\n    </div>\n  </div>\n  <div class="form-group">\n    <div ng-class="{\'col-sm-offset-2 col-sm-10\': $ctrl.operation.args.length, \'col-sm-12\': !$ctrl.operation.args.length}">\n      <button type="submit" class="btn btn-primary" ng-disabled="$ctrl.isExecuting">Execute</button>\n    </div>\n  </div>\n</form>\n\n<div ng-show="$ctrl.operationResult">\n  <p>Result:</p>\n  <pre class="jmx-operation-result" ng-class="{\'jmx-operation-error\': $ctrl.operationFailed}">{{$ctrl.operationResult}}</pre>\n</div>\n');
 $templateCache.put('plugins/jmx/html/operations.html','<h2>Operations</h2>\n<p ng-if="$ctrl.operations.length === 0">\n  This MBean has no JMX operations.\n</p>\n<div ng-if="$ctrl.operations.length > 0">\n  <p>\n    This MBean supports the following JMX operations. Expand an item in the list to invoke that operation.\n  </p>\n  <pf-list-view class="jmx-operations-list-view" items="$ctrl.operations" config="$ctrl.config"\n    menu-actions="$ctrl.menuActions">\n    <div class="list-view-pf-stacked">\n      <div class="list-group-item-heading">\n        {{item.simpleName}}\n      </div>\n      <div class="list-group-item-text">\n        {{item.description}}\n      </div>\n    </div>\n    <list-expanded-content>\n      <operation-form operation="$parent.item"></operation-form>\n    </list-expanded-content>\n  </pf-list-view>\n</div>\n');
 $templateCache.put('plugins/jvm/html/connect-delete-warning.html','<div class="modal-header">\n  <button type="button" class="close" aria-label="Close" ng-click="$dismiss()">\n    <span class="pficon pficon-close" aria-hidden="true"></span>\n  </button>\n  <h4>Are you sure?</h4>\n</div>\n<div class="modal-body">\n  <p>You are about to delete this connection.</p>\n</div>\n<div class="modal-footer">\n  <button type="button" class="btn btn-default" ng-click="$dismiss()">Cancel</button>\n  <button type="button" class="btn btn-danger" ng-click="$close()">Delete</button>\n</div>\n');
-$templateCache.put('plugins/jvm/html/connect-edit.html','<div class="modal-header">\n  <button type="button" class="close" aria-label="Close" ng-click="$dismiss()">\n    <span class="pficon pficon-close" aria-hidden="true"></span>\n  </button>\n  <h4 class="modal-title" ng-show="!model.name">Add Connection</h4>\n  <h4 class="modal-title" ng-show="model.name">Edit Connection</h4>\n</div>\n<form name="connectForm" class="form-horizontal jvm-connection-form" ng-submit="saveConnection(model)">\n  <div class="modal-body">\n    <p class="fields-status-pf">The fields marked with <span class="required-pf">*</span> are required.</p>\n    <div class="form-group" ng-class="{\'has-error\': model.errors.name}">\n      <label class="col-sm-3 control-label required-pf" for="connection-name">Name</label>\n      <div class="col-sm-8">\n        <input type="text" id="connection-name" class="form-control" name="name" ng-model="model.connection.name"\n          pf-focused="!model.connection.name">\n        <span class="help-block" ng-show="model.errors.name">{{model.errors.name}}</span>\n      </div>\n    </div>\n    <div class="form-group">\n      <label class="col-sm-3 control-label required-pf" for="connection-scheme">Scheme</label>\n      <div class="col-sm-8">\n        <select id="connection-scheme" class="form-control" name="scheme" ng-model="model.connection.scheme">\n            <option>http</option>\n            <option>https</option>\n          </select>\n      </div>\n    </div>\n    <div class="form-group" ng-class="{\'has-error\': model.errors.host}">\n      <label class="col-sm-3 control-label required-pf" for="connection-host">Host</label>\n      <div class="col-sm-8">\n        <input type="text" id="connection-host" class="form-control" name="host" ng-model="model.connection.host">\n        <span class="help-block" ng-show="model.errors.host">{{model.errors.host}}</span>\n      </div>\n    </div>\n    <div class="form-group">\n      <label class="col-sm-3 control-label" for="connection-port">Port</label>\n      <div class="col-sm-8">\n        <input type="number" id="connection-port" class="form-control" name="port" ng-model="model.connection.port">\n      </div>\n    </div>\n    <div class="form-group">\n      <label class="col-sm-3 control-label" for="connection-path">Path</label>\n      <div class="col-sm-8">\n        <input type="text" id="connection-path" class="form-control" name="path" ng-model="model.connection.path">\n      </div>\n    </div>\n    <div class="form-group">\n      <label class="col-sm-3 control-label" for="connection-path">Username</label>\n      <div class="col-sm-8">\n        <input type="text" id="connection-username" class="form-control" name="userName" ng-model="model.connection.userName">\n      </div>\n    </div>\n    <div class="form-group">\n      <label class="col-sm-3 control-label" for="connection-path">Password</label>\n      <div class="col-sm-8">\n        <input type="text" id="connection-password" class="form-control" name="password" ng-model="model.connection.password">\n      </div>\n    </div>\n    <div class="form-group">\n      <div class="col-sm-offset-3 col-sm-8">\n        <button type="button" class="btn btn-default" ng-click="testConnection(model.connection)">Test Connection</button>\n        <span class="jvm-connection-test-msg" ng-show="model.showConnectionTestResult">\n            <span ng-show="model.connectionValid">\n              <span class="pficon pficon-ok"></span> Connected successfully\n        </span>\n        <span ng-show="!model.connectionValid">\n              <span class="pficon pficon-warning-triangle-o"></span> Connection failed\n        </span>\n        </span>\n      </div>\n    </div>\n  </div>\n  <div class="modal-footer">\n    <button type="button" class="btn btn-default" ng-click="$dismiss()">Cancel</button>\n    <button type="submit" class="btn btn-primary" ng-show="!model.connection.name">Add</button>\n    <button type="submit" class="btn btn-primary" ng-show="model.connection.name">Save</button>\n  </div>\n</form>');
+$templateCache.put('plugins/jvm/html/connect-edit.html','<div class="modal-header">\n  <button type="button" class="close" aria-label="Close" ng-click="$dismiss()">\n    <span class="pficon pficon-close" aria-hidden="true"></span>\n  </button>\n  <h4 class="modal-title" ng-show="!model.name">Add Connection</h4>\n  <h4 class="modal-title" ng-show="model.name">Edit Connection</h4>\n</div>\n<form name="connectForm" class="form-horizontal jvm-connection-form" ng-submit="saveConnection(model)">\n  <div class="modal-body">\n    <p class="fields-status-pf">The fields marked with\n      <span class="required-pf">*</span> are required.</p>\n    <div class="form-group" ng-class="{\'has-error\': model.errors.name}">\n      <label class="col-sm-3 control-label required-pf" for="connection-name">Name</label>\n      <div class="col-sm-8">\n        <input type="text" id="connection-name" class="form-control" name="name" ng-model="model.connection.name" pf-focused="!model.connection.name">\n        <span class="help-block" ng-show="model.errors.name">{{model.errors.name}}</span>\n      </div>\n    </div>\n    <div class="form-group">\n      <label class="col-sm-3 control-label required-pf" for="connection-scheme">Scheme</label>\n      <div class="col-sm-8">\n        <select id="connection-scheme" class="form-control" name="scheme" ng-model="model.connection.scheme">\n          <option>http</option>\n          <option>https</option>\n        </select>\n      </div>\n    </div>\n    <div class="form-group" ng-class="{\'has-error\': model.errors.host}">\n      <label class="col-sm-3 control-label required-pf" for="connection-host">Host</label>\n      <div class="col-sm-8">\n        <input type="text" id="connection-host" class="form-control" name="host" ng-model="model.connection.host">\n        <span class="help-block" ng-show="model.errors.host">{{model.errors.host}}</span>\n      </div>\n    </div>\n    <div class="form-group">\n      <label class="col-sm-3 control-label" for="connection-port">Port</label>\n      <div class="col-sm-8">\n        <input type="number" id="connection-port" class="form-control" name="port" ng-model="model.connection.port">\n      </div>\n    </div>\n    <div class="form-group">\n      <label class="col-sm-3 control-label" for="connection-path">Path</label>\n      <div class="col-sm-8">\n        <input type="text" id="connection-path" class="form-control" name="path" ng-model="model.connection.path">\n      </div>\n    </div>\n    <div class="form-group">\n      <label class="col-sm-3 control-label" for="connection-path">Username</label>\n      <div class="col-sm-8">\n        <input type="text" id="connection-username" class="form-control" name="userName" ng-model="model.connection.userName">\n        <span class="help-block">Username is not saved</span>\n      </div>\n    </div>\n    <div class="form-group">\n      <label class="col-sm-3 control-label" for="connection-path">Password</label>\n      <div class="col-sm-8">\n        <input type="text" id="connection-password" class="form-control" name="password" ng-model="model.connection.password">\n        <span class="help-block">Password is not saved</span>\n      </div>\n    </div>\n    <div class="form-group">\n      <div class="col-sm-offset-3 col-sm-8">\n        <button type="button" class="btn btn-default" ng-click="testConnection(model.connection)">Test Connection</button>\n        <span class="jvm-connection-test-msg" ng-show="model.test.message">\n          <span class="pficon" ng-class="{\'pficon-ok\': model.test.ok, \'pficon-warning-triangle-o\': !model.test.ok}"></span> {{model.test.message}}\n        </span>\n      </div>\n    </div>\n  </div>\n  <div class="modal-footer">\n    <button type="button" class="btn btn-default" ng-click="$dismiss()">Cancel</button>\n    <button type="submit" class="btn btn-primary" ng-show="!model.connection.name">Add</button>\n    <button type="submit" class="btn btn-primary" ng-show="model.connection.name">Save</button>\n  </div>\n</form>');
+$templateCache.put('plugins/jvm/html/connect-login.html','<div class="modal-header">\n  <button type="button" class="close" aria-label="Close" ng-click="$dismiss()">\n    <span class="pficon pficon-close" aria-hidden="true"></span>\n  </button>\n  <h4 class="modal-title">Log In</h4>\n</div>\n<form name="connectForm" class="form-horizontal" ng-submit="login(connection)">\n  <div class="modal-body">\n    <div class="alert alert-danger" ng-show="showErrorMessage">\n      <span class="pficon pficon-error-circle-o"></span> Incorrect username or password\n    </div>\n    <div class="form-group">\n      <label class="col-sm-3 control-label" for="connection-username">Username</label>\n      <div class="col-sm-8">\n        <input type="text" id="connection-username" class="form-control" name="userName"\n               ng-model="connection.userName" autofocus>\n      </div>\n    </div>\n    <div class="form-group">\n      <label class="col-sm-3 control-label" for="connection-password">Password</label>\n      <div class="col-sm-8">\n        <input type="text" id="connection-password" class="form-control" name="password"\n               ng-model="connection.password"\n               ng-change="checkCredentials(connection)">\n      </div>\n    </div>\n  </div>\n  <div class="modal-footer">\n    <button type="button" class="btn btn-default" ng-click="$dismiss()">Cancel</button>\n    <button type="submit" class="btn btn-primary">Log In</button>\n  </div>\n</form>\n');
 $templateCache.put('plugins/jvm/html/connect.html','<div ng-controller="ConnectController">\n\n  <h1>Remote</h1>\n\n  <div class="row">\n    <div class="col-md-7">\n      <div class="toolbar-pf">\n        <form class="toolbar-pf-actions" ng-submit="addConnection()">\n          <div class="form-group">\n            <button type="button" class="btn btn-default" ng-click="showAddConnectionModal()">\n              Add connection\n            </button>\n          </div>\n        </form>\n      </div>\n      <pf-list-view class="jvm-connection-list"\n        items="connections" config="config" action-buttons="actionButtons" menu-actions="actionDropDown">\n        <div class="list-view-pf-description">\n          <div class="list-group-item-heading">\n            {{item.name}}\n          </div>\n          <div class="list-group-item-text">\n            {{item | connectionUrl}}\n          </div>\n        </div>\n      </pf-list-view>\n    </div>\n    <div class="col-md-5">\n      <div class="panel panel-default">\n        <div class="panel-heading">\n          <h3 class="panel-title">Instructions</h3>\n        </div>\n        <div class="panel-body">\n          <p>\n            This page allows you to connect to remote processes which <strong>already have a\n            <a href="http://jolokia.org/" target="_blank">jolokia agent</a> running inside them</strong>. You will need to\n            know the host name, port and path of the jolokia agent to be able to connect.\n          </p>\n          <p>\n            If the process you wish to connect to does not have a jolokia agent inside, please refer to the\n            <a href="http://jolokia.org/agent.html" target="_blank">jolokia documentation</a> for how to add a JVM, servlet\n            or OSGi based agent inside it.\n          </p>\n          <p>\n            If you are using <a href="http://fabric8.io/" target="_blank">Fabric8</a>,\n            <a href="http://www.jboss.org/products/fuse" target="_blank">JBoss Fuse</a>, or <a href="http://activemq.apache.org"\n              target="_blank">Apache ActiveMQ</a>; then a jolokia agent is included by default (use context path of jolokia\n            agent, usually\n            <code>jolokia</code>). Or you can always just deploy hawtio inside the process (which includes the jolokia agent,\n            use Jolokia servlet mapping inside hawtio context path, usually <code>hawtio/jolokia</code>).\n          </p>\n          <p ng-show="hasLocalMBean()">\n            Use the <strong><a href="#/jvm/local">Local Tab</a></strong> to connect to processes locally on this machine\n            (which will install a jolokia agent automatically if required).\n          </p>\n          <p ng-show="!hasLocalMBean()">\n            The <strong>Local Tab</strong> is not currently enabled or visible because either the server side\n            <strong>hawtio-local-jvm-mbean plugin</strong> is not installed or this JVM cannot find the\n            <strong>com.sun.tools.attach.VirtualMachine</strong> API usually found in the <strong>tools.jar</strong>. Please\n            see the <a href="http://hawt.io/faq/index.html" target="_blank">FAQ entry</a> for more details.\n          </p>\n        </div>\n      </div>\n    </div>\n  </div>\n</div>\n');
 $templateCache.put('plugins/jvm/html/discover.html','<div ng-controller="JVM.DiscoveryController">\n\n  <h1>Discover</h1>\n\n  <div class="row toolbar-pf">\n    <div class="col-sm-12">\n      <form class="toolbar-pf-actions">\n        <div class="form-group">\n          <input type="text" class="form-control" ng-model="filter" placeholder="Filter..." autocomplete="off">\n        </div>\n        <div class="form-group">\n          <button class="btn btn-default" ng-click="fetch()" title="Refresh"><i class="fa fa-refresh"></i> Refresh</button>\n        </div>\n      </form>\n    </div>\n  </div>\n\n  <div ng-if="discovering">\n    <div class="spinner spinner-lg loading-page"></div>\n    <div class="row">\n      <div class="col-sm-12">\n        <div class="loading-message">\n          Please wait, discovering agents ...\n        </div>\n      </div>\n    </div>\n  </div>\n\n  <div class="row main-content">\n    <div class="col-sm-12">\n      <div ng-show="!discovering">\n        <div class="loading-message" ng-show="agents.length === 0">\n          No agents discovered.\n        </div>\n        <div ng-show="agents.length > 0">\n          <ul class="discovery zebra-list">\n            <li ng-repeat="agent in agents track by $index" ng-show="filterMatches(agent)">\n\n              <div class="inline-block">\n                <img ng-src="{{getLogo(agent)}}">\n              </div>\n\n              <div class="inline-block">\n                <p ng-hide="!hasName(agent)">\n                <span class="strong"\n                      ng-show="agent.server_vendor">\n                  {{agent.server_vendor}} {{_.startCase(agent.server_product)}} {{agent.server_version}}\n                </span>\n                </p>\n              <span ng-class="getAgentIdClass(agent)">\n                <strong ng-show="hasName(agent)">Agent ID: </strong>{{agent.agent_id}}<br/>\n                <strong ng-show="hasName(agent)">Agent Version: </strong><span ng-hide="hasName(agent)"> Version: </span>{{agent.agent_version}}</span><br/>\n                <strong ng-show="hasName(agent)">Agent Description: </strong><span\n                  ng-hide="hasName(agent)"> Description: </span>{{agent.agent_description}}</span><br/>\n\n                <p ng-hide="!agent.url"><strong>Agent URL: </strong><a ng-href="{{agent.url}}"\n                                                                      target="_blank">{{agent.url}}</a>\n                </p>\n              </div>\n\n              <div class="inline-block lock" ng-show="agent.secured">\n                <i class="fa fa-lock" title="A valid username and password will be required to connect"></i>\n              </div>\n\n              <div class="inline-block" ng-hide="!agent.url">\n                <div class="connect-button"\n                    ng-click="gotoServer($event, agent)"\n                    hawtio-template-popover\n                    content="authPrompt"\n                    trigger="manual"\n                    placement="auto"\n                    data-title="Please enter your username and password">\n                  <i ng-show="agent.url" class="icon-play-circle"></i>\n                </div>\n              </div>\n\n            </li>\n          </ul>\n        </div>\n      </div>\n    </div>\n  </div>\n\n  <script type="text/ng-template" id="authPrompt">\n    <div class="auth-form">\n      <form name="authForm">\n        <input type="text"\n                class="input-sm"\n                placeholder="Username..."\n                ng-model="agent.username"\n                required>\n        <input type="password"\n                class="input-sm"\n                placeholder="Password..."\n                ng-model="agent.password"\n                required>\n        <button ng-disabled="!authForm.$valid"\n                ng-click="connectWithCredentials($event, agent)"\n                class="btn btn-success">\n          <i class="fa fa-share"></i> Connect\n        </button>\n        <button class="btn" ng-click="closePopover($event)"><i class="fa fa-remove"></i></button>\n      </form>\n    </div>\n  </script>\n\n</div>\n');
 $templateCache.put('plugins/jvm/html/jolokiaError.html','<div class="modal-header">\n  <h3 class="modal-title">The connection to jolokia failed!</h3>\n</div>\n<div class="modal-body">\n  <div ng-show="responseText">\n    <p>The connection to jolokia has failed with the following error, also check the javascript console for more details.</p>\n    <div hawtio-editor="responseText" readonly="true"></div>\n  </div>\n  <div ng-hide="responseText">\n    <p>The connection to jolokia has failed for an unknown reason, check the javascript console for more details.</p>\n  </div>\n</div>\n<div class="modal-footer">\n  <button ng-show="ConnectOptions.returnTo" class="btn" ng-click="goBack()">Back</button>\n  <button class="btn btn-primary" ng-click="retry()">Retry</button>\n</div>\n');

@@ -3,7 +3,7 @@
 namespace JVM {
 
   export function ConnectController($scope, $location: ng.ILocationService, localStorage: WindowLocalStorage,
-      workspace: Jmx.Workspace, $uibModal, connectService: ConnectService) {
+                                    workspace: Jmx.Workspace, $uibModal, connectService: ConnectService) {
     'ngInject';
 
     const VALIDATION_ERROR_REQUIRED = 'Please fill out this field';
@@ -37,8 +37,7 @@ namespace JVM {
       $scope.model = {
         connection: connection,
         errors: {},
-        showConnectionTestResult: false,
-        connectionValid: false,
+        test: {ok: false, message: null},
         originalConnection: originalConnection,
         isAddAction() {
           return this.originalConnection === null;
@@ -70,15 +69,23 @@ namespace JVM {
     };
 
     $scope.saveConnection = function(model) {
-      let errors = validateConnectionForm(model.connection);
+      const connection: Core.ConnectOptions = model.connection;
+      const originalConnection: Core.ConnectOptions = model.originalConnection;
+      
+      let errors = validateConnectionForm(connection);
       
       if (Object.keys(errors).length === 0) {
+        connection.userName = '';
+        connection.password = '';
+        
         if (model.isAddAction()) {
-          $scope.connections.unshift(model.connection);
+          $scope.connections.unshift(connection);
         } else {
-          angular.extend(model.originalConnection, model.connection);
+          angular.extend(originalConnection, connection);
         }
+        
         Core.saveConnections($scope.connections);
+        
         modalInstance.close();
       } else {
         model.errors = errors;
@@ -87,14 +94,18 @@ namespace JVM {
 
     $scope.testConnection = function(connection: Core.ConnectOptions) {
       connectService.testConnection(connection)
-        .then(result => {
-          $scope.model.showConnectionTestResult = true;
-          $scope.model.connectionValid = result;
+        .then(successMesssage => {
+          $scope.model.test.ok = true;
+          $scope.model.test.message = successMesssage;
+        })
+        .catch(errorMesssage => {
+          $scope.model.test.ok = false;
+          $scope.model.test.message = errorMesssage;
         });
     };
 
     function deleteConnection(action, connection: Core.ConnectOptions) {
-      let modalInstance = $uibModal.open({
+      $uibModal.open({
         templateUrl: 'plugins/jvm/html/connect-delete-warning.html'
       })
       .result.then(() => {
@@ -114,10 +125,37 @@ namespace JVM {
     }
 
     function connect(action, connection: Core.ConnectOptions) {
-      // connect to root by default as we do not want to show welcome page
-      connection.view = connection.view || '/';
-      Core.connectToServer(localStorage, connection);
+      connectService.testConnection(connection)
+      .then(successMesssage => {
+        connectService.connect(connection);
+      })
+      .catch(errorMesssage => {
+        $scope.connection = angular.extend({}, connection);
+        modalInstance = $uibModal.open({
+          templateUrl: 'plugins/jvm/html/connect-login.html',
+          scope: $scope
+        });
+      });
     };
+
+    $scope.login = function(connection: Core.ConnectOptions) {
+      if ($scope.credentialsOk) {
+        connectService.connect(connection);
+        modalInstance.close();
+      } else {
+        $scope.showErrorMessage = true;
+      }
+    }
+
+    $scope.checkCredentials = function(connection: Core.ConnectOptions) {
+      connectService.testConnection(connection)
+      .then(successMesssage => {
+        $scope.credentialsOk = true;
+      })
+      .catch(errorMesssage => {
+        $scope.credentialsOk = false;
+      });
+    }
 
     var autoconnect = $location.search();
     if (typeof autoconnect != 'undefined' && typeof autoconnect.name != 'undefined') {
