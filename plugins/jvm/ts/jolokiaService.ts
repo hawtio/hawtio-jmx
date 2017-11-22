@@ -2,6 +2,14 @@
 
 namespace JVM {
 
+  // constant meaning that general LIST+EXEC Jolokia operations should be used
+  export var LIST_GENERAL = "list";
+  // constant meaning that optimized hawtio:type=security,name=RBACRegistry may be used
+  export var LIST_WITH_RBAC = "list_rbac";
+
+  export const DEFAULT_MAX_DEPTH = 7;
+  export const DEFAULT_MAX_COLLECTION_SIZE = 500;
+
   const urlCandidates = ['/hawtio/jolokia', '/jolokia', 'jolokia'];
   let discoveredUrl = null;
 
@@ -189,15 +197,14 @@ namespace JVM {
   // the jolokia URL we're connected to
   _module.factory('jolokiaUrl', [(): string | boolean => getJolokiaUrl()]);
 
-  // holds the status returned from the last jolokia call (?)
+  // holds the status returned from the last jolokia call and hints for jolokia.list optimization
   _module.factory('jolokiaStatus', () => {
     return {
-      xhr: null
+      xhr: null,
+      listMethod: LIST_GENERAL,
+      listMBean: "hawtio:type=security,name=RBACRegistry"
     };
   });
-
-  export let DEFAULT_MAX_DEPTH = 7;
-  export let DEFAULT_MAX_COLLECTION_SIZE = 500;
 
   _module.factory('jolokiaParams', ["jolokiaUrl", "localStorage", (
     jolokiaUrl: string,
@@ -278,6 +285,19 @@ namespace JVM {
         if ('updateRate' in localStorage) {
           if (localStorage['updateRate'] > 0) {
             jolokia.start(localStorage['updateRate']);
+          }
+        }
+
+        // let's check if we can call faster jolokia.list()
+        let response = jolokia.request({
+          type: 'list',
+          path: Core.escapeMBeanPath(jolokiaStatus.listMBean)
+        }, {});
+        if (response) {
+          if (response.status == 200 && response.value && angular.isObject(response.value['op'])) {
+            jolokiaStatus.listMethod = LIST_WITH_RBAC;
+          } else {
+            jolokiaStatus.listMethod = LIST_GENERAL;
           }
         }
       } else {

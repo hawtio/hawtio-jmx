@@ -1,3 +1,4 @@
+/// <reference path="../../jvm/ts/jolokiaService.ts"/>
 /// <reference path="jmxHelpers.ts"/>
 
 namespace Jmx {
@@ -103,6 +104,28 @@ namespace Jmx {
       this.localStorage[key] = value;
     }
 
+    public jolokiaList(callback, flags): any {
+      if (this.jolokiaStatus.listMethod == JVM.LIST_GENERAL) {
+        return this.jolokia.list(null, Core.onSuccess(callback, flags));
+      } else {
+        flags.maxDepth = 9;
+        let res = this.jolokia.execute(this.jolokiaStatus.listMBean, "list()", Core.onSuccess(callback, flags));
+        if (res['domains'] && res['cache']) {
+          // post process cached RBAC info
+          for (let domainName in res['domains']) {
+            let domainClass = Core.escapeDots(domainName);
+            let domain = res['domains'][domainName] as Core.JMXDomain;
+            for (let mbeanName in domain) {
+              if (angular.isString(domain[mbeanName])) {
+                domain[mbeanName] = res['cache']["" + domain[mbeanName]] as Core.JMXMBean;
+              }
+            }
+          }
+          return res['domains'];
+        }
+      }
+    }
+
     public loadTree() {
       var workspace = this;
       if (this.jolokia['isDummy']) {
@@ -123,13 +146,13 @@ namespace Jmx {
         }
       };
       log.debug("jolokia: ", this.jolokia);
-      this.jolokia.request({ 'type': 'list' }, Core.onSuccess((response) => {
+      this.jolokiaList((response) => {
         if (response.value) {
           this.jolokiaStatus.xhr = null;
         }
         workspace.treeFetched = true;
         workspace.populateTree(response);
-      }, flags));
+      }, flags);
     }
 
     /**
@@ -209,12 +232,13 @@ namespace Jmx {
       }
       if (this.treeWatcherCounter !== counter) {
         this.treeWatcherCounter = counter;
-        this.jolokia.list(null, Core.onSuccess(response => this.populateTree({ value: response }),
-          {ignoreErrors: true, maxDepth: 2}));
+        this.jolokiaList(
+          (response) => this.populateTree({ value: response }),
+          { ignoreErrors: true, maxDepth: 8 });
       }
     }
 
-    public populateTree(response): void {
+    public populateTree(response: { value: any }): void {
       log.debug("JMX tree has been loaded, data: ", response.value);
 
       this.mbeanTypesToDomain = {};
