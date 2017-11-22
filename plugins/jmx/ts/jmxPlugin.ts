@@ -47,33 +47,6 @@ namespace Jmx {
 
   _module.constant('layoutTree', 'plugins/jmx/html/layoutTree.html');
 
-  // holds the status returned from the last jolokia call (?)
-  _module.factory('jolokiaStatus', () => {
-    return {
-      xhr: null
-    };
-  });
-
-  export var DEFAULT_MAX_DEPTH = 7;
-  export var DEFAULT_MAX_COLLECTION_SIZE = 500;
-
-  _module.factory('jolokiaParams', ["jolokiaUrl", "localStorage", (jolokiaUrl, localStorage) => {
-    var answer = {
-      canonicalNaming: false,
-      ignoreErrors: true,
-      mimeType: 'application/json',
-      maxDepth: DEFAULT_MAX_DEPTH,
-      maxCollectionSize: DEFAULT_MAX_COLLECTION_SIZE
-    };
-    if ('jolokiaParams' in localStorage) {
-      answer = angular.fromJson(localStorage['jolokiaParams']);
-    } else {
-      localStorage['jolokiaParams'] = angular.toJson(answer);
-    }
-    answer['url'] = jolokiaUrl;
-    return answer;
-  }]);
-
   _module.factory('jmxTreeLazyLoadRegistry', () => Core.lazyLoaders);
 
   _module.run(["HawtioNav", "$location", "workspace", "viewRegistry", "layoutTree", "layoutFull", "jolokia", "helpRegistry", "pageTitle", "$templateCache", (
