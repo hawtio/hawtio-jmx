@@ -50,16 +50,19 @@ namespace Jmx {
   /**
    * Creates a remote workspace given a remote jolokia for querying the JMX MBeans inside the jolokia
    * @param remoteJolokia
+   * @param remoteJolokiaStatus
    * @param $location
    * @param localStorage
-   * @return {Core.Workspace | Workspace}
+   * @return {Workspace}
    */
-  export function createRemoteWorkspace(remoteJolokia: Jolokia.IJolokia, $location: ng.ILocationService,
+  export function createRemoteWorkspace(remoteJolokia: Jolokia.IJolokia, remoteJolokiaStatus, $location: ng.ILocationService,
     localStorage: WindowLocalStorage, $rootScope: ng.IRootScopeService = null, $compile: ng.ICompileService = null,
-    $templateCache: ng.ITemplateCacheService = null, HawtioNav: HawtioMainNav.Registry = null) {
+    $templateCache: ng.ITemplateCacheService = null, HawtioNav: HawtioMainNav.Registry = null): Workspace {
     // lets create a child workspace object for the remote container
     let jolokiaStatus = {
-      xhr: null
+      xhr: null,
+      listMethod: remoteJolokiaStatus.listMethod,
+      listMBean: remoteJolokiaStatus.listMBean
     };
     // disable reload notifications
     let jmxTreeLazyLoadRegistry = Core.lazyLoaders;
