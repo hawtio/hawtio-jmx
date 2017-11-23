@@ -3,10 +3,10 @@
 
 namespace Jmx {
 
-  export var pluginName = 'hawtio-jmx';
-  export var log: Logging.Logger = Logger.get(pluginName);
-  export var currentProcessId = '';
-  export var templatePath = 'plugins/jmx/html';
+  export const pluginName = 'hawtio-jmx';
+  export const log: Logging.Logger = Logger.get(pluginName);
+  export let currentProcessId = '';
+  export const templatePath = 'plugins/jmx/html';
 
   // Add a few functions to the Core namespace
   /**
@@ -19,11 +19,11 @@ namespace Jmx {
    * @param {String} typeName}
    * @return {Folder}
    */
-  export function getMBeanTypeFolder(workspace:Workspace, domain: string, typeName: string):Folder {
+  export function getMBeanTypeFolder(workspace: Workspace, domain: string, typeName: string): Folder {
     if (workspace) {
-      var mbeanTypesToDomain = workspace.mbeanTypesToDomain || {};
-      var types = mbeanTypesToDomain[typeName] || {};
-      var answer = types[domain];
+      let mbeanTypesToDomain = workspace.mbeanTypesToDomain || {};
+      let types = mbeanTypesToDomain[typeName] || {};
+      let answer = types[domain];
       if (angular.isArray(answer) && answer.length) {
         return answer[0];
       }
@@ -42,8 +42,8 @@ namespace Jmx {
    * @param {String} typeName
    * @return {String}
    */
-  export function getMBeanTypeObjectName(workspace:Workspace, domain: string, typeName: string):string {
-    var folder = getMBeanTypeFolder(workspace, domain, typeName);
+  export function getMBeanTypeObjectName(workspace: Workspace, domain: string, typeName: string): string {
+    let folder = getMBeanTypeFolder(workspace, domain, typeName);
     return Core.pathGet(folder, ["objectName"]);
   }
 
@@ -52,18 +52,18 @@ namespace Jmx {
    * @param remoteJolokia
    * @param $location
    * @param localStorage
-   * @return {Core.Workspace|Workspace}
+   * @return {Core.Workspace | Workspace}
    */
   export function createRemoteWorkspace(remoteJolokia: Jolokia.IJolokia, $location: ng.ILocationService,
     localStorage: WindowLocalStorage, $rootScope: ng.IRootScopeService = null, $compile: ng.ICompileService = null,
     $templateCache: ng.ITemplateCacheService = null, HawtioNav: HawtioMainNav.Registry = null) {
     // lets create a child workspace object for the remote container
-    var jolokiaStatus = {
+    let jolokiaStatus = {
       xhr: null
     };
     // disable reload notifications
-    var jmxTreeLazyLoadRegistry = Core.lazyLoaders;
-    var profileWorkspace = new Workspace(remoteJolokia, jolokiaStatus, jmxTreeLazyLoadRegistry, $location, $compile, $templateCache, localStorage, $rootScope, HawtioNav);
+    let jmxTreeLazyLoadRegistry = Core.lazyLoaders;
+    let profileWorkspace = new Workspace(remoteJolokia, jolokiaStatus, jmxTreeLazyLoadRegistry, $location, $compile, $templateCache, localStorage, $rootScope, HawtioNav);
 
     log.info("Loading the profile using jolokia: " + remoteJolokia);
     profileWorkspace.loadTree();
