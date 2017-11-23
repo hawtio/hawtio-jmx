@@ -287,17 +287,15 @@ namespace JVM {
         }
 
         // let's check if we can call faster jolokia.list()
-        let response = jolokia.request({
-          type: 'list',
-          path: Core.escapeMBeanPath(jolokiaStatus.listMBean)
-        }, {});
-        if (response) {
-          if (response.status == 200 && response.value && angular.isObject(response.value['op'])) {
-            jolokiaStatus.listMethod = JolokiaListMethod.LIST_WITH_RBAC;
-          } else {
-            jolokiaStatus.listMethod = JolokiaListMethod.LIST_GENERAL;
-          }
-        }
+        jolokia.list(
+          Core.escapeMBeanPath(jolokiaStatus.listMBean),
+          Core.onSuccess((response) => {
+            if (response.status == 200 && response.value && angular.isObject(response.value['op'])) {
+              jolokiaStatus.listMethod = JolokiaListMethod.LIST_WITH_RBAC;
+            } else {
+              jolokiaStatus.listMethod = JolokiaListMethod.LIST_GENERAL;
+            }
+          }, {}));
       } else {
         // empty jolokia that returns nothing
         jolokia = <DummyJolokia>{
