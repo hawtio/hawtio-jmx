@@ -7,13 +7,6 @@ namespace JVM {
   export var _module = angular.module(pluginName, [ConnectModule]);
 
   _module.config(["$provide", "$routeProvider", ($provide, $routeProvider) => {
-    /*
-    $provide.decorator('WelcomePageRegistry', ['$delegate', ($delegate) => {
-      return {
-
-      }
-    }]);
-    */
     $routeProvider
             .when('/jvm', { redirectTo: '/jvm/connect' })
             .when('/jvm/welcome', { templateUrl: UrlHelpers.join(templatePath, 'welcome.html')})
@@ -53,13 +46,11 @@ namespace JVM {
         if (!HawtioCore.injector) {
           return;
         }
-        //log.debug("ConParam task firing, newUrl: ", newUrl, " oldUrl: ", oldUrl, " ConnectOptions: ", ConnectOptions);
         if (!ConnectOptions || !ConnectOptions.name || !newUrl) {
           return;
         }
         var newQuery:any = new URI(newUrl).query(true);
         if (!newQuery.con) {
-          //log.debug("Lost connection parameter (", ConnectOptions.name, ") from query params: ", newQuery, " resetting");
           newQuery['con'] = ConnectOptions.name;
           $location.search(newQuery);
         }

@@ -291,6 +291,7 @@ namespace JVM {
         // let's check if we can call faster jolokia.list()
         checkJolokiaOptimization(jolokia, jolokiaStatus);
       } else {
+        log.debug("Use dummy Jolokia");
         // empty jolokia that returns nothing
         jolokia = <DummyJolokia>{
           isDummy: true,
@@ -326,12 +327,13 @@ namespace JVM {
     jolokia.list(
       Core.escapeMBeanPath(jolokiaStatus.listMBean),
       Core.onSuccess((response) => {
-        if (response.status == 200 && response.value && angular.isObject(response.value['op'])) {
+        if (angular.isObject(response['op'])) {
           jolokiaStatus.listMethod = JolokiaListMethod.LIST_WITH_RBAC;
         } else {
           // we could get 403 error, mark the method as special case, equal in practice with LIST_GENERAL
           jolokiaStatus.listMethod = JolokiaListMethod.LIST_CANT_DETERMINE;
         }
+        log.debug("Jolokia list method:", jolokiaStatus.listMethod);
       }, {}));
   }
 

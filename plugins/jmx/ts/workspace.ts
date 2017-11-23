@@ -75,9 +75,7 @@ namespace Jmx {
           }
           workspace.HawtioNav.add(tab);
         },
-        find: (search:(NavMenuItem) => void) => {
-
-        }
+        find: (search: (NavMenuItem) => void) => { }
       };
     }
 
@@ -121,9 +119,7 @@ namespace Jmx {
       if (this.jolokia['isDummy']) {
         setTimeout(() => {
           workspace.treeFetched = true;
-          workspace.populateTree({
-            value: {}
-          });
+          workspace.populateTree({ value: {} });
         }, 10);
         return;
       }
@@ -137,11 +133,9 @@ namespace Jmx {
       };
       log.debug("jolokia: ", this.jolokia);
       this.jolokiaList((response) => {
-        if (response.value) {
-          this.jolokiaStatus.xhr = null;
-        }
+        this.jolokiaStatus.xhr = null;
         workspace.treeFetched = true;
-        workspace.populateTree(response);
+        workspace.populateTree({ value: this.unwindResponseWithRBACCache(response) });
       }, flags);
     }
 
