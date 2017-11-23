@@ -1,6 +1,6 @@
 /// <reference types="utilities" />
 /// <reference types="angular" />
-/// <reference types="core-navigation" />
+/// <reference types="core" />
 /// <reference types="angular-route" />
 declare namespace JVM {
     var rootPath: string;
