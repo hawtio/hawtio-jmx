@@ -33,8 +33,18 @@ namespace Jmx {
   _module.factory('jmxWidgets', () => Jmx.jmxWidgets);
 
   // Create the workspace object used in all kinds of places
-  _module.factory('workspace', ["$location", "jmxTreeLazyLoadRegistry", "$compile", "$templateCache", "localStorage", "jolokia", "jolokiaStatus", "$rootScope", "userDetails", "HawtioNav", ($location: ng.ILocationService, jmxTreeLazyLoadRegistry, $compile: ng.ICompileService, $templateCache: ng.ITemplateCacheService, localStorage: WindowLocalStorage, jolokia, jolokiaStatus, $rootScope, userDetails, HawtioNav) => {
-    const workspace = new Workspace(jolokia, jolokiaStatus, jmxTreeLazyLoadRegistry, $location, $compile, $templateCache, localStorage, $rootScope, HawtioNav);
+  _module.factory('workspace', ["$location", "jmxTreeLazyLoadRegistry", "$compile", "$templateCache", "localStorage", "jolokia", "jolokiaStatus", "$rootScope", "userDetails", "HawtioNav", (
+    $location: ng.ILocationService,
+    jmxTreeLazyLoadRegistry,
+    $compile: ng.ICompileService,
+    $templateCache: ng.ITemplateCacheService,
+    localStorage: WindowLocalStorage,
+    jolokia: Jolokia.IJolokia,
+    jolokiaStatus: JVM.JolokiaStatus,
+    $rootScope,
+    userDetails,
+    HawtioNav: HawtioMainNav.Registry) => {
+    let workspace = new Workspace(jolokia, jolokiaStatus, jmxTreeLazyLoadRegistry, $location, $compile, $templateCache, localStorage, $rootScope, HawtioNav);
     workspace.loadTree();
     return workspace;
   }]);

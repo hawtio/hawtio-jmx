@@ -2,10 +2,14 @@
 
 namespace JVM {
 
-  // constant meaning that general LIST+EXEC Jolokia operations should be used
-  export var LIST_GENERAL = "list";
-  // constant meaning that optimized hawtio:type=security,name=RBACRegistry may be used
-  export var LIST_WITH_RBAC = "list_rbac";
+  export enum JolokiaListMethod {
+    // constant meaning that general LIST+EXEC Jolokia operations should be used
+    LIST_GENERAL = "list",
+    // constant meaning that optimized hawtio:type=security,name=RBACRegistry may be used
+    LIST_WITH_RBAC = "list_rbac"
+  }
+
+  const JOLOKIA_RBAC_LIST_MBEAN = "hawtio:type=security,name=RBACRegistry";
 
   export const DEFAULT_MAX_DEPTH = 7;
   export const DEFAULT_MAX_COLLECTION_SIZE = 50000;
@@ -183,11 +187,6 @@ namespace JVM {
     return answer;
   }
 
-  export interface DummyJolokia extends Jolokia.IJolokia {
-    isDummy: boolean;
-    running: boolean;
-  }
-
   _module.service('ConnectionName', [() => (reset = false) => getConnectionName(reset)]);
 
   _module.service('ConnectOptions', [(): Core.ConnectOptions => {
@@ -198,11 +197,11 @@ namespace JVM {
   _module.factory('jolokiaUrl', [(): string | boolean => getJolokiaUrl()]);
 
   // holds the status returned from the last jolokia call and hints for jolokia.list optimization
-  _module.factory('jolokiaStatus', () => {
+  _module.factory('jolokiaStatus', (): JolokiaStatus => {
     return {
       xhr: null,
-      listMethod: LIST_GENERAL,
-      listMBean: "hawtio:type=security,name=RBACRegistry"
+      listMethod: JolokiaListMethod.LIST_GENERAL,
+      listMBean: JOLOKIA_RBAC_LIST_MBEAN
     };
   });
 
@@ -250,7 +249,7 @@ namespace JVM {
     "jolokiaParams", "jolokiaUrl", "ConnectOptions", "HawtioDashboard", "$uibModal", "$window", (
       $location: ng.ILocationService,
       localStorage: WindowLocalStorage,
-      jolokiaStatus,
+      jolokiaStatus: JolokiaStatus,
       $rootScope,
       userDetails: Core.UserDetails,
       jolokiaParams,
@@ -268,16 +267,15 @@ namespace JVM {
         });
 
         let modal = null;
-        jolokiaParams['ajaxError'] = jolokiaParams['ajaxError'] ? jolokiaParams['ajaxError'] : (xhr, textStatus, error) => {
-          if (xhr.status === 401 || xhr.status === 403) {
-            $window.location.href = 'auth/logout';
-          } else {
-            jolokiaStatus.xhr = xhr;
-            if (!xhr.responseText && error) {
-              xhr.responseText = error.stack;
+        if (jolokiaParams['ajaxError'] == null) {
+          jolokiaParams['ajaxError'] = (xhr: JQueryXHR, textStatus: string, error: string) => {
+            if (xhr.status === 401 || xhr.status === 403) {
+              $window.location.href = 'auth/logout';
+            } else {
+              jolokiaStatus.xhr = xhr;
             }
-          }
-        };
+          };
+        }
 
         jolokia = new Jolokia(jolokiaParams) as any;
         jolokia.stop();
@@ -295,9 +293,9 @@ namespace JVM {
         }, {});
         if (response) {
           if (response.status == 200 && response.value && angular.isObject(response.value['op'])) {
-            jolokiaStatus.listMethod = LIST_WITH_RBAC;
+            jolokiaStatus.listMethod = JolokiaListMethod.LIST_WITH_RBAC;
           } else {
-            jolokiaStatus.listMethod = LIST_GENERAL;
+            jolokiaStatus.listMethod = JolokiaListMethod.LIST_GENERAL;
           }
         }
       } else {
@@ -326,5 +324,16 @@ namespace JVM {
 
       return jolokia;
     }]);
+
+  export interface JolokiaStatus {
+    xhr: JQueryXHR;
+    listMethod: JolokiaListMethod,
+    listMBean: string
+  }
+
+  export interface DummyJolokia extends Jolokia.IJolokia {
+    isDummy: boolean;
+    running: boolean;
+  }
 
 }

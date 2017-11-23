@@ -44,7 +44,7 @@ namespace Jmx {
     private separator = '-';
 
     constructor(public jolokia: Jolokia.IJolokia,
-      public jolokiaStatus,
+      public jolokiaStatus: JVM.JolokiaStatus,
       public jmxTreeLazyLoadRegistry,
       public $location: ng.ILocationService,
       public $compile: ng.ICompileService,
@@ -105,7 +105,7 @@ namespace Jmx {
     }
 
     public jolokiaList(callback, flags): any {
-      if (this.jolokiaStatus.listMethod == JVM.LIST_GENERAL) {
+      if (this.jolokiaStatus.listMethod == JVM.JolokiaListMethod.LIST_GENERAL) {
         return this.jolokia.list(null, Core.onSuccess(callback, flags));
       } else {
         flags.maxDepth = 9;
