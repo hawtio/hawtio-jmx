@@ -227,23 +227,23 @@ namespace JVM {
     return answer;
   }]);
 
-  export function getBeforeSend() {
+  export function getBeforeSend(): (xhr: JQueryXHR) => any {
     // Just set Authorization for now...
     let headers = ['Authorization'];
     let connectionOptions = getConnectionOptions();
     if (connectionOptions && connectionOptions['token']) {
       log.debug("Setting authorization header to token");
-      return (xhr) => headers.forEach((header) =>
+      return (xhr: JQueryXHR) => headers.forEach((header) =>
         xhr.setRequestHeader(header, 'Bearer ' + connectionOptions['token']));
     } else if (connectionOptions && connectionOptions.userName && connectionOptions.password) {
       log.debug("Setting authorization header to username/password");
-      return (xhr) => headers.forEach((header) =>
+      return (xhr: JQueryXHR) => headers.forEach((header) =>
         xhr.setRequestHeader(
           header,
           Core.getBasicAuthHeader(connectionOptions.userName as string, connectionOptions.password as string)));
     } else {
       log.debug("Not setting any authorization header");
-      return (xhr) => { };
+      return (xhr: JQueryXHR) => { };
     }
   }
 
@@ -301,7 +301,7 @@ namespace JVM {
           search: (mBeanPatter, opts?) => null,
           getAttribute: (mbean, attribute, path?, opts?) => null,
           setAttribute: (mbean, attribute, value, path?, opts?) => { },
-          version: (opts?) => <Jolokia.IVersion>null,
+          version: (opts?) => null as Jolokia.IVersion,
           execute: (mbean, operation, ...args) => null,
           start: (period) => {
             jolokia.running = true;
