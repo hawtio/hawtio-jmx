@@ -110,18 +110,8 @@ namespace Jmx {
       } else {
         flags.maxDepth = 9;
         let res = this.jolokia.execute(this.jolokiaStatus.listMBean, "list()", Core.onSuccess(callback, flags));
-        if (res['domains'] && res['cache']) {
-          // post process cached RBAC info
-          for (let domainName in res['domains']) {
-            let domainClass = Core.escapeDots(domainName);
-            let domain = res['domains'][domainName] as Core.JMXDomain;
-            for (let mbeanName in domain) {
-              if (angular.isString(domain[mbeanName])) {
-                domain[mbeanName] = res['cache']["" + domain[mbeanName]] as Core.JMXMBean;
-              }
-            }
-          }
-          return res['domains'];
+        if (res) {
+          return this.unwindResponseWithRBACCache(res);
         }
       }
     }
@@ -233,9 +223,30 @@ namespace Jmx {
       if (this.treeWatcherCounter !== counter) {
         this.treeWatcherCounter = counter;
         this.jolokiaList(
-          (response) => this.populateTree({ value: response }),
+          (response) => this.populateTree({ value: this.unwindResponseWithRBACCache(response) }),
           { ignoreErrors: true, maxDepth: 8 });
       }
+    }
+
+    /**
+     * Processes response from jolokia list - if it contains "domains" and "cache" properties
+     * @param res
+     */
+    public unwindResponseWithRBACCache(res) {
+      if (res['domains'] && res['cache']) {
+        // post process cached RBAC info
+        for (let domainName in res['domains']) {
+          let domainClass = Core.escapeDots(domainName);
+          let domain = res['domains'][domainName] as Core.JMXDomain;
+          for (let mbeanName in domain) {
+            if (angular.isString(domain[mbeanName])) {
+              domain[mbeanName] = res['cache']["" + domain[mbeanName]] as Core.JMXMBean;
+            }
+          }
+        }
+        return res['domains'];
+      }
+      return res;
     }
 
     public populateTree(response: { value: any }): void {
