@@ -8,7 +8,7 @@ namespace JVM {
   export var LIST_WITH_RBAC = "list_rbac";
 
   export const DEFAULT_MAX_DEPTH = 7;
-  export const DEFAULT_MAX_COLLECTION_SIZE = 500;
+  export const DEFAULT_MAX_COLLECTION_SIZE = 50000;
 
   const urlCandidates = ['/hawtio/jolokia', '/jolokia', 'jolokia'];
   let discoveredUrl = null;
