@@ -794,7 +794,7 @@ namespace Jmx {
       return canInvoke;
     }
 
-    public hasInvokeRights(selection: NodeSelection, ...methods:Array<string>) {
+    public hasInvokeRights(selection: NodeSelection, ...methods:Array<string>): boolean {
       var canInvoke = true;
       if (selection) {
         var selectionFolder = <Folder> selection;
@@ -821,15 +821,27 @@ namespace Jmx {
                   log.debug("Could not find method:", method, " to check permissions, skipping");
                   return;
                 }
-                if (angular.isDefined(op.canInvoke)) {
-                  canInvoke = op.canInvoke;
-                }
+                canInvoke = this.resolveCanInvoke(op);
               });
             }
           }
         }
       } 
       return canInvoke;
+    }
+
+    private resolveCanInvoke(op: any): boolean {
+      // for single method
+      if (!angular.isArray(op)) {
+        return angular.isDefined(op.canInvoke) ? op.canInvoke : true;
+      }
+
+      // for overloaded methods
+      // returns true only if all overloaded methods can be invoked (i.e. canInvoke=true)
+      let cantInvoke = _.find(op, (o) =>
+        angular.isDefined(o.canInvoke) && !o.canInvoke
+      );
+      return !angular.isDefined(cantInvoke);
     }
 
     public treeContainsDomainAndProperties(domainName, properties = null) {
