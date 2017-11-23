@@ -105,7 +105,7 @@ namespace Jmx {
     }
 
     public jolokiaList(callback, flags): any {
-      if (this.jolokiaStatus.listMethod == JVM.JolokiaListMethod.LIST_GENERAL) {
+      if (this.jolokiaStatus.listMethod != JVM.JolokiaListMethod.LIST_WITH_RBAC) {
         return this.jolokia.list(null, Core.onSuccess(callback, flags));
       } else {
         flags.maxDepth = 9;

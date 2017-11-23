@@ -6,7 +6,9 @@ namespace JVM {
     // constant meaning that general LIST+EXEC Jolokia operations should be used
     LIST_GENERAL = "list",
     // constant meaning that optimized hawtio:type=security,name=RBACRegistry may be used
-    LIST_WITH_RBAC = "list_rbac"
+    LIST_WITH_RBAC = "list_rbac",
+    // when we get this status, we have to try checking again after logging in
+    LIST_CANT_DETERMINE = "cant_determine"
   }
 
   const JOLOKIA_RBAC_LIST_MBEAN = "hawtio:type=security,name=RBACRegistry";
@@ -287,15 +289,7 @@ namespace JVM {
         }
 
         // let's check if we can call faster jolokia.list()
-        jolokia.list(
-          Core.escapeMBeanPath(jolokiaStatus.listMBean),
-          Core.onSuccess((response) => {
-            if (response.status == 200 && response.value && angular.isObject(response.value['op'])) {
-              jolokiaStatus.listMethod = JolokiaListMethod.LIST_WITH_RBAC;
-            } else {
-              jolokiaStatus.listMethod = JolokiaListMethod.LIST_GENERAL;
-            }
-          }, {}));
+        checkJolokiaOptimization(jolokia, jolokiaStatus);
       } else {
         // empty jolokia that returns nothing
         jolokia = <DummyJolokia>{
@@ -322,6 +316,24 @@ namespace JVM {
 
       return jolokia;
     }]);
+
+  /**
+   * Queries available server-side MBean to check if can call optimized jolokia.list() operation
+   * @param jolokia {Jolokia.IJolokia}
+   * @param jolokiaStatus {JolokiaStatus}
+   */
+  export function checkJolokiaOptimization(jolokia: Jolokia.IJolokia, jolokiaStatus: JolokiaStatus): void {
+    jolokia.list(
+      Core.escapeMBeanPath(jolokiaStatus.listMBean),
+      Core.onSuccess((response) => {
+        if (response.status == 200 && response.value && angular.isObject(response.value['op'])) {
+          jolokiaStatus.listMethod = JolokiaListMethod.LIST_WITH_RBAC;
+        } else {
+          // we could get 403 error, mark the method as special case, equal in practice with LIST_GENERAL
+          jolokiaStatus.listMethod = JolokiaListMethod.LIST_CANT_DETERMINE;
+        }
+      }, {}));
+  }
 
   export interface JolokiaStatus {
     xhr: JQueryXHR;
