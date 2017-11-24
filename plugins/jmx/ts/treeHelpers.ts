@@ -48,12 +48,12 @@ namespace Jmx {
     // If there is a node id then select that one
     var key = $location.search()['nid'];
     if (key) {
-      node = <Folder>_.find(tree.getNodes(), { id: key });
+      node = _.find(tree.getNodes(), { id: key }) as Folder;
     }
 
     // Else optionally select the first node if there is no selection
     if (!node && activateIfNoneSelected && tree.getSelected().length === 0) {
-      const children = <Folder[]>_.takeWhile(tree.getNodes(), { level: 1 });
+      const children = tree.getNodes() as Folder[];
       if (children.length > 0) {
         node = children[0];
         // invoke any auto select function, and use its result as new first, if any returned

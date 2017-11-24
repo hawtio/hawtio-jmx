@@ -154,7 +154,7 @@ module Threads {
         } else {
           $scope.row = _.first(newValue);
           $scope.selectedRowIndex = _.findIndex(Core.pathGet($scope, ['hawtioSimpleTable', 'threads', 'rows']),
-            t => t.entity['threadId'] === $scope.row['threadId']);
+            (t: any) => t.entity['threadId'] === $scope.row['threadId']);
           openModal();
         }
         $scope.selectedRowJson = angular.toJson($scope.row, true);

@@ -60,8 +60,8 @@
     "@hawtio/ui" "~3.0.25"
 
 "@hawtio/node-backend@^3.0.0":
-  version "3.0.1"
-  resolved "https://registry.yarnpkg.com/@hawtio/node-backend/-/node-backend-3.0.1.tgz#3e5f0e3f3629c75882ff3fc3056210ce98d5df64"
+  version "3.0.3"
+  resolved "https://registry.yarnpkg.com/@hawtio/node-backend/-/node-backend-3.0.3.tgz#6222e93dfb0c739e19792574e7e1cd71168eb5d6"
   dependencies:
     "@types/node" "^7.0.31"
     body-parser "^1.17.2"
@@ -3324,8 +3324,8 @@ uid-safe@2.0.0, uid-safe@2.1.4, uid-safe@~2.0.0:
     base64-url "1.2.1"
 
 ultron@~1.1.0:
-  version "1.1.0"
-  resolved "https://registry.yarnpkg.com/ultron/-/ultron-1.1.0.tgz#b07a2e6a541a815fc6a34ccd4533baec307ca864"
+  version "1.1.1"
+  resolved "https://registry.yarnpkg.com/ultron/-/ultron-1.1.1.tgz#9fe1536a10a664a65266a1e3ccf85fd36302bc9c"
 
 unc-path-regex@^0.1.0:
   version "0.1.2"
