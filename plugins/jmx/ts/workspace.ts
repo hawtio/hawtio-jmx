@@ -3,7 +3,10 @@
 
 namespace Jmx {
 
-  var log:Logging.Logger = Logger.get("workspace");
+  const log: Logging.Logger = Logger.get("workspace");
+
+  const HAWTIO_REGISTRY_MBEAN: string = "hawtio:type=Registry";
+  const HAWTIO_TREE_WATCHER_MBEAN: string = "hawtio:type=TreeWatcher";
 
   /**
    * @class NavMenuItem
@@ -12,38 +15,39 @@ namespace Jmx {
     id: string;
     content: string;
     title?: string;
-    isValid?: (workspace:Workspace, perspectiveId?:string) => any;
-    isActive?: (worksace:Workspace) => boolean;
-    href: () => any;
+    isValid?(workspace: Workspace, perspectiveId?: string): any;
+    isActive?(worksace: Workspace): boolean;
+    href(): any;
   }
 
   /**
    * @class Workspace
    */
   export class Workspace {
-    public operationCounter = 0;
+    public operationCounter: number = 0;
     public selection: NodeSelection;
-    public tree:Folder = new Folder('MBeans');
+    public tree: Folder = new Folder('MBeans');
     public mbeanTypesToDomain = {};
     public mbeanServicesToDomain = {};
     public attributeColumnDefs = {};
     public onClickRowHandlers = {};
     public treePostProcessors = {};
-    public topLevelTabs:any = undefined 
+    public topLevelTabs: any = undefined
     public subLevelTabs = [];
     public keyToNodeMap = {};
     public pluginRegisterHandle = null;
     public pluginUpdateCounter = null;
     public treeWatchRegisterHandle = null;
     public treeWatcherCounter = null;
-    public treeFetched = false;
+    public treeFetched: boolean = false;
     // mapData allows to store arbitrary data on the workspace
     public mapData = {};
 
-    private rootId = 'root';
-    private separator = '-';
+    private rootId: string = 'root';
+    private separator: string = '-';
 
-    constructor(public jolokia: Jolokia.IJolokia,
+    constructor(
+      public jolokia: Jolokia.IJolokia,
       public jolokiaStatus: JVM.JolokiaStatus,
       public jmxTreeLazyLoadRegistry,
       public $location: ng.ILocationService,
@@ -60,11 +64,11 @@ namespace Jmx {
       if (!('updateRate' in localStorage)) {
         localStorage['updateRate'] = 5000;
       }
-      var workspace = this;
+      let workspace = this;
       this.topLevelTabs = {
-        push: (item:NavMenuItem) => {
+        push: (item: NavMenuItem) => {
           log.debug("Added menu item: ", item);
-          var tab = {
+          let tab = {
             id: item.id,
             title: () => item.content,
             isValid: () => item.isValid(workspace),
@@ -94,11 +98,11 @@ namespace Jmx {
       return child;
     }
 
-    getLocalStorage(key:string) {
+    getLocalStorage(key: string): any {
       return this.localStorage[key];
     }
 
-    setLocalStorage(key:string, value:any) {
+    setLocalStorage(key: string, value: any) {
       this.localStorage[key] = value;
     }
 
@@ -115,7 +119,7 @@ namespace Jmx {
     }
 
     public loadTree() {
-      var workspace = this;
+      let workspace = this;
       if (this.jolokia['isDummy']) {
         setTimeout(() => {
           workspace.treeFetched = true;
@@ -124,7 +128,7 @@ namespace Jmx {
         return;
       }
 
-      var flags = {
+      let flags = {
         ignoreErrors: true,
         error: (response) => {
           workspace.treeFetched = true;
@@ -145,15 +149,15 @@ namespace Jmx {
      * @method addTreePostProcessor
      * @param {Function} processor
      */
-    public addTreePostProcessor(processor:(tree:any) => void) {
-      var numKeys = _.keys(this.treePostProcessors).length;
-      var nextKey = numKeys + 1;
+    public addTreePostProcessor(processor: (tree: any) => void) {
+      let numKeys = _.keys(this.treePostProcessors).length;
+      let nextKey = numKeys + 1;
       return this.addNamedTreePostProcessor(nextKey + '', processor);
     }
 
-    public addNamedTreePostProcessor(name:string, processor:(tree:any) => void) {
+    public addNamedTreePostProcessor(name: string, processor: (tree: any) => void) {
       this.treePostProcessors[name] = processor;
-      var tree = this.tree;
+      let tree = this.tree;
       if (this.treeFetched && tree) {
         // the tree is loaded already so lets process it now :)
         processor(tree);
@@ -161,17 +165,17 @@ namespace Jmx {
       return name;
     }
 
-    public removeNamedTreePostProcessor(name:string) {
+    public removeNamedTreePostProcessor(name: string) {
       delete this.treePostProcessors[name];
     }
 
     public maybeMonitorPlugins() {
-      if (this.treeContainsDomainAndProperties("hawtio", {type: "Registry"})) {
+      if (this.treeContainsDomainAndProperties("hawtio", { type: "Registry" })) {
         if (this.pluginRegisterHandle === null) {
-          let callback = <(...response:Jolokia.IResponse[]) => void> angular.bind(this, this.maybeUpdatePlugins);
+          let callback = angular.bind(this, this.maybeUpdatePlugins) as (...response: Jolokia.IResponse[]) => void;
           this.pluginRegisterHandle = this.jolokia.register(callback, {
             type: "read",
-            mbean: "hawtio:type=Registry",
+            mbean: HAWTIO_REGISTRY_MBEAN,
             attribute: "UpdateCounter"
           });
         }
@@ -184,19 +188,19 @@ namespace Jmx {
       }
 
       // lets also listen to see if we have a JMX tree watcher
-      if (this.treeContainsDomainAndProperties("hawtio", {type: "TreeWatcher"})) {
+      if (this.treeContainsDomainAndProperties("hawtio", { type: "TreeWatcher" })) {
         if (this.treeWatchRegisterHandle === null) {
-          let callback = <(...response:Jolokia.IResponse[]) => void> angular.bind(this, this.maybeReloadTree);
+          let callback = angular.bind(this, this.maybeReloadTree) as (...response: Jolokia.IResponse[]) => void;
           this.treeWatchRegisterHandle = this.jolokia.register(callback, {
             type: "read",
-            mbean: "hawtio:type=TreeWatcher",
+            mbean: HAWTIO_TREE_WATCHER_MBEAN,
             attribute: "Counter"
           });
         }
       }
     }
 
-    public maybeUpdatePlugins(response) {
+    public maybeUpdatePlugins(response: any): void {
       if (this.pluginUpdateCounter === null) {
         this.pluginUpdateCounter = response.value;
         return;
@@ -208,8 +212,8 @@ namespace Jmx {
       }
     }
 
-    public maybeReloadTree(response) {
-      var counter = response.value;
+    public maybeReloadTree(response: any): void {
+      let counter = response.value;
       if (this.treeWatcherCounter === null) {
         this.treeWatcherCounter = counter;
         return;
@@ -224,23 +228,23 @@ namespace Jmx {
 
     /**
      * Processes response from jolokia list - if it contains "domains" and "cache" properties
-     * @param res
+     * @param response
      */
-    public unwindResponseWithRBACCache(res) {
-      if (res['domains'] && res['cache']) {
+    public unwindResponseWithRBACCache(response: any): any {
+      if (response['domains'] && response['cache']) {
         // post process cached RBAC info
-        for (let domainName in res['domains']) {
+        for (let domainName in response['domains']) {
           let domainClass = Core.escapeDots(domainName);
-          let domain = res['domains'][domainName] as Core.JMXDomain;
+          let domain = response['domains'][domainName] as Core.JMXDomain;
           for (let mbeanName in domain) {
             if (angular.isString(domain[mbeanName])) {
-              domain[mbeanName] = res['cache']["" + domain[mbeanName]] as Core.JMXMBean;
+              domain[mbeanName] = response['cache']["" + domain[mbeanName]] as Core.JMXMBean;
             }
           }
         }
-        return res['domains'];
+        return response['domains'];
       }
-      return res;
+      return response;
     }
 
     public populateTree(response: { value: any }): void {
@@ -250,9 +254,9 @@ namespace Jmx {
       this.mbeanServicesToDomain = {};
       this.keyToNodeMap = {};
 
-      var newTree = new Folder('MBeans');
+      let newTree = new Folder('MBeans');
       newTree.key = this.rootId;
-      var domains = <Core.JMXDomains>response.value;
+      let domains = response.value as Core.JMXDomains;
       angular.forEach(domains, (domain, domainName) => {
         // domain name is displayed in the tree, so let's escape it here
         // Core.escapeHtml() and _.escape() cannot be used, as escaping '"' breaks Camel tree...
@@ -265,7 +269,7 @@ namespace Jmx {
       this.enableLazyLoading(newTree);
       this.tree = newTree;
 
-      var processors = this.treePostProcessors;
+      let processors = this.treePostProcessors;
       _.forIn(processors, (fn: (Folder) => void, key) => {
         log.debug("Running tree post processor: ", key);
         fn(newTree);
@@ -273,7 +277,7 @@ namespace Jmx {
 
       this.maybeMonitorPlugins();
 
-      var rootScope = this.$rootScope;
+      let rootScope = this.$rootScope;
       if (rootScope) {
         rootScope.$broadcast('jmxTreeUpdated');
         Core.$apply(rootScope);
@@ -291,8 +295,8 @@ namespace Jmx {
 
     private populateDomainFolder(tree: Folder, domainName: string, domain: Core.JMXDomain): void {
       log.debug("JMX tree domain: " + domainName);
-      var domainClass = Core.escapeDots(domainName);
-      var folder = this.folderGetOrElse(tree, domainName);
+      let domainClass = Core.escapeDots(domainName);
+      let folder = this.folderGetOrElse(tree, domainName);
       this.initFolder(folder, domainName, [domainName]);
       angular.forEach(domain, (mbean, mbeanName) => {
         this.populateMBeanFolder(folder, domainClass, mbeanName, mbean);
@@ -305,16 +309,16 @@ namespace Jmx {
      * @param {string} str string to be escaped
     */
     private escapeTagOnly(str: string): string {
-      var tagChars = {
+      let tagChars = {
         "<": "&lt;",
         ">": "&gt;"
       };
       if (!angular.isString(str)) {
         return str;
       }
-      var escaped = "";
-      for (var i = 0; i < str.length; i++) {
-        var c = str.charAt(i);
+      let escaped = "";
+      for (let i = 0; i < str.length; i++) {
+        let c = str.charAt(i);
         escaped += tagChars[c] || c;
       }
       return escaped;
@@ -323,21 +327,20 @@ namespace Jmx {
     private populateMBeanFolder(domainFolder: Folder, domainClass: string, mbeanName: string, mbean: Core.JMXMBean): void {
       log.debug("  JMX tree mbean: " + mbeanName);
 
-      var entries = {};
-      var paths = [];
-      var typeName = null;
-      var serviceName = null;
+      let entries = {};
+      let paths = [];
+      let typeName = null;
+      let serviceName = null;
       mbeanName.split(',').forEach(prop => {
         // do not use split('=') as it splits wrong when there is a space in the mbean name
-        // var kv = prop.split('=');
-        var kv = this.splitMBeanProperty(prop);
-        var propKey = kv[0];
+        let kv = this.splitMBeanProperty(prop);
+        let propKey = kv[0];
         // mbean property value is displayed in the tree, so let's escape it here
         // Core.escapeHtml() and _.escape() cannot be used, as escaping '"' breaks Camel tree...
-        var propValue = this.escapeTagOnly(kv[1] || propKey);
+        let propValue = this.escapeTagOnly(kv[1] || propKey);
         entries[propKey] = propValue;
-        var moveToFront = false;
-        var lowerKey = propKey.toLowerCase();
+        let moveToFront = false;
+        let lowerKey = propKey.toLowerCase();
         if (lowerKey === "type") {
           typeName = propValue;
           // if the type name value already exists in the root node
@@ -356,11 +359,11 @@ namespace Jmx {
         }
       });
 
-      var folder = domainFolder;
-      var domainName = domainFolder.domain;
-      var folderNames = _.clone(domainFolder.folderNames);
-      var lastPath = paths.pop();
-      paths.forEach(path => {
+      let folder = domainFolder;
+      let domainName = domainFolder.domain;
+      let folderNames = _.clone(domainFolder.folderNames);
+      let lastPath = paths.pop();
+      paths.forEach((path) => {
         folder = this.folderGetOrElse(folder, path);
         if (folder) {
           folderNames.push(path);
@@ -393,14 +396,14 @@ namespace Jmx {
     }
 
     private folderGetOrElse(folder: Folder, name: string): Folder {
-      if(folder) {
+      if (folder) {
         return folder.getOrElse(name);
       }
-    return null;
+      return null;
     }
 
     private splitMBeanProperty(property: string): [string, string] {
-      var pos = property.indexOf('=');
+      let pos = property.indexOf('=');
       if (pos > 0) {
         return [property.substr(0, pos), property.substr(pos + 1)];
       } else {
@@ -411,19 +414,19 @@ namespace Jmx {
     public configureFolder(folder: Folder, domainName: string, domainClass: string, folderNames: string[], path: string): Folder {
       this.initFolder(folder, domainName, _.clone(folderNames));
       this.keyToNodeMap[folder.key] = folder;
-      var classes = "";
-      var typeKey = _.filter(_.keys(folder.entries), key => key.toLowerCase().indexOf("type") >= 0);
+      let classes = "";
+      let typeKey = _.filter(_.keys(folder.entries), key => key.toLowerCase().indexOf("type") >= 0);
       if (typeKey.length) {
         // last path
         angular.forEach(typeKey, key => {
-          var typeName = folder.entries[key];
+          let typeName = folder.entries[key];
           if (!folder.ancestorHasEntry(key, typeName)) {
             classes += " " + domainClass + this.separator + typeName;
           }
         });
       } else {
         // folder
-        var kindName = _.last(folderNames);
+        let kindName = _.last(folderNames);
         if (kindName === path) {
           kindName += "-folder";
         }
@@ -436,16 +439,16 @@ namespace Jmx {
     }
 
     private addFolderByDomain(folder: Folder, domainName: string, typeName: string, owner: any): void {
-      var map = owner[typeName];
+      let map = owner[typeName];
       if (!map) {
         map = {};
         owner[typeName] = map;
       }
-      var value = map[domainName];
+      let value = map[domainName];
       if (!value) {
         map[domainName] = folder;
       } else {
-        var array = null;
+        let array = null;
         if (angular.isArray(value)) {
           array = value;
         } else {
@@ -456,7 +459,7 @@ namespace Jmx {
       }
     }
 
-    private enableLazyLoading(folder: Folder) {
+    private enableLazyLoading(folder: Folder): void {
       const children = folder.children;
       if (children && children.length) {
         angular.forEach(children, (child: Folder) => this.enableLazyLoading(child));
@@ -477,8 +480,8 @@ namespace Jmx {
      * @return {String}
      */
     public hash() {
-      var hash = this.$location.search();
-      var params = Core.hashToString(hash);
+      let hash = this.$location.search();
+      let params = Core.hashToString(hash);
       if (params) {
         return "?" + params;
       }
@@ -491,7 +494,7 @@ namespace Jmx {
      * @return {Boolean}
      */
     public getActiveTab() {
-      var workspace = this;
+      let workspace = this;
       return _.find(this.topLevelTabs, tab => {
         if (!angular.isDefined(tab.isActive)) {
           return workspace.isLinkActive(tab.href());
@@ -502,14 +505,14 @@ namespace Jmx {
     }
 
     private getStrippedPathName() {
-      var pathName = Core.trimLeading((this.$location.path() || '/'), "#");
+      let pathName = Core.trimLeading((this.$location.path() || '/'), "#");
       pathName = pathName.replace(/^\//, '');
       return pathName;
     }
 
-    public linkContains(...words:String[]):boolean {
-      var pathName = this.getStrippedPathName();
-      return _.every(words, (word:string) => pathName.indexOf(word) !== 0);
+    public linkContains(...words: String[]): boolean {
+      let pathName = this.getStrippedPathName();
+      return _.every(words, (word: string) => pathName.indexOf(word) !== 0);
     }
 
     /**
@@ -519,14 +522,14 @@ namespace Jmx {
      * @param {String} href
      * @return {Boolean} true if the given link is active
      */
-    public isLinkActive(href:string):boolean {
+    public isLinkActive(href: string): boolean {
       // lets trim the leading slash
-      var pathName = this.getStrippedPathName();
+      let pathName = this.getStrippedPathName();
 
-      var link = Core.trimLeading(href, "#");
+      let link = Core.trimLeading(href, "#");
       link = link.replace(/^\//, '');
       // strip any query arguments
-      var idx = link.indexOf('?');
+      let idx = link.indexOf('?');
       if (idx >= 0) {
         link = link.substring(0, idx);
       }
@@ -544,14 +547,14 @@ namespace Jmx {
      * @param {String} href
      * @return {Boolean} true if the given link is active
      */
-    public isLinkPrefixActive(href:string):boolean {
+    public isLinkPrefixActive(href: string): boolean {
       // lets trim the leading slash
-      var pathName = this.getStrippedPathName();
+      let pathName = this.getStrippedPathName();
 
-      var link = Core.trimLeading(href, "#");
+      let link = Core.trimLeading(href, "#");
       link = link.replace(/^\//, '');
       // strip any query arguments
-      var idx = link.indexOf('?');
+      let idx = link.indexOf('?');
       if (idx >= 0) {
         link = link.substring(0, idx);
       }
@@ -564,16 +567,16 @@ namespace Jmx {
      * @param {String} path
      * @return {Boolean}
      */
-    public isTopTabActive(path:string):boolean {
-      var tab = this.$location.search()['tab'];
+    public isTopTabActive(path: string): boolean {
+      let tab = this.$location.search()['tab'];
       if (angular.isString(tab)) {
         return _.startsWith(tab, path);
       }
       return this.isLinkActive(path);
     }
 
-    public isMainTabActive(path:string):boolean {
-      var tab = this.$location.search()['main-tab'];
+    public isMainTabActive(path: string): boolean {
+      let tab = this.$location.search()['main-tab'];
       if (angular.isString(tab)) {
         return tab === path;
       }
@@ -585,8 +588,8 @@ namespace Jmx {
      * @method getSelectedMBeanName
      * @return {String}
      */
-    public getSelectedMBeanName():string {
-      var selection = this.selection;
+    public getSelectedMBeanName(): string {
+      let selection = this.selection;
       if (selection) {
         return selection.objectName;
       }
@@ -598,9 +601,9 @@ namespace Jmx {
         return this.selection;
       }
       log.debug("Location: ", this.$location);
-      var nid = this.$location.search()['nid'];
+      let nid = this.$location.search()['nid'];
       if (nid && this.tree) {
-        var answer = this.tree.findDescendant(node => nid === node.key);
+        let answer = this.tree.findDescendant(node => nid === node.key);
         if (!this.selection) {
           this.selection = answer;
         }
@@ -615,7 +618,7 @@ namespace Jmx {
      * @param {String} uri
      * @return {Boolean}
      */
-    public validSelection(uri:string) {
+    public validSelection(uri: string) {
       // TODO
       return true;
     }
@@ -626,14 +629,14 @@ namespace Jmx {
      * @method removeAndSelectParentNode
      */
     public removeAndSelectParentNode() {
-      var selection = this.selection;
+      let selection = this.selection;
       if (selection) {
-        var parent = selection.parent;
+        let parent = selection.parent;
         if (parent) {
           // lets remove the selection from the parent so we don't do any more JMX attribute queries on the children
           // or include it in table views etc
           // would be nice to eagerly remove the tree node too?
-          var idx = parent.children.indexOf(selection);
+          let idx = parent.children.indexOf(selection);
           if (idx < 0) {
             idx = _.findIndex(parent.children, n => n.key === selection.key);
           }
@@ -646,9 +649,9 @@ namespace Jmx {
     }
 
     public selectParentNode() {
-      var selection = this.selection;
+      let selection = this.selection;
       if (selection) {
-        var parent = selection.parent;
+        let parent = selection.parent;
         if (parent) {
           this.updateSelectionNode(parent);
         }
@@ -661,7 +664,7 @@ namespace Jmx {
      * @method selectionViewConfigKey
      * @return {String}
      */
-    public selectionViewConfigKey():string {
+    public selectionViewConfigKey(): string {
       return this.selectionConfigKey("view/");
     }
 
@@ -672,13 +675,13 @@ namespace Jmx {
      * @param {String} prefix
      * @return {String}
      */
-    public selectionConfigKey(prefix: string = ""):string {
-      var key:string = null;
-      var selection = this.selection;
+    public selectionConfigKey(prefix: string = ""): string {
+      let key: string = null;
+      let selection = this.selection;
       if (selection) {
         // lets make a unique string for the kind of select
         key = prefix + selection.domain;
-        var typeName = selection.typeName;
+        let typeName = selection.typeName;
         if (!typeName) {
           typeName = selection.text;
         }
@@ -691,10 +694,10 @@ namespace Jmx {
     }
 
     public moveIfViewInvalid() {
-      var workspace = this;
-      var uri = Core.trimLeading(this.$location.path(), "/");
+      let workspace = this;
+      let uri = Core.trimLeading(this.$location.path(), "/");
       if (this.selection) {
-        var key = this.selectionViewConfigKey();
+        let key = this.selectionViewConfigKey();
         if (this.validSelection(uri)) {
           // lets remember the previous selection
           this.setLocalStorage(key, uri);
@@ -702,12 +705,12 @@ namespace Jmx {
         } else {
           log.info("the uri '" + uri + "' is not valid for this selection");
           // lets look up the previous preferred value for this type
-          var defaultPath = this.getLocalStorage(key);
+          let defaultPath = this.getLocalStorage(key);
           if (!defaultPath || !this.validSelection(defaultPath)) {
             // lets find the first path we can find which is valid
             defaultPath = null;
             angular.forEach(this.subLevelTabs, (tab) => {
-              var fn = tab.isValid;
+              let fn = tab.isValid;
               if (!defaultPath && tab.href && angular.isDefined(fn) && fn(workspace)) {
                 defaultPath = tab.href();
               }
@@ -730,38 +733,24 @@ namespace Jmx {
 
     public updateSelectionNode(node: NodeSelection) {
       this.selection = node;
-      var key:string = null;
+      let key: string = null;
       if (node) {
         key = node.key;
       }
       if (key) {
-        var $location = this.$location;
-        var q = $location.search();
+        let $location = this.$location;
+        let q = $location.search();
         q['nid'] = key;
         $location.search(q);
       }
       // Broadcast an event so other parts of the UI can update accordingly
       this.$rootScope.$broadcast('jmxTreeClicked', this.selection);
-
-      // if we have updated the selection (rather than just loaded a page)
-      // lets use the previous preferred view - otherwise we may be loading
-      // a page from a bookmark so lets not change the view :)
-      /*
-      if (originalSelection) {
-        key = this.selectionViewConfigKey();
-        if (key) {
-          var defaultPath = this.getLocalStorage(key);
-          if (defaultPath) {
-            this.$location.path(defaultPath);
-          }
-        }
-      }*/
     }
 
-    private matchesProperties(entries, properties) {
+    private matchesProperties(entries, properties): boolean {
       if (!entries) return false;
-      for (var key in properties) {
-        var value = properties[key];
+      for (let key in properties) {
+        let value = properties[key];
         if (!value || entries[key] !== value) {
           return false;
         }
@@ -769,13 +758,13 @@ namespace Jmx {
       return true;
     }
 
-    public hasInvokeRightsForName(objectName:string, ...methods:Array<string>) {
+    public hasInvokeRightsForName(objectName: string, ...methods: Array<string>) {
       // allow invoke by default, same as in hasInvokeRight() below???
-      var canInvoke = true;
+      let canInvoke = true;
       if (objectName) {
-        var mbean = Core.parseMBean(objectName);
+        let mbean = Core.parseMBean(objectName);
         if (mbean) {
-          var mbeanFolder = this.findMBeanWithProperties(mbean.domain, mbean.attributes);
+          let mbeanFolder = this.findMBeanWithProperties(mbean.domain, mbean.attributes);
           if (mbeanFolder) {
             return this.hasInvokeRights.apply(this, [mbeanFolder].concat(methods));
           } else {
@@ -788,24 +777,24 @@ namespace Jmx {
       return canInvoke;
     }
 
-    public hasInvokeRights(selection: NodeSelection, ...methods:Array<string>): boolean {
-      var canInvoke = true;
+    public hasInvokeRights(selection: NodeSelection, ...methods: Array<string>): boolean {
+      let canInvoke = true;
       if (selection) {
-        var selectionFolder = <Folder> selection;
-        var mbean = selectionFolder.mbean;
+        let selectionFolder = selection as Folder;
+        let mbean = selectionFolder.mbean;
         if (mbean) {
           if (angular.isDefined(mbean.canInvoke)) {
             canInvoke = mbean.canInvoke;
           }
           if (canInvoke && methods && methods.length > 0) {
-            var opsByString = mbean['opByString'];
-            var ops = mbean['op'];
+            let opsByString = mbean['opByString'];
+            let ops = mbean['op'];
             if (opsByString && ops) {
               methods.forEach((method) => {
                 if (!canInvoke) {
                   return;
                 }
-                var op = null;
+                let op = null;
                 if (_.endsWith(method, ')')) {
                   op = opsByString[method];
                 } else {
@@ -820,7 +809,7 @@ namespace Jmx {
             }
           }
         }
-      } 
+      }
       return canInvoke;
     }
 
@@ -838,60 +827,60 @@ namespace Jmx {
       return !angular.isDefined(cantInvoke);
     }
 
-    public treeContainsDomainAndProperties(domainName, properties = null) {
-      var workspace = this;
-      var tree = workspace.tree;
-      if (tree) {
-        var folder = tree.get(domainName);
-        if (folder) {
-          if (properties) {
-            var children = folder.children || [];
-            var checkProperties = (node)  => {
-              if (!this.matchesProperties(node.entries, properties)) {
-                if (node.domain === domainName && node.children && node.children.length > 0) {
-                  return node.children.some(checkProperties);
-                } else {
-                  return false;
-                }
-              } else {
-                return true;
-              }
-            };
-            return children.some(checkProperties);
-          }
-          return true;
-        } else {
-          // console.log("no hasMBean for " + objectName + " in tree " + tree);
-        }
-      } else {
-        // console.log("workspace has no tree! returning false for hasMBean " + objectName);
+    public treeContainsDomainAndProperties(domainName: string, properties = null): boolean {
+      let workspace = this;
+      let tree = workspace.tree;
+      if (!tree) {
+        return false;
       }
-      return false;
-    }
 
-    private matches(folder, properties, propertiesCount) {
-      if (folder) {
-        var entries = folder.entries;
-        if (properties) {
-          if (!entries) return false;
-          for (var key in properties) {
-            var value = properties[key];
-            if (!value || entries[key] !== value) {
+      let folder = tree.get(domainName);
+      if (!folder) {
+        return false;
+      }
+
+      if (properties) {
+        let children = folder.children || [];
+        let checkProperties = (node) => {
+          if (!this.matchesProperties(node.entries, properties)) {
+            if (node.domain === domainName && node.children && node.children.length > 0) {
+              return node.children.some(checkProperties);
+            } else {
               return false;
             }
+          } else {
+            return true;
+          }
+        };
+        return children.some(checkProperties);
+      }
+      return true;
+    }
+
+    private matches(folder: NodeSelection, properties, propertiesCount): boolean {
+      if (!folder) {
+        return false;
+      }
+
+      let entries = folder.entries;
+      if (properties) {
+        if (!entries) return false;
+        for (let key in properties) {
+          let value = properties[key];
+          if (!value || entries[key] !== value) {
+            return false;
           }
         }
-        if (propertiesCount) {
-          return entries && Object.keys(entries).length === propertiesCount;
-        }
-        return true;
       }
-      return false;
+      if (propertiesCount) {
+        return entries && Object.keys(entries).length === propertiesCount;
+      }
+      return true;
     }
 
     // only display stuff if we have an mbean with the given properties
-    public hasDomainAndProperties(domainName, properties = null, propertiesCount = null) {
-      var node = this.selection;
+    public hasDomainAndProperties(domainName: string, properties = null, propertiesCount = null): boolean {
+      let node = this.selection;
       if (node) {
         return this.matches(node, properties, propertiesCount) && node.domain === domainName;
       }
@@ -899,20 +888,20 @@ namespace Jmx {
     }
 
     // only display stuff if we have an mbean with the given properties
-    public findMBeanWithProperties(domainName, properties = null, propertiesCount = null) {
-      var tree = this.tree;
+    public findMBeanWithProperties(domainName: string, properties = null, propertiesCount = null): any {
+      let tree = this.tree;
       if (tree) {
-          return this.findChildMBeanWithProperties(tree.get(domainName), properties, propertiesCount);
+        return this.findChildMBeanWithProperties(tree.get(domainName), properties, propertiesCount);
       }
       return null;
     }
 
-    public findChildMBeanWithProperties(folder, properties = null, propertiesCount = null) {
-      var workspace = this;
+    public findChildMBeanWithProperties(folder, properties = null, propertiesCount = null): any {
+      let workspace = this;
       if (folder) {
-        var children = folder.children;
+        let children = folder.children;
         if (children) {
-          var answer = _.find(children, node => this.matches(node, properties, propertiesCount));
+          let answer = _.find(children, node => this.matches(node, properties, propertiesCount));
           if (answer) {
             return answer;
           }
@@ -922,17 +911,17 @@ namespace Jmx {
       return null;
     }
 
-    public selectionHasDomainAndLastFolderName(objectName: string, lastName: string) {
-      var lastNameLower = (lastName || "").toLowerCase();
+    public selectionHasDomainAndLastFolderName(objectName: string, lastName: string): boolean {
+      let lastNameLower = (lastName || "").toLowerCase();
       function isName(name) {
         return (name || "").toLowerCase() === lastNameLower
       }
-      var node = this.selection;
+      let node = this.selection;
       if (node) {
         if (objectName === node.domain) {
-          var folders = node.folderNames;
+          let folders = node.folderNames;
           if (folders) {
-            var last = _.last(folders);
+            let last = _.last(folders);
             return (isName(last) || isName(node.text)) && node.isFolder() && !node.objectName;
           }
         }
@@ -940,16 +929,16 @@ namespace Jmx {
       return false;
     }
 
-    public selectionHasDomain(domainName: string) {
-      var node = this.selection;
+    public selectionHasDomain(domainName: string): boolean {
+      let node = this.selection;
       if (node) {
         return domainName === node.domain;
       }
       return false;
     }
 
-    public selectionHasDomainAndType(objectName: string, typeName: string) {
-      var node = this.selection;
+    public selectionHasDomainAndType(objectName: string, typeName: string): boolean {
+      let node = this.selection;
       if (node) {
         return objectName === node.domain && typeName === node.typeName;
       }
@@ -960,10 +949,10 @@ namespace Jmx {
      * Returns true if this workspace has any mbeans at all
      */
     hasMBeans() {
-      var answer = false;
-      var tree = this.tree;
+      let answer = false;
+      let tree = this.tree;
       if (tree) {
-        var children = tree.children;
+        let children = tree.children;
         if (angular.isArray(children) && children.length > 0) {
           answer = true;
         }
@@ -971,13 +960,13 @@ namespace Jmx {
       return answer;
     }
     hasFabricMBean() {
-      return this.hasDomainAndProperties('io.fabric8', {type: 'Fabric'});
+      return this.hasDomainAndProperties('io.fabric8', { type: 'Fabric' });
     }
     isFabricFolder() {
       return this.hasDomainAndProperties('io.fabric8');
     }
     isCamelContext() {
-      return this.hasDomainAndProperties('org.apache.camel', {type: 'context'});
+      return this.hasDomainAndProperties('org.apache.camel', { type: 'context' });
     }
     isCamelFolder() {
       return this.hasDomainAndProperties('org.apache.camel');
@@ -986,25 +975,25 @@ namespace Jmx {
       return this.selectionHasDomainAndLastFolderName('org.apache.camel', 'endpoints');
     }
     isEndpoint() {
-      return this.hasDomainAndProperties('org.apache.camel', {type: 'endpoints'});
+      return this.hasDomainAndProperties('org.apache.camel', { type: 'endpoints' });
     }
     isRoutesFolder() {
       return this.selectionHasDomainAndLastFolderName('org.apache.camel', 'routes')
     }
     isRoute() {
-      return this.hasDomainAndProperties('org.apache.camel', {type: 'routes'});
+      return this.hasDomainAndProperties('org.apache.camel', { type: 'routes' });
     }
     isComponentsFolder() {
       return this.selectionHasDomainAndLastFolderName('org.apache.camel', 'components');
     }
     isComponent() {
-      return this.hasDomainAndProperties('org.apache.camel', {type: 'components'});
+      return this.hasDomainAndProperties('org.apache.camel', { type: 'components' });
     }
     isDataformatsFolder() {
       return this.selectionHasDomainAndLastFolderName('org.apache.camel', 'dataformats');
     }
     isDataformat() {
-      return this.hasDomainAndProperties('org.apache.camel', {type: 'dataformats'});
+      return this.hasDomainAndProperties('org.apache.camel', { type: 'dataformats' });
     }
 
     isOsgiFolder() {
