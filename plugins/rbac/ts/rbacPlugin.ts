@@ -6,9 +6,13 @@
 /// <reference path="../../jvm/ts/jolokiaService.ts"/>
 /// <reference path="rbacHelpers.ts"/>
 /// <reference path="rbacTasks.ts"/>
+/// <reference path="rbac.directive.ts"/>
+
 namespace RBAC {
 
-  export const _module = angular.module(pluginName, []);
+  export const _module = angular
+    .module(pluginName, [])
+    .directive('hawtioShow', HawtioShow.factory);
 
   const TREE_POSTPROCESSOR_NAME = "rbacTreePostprocessor";
 
