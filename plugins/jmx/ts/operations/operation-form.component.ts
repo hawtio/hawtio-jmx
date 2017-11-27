@@ -91,11 +91,11 @@ namespace Jmx {
 
   }
 
-  export const operationFormComponent = <angular.IComponentOptions>{
+  export const operationFormComponent: angular.IComponentOptions = {
     bindings: {
       operation: '<'
     },
-    templateUrl: 'plugins/jmx/html/operation-form.html',
+    templateUrl: 'plugins/jmx/html/operations/operation-form.html',
     controller: OperationFormController
   };
 

@@ -3,7 +3,7 @@
 namespace Jmx {
 
   export const operationsComponent: angular.IComponentOptions = {
-    templateUrl: 'plugins/jmx/html/operations.html',
+    templateUrl: 'plugins/jmx/html/operations/operations.html',
     controller: OperationsController
   };
 
