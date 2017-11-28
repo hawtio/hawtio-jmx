@@ -38,7 +38,7 @@ namespace Jmx {
     jmxTreeLazyLoadRegistry,
     $compile: ng.ICompileService,
     $templateCache: ng.ITemplateCacheService,
-    localStorage: WindowLocalStorage,
+    localStorage: Storage,
     jolokia: Jolokia.IJolokia,
     jolokiaStatus: JVM.JolokiaStatus,
     $rootScope,

@@ -48,7 +48,7 @@ namespace Jmx {
       jmxWidgets,
       jmxWidgetTypes,
       $templateCache: ng.ITemplateCacheService,
-      localStorage: WindowLocalStorage,
+      localStorage: Storage,
       $browser,
       $timeout: ng.ITimeoutService) => {
 

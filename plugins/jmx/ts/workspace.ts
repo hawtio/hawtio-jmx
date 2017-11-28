@@ -53,7 +53,7 @@ namespace Jmx {
       public $location: ng.ILocationService,
       public $compile: ng.ICompileService,
       public $templateCache: ng.ITemplateCacheService,
-      public localStorage: WindowLocalStorage,
+      public localStorage: Storage,
       public $rootScope: ng.IRootScopeService,
       public HawtioNav: HawtioMainNav.Registry) {
 

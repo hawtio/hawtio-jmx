@@ -209,7 +209,7 @@ namespace JVM {
 
   _module.factory('jolokiaParams', ["jolokiaUrl", "localStorage", (
     jolokiaUrl: string,
-    localStorage: WindowLocalStorage) => {
+    localStorage: Storage) => {
     let answer = {
       canonicalNaming: false,
       ignoreErrors: true,

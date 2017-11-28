@@ -2,7 +2,7 @@
 
 namespace JVM {
 
-  export function ConnectController($scope, $location: ng.ILocationService, localStorage: WindowLocalStorage,
+  export function ConnectController($scope, $location: ng.ILocationService, localStorage: Storage,
                                     workspace: Jmx.Workspace, $uibModal, connectService: ConnectService) {
     'ngInject';
 
