@@ -1,17 +1,19 @@
 namespace Jmx {
 
   export class Operation {
-    
+
     args: OperationArgument[];
     description: string;
     name: string;
     simpleName: string;
+    canInvoke: boolean;
 
     constructor(method: string, args: OperationArgument[], description: string) {
       this.args = args;
       this.description = description;
       this.name = Operation.buildName(method, args);
       this.simpleName = Operation.buildSimpleName(this.name);
+      this.canInvoke = true;
     }
 
     private static buildName(method: string, args: OperationArgument[]) {
@@ -33,7 +35,7 @@ namespace Jmx {
         let simpleParamsStr = simpleParams.join(', ');
         let simpleOperationName = name.replace(paramsStr, simpleParamsStr);
         return simpleOperationName;
-      }      
+      }
     }
   }
 

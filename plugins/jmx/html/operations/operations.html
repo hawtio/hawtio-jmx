@@ -10,6 +10,7 @@
     menu-actions="$ctrl.menuActions">
     <div class="list-view-pf-stacked">
       <div class="list-group-item-heading">
+        <span class="pficon pficon-locked" ng-if="!item.canInvoke"></span>
         {{item.simpleName}}
       </div>
       <div class="list-group-item-text">

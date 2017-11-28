@@ -29,18 +29,18 @@ namespace Jmx {
       this.menuActions = [
         {
           name: 'Copy method name',
-          actionFn: (action, item) => {
+          actionFn: (action, item: Operation) => {
             let clipboard = new window.Clipboard('.jmx-operations-list-view .dropdown-menu a', {
-              text: trigger => item.simpleName
+              text: (trigger) => item.simpleName
             });
             setTimeout(() => clipboard.destroy(), 1000);
           }
         },
         {
           name: 'Copy Jolokia URL',
-          actionFn: (action, item) => {
+          actionFn: (action, item: Operation) => {
             let clipboard = new window.Clipboard('.jmx-operations-list-view .dropdown-menu a', {
-              text: trigger => this.buildJolokiaUrl(item)
+              text: (trigger) => this.buildJolokiaUrl(item)
             });
             setTimeout(() => clipboard.destroy(), 1000);
           }

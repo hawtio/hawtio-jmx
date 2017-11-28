@@ -3,7 +3,7 @@
 namespace Jmx {
 
   export class OperationsService {
-    
+
     constructor(private $q: ng.IQService, private jolokia: Jolokia.IJolokia,
       private rbacACLMBean: ng.IPromise<string>) {
       'ngInject';
@@ -16,31 +16,41 @@ namespace Jmx {
 
     private loadOperations(mbeanName: string): ng.IPromise<Operation[]> {
       return this.$q((resolve, reject) => {
-        this.jolokia.request({
-          type: 'list',
-          path: Core.escapeMBeanPath(mbeanName)
-        }, {
-          success: function(response) {
-            let operations = [];
-
-            angular.forEach(response.value.op, function(value, key) {
-              if (angular.isArray(value)) {
-                angular.forEach(value, function(item) {
-                  operations.push(new Operation(key, item.args, item.desc));
-                });
-              } else {
-                operations.push(new Operation(key, value.args, value.desc));
+        this.jolokia.request(
+          {
+            type: 'list',
+            path: Core.escapeMBeanPath(mbeanName)
+          },
+          Core.onSuccess(
+            (response) => {
+              let operations = [];
+              let operationMap = {};
+              _.forEach(response.value.op, (op: any, opName: string) => {
+                if (_.isArray(op)) {
+                  _.forEach(op, (op) =>
+                    this.addOperation(operations, operationMap, opName, op)
+                  );
+                } else {
+                  this.addOperation(operations, operationMap, opName, op);
+                }
+              });
+              if (!_.isEmpty(operationMap)) {
+                this.fetchPermissions(operationMap, mbeanName);
               }
-            });
-
-            resolve(operations);
-          }
-        }, {
-          error: (response) => {
-            log.debug('OperationsService.loadOperations() failed: ' + response.error);
-          }
-        });
+              resolve(operations);
+            },
+            {
+              error: (response) =>
+                log.debug('OperationsService.loadOperations() failed:', response)
+            }));
       });
+    }
+
+    private addOperation(operations: Operation[], operationMap: { [name: string]: Operation },
+      opName: string, op: { args: OperationArgument[], desc: string }): void {
+      let operation = new Operation(opName, op.args, op.desc);
+      operations.push(operation);
+      operationMap[operation.name] = operation;
     }
 
     getOperation(mbeanName: string, operationName): ng.IPromise<Operation> {
@@ -50,51 +60,55 @@ namespace Jmx {
 
     executeOperation(mbeanName: string, operation: Operation, argValues: any[] = []): ng.IPromise<string> {
       return this.$q((resolve, reject) => {
-        this.jolokia.execute(mbeanName, operation.name, ...argValues, {
-          success: response => {
-            if (response === null || response === 'null') {
-              resolve('Operation Succeeded!');
-            } else if (typeof response === 'string') {
-              resolve(response);
-            } else {
-              resolve(angular.toJson(response, true));
-            }
-          },
-          error: response => reject(response.stacktrace ? response.stacktrace : response.error)
-        });
+        this.jolokia.execute(mbeanName, operation.name, ...argValues,
+          {
+            success: (response) => {
+              if (response === null || response === 'null') {
+                resolve('Operation Succeeded!');
+              } else if (typeof response === 'string') {
+                resolve(response);
+              } else {
+                resolve(angular.toJson(response, true));
+              }
+            },
+            error: (response) => reject(response.stacktrace ? response.stacktrace : response.error)
+          });
       });
     };
 
-    // TODO
-    // private fetchPermissions(operations: Operation[], objectName: string): ng.IPromise<Operation[]> {
-    //   return this.$q((resolve, reject) => {
-    //     this.rbacACLMBean
-    //       .then(rbacACLMBean => {
-    //         let map = {};
-    //         map[objectName] = operations.map(operation => operation.name);
-            
-    //         this.jolokia.request({
-    //           type: 'exec',
-    //           mbean: rbacACLMBean,
-    //           operation: 'canInvoke(java.util.Map)',
-    //           arguments: [map]
-    //         }, {
-    //           success: function(response) {
-    //             let map = response.value;
-    //             angular.forEach(map[objectName], (value, key) => {
-    //               operations[key]['canInvoke'] = value['CanInvoke'];
-    //             });
-    //             resolve(operations);
-    //           }
-    //         }, {
-    //           error: (response) => {
-    //             log.debug('OperationsService.fetchPermissions() failed: ' + response.error);
-    //           }
-    //         });
-    //       });
-    //   });
-    // }
+    private fetchPermissions(operationMap: { [name: string]: Operation }, mbeanName: string): void {
+      this.rbacACLMBean.then((rbacACLMBean) => {
+        this.jolokia.request(
+          {
+            type: 'exec',
+            mbean: rbacACLMBean,
+            operation: 'canInvoke(java.util.Map)',
+            arguments: [{ [mbeanName]: _.values(operationMap).map((op) => op.name) }]
+          },
+          Core.onSuccess(
+            (response) => {
+              log.debug("rbacACLMBean response:", response);
+              let ops = response.value;
+              _.forEach(ops[mbeanName], (canInvoke: OperationCanInvoke, opName: string) =>
+                operationMap[opName].canInvoke = canInvoke.CanInvoke
+              );
+              log.debug("Got operations:", operationMap);
+            },
+            {
+              error: (response) =>
+                log.debug('OperationsService.fetchPermissions() failed:', response)
+            }
+          )
+        );
+      });
+    }
 
+  }
+
+  interface OperationCanInvoke {
+    CanInvoke: boolean;
+    Method: string;
+    ObjectName: string;
   }
 
 }
