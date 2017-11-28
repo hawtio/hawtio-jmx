@@ -6,7 +6,7 @@ namespace Jmx {
 
   export class OperationFormController {
 
-    operation;
+    operation: Operation;
     formFields;
     editorMode = 'text';
     operationFailed: boolean;

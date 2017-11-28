@@ -17,7 +17,7 @@
   </div>
   <div class="form-group">
     <div ng-class="{'col-sm-offset-2 col-sm-10': $ctrl.operation.args.length, 'col-sm-12': !$ctrl.operation.args.length}">
-      <button type="submit" class="btn btn-primary" ng-disabled="$ctrl.isExecuting">Execute</button>
+      <button type="submit" class="btn btn-primary" ng-disabled="!$ctrl.operation.canInvoke || $ctrl.isExecuting">Execute</button>
     </div>
   </div>
 </form>
