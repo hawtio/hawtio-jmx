@@ -8,4 +8,10 @@ namespace RBAC {
     getACLMBean(): ng.IPromise<string>;
   }
 
+  export interface OperationCanInvoke {
+    CanInvoke: boolean;
+    Method: string;
+    ObjectName: string;
+  }
+
 }

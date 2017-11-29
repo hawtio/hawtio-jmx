@@ -4,8 +4,8 @@
  */
 /// <reference path="../../jmx/ts/workspace.ts"/>
 /// <reference path="../../jvm/ts/jolokiaService.ts"/>
+/// <reference path="models.ts"/>
 /// <reference path="rbacHelpers.ts"/>
-/// <reference path="rbacTasks.ts"/>
 /// <reference path="rbac.directive.ts"/>
 /// <reference path="rbac.service.ts"/>
 /// <reference path="jmxTreeProcessor.ts"/>

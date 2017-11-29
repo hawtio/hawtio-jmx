@@ -1,4 +1,5 @@
 /// <reference path="operation.ts"/>
+/// <reference path="../../../rbac/ts/models.ts"/>
 
 namespace Jmx {
 
@@ -90,9 +91,9 @@ namespace Jmx {
             },
             Core.onSuccess(
               (response) => {
-                log.debug("rbacACLMBean response:", response);
+                log.debug("rbacACLMBean canInvoke operations response:", response);
                 let ops = response.value;
-                _.forEach(ops[mbeanName], (canInvoke: OperationCanInvoke, opName: string) =>
+                _.forEach(ops[mbeanName], (canInvoke: RBAC.OperationCanInvoke, opName: string) =>
                   operationMap[opName].canInvoke = canInvoke.CanInvoke
                 );
                 log.debug("Got operations:", operationMap);
@@ -107,12 +108,6 @@ namespace Jmx {
         }));
     }
 
-  }
-
-  interface OperationCanInvoke {
-    CanInvoke: boolean;
-    Method: string;
-    ObjectName: string;
   }
 
 }

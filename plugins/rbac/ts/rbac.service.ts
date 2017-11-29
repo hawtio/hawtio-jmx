@@ -1,4 +1,4 @@
-/// <reference path="rbacTasks.ts"/>
+/// <reference path="models.ts"/>
 
 namespace RBAC {
 

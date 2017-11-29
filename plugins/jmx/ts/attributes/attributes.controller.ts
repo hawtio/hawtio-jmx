@@ -50,7 +50,8 @@ namespace Jmx {
     $templateCache: ng.ITemplateCacheService,
     localStorage: Storage,
     $browser,
-    $timeout: ng.ITimeoutService) {
+    $timeout: ng.ITimeoutService,
+    attributesService: AttributesService) {
     'ngInject';
 
     $scope.searchText = '';
@@ -75,7 +76,7 @@ namespace Jmx {
       }
     });
 
-    const attributeSchemaBasic = {
+    const ATTRIBUTE_SCHEMA_BASIC = {
       properties: {
         'key': {
           type: 'string',
@@ -168,36 +169,48 @@ namespace Jmx {
 
       // update the attribute on the mbean
       let mbean = workspace.getSelectedMBeanName();
-      if (mbean) {
-        jolokia.setAttribute(mbean, key, value,
-          Core.onSuccess((response) => {
-            Core.notification("success", "Updated attribute " + key);
-          }));
+      if (!mbean) {
+        return;
       }
+      jolokia.setAttribute(mbean, key, value, Core.onSuccess(
+        (response) => {
+          Core.notification("success", `Updated attribute ${key}`);
+        },
+        {
+          error: (response) =>
+            Core.notification("danger", `Failed to update attribute ${key}`)
+        }
+      ));
     };
 
-    function onViewAttribute(row: any): void {
+    function onViewAttribute(
+      row: { summary: string, key: string, attrDesc: string, type: string, rw: boolean }): void {
       if (!row.summary) {
         return;
       }
+      if (row.rw) {
+        // for writable attribute, we need to check RBAC
+        attributesService.canInvoke(workspace.getSelectedMBeanName(), row.key, row.type)
+          .then((canInvoke) => showAttributeDialog(row, canInvoke));
+      } else {
+        showAttributeDialog(row, false);
+      }
+    }
+
+    function showAttributeDialog(
+      row: { summary: string, key: string, attrDesc: string, type: string },
+      rw: boolean): void {
       // create entity and populate it with data from the selected row
       $scope.entity = {
         key: row.key,
         description: row.attrDesc,
         type: row.type,
         jolokia: buildJolokiaUrl(row.key),
-        rw: row.rw
+        rw: rw
       };
 
-      // calculate a textare with X number of rows that usually fit the value to display
-      let len = row.summary.length;
-      let rows = (len / 40) + 1;
-      if (rows > 10) {
-        // cap at most 10 rows to not make the dialog too large
-        rows = 10;
-      }
-
-      let readOnly = !row.rw;
+      let rows = numberOfRows(row);
+      let readOnly = !$scope.entity.rw;
       if (readOnly) {
         // if the value is empty its a &nbsp; as we need this for the table to allow us to click on the empty row
         if (row.summary === '&nbsp;') {
@@ -224,13 +237,24 @@ namespace Jmx {
       return `${jolokiaUrl}/read/${mbeanName}/${attribute}`;
     }
 
+    function numberOfRows(row: { summary: string }): number {
+      // calculate a textare with X number of rows that usually fit the value to display
+      let len = row.summary.length;
+      let rows = (len / 40) + 1;
+      if (rows > 10) {
+        // cap at most 10 rows to not make the dialog too large
+        rows = 10;
+      }
+      return rows;
+    }
+
     function initAttributeSchemaView($scope, rows: number): void {
       // clone from the basic schema to the new schema we create on-the-fly
       // this is needed as the dialog have problems if reusing the schema, and changing the schema afterwards
       // so its safer to create a new schema according to our needs
       $scope.attributeSchemaView = {};
-      for (let i in attributeSchemaBasic) {
-        $scope.attributeSchemaView[i] = attributeSchemaBasic[i];
+      for (let key in ATTRIBUTE_SCHEMA_BASIC) {
+        $scope.attributeSchemaView[key] = ATTRIBUTE_SCHEMA_BASIC[key];
       }
       // and add the new attrValue which is dynamic computed
       $scope.attributeSchemaView.properties.attrValueView = {
@@ -261,8 +285,8 @@ namespace Jmx {
       // this is needed as the dialog have problems if reusing the schema, and changing the schema afterwards
       // so its safer to create a new schema according to our needs
       $scope.attributeSchemaEdit = {};
-      for (let i in attributeSchemaBasic) {
-        $scope.attributeSchemaEdit[i] = attributeSchemaBasic[i];
+      for (let key in ATTRIBUTE_SCHEMA_BASIC) {
+        $scope.attributeSchemaEdit[key] = ATTRIBUTE_SCHEMA_BASIC[key];
       }
       // and add the new attrValue which is dynamic computed
       $scope.attributeSchemaEdit.properties.attrValueEdit = {
@@ -312,20 +336,19 @@ namespace Jmx {
       }
     };
 
-    function operationComplete() {
+    function operationComplete(): void {
       updateTableContents();
     }
 
-    function updateTableContents() {
+    function updateTableContents(): void {
       // lets clear any previous queries just in case!
       Core.unregister(jolokia, $scope);
 
       $scope.gridData = [];
       $scope.mbeanIndex = null;
       let mbean = workspace.getSelectedMBeanName();
-      let request = null;
       let node = workspace.selection;
-      if (node === null || angular.isUndefined(node) || node.key !== $scope.lastKey) {
+      if (_.isNil(node) || node.key !== $scope.lastKey) {
         // cache attributes info, so we know if the attribute is read-only or read-write, and also the attribute description
         $scope.attributesInfoCache = null;
 
@@ -339,27 +362,24 @@ namespace Jmx {
         }
 
         if (mbean) {
-          let asQuery = (node) => {
-            let path = Core.escapeMBeanPath(node);
-            let query = {
+          jolokia.request(
+            {
               type: "LIST",
               method: "post",
-              path: path,
+              path: Core.escapeMBeanPath(mbean),
               ignoreErrors: true
-            };
-            return query;
-          };
-          let infoQuery = asQuery(mbean);
-          jolokia.request(infoQuery, Core.onSuccess((response) => {
-            $scope.attributesInfoCache = response.value;
-            log.debug("Updated attributes info cache for mbean " + mbean);
-          }));
+            },
+            Core.onSuccess((response) => {
+              $scope.attributesInfoCache = response.value;
+              log.debug("Updated attributes info cache for mbean", mbean, $scope.attributesInfoCache);
+            }));
         }
       }
 
+      let request = null;
       if (mbean) {
         request = { type: 'read', mbean: mbean };
-        if (node === null || angular.isUndefined(node) || node.key !== $scope.lastKey) {
+        if (_.isNil(node) || node.key !== $scope.lastKey) {
           $scope.gridOptions.columnDefs = PROPERTIES_COLUMN_DEFS;
           $scope.gridOptions.enableRowClickSelection = false;
         }
@@ -390,15 +410,14 @@ namespace Jmx {
                 $scope.mbeanCount = mbeans.length;
               }
             } else {
-              console.log("Too many type names " + typeNames);
+              console.log("Too many type names ", typeNames);
             }
           }
         }
       }
-      let callback = Core.onSuccess(render);
       if (request) {
         $scope.request = request;
-        Core.register(jolokia, $scope, request, callback);
+        Core.register(jolokia, $scope, request, Core.onSuccess(render));
       } else if (node) {
         if (node.key !== $scope.lastKey) {
           $scope.gridOptions.columnDefs = FOLDERS_COLUMN_DEFS;
@@ -414,7 +433,7 @@ namespace Jmx {
       Core.$apply($scope);
     }
 
-    function render(response) {
+    function render(response: { request: any, value: any }): void {
       let data = response.value;
       let mbeanIndex = $scope.mbeanIndex;
       let mbean = response.request['mbean'];
@@ -454,7 +473,7 @@ namespace Jmx {
               });
 
               let extraDefs = [];
-              angular.forEach(data, (value, key) => {
+              _.forEach(data, (value, key) => {
                 if (includePropertyValue(key, value)) {
                   if (!map[key]) {
                     extraDefs.push({
@@ -488,7 +507,7 @@ namespace Jmx {
             }
           }
           // mask attribute read error
-          angular.forEach(data, (value, key) => {
+          _.forEach(data, (value, key) => {
             if (includePropertyValue(key, value)) {
               data[key] = maskReadError(value);
             }
@@ -503,20 +522,19 @@ namespace Jmx {
             let newSelections = $scope.selectedIndices.map((idx) => $scope.gridData[idx]).filter((row) => row);
             $scope.selectedItems.splice(0, $scope.selectedItems.length);
             $scope.selectedItems.push.apply($scope.selectedItems, newSelections);
-            //console.log("Would have selected " + JSON.stringify($scope.selectedItems));
             Core.$apply($scope);
           }
           // if the last row, then fire an event
         } else {
-          console.log("No mbean name in request " + JSON.stringify(response.request));
+          log.info("No mbean name in request", JSON.stringify(response.request));
         }
       } else {
         $scope.gridOptions.columnDefs = PROPERTIES_COLUMN_DEFS;
         $scope.gridOptions.enableRowClickSelection = false;
         let showAllAttributes = true;
-        if (angular.isObject(data)) {
-          let properties = Array();
-          angular.forEach(data, (value, key) => {
+        if (_.isObject(data)) {
+          let properties = [];
+          _.forEach(data, (value, key) => {
             if (showAllAttributes || includePropertyValue(key, value)) {
               // always skip keys which start with _
               if (!_.startsWith(key, "_")) {
@@ -526,10 +544,8 @@ namespace Jmx {
                   value = unwrapObjectName(value);
                 }
                 // lets unwrap any arrays of object names
-                if (angular.isArray(value)) {
-                  value = value.map((v) => {
-                    return unwrapObjectName(v);
-                  });
+                if (_.isArray(value)) {
+                  value = value.map((v) => unwrapObjectName(v));
                 }
                 // the value must be string as the sorting/filtering of the table relies on that
                 let type = lookupAttributeType(key);
@@ -565,7 +581,7 @@ namespace Jmx {
       }
     }
 
-    function maskReadError(value) {
+    function maskReadError(value: any): any {
       if (typeof value !== 'string') {
         return value;
       }
@@ -580,7 +596,7 @@ namespace Jmx {
       }
     }
 
-    function addHandlerFunctions(data) {
+    function addHandlerFunctions(data: any[]): void {
       data.forEach((item) => {
         item['inDashboard'] = $scope.inDashboard;
         item['getDashboardWidgets'] = () => getDashboardWidgets(item);
@@ -664,8 +680,8 @@ namespace Jmx {
       }
     }
 
-    function unwrapObjectName(value) {
-      if (!angular.isObject(value)) {
+    function unwrapObjectName(value: any): any {
+      if (!_.isObject(value)) {
         return value;
       }
       let keys = Object.keys(value);
@@ -675,7 +691,7 @@ namespace Jmx {
       return value;
     }
 
-    function generateSummaryAndDetail(key, data) {
+    function generateSummaryAndDetail(key, data): void {
       let value = Core.escapeHtml(data.value);
       if (!angular.isArray(value) && angular.isObject(value)) {
         let detailHtml = "<table class='table table-striped'>";
@@ -725,7 +741,7 @@ namespace Jmx {
       }
     }
 
-    function lookupAttributeType(key) {
+    function lookupAttributeType(key: string): string {
       if ($scope.attributesInfoCache != null && 'attr' in $scope.attributesInfoCache) {
         let info = $scope.attributesInfoCache.attr[key];
         if (angular.isDefined(info)) {
@@ -735,8 +751,8 @@ namespace Jmx {
       return null;
     }
 
-    function includePropertyValue(key: string, value) {
-      return !angular.isObject(value);
+    function includePropertyValue(key: string, value: any): boolean {
+      return !_.isObject(value);
     }
 
   }
