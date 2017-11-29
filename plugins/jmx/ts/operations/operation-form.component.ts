@@ -85,10 +85,6 @@ namespace Jmx {
         });
     }
 
-    cancel() {
-      this.operation.isExpanded = false;
-    }
-
   }
 
   export const operationFormComponent: angular.IComponentOptions = {

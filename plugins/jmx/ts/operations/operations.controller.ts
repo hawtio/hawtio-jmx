@@ -7,8 +7,7 @@ namespace Jmx {
   export class OperationsController {
 
     config: any;
-    actionButtons: any[];
-    menuActions: any[];
+    menuActions: { name: string, actionFn: (any, Operation) => void }[];
     operations: Operation[];
 
     constructor(private $scope, private $location, private workspace: Workspace, private jolokiaUrl: string,
