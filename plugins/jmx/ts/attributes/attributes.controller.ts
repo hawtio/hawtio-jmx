@@ -1,8 +1,8 @@
-/// <reference path="./jmxPlugin.ts"/>
+/// <reference path="../jmxPlugin.ts"/>
 
 namespace Jmx {
 
-  export let propertiesColumnDefs = [
+  const PROPERTIES_COLUMN_DEFS = [
     {
       field: 'name',
       displayName: 'Attribute',
@@ -25,7 +25,7 @@ namespace Jmx {
     }
   ];
 
-  export let foldersColumnDefs = [
+  const FOLDERS_COLUMN_DEFS = [
     {
       displayName: 'Name',
       cellTemplate: `
@@ -38,19 +38,20 @@ namespace Jmx {
     }
   ];
 
-  export let AttributesController = _module.controller("Jmx.AttributesController", ["$scope", "$element", "$location", "workspace", "jolokia", "jolokiaUrl", "jmxWidgets", "jmxWidgetTypes", "$templateCache", "localStorage", "$browser", "$timeout", (
-      $scope,
-      $element,
-      $location: ng.ILocationService,
-      workspace: Workspace,
-      jolokia: Jolokia.IJolokia,
-      jolokiaUrl: string,
-      jmxWidgets,
-      jmxWidgetTypes,
-      $templateCache: ng.ITemplateCacheService,
-      localStorage: Storage,
-      $browser,
-      $timeout: ng.ITimeoutService) => {
+  export function AttributesController(
+    $scope,
+    $element,
+    $location: ng.ILocationService,
+    workspace: Workspace,
+    jolokia: Jolokia.IJolokia,
+    jolokiaUrl: string,
+    jmxWidgets,
+    jmxWidgetTypes,
+    $templateCache: ng.ITemplateCacheService,
+    localStorage: Storage,
+    $browser,
+    $timeout: ng.ITimeoutService) {
+    'ngInject';
 
     $scope.searchText = '';
     $scope.nid = 'empty';
@@ -114,7 +115,7 @@ namespace Jmx {
       // TODO disabled for now as it causes https://github.com/hawtio/hawtio/issues/262
       //sortInfo: { field: 'name', direction: 'asc'},
       data: 'gridData',
-      columnDefs: propertiesColumnDefs
+      columnDefs: PROPERTIES_COLUMN_DEFS
     };
 
     $scope.$watch(
@@ -359,7 +360,7 @@ namespace Jmx {
       if (mbean) {
         request = { type: 'read', mbean: mbean };
         if (node === null || angular.isUndefined(node) || node.key !== $scope.lastKey) {
-          $scope.gridOptions.columnDefs = propertiesColumnDefs;
+          $scope.gridOptions.columnDefs = PROPERTIES_COLUMN_DEFS;
           $scope.gridOptions.enableRowClickSelection = false;
         }
       } else if (node) {
@@ -400,7 +401,7 @@ namespace Jmx {
         Core.register(jolokia, $scope, request, callback);
       } else if (node) {
         if (node.key !== $scope.lastKey) {
-          $scope.gridOptions.columnDefs = foldersColumnDefs;
+          $scope.gridOptions.columnDefs = FOLDERS_COLUMN_DEFS;
           $scope.gridOptions.enableRowClickSelection = true;
         }
         $scope.gridData = node.children;
@@ -510,7 +511,7 @@ namespace Jmx {
           console.log("No mbean name in request " + JSON.stringify(response.request));
         }
       } else {
-        $scope.gridOptions.columnDefs = propertiesColumnDefs;
+        $scope.gridOptions.columnDefs = PROPERTIES_COLUMN_DEFS;
         $scope.gridOptions.enableRowClickSelection = false;
         let showAllAttributes = true;
         if (angular.isObject(data)) {
@@ -738,6 +739,6 @@ namespace Jmx {
       return !angular.isObject(value);
     }
 
-  }]);
+  }
 
 }
