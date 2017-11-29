@@ -26,25 +26,64 @@ module Diagnostics {
     pageTitle: string;
     instanceCounts: any;
     byteCounts: any;
+    tableConfig: any;
+    tableDtOptions: any;
+    tableColumns : Array<any>;
   }
 
   _module.controller("Diagnostics.HeapController", ["$scope", "jolokia", ($scope: HeapControllerScope, jolokia: Jolokia.IJolokia) => {
 
     $scope.classHistogram = '';
     $scope.status = '';
-    $scope.tableDef = tableDef();
     $scope.classes = [{
       num: null,
       count: null,
       bytes: null,
       deltaBytes: null,
       deltaCount: null,
-      name: 'Click reload to read class histogram'
+      name: 'Click refresh to read class histogram'
     }];
+    $scope.tableConfig = {
+      selectionMatchProp: 'name',
+      showCheckboxes: false
+    };
+
+    $scope.tableDtOptions = {
+      order: [[0, "asc"]]
+    };
+
+    $scope.tableColumns = [
+      {
+        header: '#',
+        itemField: 'num'
+      },
+      {
+        header: 'Instances',
+        itemField: 'count'
+      },
+      {
+        header: '<delta',
+        itemField: 'deltaCount'
+      },
+      {
+        header: 'Bytes',
+        itemField: 'bytes'
+      },
+      {
+        header: '<delta',
+        itemField: 'deltaBytes'
+      },
+      {
+        header: 'Class name',
+        itemField: 'name'
+      }
+    ];
+
+    $scope.tableItems = null;
+
     $scope.loading = false;
     $scope.lastLoaded = 'n/a';
     $scope.pid = findMyPid($scope.pageTitle);
-
 
     $scope.loadClassStats = () => {
       $scope.loading = true;
@@ -109,53 +148,6 @@ module Diagnostics {
       } else {
         return newValue;
       }
-    }
-
-    function numberColumnTemplate(field) {
-      return '<div class="rightAlignedNumber ngCellText" title="{{row.entity.' + field + '}}">{{row.entity.' + field + '}}</div>';
-    }
-
-    function tableDef() {
-      return {
-        selectedItems: [],
-        data: 'classes',
-        showFilter: true,
-        filterOptions: {
-          filterText: ''
-        },
-        showSelectionCheckbox: false,
-        enableRowClickSelection: true,
-        multiSelect: false,
-        primaryKeyFn: function (entity, idx) {
-          return entity.num;
-        },
-        columnDefs: [
-          {
-            field: 'num',
-            displayName: '#',
-          }, {
-            field: 'count',
-            displayName: 'Instances',
-            cellTemplate: numberColumnTemplate('count')
-          }, {
-            field: 'deltaCount',
-            displayName: '<delta',
-            cellTemplate: numberColumnTemplate('deltaCount')
-          }, {
-            field: 'bytes',
-            displayName: 'Bytes',
-            cellTemplate: numberColumnTemplate('bytes')
-          }, {
-            field: 'deltaBytes',
-            displayName: '<delta',
-            cellTemplate: numberColumnTemplate('deltaBytes')
-          }, {
-            field: 'name',
-            displayName: 'Class name',
-            cellTemplate: '<span ng-switch on="!!row.entity.sourceReference"><hawtio-open-ide ng-switch-when="true" file-name="{{row.entity.sourceReference.fileName}}" class-name="{{row.entity.sourceReference.className}}"></hawtio-open-ide> {{row.entity.name}}</span>'
-          }]
-      };
-
     }
 
     function translateJniName(name) {

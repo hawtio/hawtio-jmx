@@ -1,13 +1,10 @@
 <div class="jvm-nav-main">
   <ul class="nav nav-tabs connected"
       ng-controller="Diagnostics.NavController">
-    <!--<li ng-repeat="link in breadcrumbs" ng-show="isValid(link)" ng-class='{active : isActive(link.href)}'>-->
-    <!--<a ng-href="{{link.href}}{{hash}}" ng-bind-html-unsafe="link.content"></a>-->
-    <!--</li>-->
     <li ng-class='{active : isActive("/diagnostics/jfr")}'
         ng-show="isJfrEnabled">
       <a ng-href="#"
-         ng-click="goto('/diagnostics/jfr')"><i class="pficon-maintenance"></i> Flight Recorder</a>
+         ng-click="goto('/diagnostics/jfr')"><i class="pficon-history"></i> Flight Recorder</a>
     </li>
     <li ng-class='{active : isActive("/diagnostics/heap")}'
         ng-show="isHeapEnabled">

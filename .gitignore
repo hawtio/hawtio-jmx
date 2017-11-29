@@ -12,3 +12,4 @@ libs/
 logs
 *.log
 npm-debug.log*
+*.iml
