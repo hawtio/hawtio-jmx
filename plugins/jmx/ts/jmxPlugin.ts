@@ -3,6 +3,7 @@
 /// <reference path="widgetRepository.ts"/>
 /// <reference path="workspace.ts"/>
 /// <reference path="common/common.module.ts"/>
+/// <reference path="attributes/attributes.module.ts"/>
 /// <reference path="operations/operations.module.ts"/>
 /// <reference path="tree/tree.module.ts"/>
 
@@ -11,15 +12,16 @@ namespace Jmx {
   export var _module = angular.module(pluginName, [
     'angularResizable',
     commonModule,
+    attributesModule,
     operationsModule,
     treeModule
   ]);
 
-  _module.config(['HawtioNavBuilderProvider', "$routeProvider", (builder:HawtioMainNav.BuilderFactory, $routeProvider) => {
+  _module.config(['HawtioNavBuilderProvider', "$routeProvider", (builder: HawtioMainNav.BuilderFactory, $routeProvider) => {
 
     $routeProvider
       .when('/jmx', { redirectTo: '/jmx/attributes' })
-      .when('/jmx/attributes', {templateUrl: UrlHelpers.join(templatePath, 'attributes.html')})
+      .when('/jmx/attributes', {templateUrl: UrlHelpers.join(templatePath, 'attributes/attributes.html')})
       .when('/jmx/operations', {template: '<operations></operations>'})
       .when('/jmx/charts', {templateUrl: UrlHelpers.join(templatePath, 'charts.html')})
       .when('/jmx/chartEdit', {templateUrl: UrlHelpers.join(templatePath, 'chartEdit.html')})
@@ -38,7 +40,7 @@ namespace Jmx {
     jmxTreeLazyLoadRegistry,
     $compile: ng.ICompileService,
     $templateCache: ng.ITemplateCacheService,
-    localStorage: WindowLocalStorage,
+    localStorage: Storage,
     jolokia: Jolokia.IJolokia,
     jolokiaStatus: JVM.JolokiaStatus,
     $rootScope,
@@ -48,12 +50,6 @@ namespace Jmx {
     workspace.loadTree();
     return workspace;
   }]);
-
-  _module.factory('rbacACLMBean', function() {
-    return {
-      then: function() {}
-    }
-  });
 
   _module.constant('layoutTree', 'plugins/jmx/html/layoutTree.html');
 

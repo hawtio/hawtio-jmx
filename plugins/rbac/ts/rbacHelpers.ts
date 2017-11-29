@@ -11,9 +11,7 @@ namespace RBAC {
       mbeans[tree.objectName] = tree;
     }
     if (tree.children && tree.children.length > 0) {
-      tree.children.forEach((child) => {
-        flattenMBeanTree(mbeans, child);
-      });
+      tree.children.forEach((child) => flattenMBeanTree(mbeans, child));
     }
   }
 

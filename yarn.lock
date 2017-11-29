@@ -102,9 +102,9 @@
     lodash "~4.17.4"
     marked "~0.3.6"
 
-"@hawtio/utilities@~3.0.0", "@hawtio/utilities@~3.0.8":
-  version "3.0.15"
-  resolved "https://registry.yarnpkg.com/@hawtio/utilities/-/utilities-3.0.15.tgz#5897235705bed897fc1d7aec9001b0b9822ef86b"
+"@hawtio/utilities@^3.0.17", "@hawtio/utilities@~3.0.8":
+  version "3.0.17"
+  resolved "https://registry.yarnpkg.com/@hawtio/utilities/-/utilities-3.0.17.tgz#df1d558435597a8ab05c25b9788e7cf6a27ad356"
   dependencies:
     "@hawtio/core" "~3.0.9"
     "@hawtio/core-dts" "~3.0.11"

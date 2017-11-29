@@ -209,7 +209,7 @@ namespace JVM {
 
   _module.factory('jolokiaParams', ["jolokiaUrl", "localStorage", (
     jolokiaUrl: string,
-    localStorage: WindowLocalStorage) => {
+    localStorage: Storage) => {
     let answer = {
       canonicalNaming: false,
       ignoreErrors: true,
@@ -248,38 +248,42 @@ namespace JVM {
   }
 
   _module.factory('jolokia', ["$location", "localStorage", "jolokiaStatus", "$rootScope", "userDetails",
-    "jolokiaParams", "jolokiaUrl", "ConnectOptions", "HawtioDashboard", "$uibModal", "$window", (
+    "jolokiaParams", "jolokiaUrl", "$uibModal", "$window", (
       $location: ng.ILocationService,
-      localStorage: WindowLocalStorage,
+      localStorage: Storage,
       jolokiaStatus: JolokiaStatus,
       $rootScope,
       userDetails: Core.UserDetails,
       jolokiaParams,
       jolokiaUrl: string,
-      connectionOptions,
-      dash,
       $uibModal,
       $window): Jolokia.IJolokia => {
 
-      let jolokia = null;
+      let jolokia: Jolokia.IJolokia = null;
 
       if (jolokiaUrl) {
-        $.ajaxSetup({
-          beforeSend: getBeforeSend()
-        });
+        $.ajaxSetup({ beforeSend: getBeforeSend() });
+
+        Core.executePostLoginTasks();
 
         let modal = null;
         if (jolokiaParams['ajaxError'] == null) {
           jolokiaParams['ajaxError'] = (xhr: JQueryXHR, textStatus: string, error: string) => {
             if (xhr.status === 401 || xhr.status === 403) {
+              // logged out
               $window.location.href = 'auth/logout';
+              Core.executePreLogoutTasks(() => {
+                Core.executePostLogoutTasks(() => {
+                  log.debug("Executing logout callback after successfully executed postLogoutTasks");
+                });
+              });
             } else {
               jolokiaStatus.xhr = xhr;
             }
           };
         }
 
-        jolokia = new Jolokia(jolokiaParams) as any;
+        jolokia = new Jolokia(jolokiaParams);
         jolokia.stop();
 
         if ('updateRate' in localStorage) {
@@ -305,12 +309,12 @@ namespace JVM {
           version: (opts?) => null as Jolokia.IVersion,
           execute: (mbean, operation, ...args) => null,
           start: (period) => {
-            jolokia.running = true;
+            (jolokia as DummyJolokia).running = true;
           },
           stop: () => {
-            jolokia.running = false;
+            (jolokia as DummyJolokia).running = false;
           },
-          isRunning: () => jolokia.running,
+          isRunning: () => (jolokia as DummyJolokia).running,
           jobs: () => []
         };
       }

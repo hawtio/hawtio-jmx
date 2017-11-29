@@ -6,8 +6,8 @@ namespace Jmx {
 
   export class OperationFormController {
 
-    operation;
-    formFields;
+    operation: Operation;
+    formFields: { label: string, type: string, helpText: string, value: any }[];
     editorMode = 'text';
     operationFailed: boolean;
     operationResult: string;
@@ -83,10 +83,6 @@ namespace Jmx {
           this.operationResult = error.trim();
           this.isExecuting = false;
         });
-    }
-
-    cancel() {
-      this.operation.isExpanded = false;
     }
 
   }

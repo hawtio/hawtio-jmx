@@ -56,7 +56,7 @@ namespace Jmx {
    * @return {Workspace}
    */
   export function createRemoteWorkspace(remoteJolokia: Jolokia.IJolokia, remoteJolokiaStatus: JVM.JolokiaStatus,
-    $location: ng.ILocationService, localStorage: WindowLocalStorage, $rootScope: ng.IRootScopeService = null,
+    $location: ng.ILocationService, localStorage: Storage, $rootScope: ng.IRootScopeService = null,
     $compile: ng.ICompileService = null, $templateCache: ng.ITemplateCacheService = null,
     HawtioNav: HawtioMainNav.Registry = null): Workspace {
     // lets create a child workspace object for the remote container
