@@ -7,8 +7,28 @@ namespace Jmx {
     constructor(
       private $q: ng.IQService,
       private jolokia: Jolokia.IJolokia,
+      private jolokiaUrl: string,
       private rbacACLMBean: ng.IPromise<string>) {
       'ngInject';
+    }
+
+    registerJolokia(scope: any, request: any, callback: any): void {
+      Core.register(this.jolokia, scope, request, callback);
+    }
+
+    unregisterJolokia(scope: any): void {
+      Core.unregister(this.jolokia, scope);
+    }
+
+    listMBean(mbeanName: string, callback: any): void {
+      this.jolokia.request(
+        {
+          type: "LIST",
+          method: "post",
+          path: Core.escapeMBeanPath(mbeanName),
+          ignoreErrors: true
+        },
+        callback);
     }
 
     canInvoke(mbeanName: string, attribute: string, type: string): ng.IPromise<boolean> {
@@ -41,6 +61,25 @@ namespace Jmx {
           );
         });
       });
+    }
+
+    buildJolokiaUrl(mbeanName: string, attribute: string): string {
+      return `${this.jolokiaUrl}/read/${Core.escapeMBean(mbeanName)}/${attribute}`;
+    }
+
+    update(mbeanName: string, attribute: string, value: any): void {
+      this.jolokia.setAttribute(mbeanName, attribute, value,
+        Core.onSuccess(
+          (response) => {
+            Core.notification("success", `Updated attribute ${attribute}`);
+          },
+          {
+            error: (response) => {
+              log.debug("Failed to update attribute", response);
+              Core.notification("danger", `Failed to update attribute ${attribute}`);
+            }
+          }
+        ));
     }
 
   }

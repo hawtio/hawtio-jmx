@@ -43,8 +43,6 @@ namespace Jmx {
     $element,
     $location: ng.ILocationService,
     workspace: Workspace,
-    jolokia: Jolokia.IJolokia,
-    jolokiaUrl: string,
     jmxWidgets,
     jmxWidgetTypes,
     $templateCache: ng.ITemplateCacheService,
@@ -165,22 +163,12 @@ namespace Jmx {
       // clear entity
       $scope.entity = {};
 
-      // TODO: check if value changed
-
       // update the attribute on the mbean
       let mbean = workspace.getSelectedMBeanName();
       if (!mbean) {
         return;
       }
-      jolokia.setAttribute(mbean, key, value, Core.onSuccess(
-        (response) => {
-          Core.notification("success", `Updated attribute ${key}`);
-        },
-        {
-          error: (response) =>
-            Core.notification("danger", `Failed to update attribute ${key}`)
-        }
-      ));
+      attributesService.update(mbean, key, value);
     };
 
     function onViewAttribute(
@@ -205,7 +193,7 @@ namespace Jmx {
         key: row.key,
         description: row.attrDesc,
         type: row.type,
-        jolokia: buildJolokiaUrl(row.key),
+        jolokia: attributesService.buildJolokiaUrl(workspace.getSelectedMBeanName(), row.key),
         rw: rw
       };
 
@@ -230,11 +218,6 @@ namespace Jmx {
       }
 
       $scope.showAttributeDialog = true;
-    }
-
-    function buildJolokiaUrl(attribute): string {
-      let mbeanName = Core.escapeMBean(workspace.getSelectedMBeanName());
-      return `${jolokiaUrl}/read/${mbeanName}/${attribute}`;
     }
 
     function numberOfRows(row: { summary: string }): number {
@@ -312,37 +295,13 @@ namespace Jmx {
       }
     }
 
-    $scope.invokeSelectedMBeans = (operationName, completeFunction: () => any = null) => {
-      let queries = [];
-      angular.forEach($scope.selectedItems || [], (item) => {
-        let mbean = item["_id"];
-        if (mbean) {
-          let opName = operationName;
-          if (angular.isFunction(operationName)) {
-            opName = operationName(item);
-          }
-          queries.push({ type: "exec", operation: opName, mbean: mbean });
-        }
-      });
-      if (queries.length) {
-        let callback = () => {
-          if (completeFunction) {
-            completeFunction();
-          } else {
-            operationComplete();
-          }
-        };
-        jolokia.request(queries, Core.onSuccess(callback, { error: callback }));
-      }
-    };
-
     function operationComplete(): void {
       updateTableContents();
     }
 
     function updateTableContents(): void {
       // lets clear any previous queries just in case!
-      Core.unregister(jolokia, $scope);
+      attributesService.unregisterJolokia($scope);
 
       $scope.gridData = [];
       $scope.mbeanIndex = null;
@@ -362,17 +321,10 @@ namespace Jmx {
         }
 
         if (mbean) {
-          jolokia.request(
-            {
-              type: "LIST",
-              method: "post",
-              path: Core.escapeMBeanPath(mbean),
-              ignoreErrors: true
-            },
-            Core.onSuccess((response) => {
-              $scope.attributesInfoCache = response.value;
-              log.debug("Updated attributes info cache for mbean", mbean, $scope.attributesInfoCache);
-            }));
+          attributesService.listMBean(mbean, Core.onSuccess((response) => {
+            $scope.attributesInfoCache = response.value;
+            log.debug("Updated attributes info cache for mbean", mbean, $scope.attributesInfoCache);
+          }));
         }
       }
 
@@ -417,7 +369,7 @@ namespace Jmx {
       }
       if (request) {
         $scope.request = request;
-        Core.register(jolokia, $scope, request, Core.onSuccess(render));
+        attributesService.registerJolokia($scope, request, Core.onSuccess(render));
       } else if (node) {
         if (node.key !== $scope.lastKey) {
           $scope.gridOptions.columnDefs = FOLDERS_COLUMN_DEFS;
