@@ -1,13 +1,9 @@
-/**
- * @module Diagnostics
- * @main Diagnostics
- */
 /// <reference path="diagnosticHelpers.ts"/>
-module Diagnostics {
+namespace Diagnostics {
 
-  export var rootPath = 'plugins/diagnostics';
-  export var templatePath = rootPath + '/html/';
-  export var pluginName = 'diagnostics';
+  let rootPath = 'plugins/diagnostics';
+  let templatePath = rootPath + '/html/';
+  let pluginName = 'diagnostics';
 
   export var _module = angular.module(pluginName, ['datatable', 'hawtio-forms']);
 

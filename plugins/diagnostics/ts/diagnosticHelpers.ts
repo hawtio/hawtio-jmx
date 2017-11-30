@@ -1,12 +1,7 @@
 /// <reference path="../../jmx/ts/folder.ts"/>
 /// <reference path="../../jmx/ts/workspace.ts"/>
-module Diagnostics {
+namespace Diagnostics {
   export var log: Logging.Logger = Logger.get("Diagnostics");
-
-  export var connectControllerKey = "jvmConnectSettings";
-  export var connectionSettingsKey = Core.connectionSettingsKey;
-
-  export var logoPath = 'img/icons/jvm/';
 
 
   /**

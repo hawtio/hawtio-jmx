@@ -1,9 +1,6 @@
-/**
- * @module Diagnostics
- */
 /// <reference path="./diagnosticsPlugin.ts"/>
 /// <reference path="./diagnosticHelpers.ts"/>
-module Diagnostics {
+namespace Diagnostics {
 
   interface ClassStats {
     num: string;
@@ -78,8 +75,6 @@ module Diagnostics {
         itemField: 'name'
       }
     ];
-
-    $scope.tableItems = null;
 
     $scope.loading = false;
     $scope.lastLoaded = 'n/a';

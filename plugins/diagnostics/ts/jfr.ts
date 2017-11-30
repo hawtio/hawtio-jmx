@@ -1,8 +1,5 @@
-/**
- * @module Diagnostics
- */
 /// <reference path="diagnosticsPlugin.ts"/>
-module Diagnostics {
+namespace Diagnostics {
 
   function splitResponse(response: string) {
     return response.match(/Dumped recording "(.+)",(.+) written to:\r?\n\r?\n(.+)/);
@@ -67,7 +64,7 @@ module Diagnostics {
     jcmd: string;
   }
 
-  export var JfrController = _module.controller("Diagnostics.JfrController", ["$scope", "$location", "workspace", "jolokia", ($scope: JfrControllerScope, $location: ng.ILocationService, workspace: Jmx.Workspace, jolokia: Jolokia.IJolokia) => {
+  let JfrController = _module.controller("Diagnostics.JfrController", ["$scope", "$location", "workspace", "jolokia", ($scope: JfrControllerScope, $location: ng.ILocationService, workspace: Jmx.Workspace, jolokia: Jolokia.IJolokia) => {
 
     function render(response) {
 

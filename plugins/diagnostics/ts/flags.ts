@@ -1,8 +1,5 @@
-/**
- * @module Diagnostics
- */
 /// <reference path="./diagnosticsPlugin.ts"/>
-module Diagnostics {
+namespace Diagnostics {
     
     interface JvmFlag  {
         name:string;

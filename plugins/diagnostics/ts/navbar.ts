@@ -1,8 +1,5 @@
-/**
- * @module Diagnostics
- */
 /// <reference path="./diagnosticsPlugin.ts"/>
-module Diagnostics {
+namespace Diagnostics {
 
   _module.controller("Diagnostics.NavController", ["$scope", "$location", "workspace", ($scope, $location, workspace) => {
 
