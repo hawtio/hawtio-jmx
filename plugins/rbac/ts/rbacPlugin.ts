@@ -5,12 +5,14 @@
 /// <reference path="../../jmx/ts/workspace.ts"/>
 /// <reference path="../../jvm/ts/jolokiaService.ts"/>
 /// <reference path="models.ts"/>
-/// <reference path="rbacHelpers.ts"/>
 /// <reference path="rbac.directive.ts"/>
 /// <reference path="rbac.service.ts"/>
 /// <reference path="jmxTreeProcessor.ts"/>
 
 namespace RBAC {
+
+  export const pluginName: string = "hawtio-rbac";
+  export const log: Logging.Logger = Logger.get(pluginName);
 
   export const _module = angular
     .module(pluginName, [])
