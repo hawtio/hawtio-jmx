@@ -1,0 +1,24 @@
+<div ng-controller="Diagnostics.FlagsController">
+  <h1>Diagnostic Options</h1>
+  <div class="row toolbar-pf">
+    <div class="col-sm-12">
+      <form class="toolbar-pf-actions">
+        <div class="form-group">
+          <input type="text"
+                 class="form-control"
+                 ng-model="tableDef.filterOptions.filterText"
+                 placeholder="Filter..."
+                 autocomplete="off">
+        </div>
+        <div class="form-group">
+          <i class="pficon-close clickable"
+             title="Clear filter"
+             ng-click="tableDef.filterOptions.filterText = ''"></i>
+        </div>
+      </form>
+      <table class="table table-condensed table-striped"
+             hawtio-simple-table="tableDef"></table>
+
+    </div>
+  </div>
+</div>

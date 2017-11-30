@@ -1,0 +1,43 @@
+<div ng-controller="Diagnostics.HeapController" class="table-view">
+  <h1>Class Histogram</h1>
+  <div class="alert alert-warning alert-dismissable">
+    <button type="button"
+            class="close"
+            data-dismiss="alert"
+            aria-hidden="true"><span class="pficon pficon-close"></span></button>
+    <span class="pficon pficon-warning-triangle-o"></span>
+    <strong>Please note:</strong> Retrieving class histogram may be very
+    expensive, depending on the size and layout of the heap.
+    Equivalent JCMD Command line: <code>jcmd {{pid}} GC.class_histogram</code>
+  </div>
+  <div class="row toolbar-pf">
+    <div class="col-sm-12">
+      <form class="toolbar-pf-actions">
+        <div class="form-group">
+          <button class="btn btn-default"
+                  ng-click="loadClassStats()"
+                  title="Refresh"><i class="fa fa-refresh"></i> Refresh
+          </button>
+        </div>
+        <div class="form-group">
+          Last loaded: {{lastLoaded | date: 'yyyy-MM-dd hh:mm:ss'}}
+        </div>
+
+      </form>
+      <pf-table-view ng-if="!loading" class="threads-table" config="tableConfig" dt-options="tableDtOptions"
+                     colummns="tableColumns" items="classes" >
+      </pf-table-view>
+
+      <div ng-if="loading">
+        <div class="spinner spinner-lg loading-page"></div>
+        <div class="row">
+          <div class="col-sm-12">
+            <div class="loading-message">
+              Please wait, loading classes ...
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
