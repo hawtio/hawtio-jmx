@@ -5,14 +5,14 @@ namespace Jmx {
     args: OperationArgument[];
     description: string;
     name: string;
-    simpleName: string;
+    readableName: string;
     canInvoke: boolean;
 
     constructor(method: string, args: OperationArgument[], description: string) {
       this.args = args;
       this.description = description;
       this.name = Operation.buildName(method, args);
-      this.simpleName = Operation.buildSimpleName(this.name);
+      this.readableName = Operation.buildReadableName(this.name);
       this.canInvoke = true;
     }
 
@@ -20,22 +20,20 @@ namespace Jmx {
       return method + "(" + args.map(arg => arg.type).join() + ")";
     }
 
-    private static buildSimpleName(name: string) {
+    private static buildReadableName(name: string) {
       let startParamsIndex = name.indexOf('(') + 1;
       let endParamsIndex = name.indexOf(')');
       if (startParamsIndex === endParamsIndex) {
         return name;
-      } else {
-        let paramsStr = name.substring(startParamsIndex, endParamsIndex);
-        let params = paramsStr.split(',');
-        let simpleParams = params.map(param => {
-          let lastDotIndex = param.lastIndexOf('.');
-          return lastDotIndex > 0 ? param.substr(lastDotIndex + 1) : param;
-        });
-        let simpleParamsStr = simpleParams.join(', ');
-        let simpleOperationName = name.replace(paramsStr, simpleParamsStr);
-        return simpleOperationName;
       }
+      let paramsStr = name.substring(startParamsIndex, endParamsIndex);
+      let params = paramsStr.split(',');
+      let readableParams = params.map(param => {
+        let lastDotIndex = param.lastIndexOf('.');
+        return lastDotIndex > 0 ? param.substr(lastDotIndex + 1) : param;
+      });
+      let readableParamsStr = readableParams.join(', ');
+      return name.replace(paramsStr, readableParamsStr);
     }
   }
 

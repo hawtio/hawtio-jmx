@@ -74,10 +74,7 @@ namespace RBAC {
           let mbean = response.request.arguments[0];
           if (mbean && _.isString(mbean)) {
             mbeans[mbean]['canInvoke'] = response.value;
-            let toAdd: string = "cant-invoke";
-            if (response.value) {
-              toAdd = "can-invoke";
-            }
+            let toAdd = response.value ? "can-invoke" : "cant-invoke";
             mbeans[mbean]['addClass'] = stripClasses(mbeans[mbean]['addClass']);
             mbeans[mbean]['addClass'] = addClass(mbeans[mbean]['addClass'], toAdd);
           } else {

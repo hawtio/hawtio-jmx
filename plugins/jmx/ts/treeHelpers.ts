@@ -92,7 +92,7 @@ namespace Jmx {
   export function enableTree($scope, $location: ng.ILocationService, workspace: Workspace, treeElement, children: Array<NodeSelection>) {
     treeElement.treeview({
       lazyLoad: function (node: Folder, addNodes: (nodes: NodeSelection[]) => void) {
-        const plugin = <(workspace: Workspace, folder: Folder, onComplete: (children: NodeSelection[]) => void) => void>Jmx.findLazyLoadingFunction(workspace, node);
+        const plugin = Jmx.findLazyLoadingFunction(workspace, node) as (workspace: Workspace, folder: Folder, onComplete: (children: NodeSelection[]) => void) => void;
         if (plugin) {
           log.debug('Lazy loading folder ', node.text);
           plugin(workspace, node, children => addNodes(children));
