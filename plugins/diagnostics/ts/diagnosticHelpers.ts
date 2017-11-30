@@ -1,7 +1,7 @@
 /// <reference path="../../jmx/ts/folder.ts"/>
 /// <reference path="../../jmx/ts/workspace.ts"/>
 namespace Diagnostics {
-  export var log: Logging.Logger = Logger.get("Diagnostics");
+  export const log: Logging.Logger = Logger.get("Diagnostics");
 
 
   /**

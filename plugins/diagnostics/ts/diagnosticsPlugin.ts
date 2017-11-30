@@ -5,7 +5,7 @@ namespace Diagnostics {
   let templatePath = rootPath + '/html/';
   let pluginName = 'diagnostics';
 
-  export var _module = angular.module(pluginName, ['datatable', 'hawtio-forms']);
+  export const _module = angular.module(pluginName, ['datatable', 'hawtio-forms']);
 
   _module.config(["$routeProvider", ($routeProvider) => {
     $routeProvider.when('/diagnostics/jfr', {templateUrl: templatePath + 'jfr.html'}).when('/diagnostics/heap', {templateUrl: templatePath + 'heap.html'}).when('/diagnostics/flags', {templateUrl: templatePath + 'flags.html'});
