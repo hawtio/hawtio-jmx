@@ -3846,6 +3846,16 @@ function cubism_ruleLeft(i) {
 
 
 
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = Object.setPrototypeOf ||
+        ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+        function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+    return function (d, b) {
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
 var JVM;
 (function (JVM) {
     JVM.rootPath = 'plugins/jvm';
@@ -4270,10 +4280,636 @@ var Jmx;
     }());
     Jmx.Folder = Folder;
 })(Jmx || (Jmx = {}));
+/// <reference path="../../../jmx/ts/workspace.ts"/>
+var JVM;
+(function (JVM) {
+    ConnectController.$inject = ["$scope", "$location", "localStorage", "workspace", "$uibModal", "connectService"];
+    function ConnectController($scope, $location, localStorage, workspace, $uibModal, connectService) {
+        'ngInject';
+        var VALIDATION_ERROR_REQUIRED = 'Please fill out this field';
+        var modalInstance;
+        $scope.config = {
+            selectionMatchProp: 'name',
+            selectItems: false,
+            showSelectBox: false
+        };
+        $scope.actionButtons = [
+            {
+                name: 'Connect',
+                actionFn: connect
+            }
+        ];
+        $scope.actionDropDown = [
+            {
+                name: 'Edit',
+                actionFn: showEditConnectionModal
+            },
+            {
+                name: 'Delete',
+                actionFn: deleteConnection
+            }
+        ];
+        function initModel(connection, originalConnection) {
+            if (originalConnection === void 0) { originalConnection = null; }
+            $scope.model = {
+                connection: connection,
+                errors: {},
+                test: { ok: false, message: null },
+                originalConnection: originalConnection,
+                isAddAction: function () {
+                    return this.originalConnection === null;
+                }
+            };
+        }
+        $scope.showAddConnectionModal = function () {
+            initModel(Core.createConnectOptions({
+                host: 'localhost',
+                path: 'jolokia',
+                port: 8181
+            }));
+            modalInstance = $uibModal.open({
+                templateUrl: 'plugins/jvm/html/connect-edit.html',
+                scope: $scope
+            });
+        };
+        function showEditConnectionModal(action, connection) {
+            var clone = angular.extend({}, connection);
+            initModel(clone, connection);
+            modalInstance = $uibModal.open({
+                templateUrl: 'plugins/jvm/html/connect-edit.html',
+                scope: $scope
+            });
+        }
+        ;
+        $scope.saveConnection = function (model) {
+            var connection = model.connection;
+            var originalConnection = model.originalConnection;
+            var errors = validateConnectionForm(connection);
+            if (Object.keys(errors).length === 0) {
+                // connection is secure if username has a value
+                connection.secure = connection.userName !== null && connection.userName.trim() !== '';
+                // save connection without username and password values
+                connection.userName = '';
+                connection.password = '';
+                if (model.isAddAction()) {
+                    $scope.connections.unshift(connection);
+                }
+                else {
+                    angular.extend(originalConnection, connection);
+                }
+                Core.saveConnections($scope.connections);
+                modalInstance.close();
+            }
+            else {
+                model.errors = errors;
+            }
+        };
+        $scope.testConnection = function (connection) {
+            connectService.testConnection(connection)
+                .then(function (successMesssage) {
+                $scope.model.test.ok = true;
+                $scope.model.test.message = successMesssage;
+            })
+                .catch(function (errorMesssage) {
+                $scope.model.test.ok = false;
+                $scope.model.test.message = errorMesssage;
+            });
+        };
+        $scope.resetTestConnection = function () {
+            $scope.model.test.ok = false;
+            $scope.model.test.message = null;
+        };
+        function deleteConnection(action, connection) {
+            $uibModal.open({
+                templateUrl: 'plugins/jvm/html/connect-delete-warning.html'
+            })
+                .result.then(function () {
+                $scope.connections.splice($scope.connections.indexOf(connection), 1);
+                Core.saveConnections($scope.connections);
+            });
+        }
+        ;
+        function validateConnectionForm(connection) {
+            var errors = {};
+            ['name', 'host'].forEach(function (fieldName) {
+                if (connection[fieldName] === null || connection[fieldName].trim().length === 0) {
+                    errors[fieldName] = VALIDATION_ERROR_REQUIRED;
+                }
+            });
+            return errors;
+        }
+        function connect(action, connection) {
+            if (connection.secure) {
+                $scope.connection = angular.extend({}, connection);
+                modalInstance = $uibModal.open({
+                    templateUrl: 'plugins/jvm/html/connect-login.html',
+                    scope: $scope
+                });
+            }
+            else {
+                connectService.connect(connection);
+            }
+        }
+        $scope.login = function (connection) {
+            if ($scope.credentialsOk) {
+                connectService.connect(connection);
+                modalInstance.close();
+            }
+            else {
+                $scope.showErrorMessage = true;
+            }
+        };
+        $scope.checkCredentials = function (connection) {
+            connectService.testConnection(connection)
+                .then(function (successMesssage) {
+                $scope.credentialsOk = true;
+            })
+                .catch(function (errorMesssage) {
+                $scope.credentialsOk = false;
+            });
+        };
+        var autoconnect = $location.search();
+        if (typeof autoconnect != 'undefined' && typeof autoconnect.name != 'undefined') {
+            var conOpts = Core.createConnectOptions({
+                scheme: autoconnect.scheme || 'http',
+                host: autoconnect.host,
+                path: autoconnect.path,
+                port: autoconnect.port,
+                userName: autoconnect.userName,
+                password: autoconnect.password,
+                name: autoconnect.name
+            });
+            $scope.connect(conOpts);
+            window.close();
+        }
+        $scope.connections = Core.loadConnections();
+    }
+    JVM.ConnectController = ConnectController;
+})(JVM || (JVM = {}));
+/// <reference path="../jvmHelpers.ts"/>
+var JVM;
+(function (JVM) {
+    var ConnectService = /** @class */ (function () {
+        ConnectService.$inject = ["$q", "$window"];
+        function ConnectService($q, $window) {
+            'ngInject';
+            this.$q = $q;
+            this.$window = $window;
+        }
+        ConnectService.prototype.testConnection = function (connection) {
+            return this.$q(function (resolve, reject) {
+                new Jolokia({
+                    url: Core.createServerConnectionUrl(connection),
+                    method: 'post',
+                    mimeType: 'application/json',
+                    username: connection.userName ? connection.userName.toString() : '',
+                    password: connection.password ? connection.password.toString() : '',
+                }).request({
+                    type: 'version'
+                }, {
+                    success: function (response) {
+                        resolve('Connected successfully');
+                    },
+                    error: function (response) {
+                        reject('Connection failed');
+                    },
+                    ajaxError: function (response) {
+                        reject(response.status === 403 ? 'Incorrect username or password' : 'Connection failed');
+                    }
+                });
+            });
+        };
+        ;
+        ConnectService.prototype.connect = function (connection) {
+            JVM.log.debug("Connecting with options: ", StringHelpers.toString(connection));
+            var url = URI('').search({ con: connection.name }).toString();
+            var newWindow = this.$window.open(url);
+            newWindow['credentials'] = {
+                username: connection.userName,
+                password: connection.password
+            };
+        };
+        return ConnectService;
+    }());
+    JVM.ConnectService = ConnectService;
+})(JVM || (JVM = {}));
+var JVM;
+(function (JVM) {
+    function ConnectionUrlFilter() {
+        return function (connection) {
+            var url = connection.scheme + "://" + connection.host;
+            if (connection.port) {
+                url += ":" + connection.port;
+            }
+            if (connection.path) {
+                url += "/" + connection.path;
+            }
+            return url;
+        };
+    }
+    JVM.ConnectionUrlFilter = ConnectionUrlFilter;
+})(JVM || (JVM = {}));
+/// <reference path="connect.controller.ts"/>
+/// <reference path="connect.service.ts"/>
+/// <reference path="connection-url.filter.ts"/>
+var JVM;
+(function (JVM) {
+    JVM.ConnectModule = angular
+        .module('hawtio-jvm-connect', [])
+        .controller('ConnectController', JVM.ConnectController)
+        .service('connectService', JVM.ConnectService)
+        .filter('connectionUrl', JVM.ConnectionUrlFilter)
+        .name;
+})(JVM || (JVM = {}));
+/// <reference path="connect/connect.module.ts"/>
+var JVM;
+(function (JVM) {
+    JVM.windowJolokia = undefined;
+    JVM._module = angular.module(JVM.pluginName, [JVM.ConnectModule]);
+    JVM._module.config(["$provide", "$routeProvider", function ($provide, $routeProvider) {
+            $routeProvider
+                .when('/jvm', { redirectTo: '/jvm/connect' })
+                .when('/jvm/welcome', { templateUrl: UrlHelpers.join(JVM.templatePath, 'welcome.html') })
+                .when('/jvm/discover', { templateUrl: UrlHelpers.join(JVM.templatePath, 'discover.html') })
+                .when('/jvm/connect', { templateUrl: UrlHelpers.join(JVM.templatePath, 'connect.html') })
+                .when('/jvm/local', { templateUrl: UrlHelpers.join(JVM.templatePath, 'local.html') });
+        }]);
+    JVM._module.constant('mbeanName', 'hawtio:type=JVMList');
+    JVM._module.run(["HawtioNav", "$location", "workspace", "viewRegistry", "layoutFull", "helpRegistry", "preferencesRegistry", "ConnectOptions", "locationChangeStartTasks", "HawtioDashboard", "HawtioExtension", "$templateCache", "$compile", function (nav, $location, workspace, viewRegistry, layoutFull, helpRegistry, preferencesRegistry, ConnectOptions, locationChangeStartTasks, dash, extensions, $templateCache, $compile) {
+            viewRegistry['jvm'] = "plugins/jvm/html/layoutConnect.html";
+            extensions.add('hawtio-header', function ($scope) {
+                var template = $templateCache.get(UrlHelpers.join(JVM.templatePath, 'navbarHeaderExtension.html'));
+                return $compile(template)($scope);
+            });
+            if (!dash.inDashboard) {
+                // ensure that if the connection parameter is present, that we keep it
+                locationChangeStartTasks.addTask('ConParam', function ($event, newUrl, oldUrl) {
+                    // we can't execute until the app is initialized...
+                    if (!HawtioCore.injector) {
+                        return;
+                    }
+                    if (!ConnectOptions || !ConnectOptions.name || !newUrl) {
+                        return;
+                    }
+                    var newQuery = new URI(newUrl).query(true);
+                    if (!newQuery.con) {
+                        newQuery['con'] = ConnectOptions.name;
+                        $location.search(newQuery);
+                    }
+                });
+            }
+            var builder = nav.builder();
+            var tab = builder.id('jvm')
+                .href(function () { return '/jvm'; })
+                .title(function () { return 'Connect'; })
+                .isValid(function () { return ConnectOptions == null || ConnectOptions.name == null; })
+                .build();
+            nav.add(tab);
+            helpRegistry.addUserDoc('jvm', 'plugins/jvm/doc/help.md');
+            preferencesRegistry.addTab("Connect", 'plugins/jvm/html/reset.html');
+            preferencesRegistry.addTab("Jolokia", "plugins/jvm/html/jolokiaPreferences.html");
+        }]);
+    hawtioPluginLoader.addModule(JVM.pluginName);
+})(JVM || (JVM = {}));
+/// <reference path="jvmPlugin.ts"/>
+var JVM;
+(function (JVM) {
+    var JolokiaListMethod;
+    (function (JolokiaListMethod) {
+        // constant meaning that general LIST+EXEC Jolokia operations should be used
+        JolokiaListMethod["LIST_GENERAL"] = "list";
+        // constant meaning that optimized hawtio:type=security,name=RBACRegistry may be used
+        JolokiaListMethod["LIST_WITH_RBAC"] = "list_rbac";
+        // when we get this status, we have to try checking again after logging in
+        JolokiaListMethod["LIST_CANT_DETERMINE"] = "cant_determine";
+    })(JolokiaListMethod = JVM.JolokiaListMethod || (JVM.JolokiaListMethod = {}));
+    var JOLOKIA_RBAC_LIST_MBEAN = "hawtio:type=security,name=RBACRegistry";
+    JVM.DEFAULT_MAX_DEPTH = 7;
+    JVM.DEFAULT_MAX_COLLECTION_SIZE = 50000;
+    var urlCandidates = ['/hawtio/jolokia', '/jolokia', 'jolokia'];
+    var discoveredUrl = null;
+    hawtioPluginLoader.registerPreBootstrapTask({
+        name: 'JvmParseLocation',
+        task: function (next) {
+            var uri = new URI();
+            var query = uri.query(true);
+            JVM.log.debug("query: ", query);
+            var jolokiaUrl = query['jolokiaUrl'];
+            if (jolokiaUrl) {
+                delete query['sub-tab'];
+                delete query['main-tab'];
+                jolokiaUrl = URI.decode(jolokiaUrl);
+                var jolokiaURI = new URI(jolokiaUrl);
+                var name_1 = query['title'] || 'Unknown Connection';
+                var token = query['token'] || Core.trimLeading(uri.hash(), '#');
+                var options = Core.createConnectOptions({
+                    jolokiaUrl: jolokiaUrl,
+                    name: name_1,
+                    scheme: jolokiaURI.protocol(),
+                    host: jolokiaURI.hostname(),
+                    port: Core.parseIntValue(jolokiaURI.port()),
+                    path: Core.trimLeading(jolokiaURI.pathname(), '/')
+                });
+                if (!Core.isBlank(token)) {
+                    options['token'] = token;
+                }
+                _.merge(options, jolokiaURI.query(true));
+                _.assign(options, query);
+                JVM.log.debug("options: ", options);
+                var connections = Core.loadConnections();
+                connections.push(options);
+                Core.saveConnections(connections);
+                uri.hash("").query({
+                    con: name_1
+                });
+                window.location.replace(uri.toString());
+                // don't allow bootstrap to continue
+                return;
+            }
+            var connectionName = query['con'];
+            if (connectionName) {
+                JVM.log.debug("Not discovering jolokia");
+                // a connection name is set, no need to discover a jolokia instance
+                next();
+                return;
+            }
+            function maybeCheckNext(candidates) {
+                if (candidates.length === 0) {
+                    next();
+                }
+                else {
+                    checkNext(candidates.pop());
+                }
+            }
+            function checkNext(url) {
+                JVM.log.debug("trying URL: ", url);
+                $.ajax(url).always(function (data, statusText, jqXHR) {
+                    // for $.ajax().always(), the xhr is flipped on fail
+                    if (statusText !== 'success') {
+                        jqXHR = data;
+                    }
+                    if (jqXHR.status === 200) {
+                        try {
+                            var resp = angular.fromJson(data);
+                            //log.debug("Got response: ", resp);
+                            if ('value' in resp && 'agent' in resp.value) {
+                                discoveredUrl = url;
+                                JVM.log.debug("Found jolokia agent at: ", url, " version: ", resp.value.agent);
+                                next();
+                            }
+                            else {
+                                maybeCheckNext(urlCandidates);
+                            }
+                        }
+                        catch (e) {
+                            maybeCheckNext(urlCandidates);
+                        }
+                    }
+                    else if (jqXHR.status === 401 || jqXHR.status === 403) {
+                        // I guess this could be it...
+                        discoveredUrl = url;
+                        JVM.log.debug("Using URL: ", url, " assuming it could be an agent but got return code: ", jqXHR.status);
+                        next();
+                    }
+                    else {
+                        maybeCheckNext(urlCandidates);
+                    }
+                });
+            }
+            checkNext(urlCandidates.pop());
+        }
+    });
+    JVM.ConnectionName = null;
+    function getConnectionName(reset) {
+        if (reset === void 0) { reset = false; }
+        if (!Core.isBlank(JVM.ConnectionName) && !reset) {
+            return JVM.ConnectionName;
+        }
+        JVM.ConnectionName = '';
+        var search = new URI().search(true);
+        if ('con' in window) {
+            JVM.ConnectionName = window['con'];
+            JVM.log.debug("Using connection name from window: ", JVM.ConnectionName);
+        }
+        else if ('con' in search) {
+            JVM.ConnectionName = search['con'];
+            JVM.log.debug("Using connection name from URL: ", JVM.ConnectionName);
+        }
+        else {
+            JVM.log.debug("No connection name found, using direct connection to JVM");
+        }
+        return JVM.ConnectionName;
+    }
+    JVM.getConnectionName = getConnectionName;
+    function getConnectionOptions() {
+        var name = getConnectionName();
+        if (Core.isBlank(name)) {
+            // this will fail any if (ConnectOptions) check
+            return null;
+        }
+        var answer = Core.getConnectOptions(name);
+        // search for passed credentials when connecting to remote server
+        try {
+            if (window['credentials']) {
+                answer.userName = window['credentials'].username;
+                answer.password = window['credentials'].password;
+            }
+        }
+        catch (securityException) {
+            // ignore
+        }
+        return answer;
+    }
+    JVM.getConnectionOptions = getConnectionOptions;
+    function getJolokiaUrl() {
+        var answer = undefined;
+        var ConnectOptions = getConnectionOptions();
+        var documentBase = HawtioCore.documentBase();
+        if (!ConnectOptions || !ConnectOptions.name) {
+            JVM.log.debug("Using discovered URL");
+            answer = discoveredUrl;
+        }
+        else {
+            answer = Core.createServerConnectionUrl(ConnectOptions);
+            JVM.log.debug("Using configured URL");
+        }
+        if (!answer) {
+            // this will force a dummy jolokia instance
+            return false;
+        }
+        // build full URL
+        var windowURI = new URI();
+        var jolokiaURI = undefined;
+        if (_.startsWith(answer, '/') || _.startsWith(answer, 'http')) {
+            jolokiaURI = new URI(answer);
+        }
+        else {
+            jolokiaURI = new URI(UrlHelpers.join(documentBase, answer));
+        }
+        if (!ConnectOptions || !ConnectOptions.jolokiaUrl) {
+            if (!jolokiaURI.protocol()) {
+                jolokiaURI.protocol(windowURI.protocol());
+            }
+            if (!jolokiaURI.hostname()) {
+                jolokiaURI.host(windowURI.hostname());
+            }
+            if (!jolokiaURI.port()) {
+                jolokiaURI.port(windowURI.port());
+            }
+        }
+        answer = jolokiaURI.toString();
+        JVM.log.debug("Complete jolokia URL: ", answer);
+        return answer;
+    }
+    JVM.getJolokiaUrl = getJolokiaUrl;
+    JVM._module.service('ConnectionName', [function () { return function (reset) {
+            if (reset === void 0) { reset = false; }
+            return getConnectionName(reset);
+        }; }]);
+    JVM._module.service('ConnectOptions', [function () {
+            return getConnectionOptions();
+        }]);
+    // the jolokia URL we're connected to
+    JVM._module.factory('jolokiaUrl', [function () { return getJolokiaUrl(); }]);
+    // holds the status returned from the last jolokia call and hints for jolokia.list optimization
+    JVM._module.factory('jolokiaStatus', function () {
+        return {
+            xhr: null,
+            listMethod: JolokiaListMethod.LIST_GENERAL,
+            listMBean: JOLOKIA_RBAC_LIST_MBEAN
+        };
+    });
+    JVM._module.factory('jolokiaParams', ["jolokiaUrl", "localStorage", function (jolokiaUrl, localStorage) {
+            var answer = {
+                canonicalNaming: false,
+                ignoreErrors: true,
+                maxCollectionSize: JVM.DEFAULT_MAX_COLLECTION_SIZE,
+                maxDepth: JVM.DEFAULT_MAX_DEPTH,
+                method: 'post',
+                mimeType: 'application/json'
+            };
+            if ('jolokiaParams' in localStorage) {
+                answer = angular.fromJson(localStorage['jolokiaParams']);
+            }
+            else {
+                localStorage['jolokiaParams'] = angular.toJson(answer);
+            }
+            answer['url'] = jolokiaUrl;
+            return answer;
+        }]);
+    function getBeforeSend() {
+        // Just set Authorization for now...
+        var headers = ['Authorization'];
+        var connectionOptions = getConnectionOptions();
+        if (connectionOptions && connectionOptions['token']) {
+            JVM.log.debug("Setting authorization header to token");
+            return function (xhr) { return headers.forEach(function (header) {
+                return xhr.setRequestHeader(header, 'Bearer ' + connectionOptions['token']);
+            }); };
+        }
+        else if (connectionOptions && connectionOptions.userName && connectionOptions.password) {
+            JVM.log.debug("Setting authorization header to username/password");
+            return function (xhr) { return headers.forEach(function (header) {
+                return xhr.setRequestHeader(header, Core.getBasicAuthHeader(connectionOptions.userName, connectionOptions.password));
+            }); };
+        }
+        else {
+            JVM.log.debug("Not setting any authorization header");
+            return function (xhr) { };
+        }
+    }
+    JVM.getBeforeSend = getBeforeSend;
+    JVM._module.factory('jolokia', ["$location", "localStorage", "jolokiaStatus", "$rootScope", "userDetails",
+        "jolokiaParams", "jolokiaUrl", "$uibModal", "$window", function ($location, localStorage, jolokiaStatus, $rootScope, userDetails, jolokiaParams, jolokiaUrl, $uibModal, $window) {
+            var jolokia = null;
+            if (jolokiaUrl) {
+                $.ajaxSetup({ beforeSend: getBeforeSend() });
+                Core.executePostLoginTasks();
+                var modal = null;
+                if (jolokiaParams['ajaxError'] == null) {
+                    jolokiaParams['ajaxError'] = function (xhr, textStatus, error) {
+                        if (xhr.status === 401 || xhr.status === 403) {
+                            // logged out
+                            $window.location.href = 'auth/logout';
+                            Core.executePreLogoutTasks(function () {
+                                Core.executePostLogoutTasks(function () {
+                                    JVM.log.debug("Executing logout callback after successfully executed postLogoutTasks");
+                                });
+                            });
+                        }
+                        else {
+                            jolokiaStatus.xhr = xhr;
+                        }
+                    };
+                }
+                jolokia = new Jolokia(jolokiaParams);
+                jolokia.stop();
+                if ('updateRate' in localStorage) {
+                    if (localStorage['updateRate'] > 0) {
+                        jolokia.start(localStorage['updateRate']);
+                    }
+                }
+                // let's check if we can call faster jolokia.list()
+                checkJolokiaOptimization(jolokia, jolokiaStatus);
+            }
+            else {
+                JVM.log.debug("Use dummy Jolokia");
+                // empty jolokia that returns nothing
+                jolokia = {
+                    isDummy: true,
+                    running: false,
+                    request: function (req, opts) { return null; },
+                    register: function (req, opts) { return null; },
+                    list: function (path, opts) { return null; },
+                    search: function (mBeanPatter, opts) { return null; },
+                    getAttribute: function (mbean, attribute, path, opts) { return null; },
+                    setAttribute: function (mbean, attribute, value, path, opts) { },
+                    version: function (opts) { return null; },
+                    execute: function (mbean, operation) {
+                        var args = [];
+                        for (var _i = 2; _i < arguments.length; _i++) {
+                            args[_i - 2] = arguments[_i];
+                        }
+                        return null;
+                    },
+                    start: function (period) {
+                        jolokia.running = true;
+                    },
+                    stop: function () {
+                        jolokia.running = false;
+                    },
+                    isRunning: function () { return jolokia.running; },
+                    jobs: function () { return []; }
+                };
+            }
+            return jolokia;
+        }]);
+    /**
+     * Queries available server-side MBean to check if can call optimized jolokia.list() operation
+     * @param jolokia {Jolokia.IJolokia}
+     * @param jolokiaStatus {JolokiaStatus}
+     */
+    function checkJolokiaOptimization(jolokia, jolokiaStatus) {
+        jolokia.list(Core.escapeMBeanPath(jolokiaStatus.listMBean), Core.onSuccess(function (response) {
+            if (angular.isObject(response['op'])) {
+                jolokiaStatus.listMethod = JolokiaListMethod.LIST_WITH_RBAC;
+            }
+            else {
+                // we could get 403 error, mark the method as special case, equal in practice with LIST_GENERAL
+                jolokiaStatus.listMethod = JolokiaListMethod.LIST_CANT_DETERMINE;
+            }
+            JVM.log.debug("Jolokia list method:", jolokiaStatus.listMethod);
+        }, {}));
+    }
+    JVM.checkJolokiaOptimization = checkJolokiaOptimization;
+})(JVM || (JVM = {}));
+/// <reference path="../../jvm/ts/jolokiaService.ts"/>
 /// <reference path="jmxHelpers.ts"/>
 var Jmx;
 (function (Jmx) {
     var log = Logger.get("workspace");
+    var HAWTIO_REGISTRY_MBEAN = "hawtio:type=Registry";
+    var HAWTIO_TREE_WATCHER_MBEAN = "hawtio:type=TreeWatcher";
     /**
      * @class Workspace
      */
@@ -4329,8 +4965,7 @@ var Jmx;
                     }
                     workspace.HawtioNav.add(tab);
                 },
-                find: function (search) {
-                }
+                find: function (search) { }
             };
         }
         /**
@@ -4352,15 +4987,25 @@ var Jmx;
         Workspace.prototype.setLocalStorage = function (key, value) {
             this.localStorage[key] = value;
         };
+        Workspace.prototype.jolokiaList = function (callback, flags) {
+            if (this.jolokiaStatus.listMethod != JVM.JolokiaListMethod.LIST_WITH_RBAC) {
+                return this.jolokia.list(null, Core.onSuccess(callback, flags));
+            }
+            else {
+                flags.maxDepth = 9;
+                var res = this.jolokia.execute(this.jolokiaStatus.listMBean, "list()", Core.onSuccess(callback, flags));
+                if (res) {
+                    return this.unwindResponseWithRBACCache(res);
+                }
+            }
+        };
         Workspace.prototype.loadTree = function () {
             var _this = this;
             var workspace = this;
             if (this.jolokia['isDummy']) {
                 setTimeout(function () {
                     workspace.treeFetched = true;
-                    workspace.populateTree({
-                        value: {}
-                    });
+                    workspace.populateTree({ value: {} });
                 }, 10);
                 return;
             }
@@ -4372,13 +5017,11 @@ var Jmx;
                 }
             };
             log.debug("jolokia: ", this.jolokia);
-            this.jolokia.request({ 'type': 'list' }, Core.onSuccess(function (response) {
-                if (response.value) {
-                    _this.jolokiaStatus.xhr = null;
-                }
+            this.jolokiaList(function (response) {
+                _this.jolokiaStatus.xhr = null;
                 workspace.treeFetched = true;
-                workspace.populateTree(response);
-            }, flags));
+                workspace.populateTree({ value: _this.unwindResponseWithRBACCache(response) });
+            }, flags);
         };
         /**
          * Adds a post processor of the tree to swizzle the tree metadata after loading
@@ -4409,7 +5052,7 @@ var Jmx;
                     var callback = angular.bind(this, this.maybeUpdatePlugins);
                     this.pluginRegisterHandle = this.jolokia.register(callback, {
                         type: "read",
-                        mbean: "hawtio:type=Registry",
+                        mbean: HAWTIO_REGISTRY_MBEAN,
                         attribute: "UpdateCounter"
                     });
                 }
@@ -4427,7 +5070,7 @@ var Jmx;
                     var callback = angular.bind(this, this.maybeReloadTree);
                     this.treeWatchRegisterHandle = this.jolokia.register(callback, {
                         type: "read",
-                        mbean: "hawtio:type=TreeWatcher",
+                        mbean: HAWTIO_TREE_WATCHER_MBEAN,
                         attribute: "Counter"
                     });
                 }
@@ -4453,8 +5096,28 @@ var Jmx;
             }
             if (this.treeWatcherCounter !== counter) {
                 this.treeWatcherCounter = counter;
-                this.jolokia.list(null, Core.onSuccess(function (response) { return _this.populateTree({ value: response }); }, { ignoreErrors: true, maxDepth: 2 }));
+                this.jolokiaList(function (response) { return _this.populateTree({ value: _this.unwindResponseWithRBACCache(response) }); }, { ignoreErrors: true, maxDepth: 8 });
             }
+        };
+        /**
+         * Processes response from jolokia list - if it contains "domains" and "cache" properties
+         * @param response
+         */
+        Workspace.prototype.unwindResponseWithRBACCache = function (response) {
+            if (response['domains'] && response['cache']) {
+                // post process cached RBAC info
+                for (var domainName in response['domains']) {
+                    var domainClass = Core.escapeDots(domainName);
+                    var domain = response['domains'][domainName];
+                    for (var mbeanName in domain) {
+                        if (angular.isString(domain[mbeanName])) {
+                            domain[mbeanName] = response['cache']["" + domain[mbeanName]];
+                        }
+                    }
+                }
+                return response['domains'];
+            }
+            return response;
         };
         Workspace.prototype.populateTree = function (response) {
             var _this = this;
@@ -4533,7 +5196,6 @@ var Jmx;
             var serviceName = null;
             mbeanName.split(',').forEach(function (prop) {
                 // do not use split('=') as it splits wrong when there is a space in the mbean name
-                // var kv = prop.split('=');
                 var kv = _this.splitMBeanProperty(prop);
                 var propKey = kv[0];
                 // mbean property value is displayed in the tree, so let's escape it here
@@ -4826,28 +5488,28 @@ var Jmx;
         Workspace.prototype.removeAndSelectParentNode = function () {
             var selection = this.selection;
             if (selection) {
-                var parent = selection.parent;
-                if (parent) {
+                var parent_1 = selection.parent;
+                if (parent_1) {
                     // lets remove the selection from the parent so we don't do any more JMX attribute queries on the children
                     // or include it in table views etc
                     // would be nice to eagerly remove the tree node too?
-                    var idx = parent.children.indexOf(selection);
+                    var idx = parent_1.children.indexOf(selection);
                     if (idx < 0) {
-                        idx = _.findIndex(parent.children, function (n) { return n.key === selection.key; });
+                        idx = _.findIndex(parent_1.children, function (n) { return n.key === selection.key; });
                     }
                     if (idx >= 0) {
-                        parent.children.splice(idx, 1);
+                        parent_1.children.splice(idx, 1);
                     }
-                    this.updateSelectionNode(parent);
+                    this.updateSelectionNode(parent_1);
                 }
             }
         };
         Workspace.prototype.selectParentNode = function () {
             var selection = this.selection;
             if (selection) {
-                var parent = selection.parent;
-                if (parent) {
-                    this.updateSelectionNode(parent);
+                var parent_2 = selection.parent;
+                if (parent_2) {
+                    this.updateSelectionNode(parent_2);
                 }
             }
         };
@@ -4898,25 +5560,25 @@ var Jmx;
                 else {
                     log.info("the uri '" + uri + "' is not valid for this selection");
                     // lets look up the previous preferred value for this type
-                    var defaultPath = this.getLocalStorage(key);
-                    if (!defaultPath || !this.validSelection(defaultPath)) {
+                    var defaultPath_1 = this.getLocalStorage(key);
+                    if (!defaultPath_1 || !this.validSelection(defaultPath_1)) {
                         // lets find the first path we can find which is valid
-                        defaultPath = null;
+                        defaultPath_1 = null;
                         angular.forEach(this.subLevelTabs, function (tab) {
                             var fn = tab.isValid;
-                            if (!defaultPath && tab.href && angular.isDefined(fn) && fn(workspace)) {
-                                defaultPath = tab.href();
+                            if (!defaultPath_1 && tab.href && angular.isDefined(fn) && fn(workspace)) {
+                                defaultPath_1 = tab.href();
                             }
                         });
                     }
-                    if (!defaultPath) {
-                        defaultPath = "#/jmx/help";
+                    if (!defaultPath_1) {
+                        defaultPath_1 = "#/jmx/help";
                     }
-                    log.info("moving the URL to be " + defaultPath);
-                    if (_.startsWith(defaultPath, "#")) {
-                        defaultPath = defaultPath.substring(1);
+                    log.info("moving the URL to be " + defaultPath_1);
+                    if (_.startsWith(defaultPath_1, "#")) {
+                        defaultPath_1 = defaultPath_1.substring(1);
                     }
-                    this.$location.path(defaultPath);
+                    this.$location.path(defaultPath_1);
                     return true;
                 }
             }
@@ -4938,19 +5600,6 @@ var Jmx;
             }
             // Broadcast an event so other parts of the UI can update accordingly
             this.$rootScope.$broadcast('jmxTreeClicked', this.selection);
-            // if we have updated the selection (rather than just loaded a page)
-            // lets use the previous preferred view - otherwise we may be loading
-            // a page from a bookmark so lets not change the view :)
-            /*
-            if (originalSelection) {
-              key = this.selectionViewConfigKey();
-              if (key) {
-                var defaultPath = this.getLocalStorage(key);
-                if (defaultPath) {
-                  this.$location.path(defaultPath);
-                }
-              }
-            }*/
         };
         Workspace.prototype.matchesProperties = function (entries, properties) {
             if (!entries)
@@ -4988,6 +5637,7 @@ var Jmx;
             return canInvoke;
         };
         Workspace.prototype.hasInvokeRights = function (selection) {
+            var _this = this;
             var methods = [];
             for (var _i = 1; _i < arguments.length; _i++) {
                 methods[_i - 1] = arguments[_i];
@@ -5001,27 +5651,25 @@ var Jmx;
                         canInvoke = mbean.canInvoke;
                     }
                     if (canInvoke && methods && methods.length > 0) {
-                        var opsByString = mbean['opByString'];
-                        var ops = mbean['op'];
-                        if (opsByString && ops) {
+                        var opsByString_1 = mbean['opByString'];
+                        var ops_1 = mbean['op'];
+                        if (opsByString_1 && ops_1) {
                             methods.forEach(function (method) {
                                 if (!canInvoke) {
                                     return;
                                 }
                                 var op = null;
                                 if (_.endsWith(method, ')')) {
-                                    op = opsByString[method];
+                                    op = opsByString_1[method];
                                 }
                                 else {
-                                    op = ops[method];
+                                    op = ops_1[method];
                                 }
                                 if (!op) {
                                     log.debug("Could not find method:", method, " to check permissions, skipping");
                                     return;
                                 }
-                                if (angular.isDefined(op.canInvoke)) {
-                                    canInvoke = op.canInvoke;
-                                }
+                                canInvoke = _this.resolveCanInvoke(op);
                             });
                         }
                     }
@@ -5029,61 +5677,68 @@ var Jmx;
             }
             return canInvoke;
         };
+        Workspace.prototype.resolveCanInvoke = function (op) {
+            // for single method
+            if (!angular.isArray(op)) {
+                return angular.isDefined(op.canInvoke) ? op.canInvoke : true;
+            }
+            // for overloaded methods
+            // returns true only if all overloaded methods can be invoked (i.e. canInvoke=true)
+            var cantInvoke = _.find(op, function (o) {
+                return angular.isDefined(o.canInvoke) && !o.canInvoke;
+            });
+            return !angular.isDefined(cantInvoke);
+        };
         Workspace.prototype.treeContainsDomainAndProperties = function (domainName, properties) {
             var _this = this;
             if (properties === void 0) { properties = null; }
             var workspace = this;
             var tree = workspace.tree;
-            if (tree) {
-                var folder = tree.get(domainName);
-                if (folder) {
-                    if (properties) {
-                        var children = folder.children || [];
-                        var checkProperties = function (node) {
-                            if (!_this.matchesProperties(node.entries, properties)) {
-                                if (node.domain === domainName && node.children && node.children.length > 0) {
-                                    return node.children.some(checkProperties);
-                                }
-                                else {
-                                    return false;
-                                }
-                            }
-                            else {
-                                return true;
-                            }
-                        };
-                        return children.some(checkProperties);
-                    }
-                    return true;
-                }
-                else {
-                    // console.log("no hasMBean for " + objectName + " in tree " + tree);
-                }
+            if (!tree) {
+                return false;
             }
-            else {
-                // console.log("workspace has no tree! returning false for hasMBean " + objectName);
+            var folder = tree.get(domainName);
+            if (!folder) {
+                return false;
             }
-            return false;
-        };
-        Workspace.prototype.matches = function (folder, properties, propertiesCount) {
-            if (folder) {
-                var entries = folder.entries;
-                if (properties) {
-                    if (!entries)
-                        return false;
-                    for (var key in properties) {
-                        var value = properties[key];
-                        if (!value || entries[key] !== value) {
+            if (properties) {
+                var children = folder.children || [];
+                var checkProperties_1 = function (node) {
+                    if (!_this.matchesProperties(node.entries, properties)) {
+                        if (node.domain === domainName && node.children && node.children.length > 0) {
+                            return node.children.some(checkProperties_1);
+                        }
+                        else {
                             return false;
                         }
                     }
-                }
-                if (propertiesCount) {
-                    return entries && Object.keys(entries).length === propertiesCount;
-                }
-                return true;
+                    else {
+                        return true;
+                    }
+                };
+                return children.some(checkProperties_1);
             }
-            return false;
+            return true;
+        };
+        Workspace.prototype.matches = function (folder, properties, propertiesCount) {
+            if (!folder) {
+                return false;
+            }
+            var entries = folder.entries;
+            if (properties) {
+                if (!entries)
+                    return false;
+                for (var key in properties) {
+                    var value = properties[key];
+                    if (!value || entries[key] !== value) {
+                        return false;
+                    }
+                }
+            }
+            if (propertiesCount) {
+                return entries && Object.keys(entries).length === propertiesCount;
+            }
+            return true;
         };
         // only display stuff if we have an mbean with the given properties
         Workspace.prototype.hasDomainAndProperties = function (domainName, properties, propertiesCount) {
@@ -5266,18 +5921,21 @@ var Jmx;
     /**
      * Creates a remote workspace given a remote jolokia for querying the JMX MBeans inside the jolokia
      * @param remoteJolokia
+     * @param remoteJolokiaStatus
      * @param $location
      * @param localStorage
-     * @return {Core.Workspace|Workspace}
+     * @return {Workspace}
      */
-    function createRemoteWorkspace(remoteJolokia, $location, localStorage, $rootScope, $compile, $templateCache, HawtioNav) {
+    function createRemoteWorkspace(remoteJolokia, remoteJolokiaStatus, $location, localStorage, $rootScope, $compile, $templateCache, HawtioNav) {
         if ($rootScope === void 0) { $rootScope = null; }
         if ($compile === void 0) { $compile = null; }
         if ($templateCache === void 0) { $templateCache = null; }
         if (HawtioNav === void 0) { HawtioNav = null; }
         // lets create a child workspace object for the remote container
         var jolokiaStatus = {
-            xhr: null
+            xhr: null,
+            listMethod: remoteJolokiaStatus.listMethod,
+            listMBean: remoteJolokiaStatus.listMBean
         };
         // disable reload notifications
         var jmxTreeLazyLoadRegistry = Core.lazyLoaders;
@@ -5465,6 +6123,704 @@ var Jmx;
         .component('tab', Jmx.tabComponent)
         .name;
 })(Jmx || (Jmx = {}));
+/// <reference path="../jmxPlugin.ts"/>
+var Jmx;
+(function (Jmx) {
+    AttributesController.$inject = ["$scope", "$element", "$location", "workspace", "jmxWidgets", "jmxWidgetTypes", "$templateCache", "localStorage", "$browser", "$timeout", "attributesService"];
+    var PROPERTIES_COLUMN_DEFS = [
+        {
+            field: 'name',
+            displayName: 'Attribute',
+            cellTemplate: "\n        <div class=\"ngCellText\" title=\"{{row.entity.attrDesc}}\" data-placement=\"bottom\">\n          <div ng-show=\"!inDashboard\" class=\"inline\" compile=\"row.entity.getDashboardWidgets()\"></div>\n          <a href=\"\" ng-click=\"row.entity.onViewAttribute()\">{{row.entity.name}}</a>\n        </div>\n      "
+        },
+        {
+            field: 'value',
+            displayName: 'Value',
+            cellTemplate: "\n        <div class=\"ngCellText mouse-pointer\"\n             ng-click=\"row.entity.onViewAttribute()\"\n             title=\"{{row.entity.tooltip}}\"\n             ng-bind-html=\"row.entity.summary\"></div>\n      "
+        }
+    ];
+    var FOLDERS_COLUMN_DEFS = [
+        {
+            displayName: 'Name',
+            cellTemplate: "\n        <div class=\"ngCellText\">\n          <a href=\"\" ng-click=\"row.entity.gotoFolder(row)\">\n            <i class=\"{{row.entity.folderIconClass(row)}}\"></i> {{row.getProperty(\"title\")}}\n          </a>\n        </div>\n      "
+        }
+    ];
+    function AttributesController($scope, $element, $location, workspace, jmxWidgets, jmxWidgetTypes, $templateCache, localStorage, $browser, $timeout, attributesService) {
+        'ngInject';
+        $scope.searchText = '';
+        $scope.nid = 'empty';
+        $scope.selectedItems = [];
+        $scope.lastKey = null;
+        $scope.attributesInfoCache = {};
+        $scope.entity = {};
+        $scope.attributeSchema = {};
+        $scope.gridData = [];
+        $scope.attributes = "";
+        $scope.$watch('gridData.length', function (newValue, oldValue) {
+            if (newValue !== oldValue) {
+                if (newValue > 0) {
+                    $scope.attributes = $templateCache.get('gridTemplate');
+                }
+                else {
+                    $scope.attributes = "";
+                }
+            }
+        });
+        var ATTRIBUTE_SCHEMA_BASIC = {
+            properties: {
+                'key': {
+                    type: 'string',
+                    readOnly: 'true'
+                },
+                'description': {
+                    description: 'Description',
+                    type: 'string',
+                    formTemplate: "<textarea class='form-control' rows='2' readonly='true'></textarea>"
+                },
+                'type': {
+                    type: 'string',
+                    readOnly: 'true'
+                },
+                'jolokia': {
+                    label: 'Jolokia&nbsp;URL',
+                    type: 'string',
+                    readOnly: 'true'
+                }
+            }
+        };
+        $scope.gridOptions = {
+            scope: $scope,
+            selectedItems: [],
+            showFilter: false,
+            canSelectRows: false,
+            enableRowSelection: false,
+            enableRowClickSelection: false,
+            keepLastSelected: false,
+            multiSelect: true,
+            showColumnMenu: true,
+            displaySelectionCheckbox: false,
+            filterOptions: {
+                filterText: ''
+            },
+            // TODO disabled for now as it causes https://github.com/hawtio/hawtio/issues/262
+            //sortInfo: { field: 'name', direction: 'asc'},
+            data: 'gridData',
+            columnDefs: PROPERTIES_COLUMN_DEFS
+        };
+        $scope.$watch(function (scope) { return scope.gridOptions.selectedItems.map(function (item) { return item.key || item; }); }, function (newValue, oldValue) {
+            if (newValue !== oldValue) {
+                Jmx.log.debug("Selected items:", newValue);
+                $scope.selectedItems = newValue;
+            }
+        }, true);
+        // clear selection if we clicked the jmx nav bar button
+        // otherwise we may show data from Camel/ActiveMQ or other plugins that
+        // reuse the JMX plugin for showing tables (#884)
+        var currentUrl = $location.url();
+        if (_.endsWith(currentUrl, "/jmx/attributes")) {
+            Jmx.log.debug("Reset selection in JMX plugin");
+            workspace.selection = null;
+            $scope.lastKey = null;
+        }
+        $scope.nid = $location.search()['nid'];
+        Jmx.log.debug("nid: ", $scope.nid);
+        var updateTable = _.debounce(updateTableContents, 50, { leading: false, trailing: true });
+        $scope.$on('jmxTreeUpdated', updateTable);
+        $scope.$watch('gridOptions.filterOptions.filterText', function (newValue, oldValue) {
+            if (newValue !== oldValue) {
+                updateTable();
+            }
+        });
+        updateTable();
+        $scope.onCancelAttribute = function () {
+            // clear entity
+            $scope.entity = {};
+        };
+        $scope.onUpdateAttribute = function () {
+            var value = $scope.entity["attrValueEdit"];
+            var key = $scope.entity["key"];
+            // clear entity
+            $scope.entity = {};
+            // update the attribute on the mbean
+            var mbean = workspace.getSelectedMBeanName();
+            if (!mbean) {
+                return;
+            }
+            attributesService.update(mbean, key, value);
+        };
+        function onViewAttribute(row) {
+            if (!row.summary) {
+                return;
+            }
+            if (row.rw) {
+                // for writable attribute, we need to check RBAC
+                attributesService.canInvoke(workspace.getSelectedMBeanName(), row.key, row.type)
+                    .then(function (canInvoke) { return showAttributeDialog(row, canInvoke); });
+            }
+            else {
+                showAttributeDialog(row, false);
+            }
+        }
+        function showAttributeDialog(row, rw) {
+            // create entity and populate it with data from the selected row
+            $scope.entity = {
+                key: row.key,
+                description: row.attrDesc,
+                type: row.type,
+                jolokia: attributesService.buildJolokiaUrl(workspace.getSelectedMBeanName(), row.key),
+                rw: rw
+            };
+            var rows = numberOfRows(row);
+            var readOnly = !$scope.entity.rw;
+            if (readOnly) {
+                // if the value is empty its a &nbsp; as we need this for the table to allow us to click on the empty row
+                if (row.summary === '&nbsp;') {
+                    $scope.entity["attrValueView"] = '';
+                }
+                else {
+                    $scope.entity["attrValueView"] = row.summary;
+                }
+                initAttributeSchemaView($scope, rows);
+            }
+            else {
+                // if the value is empty its a &nbsp; as we need this for the table to allow us to click on the empty row
+                if (row.summary === '&nbsp;') {
+                    $scope.entity["attrValueEdit"] = '';
+                }
+                else {
+                    $scope.entity["attrValueEdit"] = row.summary;
+                }
+                initAttributeSchemaEdit($scope, rows);
+            }
+            $scope.showAttributeDialog = true;
+        }
+        function numberOfRows(row) {
+            // calculate a textare with X number of rows that usually fit the value to display
+            var len = row.summary.length;
+            var rows = (len / 40) + 1;
+            if (rows > 10) {
+                // cap at most 10 rows to not make the dialog too large
+                rows = 10;
+            }
+            return rows;
+        }
+        function initAttributeSchemaView($scope, rows) {
+            // clone from the basic schema to the new schema we create on-the-fly
+            // this is needed as the dialog have problems if reusing the schema, and changing the schema afterwards
+            // so its safer to create a new schema according to our needs
+            $scope.attributeSchemaView = {};
+            for (var key in ATTRIBUTE_SCHEMA_BASIC) {
+                $scope.attributeSchemaView[key] = ATTRIBUTE_SCHEMA_BASIC[key];
+            }
+            // and add the new attrValue which is dynamic computed
+            $scope.attributeSchemaView.properties.attrValueView = {
+                description: 'Value',
+                label: "Value",
+                type: 'string',
+                formTemplate: "<textarea class='form-control' rows='" + rows + "' readonly='true'></textarea>"
+            };
+            $scope.attributeSchemaView.properties.copyAttrValueViewToClipboard = {
+                label: '&nbsp;',
+                type: 'string',
+                formTemplate: "\n          <button class=\"btn btn-sm btn-default btn-clipboard pull-right\" data-clipboard-text=\"{{entity.attrValueView}}\"\n                  title=\"Copy value to clipboard\" aria-label=\"Copy value to clipboard\">\n            <i class=\"fa fa-clipboard\" aria-hidden=\"true\"></i>\n          </button>\n        "
+            };
+            // just to be safe, then delete not needed part of the schema
+            if ($scope.attributeSchemaView) {
+                delete $scope.attributeSchemaView.properties.attrValueEdit;
+                delete $scope.attributeSchemaView.properties.copyAttrValueEditToClipboard;
+            }
+        }
+        function initAttributeSchemaEdit($scope, rows) {
+            // clone from the basic schema to the new schema we create on-the-fly
+            // this is needed as the dialog have problems if reusing the schema, and changing the schema afterwards
+            // so its safer to create a new schema according to our needs
+            $scope.attributeSchemaEdit = {};
+            for (var key in ATTRIBUTE_SCHEMA_BASIC) {
+                $scope.attributeSchemaEdit[key] = ATTRIBUTE_SCHEMA_BASIC[key];
+            }
+            // and add the new attrValue which is dynamic computed
+            $scope.attributeSchemaEdit.properties.attrValueEdit = {
+                description: 'Value',
+                label: "Value",
+                type: 'string',
+                formTemplate: "<textarea class='form-control' rows='" + rows + "'></textarea>"
+            };
+            $scope.attributeSchemaEdit.properties.copyAttrValueEditToClipboard = {
+                label: '&nbsp;',
+                type: 'string',
+                formTemplate: "\n          <button class=\"btn btn-sm btn-default btn-clipboard pull-right\" data-clipboard-text=\"{{entity.attrValueEdit}}\"\n                  title=\"Copy value to clipboard\" aria-label=\"Copy value to clipboard\">\n            <i class=\"fa fa-clipboard\" aria-hidden=\"true\"></i>\n          </button>\n        "
+            };
+            // just to be safe, then delete not needed part of the schema
+            if ($scope.attributeSchemaEdit) {
+                delete $scope.attributeSchemaEdit.properties.attrValueView;
+                delete $scope.attributeSchemaEdit.properties.copyAttrValueViewToClipboard;
+            }
+        }
+        function operationComplete() {
+            updateTableContents();
+        }
+        function updateTableContents() {
+            // lets clear any previous queries just in case!
+            attributesService.unregisterJolokia($scope);
+            $scope.gridData = [];
+            $scope.mbeanIndex = null;
+            var mbean = workspace.getSelectedMBeanName();
+            var node = workspace.selection;
+            if (_.isNil(node) || node.key !== $scope.lastKey) {
+                // cache attributes info, so we know if the attribute is read-only or read-write, and also the attribute description
+                $scope.attributesInfoCache = null;
+                if (mbean == null) {
+                    // in case of refresh
+                    var _key = $location.search()['nid'];
+                    var _node = workspace.keyToNodeMap[_key];
+                    if (_node) {
+                        mbean = _node.objectName;
+                    }
+                }
+                if (mbean) {
+                    attributesService.listMBean(mbean, Core.onSuccess(function (response) {
+                        $scope.attributesInfoCache = response.value;
+                        Jmx.log.debug("Updated attributes info cache for mbean", mbean, $scope.attributesInfoCache);
+                    }));
+                }
+            }
+            var request = null;
+            if (mbean) {
+                request = { type: 'read', mbean: mbean };
+                if (_.isNil(node) || node.key !== $scope.lastKey) {
+                    $scope.gridOptions.columnDefs = PROPERTIES_COLUMN_DEFS;
+                    $scope.gridOptions.enableRowClickSelection = false;
+                }
+            }
+            else if (node) {
+                if (node.key !== $scope.lastKey) {
+                    $scope.gridOptions.columnDefs = [];
+                    $scope.gridOptions.enableRowClickSelection = true;
+                }
+                // lets query each child's details
+                var children = node.children;
+                if (children) {
+                    var childNodes = children.map(function (child) { return child.objectName; });
+                    var mbeans = childNodes.filter(function (mbean) { return FilterHelpers.search(mbean, $scope.gridOptions.filterOptions.filterText); });
+                    var maxFolderSize = localStorage["jmxMaxFolderSize"];
+                    mbeans = mbeans.slice(0, maxFolderSize);
+                    if (mbeans) {
+                        var typeNames = Jmx.getUniqueTypeNames(children);
+                        if (typeNames.length <= 1) {
+                            var query = mbeans.map(function (mbean) {
+                                return { type: "READ", mbean: mbean, ignoreErrors: true };
+                            });
+                            if (query.length > 0) {
+                                request = query;
+                                // deal with multiple results
+                                $scope.mbeanIndex = {};
+                                $scope.mbeanRowCounter = 0;
+                                $scope.mbeanCount = mbeans.length;
+                            }
+                        }
+                        else {
+                            console.log("Too many type names ", typeNames);
+                        }
+                    }
+                }
+            }
+            if (request) {
+                $scope.request = request;
+                attributesService.registerJolokia($scope, request, Core.onSuccess(render));
+            }
+            else if (node) {
+                if (node.key !== $scope.lastKey) {
+                    $scope.gridOptions.columnDefs = FOLDERS_COLUMN_DEFS;
+                    $scope.gridOptions.enableRowClickSelection = true;
+                }
+                $scope.gridData = node.children;
+                addHandlerFunctions($scope.gridData);
+            }
+            if (node) {
+                $scope.lastKey = node.key;
+                $scope.title = node.text;
+            }
+            Core.$apply($scope);
+        }
+        function render(response) {
+            var data = response.value;
+            var mbeanIndex = $scope.mbeanIndex;
+            var mbean = response.request['mbean'];
+            if (mbean) {
+                // lets store the mbean in the row for later
+                data["_id"] = mbean;
+            }
+            if (mbeanIndex) {
+                if (mbean) {
+                    var idx = mbeanIndex[mbean];
+                    if (!angular.isDefined(idx)) {
+                        idx = $scope.mbeanRowCounter;
+                        mbeanIndex[mbean] = idx;
+                        $scope.mbeanRowCounter += 1;
+                    }
+                    if (idx === 0) {
+                        // this is to force the table to repaint
+                        $scope.selectedIndices = $scope.selectedItems.map(function (item) { return $scope.gridData.indexOf(item); });
+                        $scope.gridData = [];
+                        if (!$scope.gridOptions.columnDefs.length) {
+                            // lets update the column definitions based on any configured defaults
+                            var key = workspace.selectionConfigKey();
+                            $scope.gridOptions.gridKey = key;
+                            $scope.gridOptions.onClickRowHandlers = workspace.onClickRowHandlers;
+                            var defaultDefs_1 = _.clone(workspace.attributeColumnDefs[key]) || [];
+                            var defaultSize_1 = defaultDefs_1.length;
+                            var map_1 = {};
+                            angular.forEach(defaultDefs_1, function (value, key) {
+                                var field = value.field;
+                                if (field) {
+                                    map_1[field] = value;
+                                }
+                            });
+                            var extraDefs_1 = [];
+                            _.forEach(data, function (value, key) {
+                                if (includePropertyValue(key, value)) {
+                                    if (!map_1[key]) {
+                                        extraDefs_1.push({
+                                            field: key,
+                                            displayName: key === '_id' ? 'Object name' : Core.humanizeValue(key),
+                                            visible: defaultSize_1 === 0
+                                        });
+                                    }
+                                }
+                            });
+                            // the additional columns (which are not pre-configured), should be sorted
+                            // so the column menu has a nice sorted list instead of random ordering
+                            extraDefs_1 = extraDefs_1.sort(function (def, def2) {
+                                // make sure _id is last
+                                if (_.startsWith(def.field, '_')) {
+                                    return 1;
+                                }
+                                else if (_.startsWith(def2.field, '_')) {
+                                    return -1;
+                                }
+                                return def.field.localeCompare(def2.field);
+                            });
+                            extraDefs_1.forEach(function (e) { return defaultDefs_1.push(e); });
+                            if (extraDefs_1.length > 0) {
+                                $scope.hasExtraColumns = true;
+                            }
+                            $scope.gridOptions.columnDefs = defaultDefs_1;
+                            $scope.gridOptions.enableRowClickSelection = true;
+                        }
+                    }
+                    // mask attribute read error
+                    _.forEach(data, function (value, key) {
+                        if (includePropertyValue(key, value)) {
+                            data[key] = maskReadError(value);
+                        }
+                    });
+                    // assume 1 row of data per mbean
+                    $scope.gridData[idx] = data;
+                    addHandlerFunctions($scope.gridData);
+                    var count = $scope.mbeanCount;
+                    if (!count || idx + 1 >= count) {
+                        // only cause a refresh on the last row
+                        var newSelections = $scope.selectedIndices.map(function (idx) { return $scope.gridData[idx]; }).filter(function (row) { return row; });
+                        $scope.selectedItems.splice(0, $scope.selectedItems.length);
+                        $scope.selectedItems.push.apply($scope.selectedItems, newSelections);
+                        Core.$apply($scope);
+                    }
+                    // if the last row, then fire an event
+                }
+                else {
+                    Jmx.log.info("No mbean name in request", JSON.stringify(response.request));
+                }
+            }
+            else {
+                $scope.gridOptions.columnDefs = PROPERTIES_COLUMN_DEFS;
+                $scope.gridOptions.enableRowClickSelection = false;
+                var showAllAttributes_1 = true;
+                if (_.isObject(data)) {
+                    var properties_1 = [];
+                    _.forEach(data, function (value, key) {
+                        if (showAllAttributes_1 || includePropertyValue(key, value)) {
+                            // always skip keys which start with _
+                            if (!_.startsWith(key, "_")) {
+                                // lets format the ObjectName nicely dealing with objects with
+                                // nested object names or arrays of object names
+                                if (key === "ObjectName") {
+                                    value = unwrapObjectName(value);
+                                }
+                                // lets unwrap any arrays of object names
+                                if (_.isArray(value)) {
+                                    value = value.map(function (v) { return unwrapObjectName(v); });
+                                }
+                                // the value must be string as the sorting/filtering of the table relies on that
+                                var type = lookupAttributeType(key);
+                                var data_1 = {
+                                    key: key,
+                                    name: Core.humanizeValue(key),
+                                    value: maskReadError(Core.safeNullAsString(value, type))
+                                };
+                                generateSummaryAndDetail(key, data_1);
+                                properties_1.push(data_1);
+                            }
+                        }
+                    });
+                    if (!_.some(properties_1, function (p) {
+                        return p['key'] === 'ObjectName';
+                    })) {
+                        var objectName = {
+                            key: "ObjectName",
+                            name: "Object Name",
+                            value: mbean
+                        };
+                        generateSummaryAndDetail(objectName.key, objectName);
+                        properties_1.push(objectName);
+                    }
+                    properties_1 = _.sortBy(properties_1, 'name');
+                    $scope.selectedItems = [data];
+                    data = properties_1;
+                }
+                $scope.gridData = data;
+                addHandlerFunctions($scope.gridData);
+                Core.$apply($scope);
+            }
+        }
+        function maskReadError(value) {
+            if (typeof value !== 'string') {
+                return value;
+            }
+            var forbidden = /^ERROR: Reading attribute .+ \(class java\.lang\.SecurityException\)$/;
+            var unsupported = /^ERROR: java\.lang\.UnsupportedOperationException: .+ \(class javax\.management\.RuntimeMBeanException\)$/;
+            if (value.match(forbidden)) {
+                return "**********";
+            }
+            else if (value.match(unsupported)) {
+                return "(Not supported)";
+            }
+            else {
+                return value;
+            }
+        }
+        function addHandlerFunctions(data) {
+            data.forEach(function (item) {
+                item['inDashboard'] = $scope.inDashboard;
+                item['getDashboardWidgets'] = function () { return getDashboardWidgets(item); };
+                item['onViewAttribute'] = function () { return onViewAttribute(item); };
+                item['folderIconClass'] = function (row) { return folderIconClass(row); };
+                item['gotoFolder'] = function (row) { return gotoFolder(row); };
+            });
+        }
+        function getDashboardWidgets(row) {
+            var mbean = workspace.getSelectedMBeanName();
+            if (!mbean) {
+                return '';
+            }
+            var potentialCandidates = _.filter(jmxWidgets, function (widget) {
+                return mbean === widget.mbean;
+            });
+            if (potentialCandidates.length === 0) {
+                return '';
+            }
+            potentialCandidates = _.filter(potentialCandidates, function (widget) {
+                return widget.attribute === row.key || widget.total === row.key;
+            });
+            if (potentialCandidates.length === 0) {
+                return '';
+            }
+            row.addChartToDashboard = function (type) { return $scope.addChartToDashboard(row, type); };
+            var rc = [];
+            potentialCandidates.forEach(function (widget) {
+                var widgetType = Jmx.getWidgetType(widget);
+                rc.push("\n              <i class=\"" + widgetType['icon'] + " clickable\"\n                 title=\"" + widgetType['title'] + "\"\n                 ng-click=\"row.entity.addChartToDashboard('" + widgetType['type'] + "')\"></i>\n            ");
+            });
+            return rc.join() + "&nbsp;";
+        }
+        $scope.addChartToDashboard = function (row, widgetType) {
+            var mbean = workspace.getSelectedMBeanName();
+            var candidates = jmxWidgets
+                .filter(function (widget) { return mbean === widget.mbean; })
+                .filter(function (widget) { return widget.attribute === row.key || widget.total === row.key; })
+                .filter(function (widget) { return widget.type === widgetType; });
+            // hmmm, we really should only have one result...
+            var widget = _.first(candidates);
+            var type = Jmx.getWidgetType(widget);
+            $location.url(Jmx.createDashboardLink(type, widget));
+        };
+        function folderIconClass(row) {
+            // TODO lets ignore the classes property for now
+            // as we don't have an easy way to know if there is an icon defined for an icon or not
+            // and we want to make sure there always is an icon shown
+            /*
+             let classes = (row.getProperty("addClass") || "").trim();
+             if (classes) {
+             return classes;
+             }
+             */
+            if (!row.getProperty) {
+                return '';
+            }
+            return row.getProperty('objectName') ? 'fa fa-cog' : 'pficon pficon-folder-close';
+        }
+        function gotoFolder(row) {
+            if (row.getProperty) {
+                var key = row.getProperty('key');
+                if (key) {
+                    $location.search('nid', key);
+                }
+            }
+        }
+        function unwrapObjectName(value) {
+            if (!_.isObject(value)) {
+                return value;
+            }
+            var keys = Object.keys(value);
+            if (keys.length === 1 && keys[0] === "objectName") {
+                return value["objectName"];
+            }
+            return value;
+        }
+        function generateSummaryAndDetail(key, data) {
+            var value = Core.escapeHtml(data.value);
+            if (!angular.isArray(value) && angular.isObject(value)) {
+                var detailHtml_1 = "<table class='table table-striped'>";
+                var summary_1 = "";
+                var object_1 = value;
+                var keys = Object.keys(value).sort();
+                angular.forEach(keys, function (key) {
+                    var value = object_1[key];
+                    detailHtml_1 += "<tr><td>" + Core.humanizeValue(key) + "</td><td>" + value + "</td></tr>";
+                    summary_1 += Core.humanizeValue(key) + ": " + value + "  ";
+                });
+                detailHtml_1 += "</table>";
+                data.summary = summary_1;
+                data.detailHtml = detailHtml_1;
+                data.tooltip = summary_1;
+            }
+            else {
+                var text = value;
+                // if the text is empty then use a no-break-space so the table allows us to click on the row,
+                // otherwise if the text is empty, then you cannot click on the row
+                if (text === '') {
+                    text = '&nbsp;';
+                    data.tooltip = "";
+                }
+                else {
+                    data.tooltip = text;
+                }
+                data.summary = "" + text;
+                data.detailHtml = "<pre>" + text + "</pre>";
+                if (angular.isArray(value)) {
+                    var html_1 = "<ul>";
+                    angular.forEach(value, function (item) { return html_1 += "<li>" + item + "</li>"; });
+                    html_1 += "</ul>";
+                    data.detailHtml = html_1;
+                }
+            }
+            // enrich the data with information if the attribute is read-only/read-write, and the JMX attribute description (if any)
+            data.rw = false;
+            data.attrDesc = data.name;
+            data.type = "string";
+            if ($scope.attributesInfoCache != null && 'attr' in $scope.attributesInfoCache) {
+                var info = $scope.attributesInfoCache.attr[key];
+                if (angular.isDefined(info)) {
+                    data.rw = info.rw;
+                    data.attrDesc = info.desc;
+                    data.type = info.type;
+                }
+            }
+        }
+        function lookupAttributeType(key) {
+            if ($scope.attributesInfoCache != null && 'attr' in $scope.attributesInfoCache) {
+                var info = $scope.attributesInfoCache.attr[key];
+                if (angular.isDefined(info)) {
+                    return info.type;
+                }
+            }
+            return null;
+        }
+        function includePropertyValue(key, value) {
+            return !_.isObject(value);
+        }
+    }
+    Jmx.AttributesController = AttributesController;
+})(Jmx || (Jmx = {}));
+/// <reference path="../../../rbac/ts/models.ts"/>
+var Jmx;
+(function (Jmx) {
+    var AttributesService = /** @class */ (function () {
+        AttributesService.$inject = ["$q", "jolokia", "jolokiaUrl", "rbacACLMBean"];
+        function AttributesService($q, jolokia, jolokiaUrl, rbacACLMBean) {
+            'ngInject';
+            this.$q = $q;
+            this.jolokia = jolokia;
+            this.jolokiaUrl = jolokiaUrl;
+            this.rbacACLMBean = rbacACLMBean;
+        }
+        AttributesService.prototype.registerJolokia = function (scope, request, callback) {
+            Core.register(this.jolokia, scope, request, callback);
+        };
+        AttributesService.prototype.unregisterJolokia = function (scope) {
+            Core.unregister(this.jolokia, scope);
+        };
+        AttributesService.prototype.listMBean = function (mbeanName, callback) {
+            this.jolokia.request({
+                type: "LIST",
+                method: "post",
+                path: Core.escapeMBeanPath(mbeanName),
+                ignoreErrors: true
+            }, callback);
+        };
+        AttributesService.prototype.canInvoke = function (mbeanName, attribute, type) {
+            var _this = this;
+            return this.$q(function (resolve, reject) {
+                if (_.isNull(mbeanName) || _.isNull(attribute) || _.isNull(type)) {
+                    resolve(false);
+                    return;
+                }
+                _this.rbacACLMBean.then(function (rbacACLMBean) {
+                    _this.jolokia.request({
+                        type: 'exec',
+                        mbean: rbacACLMBean,
+                        operation: 'canInvoke(java.lang.String,java.lang.String,[Ljava.lang.String;)',
+                        arguments: [mbeanName, "set" + attribute, [type]]
+                    }, Core.onSuccess(function (response) {
+                        Jmx.log.debug("rbacACLMBean canInvoke attribute response:", response);
+                        var canInvoke = response.value;
+                        resolve(canInvoke);
+                    }, {
+                        error: function (response) {
+                            Jmx.log.debug('AttributesService.canInvoke() failed:', response);
+                            resolve(false);
+                        }
+                    }));
+                });
+            });
+        };
+        AttributesService.prototype.buildJolokiaUrl = function (mbeanName, attribute) {
+            return this.jolokiaUrl + "/read/" + Core.escapeMBean(mbeanName) + "/" + attribute;
+        };
+        AttributesService.prototype.update = function (mbeanName, attribute, value) {
+            this.jolokia.setAttribute(mbeanName, attribute, value, Core.onSuccess(function (response) {
+                Core.notification("success", "Updated attribute " + attribute);
+            }, {
+                error: function (response) {
+                    Jmx.log.debug("Failed to update attribute", response);
+                    Core.notification("danger", "Failed to update attribute " + attribute);
+                }
+            }));
+        };
+        return AttributesService;
+    }());
+    Jmx.AttributesService = AttributesService;
+})(Jmx || (Jmx = {}));
+/// <reference path="../jmxPlugin.ts"/>
+/// <reference path="attributes.controller.ts"/>
+/// <reference path="attributes.service.ts"/>
+var Jmx;
+(function (Jmx) {
+    Jmx.attributesModule = angular
+        .module('hawtio-jmx-attributes', [])
+        .controller('Jmx.AttributesController', Jmx.AttributesController)
+        .service('attributesService', Jmx.AttributesService)
+        .name;
+})(Jmx || (Jmx = {}));
 var Jmx;
 (function (Jmx) {
     var Operation = /** @class */ (function () {
@@ -5473,6 +6829,7 @@ var Jmx;
             this.description = description;
             this.name = Operation.buildName(method, args);
             this.simpleName = Operation.buildSimpleName(this.name);
+            this.canInvoke = true;
         }
         Operation.buildName = function (method, args) {
             return method + "(" + args.map(function (arg) { return arg.type; }).join() + ")";
@@ -5500,6 +6857,7 @@ var Jmx;
     Jmx.Operation = Operation;
 })(Jmx || (Jmx = {}));
 /// <reference path="operation.ts"/>
+/// <reference path="../../../rbac/ts/models.ts"/>
 var Jmx;
 (function (Jmx) {
     var OperationsService = /** @class */ (function () {
@@ -5520,27 +6878,37 @@ var Jmx;
                 _this.jolokia.request({
                     type: 'list',
                     path: Core.escapeMBeanPath(mbeanName)
-                }, {
-                    success: function (response) {
-                        var operations = [];
-                        angular.forEach(response.value.op, function (value, key) {
-                            if (angular.isArray(value)) {
-                                angular.forEach(value, function (item) {
-                                    operations.push(new Jmx.Operation(key, item.args, item.desc));
-                                });
-                            }
-                            else {
-                                operations.push(new Jmx.Operation(key, value.args, value.desc));
-                            }
-                        });
+                }, Core.onSuccess(function (response) {
+                    var operations = [];
+                    var operationMap = {};
+                    _.forEach(response.value.op, function (op, opName) {
+                        if (_.isArray(op)) {
+                            _.forEach(op, function (op) {
+                                return _this.addOperation(operations, operationMap, opName, op);
+                            });
+                        }
+                        else {
+                            _this.addOperation(operations, operationMap, opName, op);
+                        }
+                    });
+                    if (!_.isEmpty(operationMap)) {
+                        _this.fetchPermissions(operationMap, mbeanName)
+                            .then(function () { return resolve(operations); });
+                    }
+                    else {
                         resolve(operations);
                     }
                 }, {
                     error: function (response) {
-                        Jmx.log.debug('OperationsService.loadOperations() failed: ' + response.error);
+                        return Jmx.log.debug('OperationsService.loadOperations() failed:', response);
                     }
-                });
+                }));
             });
+        };
+        OperationsService.prototype.addOperation = function (operations, operationMap, opName, op) {
+            var operation = new Jmx.Operation(opName, op.args, op.desc);
+            operations.push(operation);
+            operationMap[operation.name] = operation;
         };
         OperationsService.prototype.getOperation = function (mbeanName, operationName) {
             return this.getOperations(mbeanName)
@@ -5568,6 +6936,32 @@ var Jmx;
             });
         };
         ;
+        OperationsService.prototype.fetchPermissions = function (operationMap, mbeanName) {
+            var _this = this;
+            return this.$q(function (resolve, reject) {
+                return _this.rbacACLMBean.then(function (rbacACLMBean) {
+                    _this.jolokia.request({
+                        type: 'exec',
+                        mbean: rbacACLMBean,
+                        operation: 'canInvoke(java.util.Map)',
+                        arguments: [(_a = {}, _a[mbeanName] = _.values(operationMap).map(function (op) { return op.name; }), _a)]
+                    }, Core.onSuccess(function (response) {
+                        Jmx.log.debug("rbacACLMBean canInvoke operations response:", response);
+                        var ops = response.value;
+                        _.forEach(ops[mbeanName], function (canInvoke, opName) {
+                            return operationMap[opName].canInvoke = canInvoke.CanInvoke;
+                        });
+                        Jmx.log.debug("Got operations:", operationMap);
+                        resolve();
+                    }, {
+                        error: function (response) {
+                            return Jmx.log.debug('OperationsService.fetchPermissions() failed:', response);
+                        }
+                    }));
+                    var _a;
+                });
+            });
+        };
         return OperationsService;
     }());
     Jmx.OperationsService = OperationsService;
@@ -5638,7 +7032,7 @@ var Jmx;
 var Jmx;
 (function (Jmx) {
     Jmx.operationsComponent = {
-        templateUrl: 'plugins/jmx/html/operations.html',
+        templateUrl: 'plugins/jmx/html/operations/operations.html',
         controller: Jmx.OperationsController
     };
 })(Jmx || (Jmx = {}));
@@ -5721,9 +7115,6 @@ var Jmx;
                 _this.isExecuting = false;
             });
         };
-        OperationFormController.prototype.cancel = function () {
-            this.operation.isExpanded = false;
-        };
         return OperationFormController;
     }());
     Jmx.OperationFormController = OperationFormController;
@@ -5731,7 +7122,7 @@ var Jmx;
         bindings: {
             operation: '<'
         },
-        templateUrl: 'plugins/jmx/html/operation-form.html',
+        templateUrl: 'plugins/jmx/html/operations/operation-form.html',
         controller: OperationFormController
     };
 })(Jmx || (Jmx = {}));
@@ -5802,7 +7193,7 @@ var Jmx;
         }
         // Else optionally select the first node if there is no selection
         if (!node && activateIfNoneSelected && tree.getSelected().length === 0) {
-            var children = _.takeWhile(tree.getNodes(), { level: 1 });
+            var children = tree.getNodes();
             if (children.length > 0) {
                 node = children[0];
                 // invoke any auto select function, and use its result as new first, if any returned
@@ -6006,6 +7397,7 @@ var Jmx;
 /// <reference path="widgetRepository.ts"/>
 /// <reference path="workspace.ts"/>
 /// <reference path="common/common.module.ts"/>
+/// <reference path="attributes/attributes.module.ts"/>
 /// <reference path="operations/operations.module.ts"/>
 /// <reference path="tree/tree.module.ts"/>
 var Jmx;
@@ -6013,13 +7405,14 @@ var Jmx;
     Jmx._module = angular.module(Jmx.pluginName, [
         'angularResizable',
         Jmx.commonModule,
+        Jmx.attributesModule,
         Jmx.operationsModule,
         Jmx.treeModule
     ]);
     Jmx._module.config(['HawtioNavBuilderProvider', "$routeProvider", function (builder, $routeProvider) {
             $routeProvider
                 .when('/jmx', { redirectTo: '/jmx/attributes' })
-                .when('/jmx/attributes', { templateUrl: UrlHelpers.join(Jmx.templatePath, 'attributes.html') })
+                .when('/jmx/attributes', { templateUrl: UrlHelpers.join(Jmx.templatePath, 'attributes/attributes.html') })
                 .when('/jmx/operations', { template: '<operations></operations>' })
                 .when('/jmx/charts', { templateUrl: UrlHelpers.join(Jmx.templatePath, 'charts.html') })
                 .when('/jmx/chartEdit', { templateUrl: UrlHelpers.join(Jmx.templatePath, 'chartEdit.html') })
@@ -6035,37 +7428,7 @@ var Jmx;
             workspace.loadTree();
             return workspace;
         }]);
-    Jmx._module.factory('rbacACLMBean', function () {
-        return {
-            then: function () { }
-        };
-    });
     Jmx._module.constant('layoutTree', 'plugins/jmx/html/layoutTree.html');
-    // holds the status returned from the last jolokia call (?)
-    Jmx._module.factory('jolokiaStatus', function () {
-        return {
-            xhr: null
-        };
-    });
-    Jmx.DEFAULT_MAX_DEPTH = 7;
-    Jmx.DEFAULT_MAX_COLLECTION_SIZE = 500;
-    Jmx._module.factory('jolokiaParams', ["jolokiaUrl", "localStorage", function (jolokiaUrl, localStorage) {
-            var answer = {
-                canonicalNaming: false,
-                ignoreErrors: true,
-                mimeType: 'application/json',
-                maxDepth: Jmx.DEFAULT_MAX_DEPTH,
-                maxCollectionSize: Jmx.DEFAULT_MAX_COLLECTION_SIZE
-            };
-            if ('jolokiaParams' in localStorage) {
-                answer = angular.fromJson(localStorage['jolokiaParams']);
-            }
-            else {
-                localStorage['jolokiaParams'] = angular.toJson(answer);
-            }
-            answer['url'] = jolokiaUrl;
-            return answer;
-        }]);
     Jmx._module.factory('jmxTreeLazyLoadRegistry', function () { return Core.lazyLoaders; });
     Jmx._module.run(["HawtioNav", "$location", "workspace", "viewRegistry", "layoutTree", "layoutFull", "jolokia", "helpRegistry", "pageTitle", "$templateCache", function (nav, $location, workspace, viewRegistry, layoutTree, layoutFull, jolokia, helpRegistry, pageTitle, $templateCache) {
             Jmx.log.debug('loaded');
@@ -6131,653 +7494,6 @@ var Jmx;
                 Core.$apply($scope);
             };
             Core.register(jolokia, $scope, $scope.req, Core.onSuccess($scope.render));
-        }]);
-})(Jmx || (Jmx = {}));
-/// <reference path="./jmxPlugin.ts"/>
-var Jmx;
-(function (Jmx) {
-    Jmx.propertiesColumnDefs = [
-        {
-            field: 'name',
-            displayName: 'Attribute',
-            cellTemplate: "\n        <div class=\"ngCellText\" title=\"{{row.entity.attrDesc}}\" data-placement=\"bottom\">\n          <div ng-show=\"!inDashboard\" class=\"inline\" compile=\"row.entity.getDashboardWidgets()\"></div>\n          <a href=\"\" ng-click=\"row.entity.onViewAttribute()\">{{row.entity.name}}</a>\n        </div>\n      "
-        },
-        {
-            field: 'value',
-            displayName: 'Value',
-            cellTemplate: "\n        <div class=\"ngCellText mouse-pointer\"\n             ng-click=\"row.entity.onViewAttribute()\"\n             title=\"{{row.entity.tooltip}}\"\n             ng-bind-html=\"row.entity.summary\"></div>\n      "
-        }
-    ];
-    Jmx.foldersColumnDefs = [
-        {
-            displayName: 'Name',
-            cellTemplate: "\n        <div class=\"ngCellText\">\n          <a href=\"\" ng-click=\"row.entity.gotoFolder(row)\">\n            <i class=\"{{row.entity.folderIconClass(row)}}\"></i> {{row.getProperty(\"title\")}}\n          </a>\n        </div>\n      "
-        }
-    ];
-    Jmx.AttributesController = Jmx._module.controller("Jmx.AttributesController", ["$scope", "$element", "$location", "workspace", "jolokia", "jolokiaUrl", "jmxWidgets", "jmxWidgetTypes", "$templateCache", "localStorage", "$browser", "$timeout", function ($scope, $element, $location, workspace, jolokia, jolokiaUrl, jmxWidgets, jmxWidgetTypes, $templateCache, localStorage, $browser, $timeout) {
-            $scope.searchText = '';
-            $scope.nid = 'empty';
-            $scope.selectedItems = [];
-            $scope.lastKey = null;
-            $scope.attributesInfoCache = {};
-            $scope.entity = {};
-            $scope.attributeSchema = {};
-            $scope.gridData = [];
-            $scope.attributes = "";
-            $scope.$watch('gridData.length', function (newValue, oldValue) {
-                if (newValue !== oldValue) {
-                    if (newValue > 0) {
-                        $scope.attributes = $templateCache.get('gridTemplate');
-                    }
-                    else {
-                        $scope.attributes = "";
-                    }
-                }
-            });
-            var attributeSchemaBasic = {
-                properties: {
-                    'key': {
-                        type: 'string',
-                        readOnly: 'true'
-                    },
-                    'description': {
-                        description: 'Description',
-                        type: 'string',
-                        formTemplate: "<textarea class='form-control' rows='2' readonly='true'></textarea>"
-                    },
-                    'type': {
-                        type: 'string',
-                        readOnly: 'true'
-                    },
-                    'jolokia': {
-                        label: 'Jolokia&nbsp;URL',
-                        type: 'string',
-                        readOnly: 'true'
-                    }
-                }
-            };
-            $scope.gridOptions = {
-                scope: $scope,
-                selectedItems: [],
-                showFilter: false,
-                canSelectRows: false,
-                enableRowSelection: false,
-                enableRowClickSelection: false,
-                keepLastSelected: false,
-                multiSelect: true,
-                showColumnMenu: true,
-                displaySelectionCheckbox: false,
-                filterOptions: {
-                    filterText: ''
-                },
-                // TODO disabled for now as it causes https://github.com/hawtio/hawtio/issues/262
-                //sortInfo: { field: 'name', direction: 'asc'},
-                data: 'gridData',
-                columnDefs: Jmx.propertiesColumnDefs
-            };
-            $scope.$watch(function (scope) { return scope.gridOptions.selectedItems.map(function (item) { return item.key || item; }); }, function (newValue, oldValue) {
-                if (newValue !== oldValue) {
-                    Jmx.log.debug("Selected items:", newValue);
-                    $scope.selectedItems = newValue;
-                }
-            }, true);
-            // clear selection if we clicked the jmx nav bar button
-            // otherwise we may show data from Camel/ActiveMQ or other plugins that
-            // reuse the JMX plugin for showing tables (#884)
-            var currentUrl = $location.url();
-            if (_.endsWith(currentUrl, "/jmx/attributes")) {
-                Jmx.log.debug("Reset selection in JMX plugin");
-                workspace.selection = null;
-                $scope.lastKey = null;
-            }
-            $scope.nid = $location.search()['nid'];
-            Jmx.log.debug("nid: ", $scope.nid);
-            var updateTable = _.debounce(updateTableContents, 50, { leading: false, trailing: true });
-            $scope.$on('jmxTreeUpdated', updateTable);
-            $scope.$watch('gridOptions.filterOptions.filterText', function (newValue, oldValue) {
-                if (newValue !== oldValue) {
-                    updateTable();
-                }
-            });
-            updateTable();
-            $scope.onCancelAttribute = function () {
-                // clear entity
-                $scope.entity = {};
-            };
-            $scope.onUpdateAttribute = function () {
-                var value = $scope.entity["attrValueEdit"];
-                var key = $scope.entity["key"];
-                // clear entity
-                $scope.entity = {};
-                // TODO: check if value changed
-                // update the attribute on the mbean
-                var mbean = workspace.getSelectedMBeanName();
-                if (mbean) {
-                    jolokia.setAttribute(mbean, key, value, Core.onSuccess(function (response) {
-                        Core.notification("success", "Updated attribute " + key);
-                    }));
-                }
-            };
-            function onViewAttribute(row) {
-                if (!row.summary) {
-                    return;
-                }
-                // create entity and populate it with data from the selected row
-                $scope.entity = {
-                    key: row.key,
-                    description: row.attrDesc,
-                    type: row.type,
-                    jolokia: buildJolokiaUrl(row.key),
-                    rw: row.rw
-                };
-                // calculate a textare with X number of rows that usually fit the value to display
-                var len = row.summary.length;
-                var rows = (len / 40) + 1;
-                if (rows > 10) {
-                    // cap at most 10 rows to not make the dialog too large
-                    rows = 10;
-                }
-                var readOnly = !row.rw;
-                if (readOnly) {
-                    // if the value is empty its a &nbsp; as we need this for the table to allow us to click on the empty row
-                    if (row.summary === '&nbsp;') {
-                        $scope.entity["attrValueView"] = '';
-                    }
-                    else {
-                        $scope.entity["attrValueView"] = row.summary;
-                    }
-                    initAttributeSchemaView($scope, rows);
-                }
-                else {
-                    // if the value is empty its a &nbsp; as we need this for the table to allow us to click on the empty row
-                    if (row.summary === '&nbsp;') {
-                        $scope.entity["attrValueEdit"] = '';
-                    }
-                    else {
-                        $scope.entity["attrValueEdit"] = row.summary;
-                    }
-                    initAttributeSchemaEdit($scope, rows);
-                }
-                $scope.showAttributeDialog = true;
-            }
-            function buildJolokiaUrl(attribute) {
-                var mbeanName = Core.escapeMBean(workspace.getSelectedMBeanName());
-                return jolokiaUrl + "/read/" + mbeanName + "/" + attribute;
-            }
-            function initAttributeSchemaView($scope, rows) {
-                // clone from the basic schema to the new schema we create on-the-fly
-                // this is needed as the dialog have problems if reusing the schema, and changing the schema afterwards
-                // so its safer to create a new schema according to our needs
-                $scope.attributeSchemaView = {};
-                for (var i in attributeSchemaBasic) {
-                    $scope.attributeSchemaView[i] = attributeSchemaBasic[i];
-                }
-                // and add the new attrValue which is dynamic computed
-                $scope.attributeSchemaView.properties.attrValueView = {
-                    description: 'Value',
-                    label: "Value",
-                    type: 'string',
-                    formTemplate: "<textarea class='form-control' rows='" + rows + "' readonly='true'></textarea>"
-                };
-                $scope.attributeSchemaView.properties.copyAttrValueViewToClipboard = {
-                    label: '&nbsp;',
-                    type: 'string',
-                    formTemplate: "\n          <button class=\"btn btn-sm btn-default btn-clipboard pull-right\" data-clipboard-text=\"{{entity.attrValueView}}\"\n                  title=\"Copy value to clipboard\" aria-label=\"Copy value to clipboard\">\n            <i class=\"fa fa-clipboard\" aria-hidden=\"true\"></i>\n          </button>\n        "
-                };
-                // just to be safe, then delete not needed part of the schema
-                if ($scope.attributeSchemaView) {
-                    delete $scope.attributeSchemaView.properties.attrValueEdit;
-                    delete $scope.attributeSchemaView.properties.copyAttrValueEditToClipboard;
-                }
-            }
-            function initAttributeSchemaEdit($scope, rows) {
-                // clone from the basic schema to the new schema we create on-the-fly
-                // this is needed as the dialog have problems if reusing the schema, and changing the schema afterwards
-                // so its safer to create a new schema according to our needs
-                $scope.attributeSchemaEdit = {};
-                for (var i in attributeSchemaBasic) {
-                    $scope.attributeSchemaEdit[i] = attributeSchemaBasic[i];
-                }
-                // and add the new attrValue which is dynamic computed
-                $scope.attributeSchemaEdit.properties.attrValueEdit = {
-                    description: 'Value',
-                    label: "Value",
-                    type: 'string',
-                    formTemplate: "<textarea class='form-control' rows='" + rows + "'></textarea>"
-                };
-                $scope.attributeSchemaEdit.properties.copyAttrValueEditToClipboard = {
-                    label: '&nbsp;',
-                    type: 'string',
-                    formTemplate: "\n          <button class=\"btn btn-sm btn-default btn-clipboard pull-right\" data-clipboard-text=\"{{entity.attrValueEdit}}\"\n                  title=\"Copy value to clipboard\" aria-label=\"Copy value to clipboard\">\n            <i class=\"fa fa-clipboard\" aria-hidden=\"true\"></i>\n          </button>\n        "
-                };
-                // just to be safe, then delete not needed part of the schema
-                if ($scope.attributeSchemaEdit) {
-                    delete $scope.attributeSchemaEdit.properties.attrValueView;
-                    delete $scope.attributeSchemaEdit.properties.copyAttrValueViewToClipboard;
-                }
-            }
-            $scope.invokeSelectedMBeans = function (operationName, completeFunction) {
-                if (completeFunction === void 0) { completeFunction = null; }
-                var queries = [];
-                angular.forEach($scope.selectedItems || [], function (item) {
-                    var mbean = item["_id"];
-                    if (mbean) {
-                        var opName = operationName;
-                        if (angular.isFunction(operationName)) {
-                            opName = operationName(item);
-                        }
-                        queries.push({ type: "exec", operation: opName, mbean: mbean });
-                    }
-                });
-                if (queries.length) {
-                    var callback = function () {
-                        if (completeFunction) {
-                            completeFunction();
-                        }
-                        else {
-                            operationComplete();
-                        }
-                    };
-                    jolokia.request(queries, Core.onSuccess(callback, { error: callback }));
-                }
-            };
-            function operationComplete() {
-                updateTableContents();
-            }
-            function updateTableContents() {
-                // lets clear any previous queries just in case!
-                Core.unregister(jolokia, $scope);
-                $scope.gridData = [];
-                $scope.mbeanIndex = null;
-                var mbean = workspace.getSelectedMBeanName();
-                var request = null;
-                var node = workspace.selection;
-                if (node === null || angular.isUndefined(node) || node.key !== $scope.lastKey) {
-                    // cache attributes info, so we know if the attribute is read-only or read-write, and also the attribute description
-                    $scope.attributesInfoCache = null;
-                    if (mbean == null) {
-                        // in case of refresh
-                        var _key = $location.search()['nid'];
-                        var _node = workspace.keyToNodeMap[_key];
-                        if (_node) {
-                            mbean = _node.objectName;
-                        }
-                    }
-                    if (mbean) {
-                        var asQuery = function (node) {
-                            var path = Core.escapeMBeanPath(node);
-                            var query = {
-                                type: "LIST",
-                                method: "post",
-                                path: path,
-                                ignoreErrors: true
-                            };
-                            return query;
-                        };
-                        var infoQuery = asQuery(mbean);
-                        jolokia.request(infoQuery, Core.onSuccess(function (response) {
-                            $scope.attributesInfoCache = response.value;
-                            Jmx.log.debug("Updated attributes info cache for mbean " + mbean);
-                        }));
-                    }
-                }
-                if (mbean) {
-                    request = { type: 'read', mbean: mbean };
-                    if (node === null || angular.isUndefined(node) || node.key !== $scope.lastKey) {
-                        $scope.gridOptions.columnDefs = Jmx.propertiesColumnDefs;
-                        $scope.gridOptions.enableRowClickSelection = false;
-                    }
-                }
-                else if (node) {
-                    if (node.key !== $scope.lastKey) {
-                        $scope.gridOptions.columnDefs = [];
-                        $scope.gridOptions.enableRowClickSelection = true;
-                    }
-                    // lets query each child's details
-                    var children = node.children;
-                    if (children) {
-                        var childNodes = children.map(function (child) { return child.objectName; });
-                        var mbeans = childNodes.filter(function (mbean) { return FilterHelpers.search(mbean, $scope.gridOptions.filterOptions.filterText); });
-                        var maxFolderSize = localStorage["jmxMaxFolderSize"];
-                        mbeans = mbeans.slice(0, maxFolderSize);
-                        if (mbeans) {
-                            var typeNames = Jmx.getUniqueTypeNames(children);
-                            if (typeNames.length <= 1) {
-                                var query = mbeans.map(function (mbean) {
-                                    return { type: "READ", mbean: mbean, ignoreErrors: true };
-                                });
-                                if (query.length > 0) {
-                                    request = query;
-                                    // deal with multiple results
-                                    $scope.mbeanIndex = {};
-                                    $scope.mbeanRowCounter = 0;
-                                    $scope.mbeanCount = mbeans.length;
-                                }
-                            }
-                            else {
-                                console.log("Too many type names " + typeNames);
-                            }
-                        }
-                    }
-                }
-                var callback = Core.onSuccess(render);
-                if (request) {
-                    $scope.request = request;
-                    Core.register(jolokia, $scope, request, callback);
-                }
-                else if (node) {
-                    if (node.key !== $scope.lastKey) {
-                        $scope.gridOptions.columnDefs = Jmx.foldersColumnDefs;
-                        $scope.gridOptions.enableRowClickSelection = true;
-                    }
-                    $scope.gridData = node.children;
-                    addHandlerFunctions($scope.gridData);
-                }
-                if (node) {
-                    $scope.lastKey = node.key;
-                    $scope.title = node.text;
-                }
-                Core.$apply($scope);
-            }
-            function render(response) {
-                var data = response.value;
-                var mbeanIndex = $scope.mbeanIndex;
-                var mbean = response.request['mbean'];
-                if (mbean) {
-                    // lets store the mbean in the row for later
-                    data["_id"] = mbean;
-                }
-                if (mbeanIndex) {
-                    if (mbean) {
-                        var idx = mbeanIndex[mbean];
-                        if (!angular.isDefined(idx)) {
-                            idx = $scope.mbeanRowCounter;
-                            mbeanIndex[mbean] = idx;
-                            $scope.mbeanRowCounter += 1;
-                        }
-                        if (idx === 0) {
-                            // this is to force the table to repaint
-                            $scope.selectedIndices = $scope.selectedItems.map(function (item) { return $scope.gridData.indexOf(item); });
-                            $scope.gridData = [];
-                            if (!$scope.gridOptions.columnDefs.length) {
-                                // lets update the column definitions based on any configured defaults
-                                var key = workspace.selectionConfigKey();
-                                $scope.gridOptions.gridKey = key;
-                                $scope.gridOptions.onClickRowHandlers = workspace.onClickRowHandlers;
-                                var defaultDefs_1 = _.clone(workspace.attributeColumnDefs[key]) || [];
-                                var defaultSize_1 = defaultDefs_1.length;
-                                var map_1 = {};
-                                angular.forEach(defaultDefs_1, function (value, key) {
-                                    var field = value.field;
-                                    if (field) {
-                                        map_1[field] = value;
-                                    }
-                                });
-                                var extraDefs_1 = [];
-                                angular.forEach(data, function (value, key) {
-                                    if (includePropertyValue(key, value)) {
-                                        if (!map_1[key]) {
-                                            extraDefs_1.push({
-                                                field: key,
-                                                displayName: key === '_id' ? 'Object name' : Core.humanizeValue(key),
-                                                visible: defaultSize_1 === 0
-                                            });
-                                        }
-                                    }
-                                });
-                                // the additional columns (which are not pre-configured), should be sorted
-                                // so the column menu has a nice sorted list instead of random ordering
-                                extraDefs_1 = extraDefs_1.sort(function (def, def2) {
-                                    // make sure _id is last
-                                    if (_.startsWith(def.field, '_')) {
-                                        return 1;
-                                    }
-                                    else if (_.startsWith(def2.field, '_')) {
-                                        return -1;
-                                    }
-                                    return def.field.localeCompare(def2.field);
-                                });
-                                extraDefs_1.forEach(function (e) { return defaultDefs_1.push(e); });
-                                if (extraDefs_1.length > 0) {
-                                    $scope.hasExtraColumns = true;
-                                }
-                                $scope.gridOptions.columnDefs = defaultDefs_1;
-                                $scope.gridOptions.enableRowClickSelection = true;
-                            }
-                        }
-                        // mask attribute read error
-                        angular.forEach(data, function (value, key) {
-                            if (includePropertyValue(key, value)) {
-                                data[key] = maskReadError(value);
-                            }
-                        });
-                        // assume 1 row of data per mbean
-                        $scope.gridData[idx] = data;
-                        addHandlerFunctions($scope.gridData);
-                        var count = $scope.mbeanCount;
-                        if (!count || idx + 1 >= count) {
-                            // only cause a refresh on the last row
-                            var newSelections = $scope.selectedIndices.map(function (idx) { return $scope.gridData[idx]; }).filter(function (row) { return row; });
-                            $scope.selectedItems.splice(0, $scope.selectedItems.length);
-                            $scope.selectedItems.push.apply($scope.selectedItems, newSelections);
-                            //console.log("Would have selected " + JSON.stringify($scope.selectedItems));
-                            Core.$apply($scope);
-                        }
-                        // if the last row, then fire an event
-                    }
-                    else {
-                        console.log("No mbean name in request " + JSON.stringify(response.request));
-                    }
-                }
-                else {
-                    $scope.gridOptions.columnDefs = Jmx.propertiesColumnDefs;
-                    $scope.gridOptions.enableRowClickSelection = false;
-                    var showAllAttributes_1 = true;
-                    if (angular.isObject(data)) {
-                        var properties_1 = Array();
-                        angular.forEach(data, function (value, key) {
-                            if (showAllAttributes_1 || includePropertyValue(key, value)) {
-                                // always skip keys which start with _
-                                if (!_.startsWith(key, "_")) {
-                                    // lets format the ObjectName nicely dealing with objects with
-                                    // nested object names or arrays of object names
-                                    if (key === "ObjectName") {
-                                        value = unwrapObjectName(value);
-                                    }
-                                    // lets unwrap any arrays of object names
-                                    if (angular.isArray(value)) {
-                                        value = value.map(function (v) {
-                                            return unwrapObjectName(v);
-                                        });
-                                    }
-                                    // the value must be string as the sorting/filtering of the table relies on that
-                                    var type = lookupAttributeType(key);
-                                    var data_1 = {
-                                        key: key,
-                                        name: Core.humanizeValue(key),
-                                        value: maskReadError(Core.safeNullAsString(value, type))
-                                    };
-                                    generateSummaryAndDetail(key, data_1);
-                                    properties_1.push(data_1);
-                                }
-                            }
-                        });
-                        if (!_.some(properties_1, function (p) {
-                            return p['key'] === 'ObjectName';
-                        })) {
-                            var objectName = {
-                                key: "ObjectName",
-                                name: "Object Name",
-                                value: mbean
-                            };
-                            generateSummaryAndDetail(objectName.key, objectName);
-                            properties_1.push(objectName);
-                        }
-                        properties_1 = _.sortBy(properties_1, 'name');
-                        $scope.selectedItems = [data];
-                        data = properties_1;
-                    }
-                    $scope.gridData = data;
-                    addHandlerFunctions($scope.gridData);
-                    Core.$apply($scope);
-                }
-            }
-            function maskReadError(value) {
-                if (typeof value !== 'string') {
-                    return value;
-                }
-                var forbidden = /^ERROR: Reading attribute .+ \(class java\.lang\.SecurityException\)$/;
-                var unsupported = /^ERROR: java\.lang\.UnsupportedOperationException: .+ \(class javax\.management\.RuntimeMBeanException\)$/;
-                if (value.match(forbidden)) {
-                    return "**********";
-                }
-                else if (value.match(unsupported)) {
-                    return "(Not supported)";
-                }
-                else {
-                    return value;
-                }
-            }
-            function addHandlerFunctions(data) {
-                data.forEach(function (item) {
-                    item['inDashboard'] = $scope.inDashboard;
-                    item['getDashboardWidgets'] = function () { return getDashboardWidgets(item); };
-                    item['onViewAttribute'] = function () { return onViewAttribute(item); };
-                    item['folderIconClass'] = function (row) { return folderIconClass(row); };
-                    item['gotoFolder'] = function (row) { return gotoFolder(row); };
-                });
-            }
-            function getDashboardWidgets(row) {
-                var mbean = workspace.getSelectedMBeanName();
-                if (!mbean) {
-                    return '';
-                }
-                var potentialCandidates = _.filter(jmxWidgets, function (widget) {
-                    return mbean === widget.mbean;
-                });
-                if (potentialCandidates.length === 0) {
-                    return '';
-                }
-                potentialCandidates = _.filter(potentialCandidates, function (widget) {
-                    return widget.attribute === row.key || widget.total === row.key;
-                });
-                if (potentialCandidates.length === 0) {
-                    return '';
-                }
-                row.addChartToDashboard = function (type) { return $scope.addChartToDashboard(row, type); };
-                var rc = [];
-                potentialCandidates.forEach(function (widget) {
-                    var widgetType = Jmx.getWidgetType(widget);
-                    rc.push("\n              <i class=\"" + widgetType['icon'] + " clickable\"\n                 title=\"" + widgetType['title'] + "\"\n                 ng-click=\"row.entity.addChartToDashboard('" + widgetType['type'] + "')\"></i>\n            ");
-                });
-                return rc.join() + "&nbsp;";
-            }
-            $scope.addChartToDashboard = function (row, widgetType) {
-                var mbean = workspace.getSelectedMBeanName();
-                var candidates = jmxWidgets
-                    .filter(function (widget) { return mbean === widget.mbean; })
-                    .filter(function (widget) { return widget.attribute === row.key || widget.total === row.key; })
-                    .filter(function (widget) { return widget.type === widgetType; });
-                // hmmm, we really should only have one result...
-                var widget = _.first(candidates);
-                var type = Jmx.getWidgetType(widget);
-                $location.url(Jmx.createDashboardLink(type, widget));
-            };
-            function folderIconClass(row) {
-                // TODO lets ignore the classes property for now
-                // as we don't have an easy way to know if there is an icon defined for an icon or not
-                // and we want to make sure there always is an icon shown
-                /*
-                 let classes = (row.getProperty("addClass") || "").trim();
-                 if (classes) {
-                 return classes;
-                 }
-                 */
-                if (!row.getProperty) {
-                    return '';
-                }
-                return row.getProperty('objectName') ? 'fa fa-cog' : 'pficon pficon-folder-close';
-            }
-            function gotoFolder(row) {
-                if (row.getProperty) {
-                    var key = row.getProperty('key');
-                    if (key) {
-                        $location.search('nid', key);
-                    }
-                }
-            }
-            function unwrapObjectName(value) {
-                if (!angular.isObject(value)) {
-                    return value;
-                }
-                var keys = Object.keys(value);
-                if (keys.length === 1 && keys[0] === "objectName") {
-                    return value["objectName"];
-                }
-                return value;
-            }
-            function generateSummaryAndDetail(key, data) {
-                var value = Core.escapeHtml(data.value);
-                if (!angular.isArray(value) && angular.isObject(value)) {
-                    var detailHtml_1 = "<table class='table table-striped'>";
-                    var summary_1 = "";
-                    var object_1 = value;
-                    var keys = Object.keys(value).sort();
-                    angular.forEach(keys, function (key) {
-                        var value = object_1[key];
-                        detailHtml_1 += "<tr><td>" + Core.humanizeValue(key) + "</td><td>" + value + "</td></tr>";
-                        summary_1 += Core.humanizeValue(key) + ": " + value + "  ";
-                    });
-                    detailHtml_1 += "</table>";
-                    data.summary = summary_1;
-                    data.detailHtml = detailHtml_1;
-                    data.tooltip = summary_1;
-                }
-                else {
-                    var text = value;
-                    // if the text is empty then use a no-break-space so the table allows us to click on the row,
-                    // otherwise if the text is empty, then you cannot click on the row
-                    if (text === '') {
-                        text = '&nbsp;';
-                        data.tooltip = "";
-                    }
-                    else {
-                        data.tooltip = text;
-                    }
-                    data.summary = "" + text;
-                    data.detailHtml = "<pre>" + text + "</pre>";
-                    if (angular.isArray(value)) {
-                        var html_1 = "<ul>";
-                        angular.forEach(value, function (item) { return html_1 += "<li>" + item + "</li>"; });
-                        html_1 += "</ul>";
-                        data.detailHtml = html_1;
-                    }
-                }
-                // enrich the data with information if the attribute is read-only/read-write, and the JMX attribute description (if any)
-                data.rw = false;
-                data.attrDesc = data.name;
-                data.type = "string";
-                if ($scope.attributesInfoCache != null && 'attr' in $scope.attributesInfoCache) {
-                    var info = $scope.attributesInfoCache.attr[key];
-                    if (angular.isDefined(info)) {
-                        data.rw = info.rw;
-                        data.attrDesc = info.desc;
-                        data.type = info.type;
-                    }
-                }
-            }
-            function lookupAttributeType(key) {
-                if ($scope.attributesInfoCache != null && 'attr' in $scope.attributesInfoCache) {
-                    var info = $scope.attributesInfoCache.attr[key];
-                    if (angular.isDefined(info)) {
-                        return info.type;
-                    }
-                }
-                return null;
-            }
-            function includePropertyValue(key, value) {
-                return !angular.isObject(value);
-            }
         }]);
 })(Jmx || (Jmx = {}));
 /// <reference path="jmxPlugin.ts"/>
@@ -7322,306 +8038,6 @@ var Jmx;
             Core.register(jolokia, $scope, $scope.reqs, Core.onSuccess($scope.render));
         }]);
 })(Jmx || (Jmx = {}));
-/// <reference path="../../../jmx/ts/workspace.ts"/>
-var JVM;
-(function (JVM) {
-    ConnectController.$inject = ["$scope", "$location", "localStorage", "workspace", "$uibModal", "connectService"];
-    function ConnectController($scope, $location, localStorage, workspace, $uibModal, connectService) {
-        'ngInject';
-        var VALIDATION_ERROR_REQUIRED = 'Please fill out this field';
-        var modalInstance;
-        $scope.config = {
-            selectionMatchProp: 'name',
-            selectItems: false,
-            showSelectBox: false
-        };
-        $scope.actionButtons = [
-            {
-                name: 'Connect',
-                actionFn: connect
-            }
-        ];
-        $scope.actionDropDown = [
-            {
-                name: 'Edit',
-                actionFn: showEditConnectionModal
-            },
-            {
-                name: 'Delete',
-                actionFn: deleteConnection
-            }
-        ];
-        function initModel(connection, originalConnection) {
-            if (originalConnection === void 0) { originalConnection = null; }
-            $scope.model = {
-                connection: connection,
-                errors: {},
-                test: { ok: false, message: null },
-                originalConnection: originalConnection,
-                isAddAction: function () {
-                    return this.originalConnection === null;
-                }
-            };
-        }
-        $scope.showAddConnectionModal = function () {
-            initModel(Core.createConnectOptions({
-                host: 'localhost',
-                path: 'jolokia',
-                port: 8181
-            }));
-            modalInstance = $uibModal.open({
-                templateUrl: 'plugins/jvm/html/connect-edit.html',
-                scope: $scope
-            });
-        };
-        function showEditConnectionModal(action, connection) {
-            var clone = angular.extend({}, connection);
-            initModel(clone, connection);
-            modalInstance = $uibModal.open({
-                templateUrl: 'plugins/jvm/html/connect-edit.html',
-                scope: $scope
-            });
-        }
-        ;
-        $scope.saveConnection = function (model) {
-            var connection = model.connection;
-            var originalConnection = model.originalConnection;
-            var errors = validateConnectionForm(connection);
-            if (Object.keys(errors).length === 0) {
-                // connection is secure if username has a value
-                connection.secure = connection.userName !== null && connection.userName.trim() !== '';
-                // save connection without username and password values
-                connection.userName = '';
-                connection.password = '';
-                if (model.isAddAction()) {
-                    $scope.connections.unshift(connection);
-                }
-                else {
-                    angular.extend(originalConnection, connection);
-                }
-                Core.saveConnections($scope.connections);
-                modalInstance.close();
-            }
-            else {
-                model.errors = errors;
-            }
-        };
-        $scope.testConnection = function (connection) {
-            connectService.testConnection(connection)
-                .then(function (successMesssage) {
-                $scope.model.test.ok = true;
-                $scope.model.test.message = successMesssage;
-            })
-                .catch(function (errorMesssage) {
-                $scope.model.test.ok = false;
-                $scope.model.test.message = errorMesssage;
-            });
-        };
-        $scope.resetTestConnection = function () {
-            $scope.model.test.ok = false;
-            $scope.model.test.message = null;
-        };
-        function deleteConnection(action, connection) {
-            $uibModal.open({
-                templateUrl: 'plugins/jvm/html/connect-delete-warning.html'
-            })
-                .result.then(function () {
-                $scope.connections.splice($scope.connections.indexOf(connection), 1);
-                Core.saveConnections($scope.connections);
-            });
-        }
-        ;
-        function validateConnectionForm(connection) {
-            var errors = {};
-            ['name', 'host'].forEach(function (fieldName) {
-                if (connection[fieldName] === null || connection[fieldName].trim().length === 0) {
-                    errors[fieldName] = VALIDATION_ERROR_REQUIRED;
-                }
-            });
-            return errors;
-        }
-        function connect(action, connection) {
-            if (connection.secure) {
-                $scope.connection = angular.extend({}, connection);
-                modalInstance = $uibModal.open({
-                    templateUrl: 'plugins/jvm/html/connect-login.html',
-                    scope: $scope
-                });
-            }
-            else {
-                connectService.connect(connection);
-            }
-        }
-        $scope.login = function (connection) {
-            if ($scope.credentialsOk) {
-                connectService.connect(connection);
-                modalInstance.close();
-            }
-            else {
-                $scope.showErrorMessage = true;
-            }
-        };
-        $scope.checkCredentials = function (connection) {
-            connectService.testConnection(connection)
-                .then(function (successMesssage) {
-                $scope.credentialsOk = true;
-            })
-                .catch(function (errorMesssage) {
-                $scope.credentialsOk = false;
-            });
-        };
-        var autoconnect = $location.search();
-        if (typeof autoconnect != 'undefined' && typeof autoconnect.name != 'undefined') {
-            var conOpts = Core.createConnectOptions({
-                scheme: autoconnect.scheme || 'http',
-                host: autoconnect.host,
-                path: autoconnect.path,
-                port: autoconnect.port,
-                userName: autoconnect.userName,
-                password: autoconnect.password,
-                name: autoconnect.name
-            });
-            $scope.connect(conOpts);
-            window.close();
-        }
-        $scope.connections = Core.loadConnections();
-    }
-    JVM.ConnectController = ConnectController;
-})(JVM || (JVM = {}));
-/// <reference path="../jvmHelpers.ts"/>
-var JVM;
-(function (JVM) {
-    var ConnectService = /** @class */ (function () {
-        ConnectService.$inject = ["$q", "$window"];
-        function ConnectService($q, $window) {
-            'ngInject';
-            this.$q = $q;
-            this.$window = $window;
-        }
-        ConnectService.prototype.testConnection = function (connection) {
-            return this.$q(function (resolve, reject) {
-                new Jolokia({
-                    url: Core.createServerConnectionUrl(connection),
-                    method: 'post',
-                    mimeType: 'application/json',
-                    username: connection.userName ? connection.userName.toString() : '',
-                    password: connection.password ? connection.password.toString() : '',
-                }).request({
-                    type: 'version'
-                }, {
-                    success: function (response) {
-                        resolve('Connected successfully');
-                    },
-                    error: function (response) {
-                        reject('Connection failed');
-                    },
-                    ajaxError: function (response) {
-                        reject(response.status === 403 ? 'Incorrect username or password' : 'Connection failed');
-                    }
-                });
-            });
-        };
-        ;
-        ConnectService.prototype.connect = function (connection) {
-            JVM.log.debug("Connecting with options: ", StringHelpers.toString(connection));
-            var url = URI('').search({ con: connection.name }).toString();
-            var newWindow = this.$window.open(url);
-            newWindow['credentials'] = {
-                username: connection.userName,
-                password: connection.password
-            };
-        };
-        return ConnectService;
-    }());
-    JVM.ConnectService = ConnectService;
-})(JVM || (JVM = {}));
-var JVM;
-(function (JVM) {
-    function ConnectionUrlFilter() {
-        return function (connection) {
-            var url = connection.scheme + "://" + connection.host;
-            if (connection.port) {
-                url += ":" + connection.port;
-            }
-            if (connection.path) {
-                url += "/" + connection.path;
-            }
-            return url;
-        };
-    }
-    JVM.ConnectionUrlFilter = ConnectionUrlFilter;
-})(JVM || (JVM = {}));
-/// <reference path="connect.controller.ts"/>
-/// <reference path="connect.service.ts"/>
-/// <reference path="connection-url.filter.ts"/>
-var JVM;
-(function (JVM) {
-    JVM.ConnectModule = angular
-        .module('hawtio-jvm-connect', [])
-        .controller('ConnectController', JVM.ConnectController)
-        .service('connectService', JVM.ConnectService)
-        .filter('connectionUrl', JVM.ConnectionUrlFilter)
-        .name;
-})(JVM || (JVM = {}));
-/// <reference path="connect/connect.module.ts"/>
-var JVM;
-(function (JVM) {
-    JVM.windowJolokia = undefined;
-    JVM._module = angular.module(JVM.pluginName, [JVM.ConnectModule]);
-    JVM._module.config(["$provide", "$routeProvider", function ($provide, $routeProvider) {
-            /*
-            $provide.decorator('WelcomePageRegistry', ['$delegate', ($delegate) => {
-              return {
-        
-              }
-            }]);
-            */
-            $routeProvider
-                .when('/jvm', { redirectTo: '/jvm/connect' })
-                .when('/jvm/welcome', { templateUrl: UrlHelpers.join(JVM.templatePath, 'welcome.html') })
-                .when('/jvm/discover', { templateUrl: UrlHelpers.join(JVM.templatePath, 'discover.html') })
-                .when('/jvm/connect', { templateUrl: UrlHelpers.join(JVM.templatePath, 'connect.html') })
-                .when('/jvm/local', { templateUrl: UrlHelpers.join(JVM.templatePath, 'local.html') });
-        }]);
-    JVM._module.constant('mbeanName', 'hawtio:type=JVMList');
-    JVM._module.run(["HawtioNav", "$location", "workspace", "viewRegistry", "layoutFull", "helpRegistry", "preferencesRegistry", "ConnectOptions", "locationChangeStartTasks", "HawtioDashboard", "HawtioExtension", "$templateCache", "$compile", function (nav, $location, workspace, viewRegistry, layoutFull, helpRegistry, preferencesRegistry, ConnectOptions, locationChangeStartTasks, dash, extensions, $templateCache, $compile) {
-            viewRegistry['jvm'] = "plugins/jvm/html/layoutConnect.html";
-            extensions.add('hawtio-header', function ($scope) {
-                var template = $templateCache.get(UrlHelpers.join(JVM.templatePath, 'navbarHeaderExtension.html'));
-                return $compile(template)($scope);
-            });
-            if (!dash.inDashboard) {
-                // ensure that if the connection parameter is present, that we keep it
-                locationChangeStartTasks.addTask('ConParam', function ($event, newUrl, oldUrl) {
-                    // we can't execute until the app is initialized...
-                    if (!HawtioCore.injector) {
-                        return;
-                    }
-                    //log.debug("ConParam task firing, newUrl: ", newUrl, " oldUrl: ", oldUrl, " ConnectOptions: ", ConnectOptions);
-                    if (!ConnectOptions || !ConnectOptions.name || !newUrl) {
-                        return;
-                    }
-                    var newQuery = new URI(newUrl).query(true);
-                    if (!newQuery.con) {
-                        //log.debug("Lost connection parameter (", ConnectOptions.name, ") from query params: ", newQuery, " resetting");
-                        newQuery['con'] = ConnectOptions.name;
-                        $location.search(newQuery);
-                    }
-                });
-            }
-            var builder = nav.builder();
-            var tab = builder.id('jvm')
-                .href(function () { return '/jvm'; })
-                .title(function () { return 'Connect'; })
-                .isValid(function () { return ConnectOptions == null || ConnectOptions.name == null; })
-                .build();
-            nav.add(tab);
-            helpRegistry.addUserDoc('jvm', 'plugins/jvm/doc/help.md');
-            preferencesRegistry.addTab("Connect", 'plugins/jvm/html/reset.html');
-            preferencesRegistry.addTab("Jolokia", "plugins/jvm/html/jolokiaPreferences.html");
-        }]);
-    hawtioPluginLoader.addModule(JVM.pluginName);
-})(JVM || (JVM = {}));
 /// <reference path="jvmPlugin.ts"/>
 var JVM;
 (function (JVM) {
@@ -7787,310 +8203,6 @@ var JVM;
         }]);
 })(JVM || (JVM = {}));
 /// <reference path="jvmPlugin.ts"/>
-var JVM;
-(function (JVM) {
-    var urlCandidates = ['/hawtio/jolokia', '/jolokia', 'jolokia'];
-    var discoveredUrl = null;
-    hawtioPluginLoader.registerPreBootstrapTask({
-        name: 'JvmParseLocation',
-        task: function (next) {
-            var uri = new URI();
-            var query = uri.query(true);
-            JVM.log.debug("query: ", query);
-            var jolokiaUrl = query['jolokiaUrl'];
-            if (jolokiaUrl) {
-                delete query['sub-tab'];
-                delete query['main-tab'];
-                jolokiaUrl = URI.decode(jolokiaUrl);
-                var jolokiaURI = new URI(jolokiaUrl);
-                var name = query['title'] || 'Unknown Connection';
-                var token = query['token'] || Core.trimLeading(uri.hash(), '#');
-                var options = Core.createConnectOptions({
-                    jolokiaUrl: jolokiaUrl,
-                    name: name,
-                    scheme: jolokiaURI.protocol(),
-                    host: jolokiaURI.hostname(),
-                    port: Core.parseIntValue(jolokiaURI.port()),
-                    path: Core.trimLeading(jolokiaURI.pathname(), '/')
-                });
-                if (!Core.isBlank(token)) {
-                    options['token'] = token;
-                }
-                _.merge(options, jolokiaURI.query(true));
-                _.assign(options, query);
-                JVM.log.debug("options: ", options);
-                var connections = Core.loadConnections();
-                connections.push(options);
-                Core.saveConnections(connections);
-                uri.hash("").query({
-                    con: name
-                });
-                window.location.replace(uri.toString());
-                // don't allow bootstrap to continue
-                return;
-            }
-            var connectionName = query['con'];
-            if (connectionName) {
-                JVM.log.debug("Not discovering jolokia");
-                // a connection name is set, no need to discover a jolokia instance
-                next();
-                return;
-            }
-            function maybeCheckNext(candidates) {
-                if (candidates.length === 0) {
-                    next();
-                }
-                else {
-                    checkNext(candidates.pop());
-                }
-            }
-            function checkNext(url) {
-                JVM.log.debug("trying URL: ", url);
-                $.ajax(url).always(function (data, statusText, jqXHR) {
-                    // for $.ajax().always(), the xhr is flipped on fail
-                    if (statusText !== 'success') {
-                        jqXHR = data;
-                    }
-                    if (jqXHR.status === 200) {
-                        try {
-                            var resp = angular.fromJson(data);
-                            //log.debug("Got response: ", resp);
-                            if ('value' in resp && 'agent' in resp.value) {
-                                discoveredUrl = url;
-                                JVM.log.debug("Found jolokia agent at: ", url, " version: ", resp.value.agent);
-                                next();
-                            }
-                            else {
-                                maybeCheckNext(urlCandidates);
-                            }
-                        }
-                        catch (e) {
-                            maybeCheckNext(urlCandidates);
-                        }
-                    }
-                    else if (jqXHR.status === 401 || jqXHR.status === 403) {
-                        // I guess this could be it...
-                        discoveredUrl = url;
-                        JVM.log.debug("Using URL: ", url, " assuming it could be an agent but got return code: ", jqXHR.status);
-                        next();
-                    }
-                    else {
-                        maybeCheckNext(urlCandidates);
-                    }
-                });
-            }
-            checkNext(urlCandidates.pop());
-        }
-    });
-    JVM.ConnectionName = null;
-    function getConnectionName(reset) {
-        if (reset === void 0) { reset = false; }
-        if (!Core.isBlank(JVM.ConnectionName) && !reset) {
-            return JVM.ConnectionName;
-        }
-        JVM.ConnectionName = '';
-        var search = new URI().search(true);
-        if ('con' in window) {
-            JVM.ConnectionName = window['con'];
-            JVM.log.debug("Using connection name from window: ", JVM.ConnectionName);
-        }
-        else if ('con' in search) {
-            JVM.ConnectionName = search['con'];
-            JVM.log.debug("Using connection name from URL: ", JVM.ConnectionName);
-        }
-        else {
-            JVM.log.debug("No connection name found, using direct connection to JVM");
-        }
-        return JVM.ConnectionName;
-    }
-    JVM.getConnectionName = getConnectionName;
-    function getConnectionOptions() {
-        var name = getConnectionName();
-        if (Core.isBlank(name)) {
-            // this will fail any if (ConnectOptions) check
-            return null;
-        }
-        var answer = Core.getConnectOptions(name);
-        // search for passed credentials when connecting to remote server
-        try {
-            if (window['credentials']) {
-                answer.userName = window['credentials'].username;
-                answer.password = window['credentials'].password;
-            }
-        }
-        catch (securityException) {
-            // ignore
-        }
-        return answer;
-    }
-    JVM.getConnectionOptions = getConnectionOptions;
-    function getJolokiaUrl() {
-        var answer = undefined;
-        var ConnectOptions = getConnectionOptions();
-        var documentBase = HawtioCore.documentBase();
-        if (!ConnectOptions || !ConnectOptions.name) {
-            JVM.log.debug("Using discovered URL");
-            answer = discoveredUrl;
-        }
-        else {
-            answer = Core.createServerConnectionUrl(ConnectOptions);
-            JVM.log.debug("Using configured URL");
-        }
-        if (!answer) {
-            // this will force a dummy jolokia instance
-            return false;
-        }
-        // build full URL
-        var windowURI = new URI();
-        var jolokiaURI = undefined;
-        if (_.startsWith(answer, '/') || _.startsWith(answer, 'http')) {
-            jolokiaURI = new URI(answer);
-        }
-        else {
-            jolokiaURI = new URI(UrlHelpers.join(documentBase, answer));
-        }
-        if (!ConnectOptions || !ConnectOptions.jolokiaUrl) {
-            if (!jolokiaURI.protocol()) {
-                jolokiaURI.protocol(windowURI.protocol());
-            }
-            if (!jolokiaURI.hostname()) {
-                jolokiaURI.host(windowURI.hostname());
-            }
-            if (!jolokiaURI.port()) {
-                jolokiaURI.port(windowURI.port());
-            }
-        }
-        answer = jolokiaURI.toString();
-        JVM.log.debug("Complete jolokia URL: ", answer);
-        return answer;
-    }
-    JVM.getJolokiaUrl = getJolokiaUrl;
-    JVM._module.service('ConnectionName', [function () {
-            return function (reset) {
-                if (reset === void 0) { reset = false; }
-                return getConnectionName(reset);
-            };
-        }]);
-    JVM._module.service('ConnectOptions', [function () {
-            return getConnectionOptions();
-        }]);
-    // the jolokia URL we're connected to
-    JVM._module.factory('jolokiaUrl', [function () {
-            return getJolokiaUrl();
-        }]);
-    // holds the status returned from the last jolokia call (?)
-    JVM._module.factory('jolokiaStatus', function () {
-        return {
-            xhr: null
-        };
-    });
-    JVM.DEFAULT_MAX_DEPTH = 7;
-    JVM.DEFAULT_MAX_COLLECTION_SIZE = 500;
-    JVM._module.factory('jolokiaParams', ["jolokiaUrl", "localStorage", function (jolokiaUrl, localStorage) {
-            var answer = {
-                canonicalNaming: false,
-                ignoreErrors: true,
-                maxCollectionSize: JVM.DEFAULT_MAX_COLLECTION_SIZE,
-                maxDepth: JVM.DEFAULT_MAX_DEPTH,
-                method: 'post',
-                mimeType: 'application/json'
-            };
-            if ('jolokiaParams' in localStorage) {
-                answer = angular.fromJson(localStorage['jolokiaParams']);
-            }
-            else {
-                localStorage['jolokiaParams'] = angular.toJson(answer);
-            }
-            answer['url'] = jolokiaUrl;
-            return answer;
-        }]);
-    function getBeforeSend() {
-        // Just set Authorization for now...
-        var headers = ['Authorization'];
-        var connectionOptions = getConnectionOptions();
-        if (connectionOptions && connectionOptions['token']) {
-            JVM.log.debug("Setting authorization header to token");
-            return function (xhr) {
-                headers.forEach(function (header) {
-                    xhr.setRequestHeader(header, 'Bearer ' + connectionOptions['token']);
-                });
-            };
-        }
-        else if (connectionOptions && connectionOptions.userName && connectionOptions.password) {
-            JVM.log.debug("Setting authorization header to username/password");
-            return function (xhr) {
-                headers.forEach(function (header) {
-                    xhr.setRequestHeader(header, Core.getBasicAuthHeader(connectionOptions.userName, connectionOptions.password));
-                });
-            };
-        }
-        else {
-            JVM.log.debug("Not setting any authorization header");
-            return function (xhr) {
-            };
-        }
-    }
-    JVM.getBeforeSend = getBeforeSend;
-    JVM._module.factory('jolokia', ["$location", "localStorage", "jolokiaStatus", "$rootScope", "userDetails",
-        "jolokiaParams", "jolokiaUrl", "ConnectOptions", "HawtioDashboard", "$uibModal", "$window", function ($location, localStorage, jolokiaStatus, $rootScope, userDetails, jolokiaParams, jolokiaUrl, connectionOptions, dash, $uibModal, $window) {
-            var jolokia = null;
-            if (jolokiaUrl) {
-                $.ajaxSetup({
-                    beforeSend: getBeforeSend()
-                });
-                var modal = null;
-                jolokiaParams['ajaxError'] = jolokiaParams['ajaxError'] ? jolokiaParams['ajaxError'] : function (xhr, textStatus, error) {
-                    if (xhr.status === 401 || xhr.status === 403) {
-                        $window.location.href = 'auth/logout';
-                    }
-                    else {
-                        jolokiaStatus.xhr = xhr;
-                        if (!xhr.responseText && error) {
-                            xhr.responseText = error.stack;
-                        }
-                    }
-                };
-                jolokia = new Jolokia(jolokiaParams);
-                jolokia.stop();
-                if ('updateRate' in localStorage) {
-                    if (localStorage['updateRate'] > 0) {
-                        jolokia.start(localStorage['updateRate']);
-                    }
-                }
-            }
-            else {
-                // empty jolokia that returns nothing
-                jolokia = {
-                    isDummy: true,
-                    running: false,
-                    request: function (req, opts) { return null; },
-                    register: function (req, opts) { return null; },
-                    list: function (path, opts) { return null; },
-                    search: function (mBeanPatter, opts) { return null; },
-                    getAttribute: function (mbean, attribute, path, opts) { return null; },
-                    setAttribute: function (mbean, attribute, value, path, opts) { },
-                    version: function (opts) { return null; },
-                    execute: function (mbean, operation) {
-                        var args = [];
-                        for (var _i = 2; _i < arguments.length; _i++) {
-                            args[_i - 2] = arguments[_i];
-                        }
-                        return null;
-                    },
-                    start: function (period) {
-                        jolokia.running = true;
-                    },
-                    stop: function () {
-                        jolokia.running = false;
-                    },
-                    isRunning: function () { return jolokia.running; },
-                    jobs: function () { return []; }
-                };
-            }
-            return jolokia;
-        }]);
-})(JVM || (JVM = {}));
-/// <reference path="jvmPlugin.ts"/>
 /**
  * @module JVM
  */
@@ -8198,6 +8310,356 @@ var JVM;
             };
         }]);
 })(JVM || (JVM = {}));
+var RBAC;
+(function (RBAC) {
+    var JmxTreeProcessor = /** @class */ (function () {
+        function JmxTreeProcessor(jolokia, jolokiaStatus, rbacTasks, workspace) {
+            this.jolokia = jolokia;
+            this.jolokiaStatus = jolokiaStatus;
+            this.rbacTasks = rbacTasks;
+            this.workspace = workspace;
+        }
+        JmxTreeProcessor.prototype.process = function (tree) {
+            var _this = this;
+            this.rbacTasks.getACLMBean().then(function (aclMBean) {
+                var mbeans = {};
+                RBAC.flattenMBeanTree(mbeans, tree);
+                switch (_this.jolokiaStatus.listMethod) {
+                    case JVM.JolokiaListMethod.LIST_WITH_RBAC:
+                        // we already have everything related to RBAC in place, except 'addClass' property
+                        RBAC.log.debug("Process JMX tree: list with RBAC mode");
+                        _this.processWithRBAC(mbeans);
+                        break;
+                    case JVM.JolokiaListMethod.LIST_GENERAL:
+                    case JVM.JolokiaListMethod.LIST_CANT_DETERMINE:
+                    default:
+                        RBAC.log.debug("Process JMX tree: general mode");
+                        _this.processGeneral(aclMBean, mbeans);
+                        break;
+                }
+            });
+        };
+        JmxTreeProcessor.prototype.processWithRBAC = function (mbeans) {
+            _.forEach(mbeans, function (mbean, mbeanName) {
+                var toAdd = mbean.mbean && mbean.mbean.canInvoke ? "can-invoke" : "cant-invoke";
+                mbeans[mbeanName]['addClass'] = RBAC.stripClasses(mbeans[mbeanName]['addClass']);
+                mbeans[mbeanName]['addClass'] = RBAC.addClass(mbeans[mbeanName]['addClass'], toAdd);
+            });
+        };
+        JmxTreeProcessor.prototype.processGeneral = function (aclMBean, mbeans) {
+            var _this = this;
+            var requests = [];
+            var bulkRequest = {};
+            _.forEach(mbeans, function (mbean, mbeanName) {
+                if (!('canInvoke' in mbean)) {
+                    requests.push({
+                        type: 'exec',
+                        mbean: aclMBean,
+                        operation: 'canInvoke(java.lang.String)',
+                        arguments: [mbeanName]
+                    });
+                    if (mbean.mbean && mbean.mbean.op) {
+                        var ops = mbean.mbean.op;
+                        mbean.mbean.opByString = {};
+                        var opList_1 = [];
+                        _.forEach(ops, function (op, opName) {
+                            if (_.isArray(op)) {
+                                _.forEach(op, function (op) { return _this.addOperation(mbean, opList_1, opName, op); });
+                            }
+                            else {
+                                _this.addOperation(mbean, opList_1, opName, op);
+                            }
+                        });
+                        bulkRequest[mbeanName] = opList_1;
+                    }
+                }
+            });
+            requests.push({
+                type: 'exec',
+                mbean: aclMBean,
+                operation: 'canInvoke(java.util.Map)',
+                arguments: [bulkRequest]
+            });
+            this.jolokia.request(requests, Core.onSuccess(function (response) {
+                var mbean = response.request.arguments[0];
+                if (mbean && _.isString(mbean)) {
+                    mbeans[mbean]['canInvoke'] = response.value;
+                    var toAdd = "cant-invoke";
+                    if (response.value) {
+                        toAdd = "can-invoke";
+                    }
+                    mbeans[mbean]['addClass'] = RBAC.stripClasses(mbeans[mbean]['addClass']);
+                    mbeans[mbean]['addClass'] = RBAC.addClass(mbeans[mbean]['addClass'], toAdd);
+                }
+                else {
+                    var responseMap = response.value;
+                    _.forEach(responseMap, function (operations, mbeanName) {
+                        _.forEach(operations, function (data, operationName) {
+                            mbeans[mbeanName].mbean.opByString[operationName]['canInvoke'] = data['CanInvoke'];
+                        });
+                    });
+                }
+            }, { error: function (response) { } }));
+        };
+        JmxTreeProcessor.prototype.addOperation = function (mbean, opList, opName, op) {
+            var operationString = Core.operationToString(opName, op.args);
+            // enrich the mbean by indexing the full operation string so we can easily look it up later
+            mbean.mbean.opByString[operationString] = op;
+            opList.push(operationString);
+        };
+        return JmxTreeProcessor;
+    }());
+    RBAC.JmxTreeProcessor = JmxTreeProcessor;
+})(RBAC || (RBAC = {}));
+/// <reference path="../../jmx/ts/workspace.ts"/>
+var RBAC;
+(function (RBAC) {
+    var MBEAN_ONLY = 'canInvoke(java.lang.String)';
+    var OVERLOADED_METHOD = 'canInvoke(java.lang.String,java.lang.String)';
+    var EXACT_METHOD = 'canInvoke(java.lang.String,java.lang.String,[Ljava.lang.String;)';
+    var HIDE = 'hide';
+    var REMOVE = 'remove';
+    var INVERSE = 'inverse';
+    /**
+     * Directive that sets an element's visibility to hidden if the user cannot invoke the supplied operation
+     */
+    var HawtioShow = /** @class */ (function () {
+        function HawtioShow(workspace) {
+            this.workspace = workspace;
+            this.restrict = 'A';
+        }
+        HawtioShow.factory = ["workspace", function (workspace) {
+            'ngInject';
+            return new HawtioShow(workspace);
+        }];
+        HawtioShow.prototype.link = function (scope, element, attr) {
+            var _this = this;
+            var objectName = attr['objectName'];
+            if (!objectName) {
+                return;
+            }
+            scope.$watch(function () {
+                var methodName = attr['methodName'];
+                var argumentTypes = attr['argumentTypes'];
+                var mode = attr['mode'] || HIDE;
+                var op = _this.getOp(objectName, methodName, argumentTypes);
+                var args = _this.getArguments(op, objectName, methodName, argumentTypes);
+                objectName = args[0];
+                methodName = args[1];
+                if (objectName) {
+                    var mbean = Core.parseMBean(objectName);
+                    var folder = _this.workspace.findMBeanWithProperties(mbean.domain, mbean.attributes);
+                    if (folder) {
+                        var invokeRights = void 0;
+                        if (methodName) {
+                            invokeRights = _this.workspace.hasInvokeRights(folder, methodName);
+                        }
+                        else {
+                            invokeRights = _this.workspace.hasInvokeRights(folder);
+                        }
+                        _this.applyInvokeRights(element, invokeRights, mode);
+                    }
+                }
+            });
+        };
+        HawtioShow.prototype.getOp = function (objectName, methodName, argumentTypes) {
+            var answer = MBEAN_ONLY;
+            if (!Core.isBlank(methodName)) {
+                answer = OVERLOADED_METHOD;
+            }
+            if (!Core.isBlank(argumentTypes)) {
+                answer = EXACT_METHOD;
+            }
+            return answer;
+        };
+        HawtioShow.prototype.getArguments = function (op, objectName, methodName, argumentTypes) {
+            var args = [];
+            if (op === MBEAN_ONLY) {
+                args.push(objectName);
+            }
+            else if (op === OVERLOADED_METHOD) {
+                args.push(objectName);
+                args.push(methodName);
+            }
+            else if (op === EXACT_METHOD) {
+                args.push(objectName);
+                args.push(methodName);
+                args.push(argumentTypes.split(',').map(function (s) { return s.trim(); }));
+            }
+            return args;
+        };
+        HawtioShow.prototype.applyInvokeRights = function (element, value, mode) {
+            if (value) {
+                if (mode === INVERSE) {
+                    element.css({ display: 'none' });
+                }
+            }
+            else {
+                if (mode === REMOVE) {
+                    element.css({ display: 'none' });
+                }
+                else if (mode === HIDE) {
+                    element.css({ visibility: 'hidden' });
+                }
+            }
+        };
+        return HawtioShow;
+    }());
+    RBAC.HawtioShow = HawtioShow;
+})(RBAC || (RBAC = {}));
+/// <reference path="models.ts"/>
+var RBAC;
+(function (RBAC) {
+    RBAC.TREE_POSTPROCESSOR_NAME = "rbacTreePostprocessor";
+    var RBACTasksFactory = /** @class */ (function () {
+        function RBACTasksFactory() {
+        }
+        RBACTasksFactory.create = ["postLoginTasks", "jolokia", "$q", function (postLoginTasks, jolokia, $q) {
+            'ngInject';
+            var rbacTasks = new RBACTasksImpl($q.defer());
+            postLoginTasks.addTask("FetchJMXSecurityMBeans", function () { return rbacTasks.fetchJMXSecurityMBeans(jolokia); });
+            return rbacTasks;
+        }];
+        return RBACTasksFactory;
+    }());
+    RBAC.RBACTasksFactory = RBACTasksFactory;
+    var RBACACLMBeanFactory = /** @class */ (function () {
+        function RBACACLMBeanFactory() {
+        }
+        RBACACLMBeanFactory.create = ["rbacTasks", function (rbacTasks) {
+            'ngInject';
+            return rbacTasks.getACLMBean();
+        }];
+        return RBACACLMBeanFactory;
+    }());
+    RBAC.RBACACLMBeanFactory = RBACACLMBeanFactory;
+    var RBACTasksImpl = /** @class */ (function (_super) {
+        __extends(RBACTasksImpl, _super);
+        function RBACTasksImpl(deferred) {
+            var _this = _super.call(this) || this;
+            _this.deferred = deferred;
+            _this.ACLMBean = null;
+            return _this;
+        }
+        RBACTasksImpl.prototype.fetchJMXSecurityMBeans = function (jolokia) {
+            var _this = this;
+            jolokia.request({ type: 'search', mbean: '*:type=security,area=jmx,*' }, Core.onSuccess(function (response) {
+                RBAC.log.debug("Fetching JMXSecurity MBeans...", response);
+                var mbeans = response.value;
+                var chosen = "";
+                if (mbeans.length === 0) {
+                    RBAC.log.info("Didn't discover any JMXSecurity mbeans, client-side role based access control is disabled");
+                    return;
+                }
+                else if (mbeans.length === 1) {
+                    chosen = mbeans[0];
+                }
+                else if (mbeans.length > 1) {
+                    var picked_1 = false;
+                    mbeans.forEach(function (mbean) {
+                        if (picked_1) {
+                            return;
+                        }
+                        if (_.includes(mbean, "HawtioDummy")) {
+                            return;
+                        }
+                        if (!_.includes(mbean, "rank=")) {
+                            chosen = mbean;
+                            picked_1 = true;
+                        }
+                    });
+                }
+                if (chosen != null && chosen != "") {
+                    RBAC.log.info("Using mbean", chosen, "for client-side role based access control");
+                    _this.initialize(chosen);
+                }
+                else {
+                    RBAC.log.info("Didn't discover any effective JMXSecurity mbeans, client-side role based access control is disabled");
+                }
+            }));
+        };
+        RBACTasksImpl.prototype.initialize = function (mbean) {
+            this.ACLMBean = mbean;
+            this.deferred.resolve(this.ACLMBean);
+            _super.prototype.execute.call(this);
+        };
+        RBACTasksImpl.prototype.getACLMBean = function () {
+            return this.deferred.promise;
+        };
+        return RBACTasksImpl;
+    }(Core.TasksImpl));
+})(RBAC || (RBAC = {}));
+/**
+ * @namespace RBAC
+ */
+var RBAC;
+(function (RBAC) {
+    RBAC.pluginName = "hawtio-rbac";
+    RBAC.log = Logger.get(RBAC.pluginName);
+    function flattenMBeanTree(mbeans, tree) {
+        if (!Core.isBlank(tree.objectName)) {
+            mbeans[tree.objectName] = tree;
+        }
+        if (tree.children && tree.children.length > 0) {
+            tree.children.forEach(function (child) { return flattenMBeanTree(mbeans, child); });
+        }
+    }
+    RBAC.flattenMBeanTree = flattenMBeanTree;
+    function stripClasses(css) {
+        if (Core.isBlank(css)) {
+            return css;
+        }
+        var parts = css.split(" ");
+        var answer = [];
+        parts.forEach(function (part) {
+            if (part !== "can-invoke" && part !== "cant-invoke") {
+                answer.push(part);
+            }
+        });
+        return answer.join(" ").trim();
+    }
+    RBAC.stripClasses = stripClasses;
+    function addClass(css, _class) {
+        if (Core.isBlank(css)) {
+            return _class;
+        }
+        var parts = css.split(" ");
+        parts.push(_class);
+        return _.uniq(parts).join(" ").trim();
+    }
+    RBAC.addClass = addClass;
+})(RBAC || (RBAC = {}));
+/**
+ * @namespace RBAC
+ * @main RBAC
+ */
+/// <reference path="../../jmx/ts/workspace.ts"/>
+/// <reference path="../../jvm/ts/jolokiaService.ts"/>
+/// <reference path="models.ts"/>
+/// <reference path="rbacHelpers.ts"/>
+/// <reference path="rbac.directive.ts"/>
+/// <reference path="rbac.service.ts"/>
+/// <reference path="jmxTreeProcessor.ts"/>
+var RBAC;
+(function (RBAC) {
+    RBAC._module = angular
+        .module(RBAC.pluginName, [])
+        .directive('hawtioShow', RBAC.HawtioShow.factory)
+        .service('rbacTasks', RBAC.RBACTasksFactory.create)
+        .service('rbacACLMBean', RBAC.RBACACLMBeanFactory.create);
+    RBAC._module.run(["jolokia", "jolokiaStatus", "rbacTasks", "preLogoutTasks", "workspace", function (jolokia, jolokiaStatus, rbacTasks, preLogoutTasks, workspace) {
+            preLogoutTasks.addTask("resetRBAC", function () {
+                RBAC.log.debug("Resetting RBAC tasks");
+                rbacTasks.reset();
+                workspace.removeNamedTreePostProcessor(RBAC.TREE_POSTPROCESSOR_NAME);
+            });
+            // add info to the JMX tree if we have access to invoke on mbeans
+            // or not
+            var processor = new RBAC.JmxTreeProcessor(jolokia, jolokiaStatus, rbacTasks, workspace);
+            rbacTasks.addTask("JMXTreePostProcess", function () { return workspace.addNamedTreePostProcessor(RBAC.TREE_POSTPROCESSOR_NAME, function (tree) { return processor.process(tree); }); });
+        }]);
+    hawtioPluginLoader.addModule(RBAC.pluginName);
+})(RBAC || (RBAC = {}));
 /// <reference path="../../jmx/ts/workspace.ts" />
 var Threads;
 (function (Threads) {
@@ -8661,13 +9123,10 @@ var Threads;
 })(Threads || (Threads = {}));
 
 angular.module('hawtio-jmx-templates', []).run(['$templateCache', function($templateCache) {$templateCache.put('plugins/jmx/html/areaChart.html','<div ng-controller="Jmx.AreaChartController">\n  <script type="text/ng-template" id="areaChart">\n    <fs-area bind="data" duration="250" interpolate="false" point-radius="5" width="width" height="height" label=""></fs-area>\n  </script>\n  <div compile="template"></div>\n</div>\n');
-$templateCache.put('plugins/jmx/html/attributes.html','<script type="text/ng-template" id="gridTemplate">\n  <table class="table table-striped table-bordered table-hover jmx-attributes-table"\n    ng-class="{\'ht-table-extra-columns\': hasExtraColumns}"\n    hawtio-simple-table="gridOptions">\n  </table>\n</script>\n\n<div class="table-view" ng-controller="Jmx.AttributesController">\n\n  <h2>Attributes</h2>\n  \n  <div ng-if="gridData.length > 0">\n    <div compile="attributes"></div>\n  </div>\n\n  <!-- modal dialog to show/edit the attribute -->\n  <div hawtio-confirm-dialog="showAttributeDialog" ok-button-text="Update"\n       show-ok-button="{{entity.rw ? \'true\' : \'false\'}}" on-ok="onUpdateAttribute()" on-cancel="onCancelAttribute()"\n       cancel-button-text="Close" title="Attribute: {{entity.key}}" optional-size="lg">\n    <div class="dialog-body">\n      <!-- have a form for view and another for edit -->\n      <div simple-form ng-hide="!entity.rw" name="attributeEditor" mode="edit" entity=\'entity\' data=\'attributeSchemaEdit\'></div>\n      <div simple-form ng-hide="entity.rw" name="attributeViewer" mode="view" entity=\'entity\' data=\'attributeSchemaView\'></div>\n    </div>\n  </div>\n\n</div>\n');
 $templateCache.put('plugins/jmx/html/chartEdit.html','<div ng-controller="Jmx.ChartEditController">\n  <form>\n    <fieldset>\n      <div class="control-group" ng-show="canEditChart()">\n        <input type="submit" class="btn" value="View Chart" ng-click="viewChart()"\n               ng-disabled="!selectedAttributes.length && !selectedMBeans.length"/>\n      </div>\n      <div class="control-group">\n        <table class="table">\n          <thead>\n          <tr>\n            <th ng-show="showAttributes()">Attributes</th>\n            <th ng-show="showElements()">Elements</th>\n          </tr>\n          </thead>\n          <tbody>\n          <tr>\n            <td ng-show="showAttributes()">\n              <select id="attributes" size="20" multiple ng-multiple="true" ng-model="selectedAttributes"\n                      ng-options="name | humanize for (name, value) in metrics"></select>\n            </td>\n            <td ng-show="showElements()">\n              <select id="mbeans" size="20" multiple ng-multiple="true" ng-model="selectedMBeans"\n                      ng-options="name for (name, value) in mbeans"></select>\n            </td>\n          </tr>\n          </tbody>\n        </table>\n\n        <div class="alert" ng-show="!canEditChart()">\n          <button type="button" class="close" data-dismiss="alert">\xD7</button>\n          <strong>No numeric metrics available!</strong> Try select another item to chart on.\n        </div>\n      </div>\n    </fieldset>\n  </form>\n</div>\n');
 $templateCache.put('plugins/jmx/html/charts.html','<div ng-controller="Jmx.ChartController">\n  <h2>Chart</h2>\n  <div ng-switch="errorMessage()">\n    <div ng-switch-when="metrics">No valid metrics to show for this mbean.</div>\n    <div ng-switch-when="updateRate">Charts aren\'t available when the update rate is set to "No refreshes", go to the <a ng-href="#/preferences{{hash}}">Preferences</a> panel and set a refresh rate to enable charts</div>\n    <div id="charts"></div>\n  </div>\n</div>\n');
 $templateCache.put('plugins/jmx/html/donutChart.html','<div ng-controller="Jmx.DonutChartController">\n  <script type="text/ng-template" id="donut">\n    <fs-donut bind="data" outer-radius="200" inner-radius="75"></fs-donut>\n  </script>\n  <div compile="template"></div>\n</div>\n');
 $templateCache.put('plugins/jmx/html/layoutTree.html','<div class="tree-nav-layout">\n  <div class="sidebar-pf sidebar-pf-left" resizable r-directions="[\'right\']">\n    <tree-header></tree-header>\n    <tree></tree>\n  </div>\n  <div class="tree-nav-main">\n    <jmx-header></jmx-header>\n    <tab></tab>\n    <div class="contents" ng-view></div>\n  </div>\n</div>\n');
-$templateCache.put('plugins/jmx/html/operation-form.html','<p ng-hide="$ctrl.operation.args.length">\n  This JMX operation requires no arguments. Click the \'Execute\' button to invoke the operation.\n</p>\n<p ng-show="$ctrl.operation.args.length">\n  This JMX operation requires some parameters. Fill in the fields below and click the \'Execute\' button\n  to invoke the operation.\n</p>\n\n<form class="form-horizontal" ng-submit="$ctrl.execute()">\n  <div class="form-group" ng-repeat="formField in $ctrl.formFields">\n    <label class="col-sm-2 control-label" for="{{formField.label}}">{{formField.label}}</label>\n    <div class="col-sm-10">\n      <input type="{{formField.type}}" id="{{formField.label}}" ng-class="{\'form-control\': formField.type !== \'checkbox\'}"\n        ng-model="formField.value">\n      <span class="help-block">{{formField.helpText}}</span>\n    </div>\n  </div>\n  <div class="form-group">\n    <div ng-class="{\'col-sm-offset-2 col-sm-10\': $ctrl.operation.args.length, \'col-sm-12\': !$ctrl.operation.args.length}">\n      <button type="submit" class="btn btn-primary" ng-disabled="$ctrl.isExecuting">Execute</button>\n    </div>\n  </div>\n</form>\n\n<div ng-show="$ctrl.operationResult">\n  <p>Result:</p>\n  <pre class="jmx-operation-result" ng-class="{\'jmx-operation-error\': $ctrl.operationFailed}">{{$ctrl.operationResult}}</pre>\n</div>\n');
-$templateCache.put('plugins/jmx/html/operations.html','<h2>Operations</h2>\n<p ng-if="$ctrl.operations.length === 0">\n  This MBean has no JMX operations.\n</p>\n<div ng-if="$ctrl.operations.length > 0">\n  <p>\n    This MBean supports the following JMX operations. Expand an item in the list to invoke that operation.\n  </p>\n  <pf-list-view class="jmx-operations-list-view" items="$ctrl.operations" config="$ctrl.config"\n    menu-actions="$ctrl.menuActions">\n    <div class="list-view-pf-stacked">\n      <div class="list-group-item-heading">\n        {{item.simpleName}}\n      </div>\n      <div class="list-group-item-text">\n        {{item.description}}\n      </div>\n    </div>\n    <list-expanded-content>\n      <operation-form operation="$parent.item"></operation-form>\n    </list-expanded-content>\n  </pf-list-view>\n</div>\n');
 $templateCache.put('plugins/jvm/html/connect-delete-warning.html','<div class="modal-header">\n  <button type="button" class="close" aria-label="Close" ng-click="$dismiss()">\n    <span class="pficon pficon-close" aria-hidden="true"></span>\n  </button>\n  <h4>Are you sure?</h4>\n</div>\n<div class="modal-body">\n  <p>You are about to delete this connection.</p>\n</div>\n<div class="modal-footer">\n  <button type="button" class="btn btn-default" ng-click="$dismiss()">Cancel</button>\n  <button type="button" class="btn btn-danger" ng-click="$close()">Delete</button>\n</div>\n');
 $templateCache.put('plugins/jvm/html/connect-edit.html','<div class="modal-header">\n  <button type="button" class="close" aria-label="Close" ng-click="$dismiss()">\n    <span class="pficon pficon-close" aria-hidden="true"></span>\n  </button>\n  <h4 class="modal-title" ng-show="!model.name">Add Connection</h4>\n  <h4 class="modal-title" ng-show="model.name">Edit Connection</h4>\n</div>\n<form name="connectForm" class="form-horizontal jvm-connection-form" ng-submit="saveConnection(model)">\n  <div class="modal-body">\n    <p class="fields-status-pf">The fields marked with\n      <span class="required-pf">*</span> are required.</p>\n    <div class="form-group" ng-class="{\'has-error\': model.errors.name}">\n      <label class="col-sm-3 control-label required-pf" for="connection-name">Name</label>\n      <div class="col-sm-8">\n        <input type="text" id="connection-name" class="form-control" name="name" ng-model="model.connection.name" pf-focused="!model.connection.name">\n        <span class="help-block" ng-show="model.errors.name">{{model.errors.name}}</span>\n      </div>\n    </div>\n    <div class="form-group">\n      <label class="col-sm-3 control-label required-pf" for="connection-scheme">Scheme</label>\n      <div class="col-sm-8">\n        <select id="connection-scheme" class="form-control" name="scheme" ng-model="model.connection.scheme">\n          <option>http</option>\n          <option>https</option>\n        </select>\n      </div>\n    </div>\n    <div class="form-group" ng-class="{\'has-error\': model.errors.host}">\n      <label class="col-sm-3 control-label required-pf" for="connection-host">Host</label>\n      <div class="col-sm-8">\n        <input type="text" id="connection-host" class="form-control" name="host" ng-model="model.connection.host" ng-change="">\n        <span class="help-block" ng-show="model.errors.host">{{model.errors.host}}</span>\n      </div>\n    </div>\n    <div class="form-group">\n      <label class="col-sm-3 control-label" for="connection-port">Port</label>\n      <div class="col-sm-8">\n        <input type="number" id="connection-port" class="form-control" name="port" ng-model="model.connection.port" ng-change="resetTestConnection()">\n      </div>\n    </div>\n    <div class="form-group">\n      <label class="col-sm-3 control-label" for="connection-path">Path</label>\n      <div class="col-sm-8">\n        <input type="text" id="connection-path" class="form-control" name="path" ng-model="model.connection.path" ng-change="resetTestConnection()">\n      </div>\n    </div>\n    <div class="form-group">\n      <label class="col-sm-3 control-label" for="connection-path">Username</label>\n      <div class="col-sm-8">\n        <input type="text" id="connection-username" class="form-control" name="userName" ng-model="model.connection.userName" ng-change="resetTestConnection()">\n        <span class="help-block">Username is not saved</span>\n      </div>\n    </div>\n    <div class="form-group">\n      <label class="col-sm-3 control-label" for="connection-path">Password</label>\n      <div class="col-sm-8">\n        <input type="password" id="connection-password" class="form-control" name="password" ng-model="model.connection.password" ng-change="resetTestConnection()">\n        <span class="help-block">Password is not saved</span>\n      </div>\n    </div>\n    <div class="form-group">\n      <div class="col-sm-offset-3 col-sm-8">\n        <button type="button" class="btn btn-primary" ng-click="testConnection(model.connection)" ng-disabled="model.test.ok">\n          Test Connection\n        </button>\n        <span class="jvm-connection-test-msg" ng-show="model.test.message">\n          <span class="pficon" ng-class="{\'pficon-ok\': model.test.ok, \'pficon-warning-triangle-o\': !model.test.ok}"></span>\n          {{model.test.message}}\n        </span>\n      </div>\n    </div>\n  </div>\n  <div class="modal-footer">\n    <button type="button" class="btn btn-default" ng-click="$dismiss()">Cancel</button>\n    <button type="submit" class="btn btn-primary" ng-show="!model.connection.name" ng-disabled="!model.test.ok">Add</button>\n    <button type="submit" class="btn btn-primary" ng-show="model.connection.name" ng-disabled="!model.test.ok">Save</button>\n  </div>\n</form>');
 $templateCache.put('plugins/jvm/html/connect-login.html','<div class="modal-header">\n  <button type="button" class="close" aria-label="Close" ng-click="$dismiss()">\n    <span class="pficon pficon-close" aria-hidden="true"></span>\n  </button>\n  <h4 class="modal-title">Log In</h4>\n</div>\n<form name="connectForm" class="form-horizontal" ng-submit="login(connection)">\n  <div class="modal-body">\n    <div class="alert alert-danger" ng-show="showErrorMessage">\n      <span class="pficon pficon-error-circle-o"></span> Incorrect username or password\n    </div>\n    <div class="form-group">\n      <label class="col-sm-3 control-label" for="connection-username">Username</label>\n      <div class="col-sm-8">\n        <input type="text" id="connection-username" class="form-control" name="userName"\n               ng-model="connection.userName" autofocus>\n      </div>\n    </div>\n    <div class="form-group">\n      <label class="col-sm-3 control-label" for="connection-password">Password</label>\n      <div class="col-sm-8">\n        <input type="password" id="connection-password" class="form-control" name="password"\n               ng-model="connection.password"\n               ng-change="checkCredentials(connection)">\n      </div>\n    </div>\n  </div>\n  <div class="modal-footer">\n    <button type="button" class="btn btn-default" ng-click="$dismiss()">Cancel</button>\n    <button type="submit" class="btn btn-primary">Log In</button>\n  </div>\n</form>\n');
@@ -8680,8 +9139,11 @@ $templateCache.put('plugins/jvm/html/local.html','<div ng-controller="JVM.JVMsCo
 $templateCache.put('plugins/jvm/html/navbarHeaderExtension.html','<style>\n  .navbar-header-hawtio-jvm {\n    float: left;\n    margin: 0;\n  }\n\n  .navbar-header-hawtio-jvm h4 {\n    color: white;\n    margin: 0px;\n  }\n\n  .navbar-header-hawtio-jvm li {\n    list-style-type: none;\n    display: inline-block;\n    margin-right: 10px;\n    margin-top: 4px;\n  }\n</style>\n<ul class="navbar-header-hawtio-jvm" ng-controller="JVM.HeaderController">\n  <li ng-show="containerName"><h4 ng-bind="containerName"></h4></li>\n  <li ng-show="goBack"><strong><a href="" ng-click="goBack()">Back</a></strong></li>\n</ul>\n');
 $templateCache.put('plugins/jvm/html/reset.html','<div ng-controller="JVM.ResetController">\n  <form class="form-horizontal">\n    <fieldset>\n      <div class="form-group">\n        <label class="col-sm-2 control-label">\n          <strong>\n            <span class="pficon pficon-warning-triangle-o"></span> Clear saved connections\n          </strong>\n        </label>\n        <div class="col-sm-10">\n          <button class="btn btn-danger" ng-click="doClearConnectSettings()">Clear saved connections</button>\n          <span class="help-block">Wipe all saved connection settings stored by {{branding.appName}} in your browser\'s local storage</span>\n        </div>\n      </div>\n    </fieldset>\n  </form>\n</div>\n\n');
 $templateCache.put('plugins/threads/html/threads.html','<div id="threads-page" class="table-view" ng-controller="ThreadsController">\n\n  <h1>Threads</h1>\n\n  <pf-toolbar config="toolbarConfig"></pf-toolbar>\n\n  <pf-table-view class="threads-table" config="tableConfig" dt-options="tableDtOptions"\n    colummns="tableColumns" items="filteredThreads" action-buttons="tableActionButtons">\n  </pf-table-view>\n\n  <script type="text/ng-template" id="threadModalContent.html">\n    <div class="modal-header">\n      <button type="button" class="close" aria-label="Close" ng-click="$close()">\n        <span class="pficon pficon-close" aria-hidden="true"></span>\n      </button>\n      <h4 class="modal-title">Thread</h4>\n    </div>\n    <div class="modal-body">\n      <div class="row">\n        <div class="col-md-12">\n          <dl class="dl-horizontal">\n            <dt>ID</dt>\n            <dd>{{thread.threadId}}</dd>\n            <dt>Name</dt>\n            <dd>{{thread.threadName}}</dd>\n            <dt>Waited Count</dt>\n            <dd>{{thread.waitedCount}}</dd>\n            <dt>Waited Time</dt>\n            <dd>{{thread.waitedTime}} ms</dd>\n            <dt>Blocked Count</dt>\n            <dd>{{thread.blockedCount}}</dd>\n            <dt>Blocked Time</dt>\n            <dd>{{thread.blockedTime}} ms</dd>\n            <div ng-show="thread.lockInfo != null">\n              <dt>Lock Name</dt>\n              <dd>{{thread.lockName}}</dd>\n              <dt>Lock Class Name</dt>\n              <dd>{{thread.lockInfo.className}}</dd>\n              <dt>Lock Identity Hash Code</dt>\n              <dd>{{thread.lockInfo.identityHashCode}}</dd>\n            </div>\n            <div ng-show="thread.lockOwnerId > 0">\n              <dt>Waiting for lock owned by</dt>\n              <dd><a href="" ng-click="selectThreadById(thread.lockOwnerId)">{{thread.lockOwnerId}} - {{thread.lockOwnerName}}</a></dd>\n            </div>\n            <div ng-show="thread.lockedSynchronizers.length > 0">\n              <dt>Locked Synchronizers</dt>\n              <dd>\n                <ol class="list-unstyled">\n                  <li ng-repeat="synchronizer in thread.lockedSynchronizers">\n                    <span title="Class Name">{{synchronizer.className}}</span> -\n                    <span title="Identity Hash Code">{{synchronizer.identityHashCode}}</span>\n                  </li>\n                </ol>\n              </dd>\n            </div>\n          </dl>\n        </div>\n      </div>\n      <div class="row" ng-show="thread.lockedMonitors.length > 0">\n        <div class="col-md-12">\n          <dl>\n            <dt>Locked Monitors</dt>\n            <dd>\n              <ol class="zebra-list">\n                <li ng-repeat="monitor in thread.lockedMonitors">\n                  Frame: <strong>{{monitor.lockedStackDepth}}</strong>\n                  <span class="green">{{monitor.lockedStackFrame.className}}</span>\n                  <span class="bold">.</span>\n                  <span class="blue bold">{{monitor.lockedStackFrame.methodName}}</span>\n                  &nbsp;({{monitor.lockedStackFrame.fileName}}<span ng-show="frame.lineNumber > 0">:{{monitor.lockedStackFrame.lineNumber}}</span>)\n                  <span class="orange" ng-show="monitor.lockedStackFrame.nativeMethod">(Native)</span>\n                </li>\n              </ol>\n            </dd>\n          </dl>\n        </div>\n      </div>\n      <div class="row">\n        <div class="col-md-12">\n          <dl>\n            <dt>Stack Trace</dt>\n            <dd>\n              <ol class="zebra-list">\n                <li ng-repeat="frame in thread.stackTrace">\n                  <span class="green">{{frame.className}}</span>\n                  <span class="bold">.</span>\n                  <span class="blue bold">{{frame.methodName}}</span>\n                  &nbsp;({{frame.fileName}}<span ng-show="frame.lineNumber > 0">:{{frame.lineNumber}}</span>)\n                  <span class="orange" ng-show="frame.nativeMethod">(Native)</span>\n                </li>\n              </ol>\n            </dd>\n          </dl>            \n        </div>\n      </div>\n    </div>\n  </script>\n\n</div>\n');
+$templateCache.put('plugins/jmx/html/attributes/attributes.html','<script type="text/ng-template" id="gridTemplate">\n  <table class="table table-striped table-bordered table-hover jmx-attributes-table"\n    ng-class="{\'ht-table-extra-columns\': hasExtraColumns}"\n    hawtio-simple-table="gridOptions">\n  </table>\n</script>\n\n<div class="table-view" ng-controller="Jmx.AttributesController">\n\n  <h2>Attributes</h2>\n  \n  <div ng-if="gridData.length > 0">\n    <div compile="attributes"></div>\n  </div>\n\n  <!-- modal dialog to show/edit the attribute -->\n  <div hawtio-confirm-dialog="showAttributeDialog" ok-button-text="Update"\n       show-ok-button="{{entity.rw ? \'true\' : \'false\'}}" on-ok="onUpdateAttribute()" on-cancel="onCancelAttribute()"\n       cancel-button-text="Close" title="Attribute: {{entity.key}}" optional-size="lg">\n    <div class="dialog-body">\n      <!-- have a form for view and another for edit -->\n      <div simple-form ng-hide="!entity.rw" name="attributeEditor" mode="edit" entity=\'entity\' data=\'attributeSchemaEdit\'></div>\n      <div simple-form ng-hide="entity.rw" name="attributeViewer" mode="view" entity=\'entity\' data=\'attributeSchemaView\'></div>\n    </div>\n  </div>\n\n</div>\n');
 $templateCache.put('plugins/jmx/html/common/header.html','<div class="jmx-header">\n  <h1>\n    {{$ctrl.title}}\n    <small class="text-muted">{{$ctrl.objectName}}</small>\n  </h1>\n</div>\n');
 $templateCache.put('plugins/jmx/html/common/tab.html','<ul class="nav nav-tabs">\n  <li ng-class="{active: $ctrl.isTabActive(\'/jmx/attributes\')}">\n    <a href="#" ng-click="$ctrl.goto(\'/jmx/attributes\')">Attributes</a>\n  </li>\n  <li ng-class="{active: $ctrl.isTabActive(\'/jmx/operations\')}">\n    <a href="#" ng-click="$ctrl.goto(\'/jmx/operations\')">Operations</a>\n  </li>\n  <li ng-class="{active: $ctrl.isTabActive(\'/jmx/charts\')}">\n    <a href="#" ng-click="$ctrl.goto(\'/jmx/charts\')">Chart</a>\n  </li>\n</ul>\n');
+$templateCache.put('plugins/jmx/html/operations/operation-form.html','<p ng-hide="$ctrl.operation.args.length">\n  This JMX operation requires no arguments. Click the \'Execute\' button to invoke the operation.\n</p>\n<p ng-show="$ctrl.operation.args.length">\n  This JMX operation requires some parameters. Fill in the fields below and click the \'Execute\' button\n  to invoke the operation.\n</p>\n\n<form class="form-horizontal" ng-submit="$ctrl.execute()">\n  <div class="form-group" ng-repeat="formField in $ctrl.formFields">\n    <label class="col-sm-2 control-label" for="{{formField.label}}">{{formField.label}}</label>\n    <div class="col-sm-10">\n      <input type="{{formField.type}}" id="{{formField.label}}" ng-class="{\'form-control\': formField.type !== \'checkbox\'}"\n        ng-model="formField.value">\n      <span class="help-block">{{formField.helpText}}</span>\n    </div>\n  </div>\n  <div class="form-group">\n    <div ng-class="{\'col-sm-offset-2 col-sm-10\': $ctrl.operation.args.length, \'col-sm-12\': !$ctrl.operation.args.length}">\n      <button type="submit" class="btn btn-primary" ng-disabled="!$ctrl.operation.canInvoke || $ctrl.isExecuting">Execute</button>\n    </div>\n  </div>\n</form>\n\n<div ng-show="$ctrl.operationResult">\n  <p>Result:</p>\n  <pre class="jmx-operation-result" ng-class="{\'jmx-operation-error\': $ctrl.operationFailed}">{{$ctrl.operationResult}}</pre>\n</div>\n');
+$templateCache.put('plugins/jmx/html/operations/operations.html','<h2>Operations</h2>\n<p ng-if="$ctrl.operations.length === 0">\n  This MBean has no JMX operations.\n</p>\n<div ng-if="$ctrl.operations.length > 0">\n  <p>\n    This MBean supports the following JMX operations. Expand an item in the list to invoke that operation.\n  </p>\n  <pf-list-view class="jmx-operations-list-view" items="$ctrl.operations" config="$ctrl.config"\n    menu-actions="$ctrl.menuActions">\n    <div class="list-view-pf-stacked">\n      <div class="list-group-item-heading">\n        <span class="pficon pficon-locked" ng-if="!item.canInvoke"></span>\n        {{item.simpleName}}\n      </div>\n      <div class="list-group-item-text">\n        {{item.description}}\n      </div>\n    </div>\n    <list-expanded-content>\n      <operation-form operation="$parent.item"></operation-form>\n    </list-expanded-content>\n  </pf-list-view>\n</div>\n');
 $templateCache.put('plugins/jmx/html/tree/content.html','<div class="tree-nav-sidebar-content">\n  <div class="spinner spinner-lg" ng-hide="$ctrl.treeFetched()"></div>\n  <div id="jmxtree" class="treeview-pf-hover treeview-pf-select"></div>\n</div>\n');
 $templateCache.put('plugins/jmx/html/tree/header.html','<div class="tree-nav-sidebar-header">\n  <form role="form" class="search-pf has-button">\n    <div class="form-group has-clear">\n      <div class="search-pf-input-group">\n        <label for="input-search" class="sr-only">Search Tree:</label>\n        <input id="input-search" type="search" class="form-control" placeholder="Search tree:"\n          ng-model="$ctrl.filter">\n        <button type="button" class="clear" aria-hidden="true"\n          ng-hide="$ctrl.filter.length === 0"\n          ng-click="$ctrl.filter = \'\'">\n          <span class="pficon pficon-close"></span>\n        </button>\n      </div>\n    </div>\n    <div class="form-group tree-nav-buttons">\n      <span class="badge" ng-class="{positive: $ctrl.result.length > 0}"\n        ng-show="$ctrl.filter.length > 0">\n        {{$ctrl.result.length}}\n      </span>\n      <i class="fa fa-plus-square-o" title="Expand All" ng-click="$ctrl.expandAll()"></i>\n      <i class="fa fa-minus-square-o" title="Collapse All" ng-click="$ctrl.contractAll()"></i>\n    </div>\n  </form>\n</div>\n');
 $templateCache.put('plugins/jmx/doc/help.md','### JMX\n\nThe [JMX](#/jmx/attributes) plugin in [hawtio](http://hawt.io "hawtio") gives a raw view of the underlying JMX metric data, allowing access to the entire JMX domain tree of MBeans.\n');

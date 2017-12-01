@@ -238,9 +238,9 @@ angular-file-upload@~2.5.0:
   version "2.5.0"
   resolved "https://registry.yarnpkg.com/angular-file-upload/-/angular-file-upload-2.5.0.tgz#0f53c93fbc70ed8ba8340a9a289ba64b680e2167"
 
-angular-patternfly@4.12.1:
-  version "4.12.1"
-  resolved "https://registry.yarnpkg.com/angular-patternfly/-/angular-patternfly-4.12.1.tgz#b8079060d0b78a1ef1deff80b7a8db589197d0a3"
+angular-patternfly@^4.0.0:
+  version "4.13.2"
+  resolved "https://registry.yarnpkg.com/angular-patternfly/-/angular-patternfly-4.13.2.tgz#ba40a3cb61337c136cdf2b30a13c636b0ea5c1d0"
   dependencies:
     angular "1.5.*"
     angular-animate "1.5.*"

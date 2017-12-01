@@ -1,16 +1,17 @@
 /// <reference types="utilities" />
 /// <reference types="angular" />
+/// <reference types="jquery" />
 /// <reference types="core" />
 /// <reference types="angular-route" />
 declare namespace JVM {
-    var rootPath: string;
-    var templatePath: string;
-    var pluginName: string;
-    var log: Logging.Logger;
-    var connectControllerKey: string;
-    var connectionSettingsKey: string;
-    var logoPath: string;
-    var logoRegistry: {
+    const rootPath = "plugins/jvm";
+    const templatePath: string;
+    const pluginName = "hawtio-jvm";
+    const log: Logging.Logger;
+    const connectControllerKey = "jvmConnectSettings";
+    const connectionSettingsKey: string;
+    const logoPath = "img/icons/jvm/";
+    const logoRegistry: {
         'jetty': string;
         'tomcat': string;
         'generic': string;
@@ -262,6 +263,57 @@ declare namespace Jmx {
         findAncestor(filter: (node: NodeSelection) => boolean): NodeSelection | null;
     }
 }
+declare namespace JVM {
+    function ConnectController($scope: any, $location: ng.ILocationService, localStorage: Storage, workspace: Jmx.Workspace, $uibModal: any, connectService: ConnectService): void;
+}
+declare namespace JVM {
+    class ConnectService {
+        private $q;
+        private $window;
+        constructor($q: ng.IQService, $window: ng.IWindowService);
+        testConnection(connection: Core.ConnectOptions): ng.IPromise<string>;
+        connect(connection: Core.ConnectToServerOptions): void;
+    }
+}
+declare namespace JVM {
+    function ConnectionUrlFilter(): (connection: Core.ConnectOptions) => string;
+}
+declare namespace JVM {
+    const ConnectModule: string;
+}
+declare namespace JVM {
+    var windowJolokia: Jolokia.IJolokia;
+    var _module: angular.IModule;
+}
+declare namespace JVM {
+    enum JolokiaListMethod {
+        LIST_GENERAL = "list",
+        LIST_WITH_RBAC = "list_rbac",
+        LIST_CANT_DETERMINE = "cant_determine",
+    }
+    const DEFAULT_MAX_DEPTH = 7;
+    const DEFAULT_MAX_COLLECTION_SIZE = 50000;
+    let ConnectionName: string;
+    function getConnectionName(reset?: boolean): string;
+    function getConnectionOptions(): Core.ConnectOptions;
+    function getJolokiaUrl(): string | boolean;
+    function getBeforeSend(): (xhr: JQueryXHR) => any;
+    /**
+     * Queries available server-side MBean to check if can call optimized jolokia.list() operation
+     * @param jolokia {Jolokia.IJolokia}
+     * @param jolokiaStatus {JolokiaStatus}
+     */
+    function checkJolokiaOptimization(jolokia: Jolokia.IJolokia, jolokiaStatus: JolokiaStatus): void;
+    interface JolokiaStatus {
+        xhr: JQueryXHR;
+        listMethod: JolokiaListMethod;
+        listMBean: string;
+    }
+    interface DummyJolokia extends Jolokia.IJolokia {
+        isDummy: boolean;
+        running: boolean;
+    }
+}
 declare namespace Jmx {
     /**
      * @class NavMenuItem
@@ -270,21 +322,21 @@ declare namespace Jmx {
         id: string;
         content: string;
         title?: string;
-        isValid?: (workspace: Workspace, perspectiveId?: string) => any;
-        isActive?: (worksace: Workspace) => boolean;
-        href: () => any;
+        isValid?(workspace: Workspace, perspectiveId?: string): any;
+        isActive?(worksace: Workspace): boolean;
+        href(): any;
     }
     /**
      * @class Workspace
      */
     class Workspace {
         jolokia: Jolokia.IJolokia;
-        jolokiaStatus: any;
+        jolokiaStatus: JVM.JolokiaStatus;
         jmxTreeLazyLoadRegistry: any;
         $location: ng.ILocationService;
         $compile: ng.ICompileService;
         $templateCache: ng.ITemplateCacheService;
-        localStorage: WindowLocalStorage;
+        localStorage: Storage;
         $rootScope: ng.IRootScopeService;
         HawtioNav: HawtioMainNav.Registry;
         operationCounter: number;
@@ -306,7 +358,7 @@ declare namespace Jmx {
         mapData: {};
         private rootId;
         private separator;
-        constructor(jolokia: Jolokia.IJolokia, jolokiaStatus: any, jmxTreeLazyLoadRegistry: any, $location: ng.ILocationService, $compile: ng.ICompileService, $templateCache: ng.ITemplateCacheService, localStorage: WindowLocalStorage, $rootScope: ng.IRootScopeService, HawtioNav: HawtioMainNav.Registry);
+        constructor(jolokia: Jolokia.IJolokia, jolokiaStatus: JVM.JolokiaStatus, jmxTreeLazyLoadRegistry: any, $location: ng.ILocationService, $compile: ng.ICompileService, $templateCache: ng.ITemplateCacheService, localStorage: Storage, $rootScope: ng.IRootScopeService, HawtioNav: HawtioMainNav.Registry);
         /**
          * Creates a shallow copy child workspace with its own selection and location
          * @method createChildWorkspace
@@ -316,6 +368,7 @@ declare namespace Jmx {
         createChildWorkspace(location: any): Workspace;
         getLocalStorage(key: string): any;
         setLocalStorage(key: string, value: any): void;
+        jolokiaList(callback: any, flags: any): any;
         loadTree(): void;
         /**
          * Adds a post processor of the tree to swizzle the tree metadata after loading
@@ -329,7 +382,14 @@ declare namespace Jmx {
         maybeMonitorPlugins(): void;
         maybeUpdatePlugins(response: any): void;
         maybeReloadTree(response: any): void;
-        populateTree(response: any): void;
+        /**
+         * Processes response from jolokia list - if it contains "domains" and "cache" properties
+         * @param response
+         */
+        unwindResponseWithRBACCache(response: any): any;
+        populateTree(response: {
+            value: any;
+        }): void;
         private initFolder(folder, domain, folderNames);
         private populateDomainFolder(tree, domainName, domain);
         /**
@@ -423,10 +483,11 @@ declare namespace Jmx {
         private matchesProperties(entries, properties);
         hasInvokeRightsForName(objectName: string, ...methods: Array<string>): any;
         hasInvokeRights(selection: NodeSelection, ...methods: Array<string>): boolean;
-        treeContainsDomainAndProperties(domainName: any, properties?: any): boolean;
+        private resolveCanInvoke(op);
+        treeContainsDomainAndProperties(domainName: string, properties?: any): boolean;
         private matches(folder, properties, propertiesCount);
-        hasDomainAndProperties(domainName: any, properties?: any, propertiesCount?: any): boolean;
-        findMBeanWithProperties(domainName: any, properties?: any, propertiesCount?: any): any;
+        hasDomainAndProperties(domainName: string, properties?: any, propertiesCount?: any): boolean;
+        findMBeanWithProperties(domainName: string, properties?: any, propertiesCount?: any): any;
         findChildMBeanWithProperties(folder: any, properties?: any, propertiesCount?: any): any;
         selectionHasDomainAndLastFolderName(objectName: string, lastName: string): boolean;
         selectionHasDomain(domainName: string): boolean;
@@ -453,10 +514,10 @@ declare namespace Jmx {
     }
 }
 declare namespace Jmx {
-    var pluginName: string;
-    var log: Logging.Logger;
-    var currentProcessId: string;
-    var templatePath: string;
+    const pluginName = "hawtio-jmx";
+    const log: Logging.Logger;
+    let currentProcessId: string;
+    const templatePath = "plugins/jmx/html";
     /**
      * Returns the Folder object for the given domain name and type name or null if it can not be found
      * @method getMBeanTypeFolder
@@ -482,15 +543,23 @@ declare namespace Jmx {
     /**
      * Creates a remote workspace given a remote jolokia for querying the JMX MBeans inside the jolokia
      * @param remoteJolokia
+     * @param remoteJolokiaStatus
      * @param $location
      * @param localStorage
-     * @return {Core.Workspace|Workspace}
+     * @return {Workspace}
      */
-    function createRemoteWorkspace(remoteJolokia: Jolokia.IJolokia, $location: ng.ILocationService, localStorage: WindowLocalStorage, $rootScope?: ng.IRootScopeService, $compile?: ng.ICompileService, $templateCache?: ng.ITemplateCacheService, HawtioNav?: HawtioMainNav.Registry): Workspace;
+    function createRemoteWorkspace(remoteJolokia: Jolokia.IJolokia, remoteJolokiaStatus: JVM.JolokiaStatus, $location: ng.ILocationService, localStorage: Storage, $rootScope?: ng.IRootScopeService, $compile?: ng.ICompileService, $templateCache?: ng.ITemplateCacheService, HawtioNav?: HawtioMainNav.Registry): Workspace;
 }
 declare namespace Jmx {
     function createDashboardLink(widgetType: any, widget: any): string;
-    function getWidgetType(widget: any): any;
+    function getWidgetType(widget: any): {
+        type: string;
+        icon: string;
+        route: string;
+        size_x: number;
+        size_y: number;
+        title: string;
+    };
     var jmxWidgetTypes: {
         type: string;
         icon: string;
@@ -549,11 +618,47 @@ declare namespace Jmx {
     const commonModule: string;
 }
 declare namespace Jmx {
+    function AttributesController($scope: any, $element: any, $location: ng.ILocationService, workspace: Workspace, jmxWidgets: any, jmxWidgetTypes: any, $templateCache: ng.ITemplateCacheService, localStorage: Storage, $browser: any, $timeout: ng.ITimeoutService, attributesService: AttributesService): void;
+}
+/**
+ * @namespace RBAC
+ */
+declare namespace RBAC {
+    interface RBACTasks extends Core.Tasks {
+        initialize(mbean: string): void;
+        getACLMBean(): ng.IPromise<string>;
+    }
+    interface OperationCanInvoke {
+        CanInvoke: boolean;
+        Method: string;
+        ObjectName: string;
+    }
+}
+declare namespace Jmx {
+    class AttributesService {
+        private $q;
+        private jolokia;
+        private jolokiaUrl;
+        private rbacACLMBean;
+        constructor($q: ng.IQService, jolokia: Jolokia.IJolokia, jolokiaUrl: string, rbacACLMBean: ng.IPromise<string>);
+        registerJolokia(scope: any, request: any, callback: any): void;
+        unregisterJolokia(scope: any): void;
+        listMBean(mbeanName: string, callback: any): void;
+        canInvoke(mbeanName: string, attribute: string, type: string): ng.IPromise<boolean>;
+        buildJolokiaUrl(mbeanName: string, attribute: string): string;
+        update(mbeanName: string, attribute: string, value: any): void;
+    }
+}
+declare namespace Jmx {
+    const attributesModule: string;
+}
+declare namespace Jmx {
     class Operation {
         args: OperationArgument[];
         description: string;
         name: string;
         simpleName: string;
+        canInvoke: boolean;
         constructor(method: string, args: OperationArgument[], description: string);
         private static buildName(method, args);
         private static buildSimpleName(name);
@@ -572,8 +677,10 @@ declare namespace Jmx {
         constructor($q: ng.IQService, jolokia: Jolokia.IJolokia, rbacACLMBean: ng.IPromise<string>);
         getOperations(mbeanName: string): ng.IPromise<Operation[]>;
         private loadOperations(mbeanName);
+        private addOperation(operations, operationMap, opName, op);
         getOperation(mbeanName: string, operationName: any): ng.IPromise<Operation>;
         executeOperation(mbeanName: string, operation: Operation, argValues?: any[]): ng.IPromise<string>;
+        private fetchPermissions(operationMap, mbeanName);
     }
 }
 declare namespace Jmx {
@@ -584,8 +691,10 @@ declare namespace Jmx {
         private jolokiaUrl;
         private operationsService;
         config: any;
-        actionButtons: any[];
-        menuActions: any[];
+        menuActions: {
+            name: string;
+            actionFn: (any, Operation) => void;
+        }[];
         operations: Operation[];
         constructor($scope: any, $location: any, workspace: Workspace, jolokiaUrl: string, operationsService: OperationsService);
         $onInit(): void;
@@ -601,8 +710,13 @@ declare namespace Jmx {
     class OperationFormController {
         private workspace;
         private operationsService;
-        operation: any;
-        formFields: any;
+        operation: Operation;
+        formFields: {
+            label: string;
+            type: string;
+            helpText: string;
+            value: any;
+        }[];
         editorMode: string;
         operationFailed: boolean;
         operationResult: string;
@@ -613,7 +727,6 @@ declare namespace Jmx {
         private static convertToHtmlInputType(javaType);
         private static getDefaultValue(javaType);
         execute(): void;
-        cancel(): void;
     }
     const operationFormComponent: angular.IComponentOptions;
 }
@@ -662,23 +775,9 @@ declare namespace Jmx {
 }
 declare namespace Jmx {
     var _module: angular.IModule;
-    var DEFAULT_MAX_DEPTH: number;
-    var DEFAULT_MAX_COLLECTION_SIZE: number;
 }
 declare namespace Jmx {
     var AreaChartController: angular.IModule;
-}
-declare namespace Jmx {
-    let propertiesColumnDefs: {
-        field: string;
-        displayName: string;
-        cellTemplate: string;
-    }[];
-    let foldersColumnDefs: {
-        displayName: string;
-        cellTemplate: string;
-    }[];
-    let AttributesController: angular.IModule;
 }
 declare namespace Jmx {
 }
@@ -688,46 +787,11 @@ declare namespace Jmx {
     var DonutChartController: angular.IModule;
 }
 declare namespace JVM {
-    function ConnectController($scope: any, $location: ng.ILocationService, localStorage: WindowLocalStorage, workspace: Jmx.Workspace, $uibModal: any, connectService: ConnectService): void;
-}
-declare namespace JVM {
-    class ConnectService {
-        private $q;
-        private $window;
-        constructor($q: ng.IQService, $window: ng.IWindowService);
-        testConnection(connection: Core.ConnectOptions): ng.IPromise<string>;
-        connect(connection: Core.ConnectToServerOptions): void;
-    }
-}
-declare namespace JVM {
-    function ConnectionUrlFilter(): (connection: Core.ConnectOptions) => string;
-}
-declare namespace JVM {
-    const ConnectModule: string;
-}
-declare namespace JVM {
-    var windowJolokia: Jolokia.IJolokia;
-    var _module: angular.IModule;
-}
-declare namespace JVM {
 }
 declare module JVM {
     var HeaderController: angular.IModule;
 }
 declare namespace JVM {
-}
-declare namespace JVM {
-    var ConnectionName: string;
-    function getConnectionName(reset?: boolean): string;
-    function getConnectionOptions(): Core.ConnectOptions;
-    function getJolokiaUrl(): any;
-    interface DummyJolokia extends Jolokia.IJolokia {
-        isDummy: boolean;
-        running: boolean;
-    }
-    var DEFAULT_MAX_DEPTH: number;
-    var DEFAULT_MAX_COLLECTION_SIZE: number;
-    function getBeforeSend(): (xhr: any) => void;
 }
 /**
  * @module JVM
@@ -737,6 +801,60 @@ declare module JVM {
 declare namespace JVM {
 }
 declare namespace JVM {
+}
+declare namespace RBAC {
+    class JmxTreeProcessor {
+        private jolokia;
+        private jolokiaStatus;
+        private rbacTasks;
+        private workspace;
+        constructor(jolokia: Jolokia.IJolokia, jolokiaStatus: JVM.JolokiaStatus, rbacTasks: RBACTasks, workspace: Jmx.Workspace);
+        process(tree: any): void;
+        private processWithRBAC(mbeans);
+        private processGeneral(aclMBean, mbeans);
+        private addOperation(mbean, opList, opName, op);
+    }
+}
+declare namespace RBAC {
+    /**
+     * Directive that sets an element's visibility to hidden if the user cannot invoke the supplied operation
+     */
+    class HawtioShow implements ng.IDirective {
+        private workspace;
+        restrict: string;
+        constructor(workspace: Jmx.Workspace);
+        static factory(workspace: Jmx.Workspace): HawtioShow;
+        link(scope: ng.IScope, element: ng.IAugmentedJQuery, attr: ng.IAttributes): void;
+        private getOp(objectName, methodName, argumentTypes);
+        private getArguments(op, objectName, methodName, argumentTypes);
+        private applyInvokeRights(element, value, mode);
+    }
+}
+declare namespace RBAC {
+    const TREE_POSTPROCESSOR_NAME = "rbacTreePostprocessor";
+    class RBACTasksFactory {
+        static create(postLoginTasks: Core.Tasks, jolokia: Jolokia.IJolokia, $q: ng.IQService): RBACTasks;
+    }
+    class RBACACLMBeanFactory {
+        static create(rbacTasks: RBACTasks): ng.IPromise<string>;
+    }
+}
+/**
+ * @namespace RBAC
+ */
+declare namespace RBAC {
+    const pluginName: string;
+    const log: Logging.Logger;
+    function flattenMBeanTree(mbeans: any, tree: any): void;
+    function stripClasses(css: string): string;
+    function addClass(css: string, _class: string): string;
+}
+/**
+ * @namespace RBAC
+ * @main RBAC
+ */
+declare namespace RBAC {
+    const _module: angular.IModule;
 }
 declare namespace Threads {
     var pluginName: string;
