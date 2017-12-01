@@ -1,5 +1,7 @@
 namespace RBAC {
 
+  type MBeans = { [name: string]: Jmx.Folder };
+
   export class JmxTreeProcessor {
 
     constructor(
@@ -9,45 +11,48 @@ namespace RBAC {
       private workspace: Jmx.Workspace) {
     }
 
-    process(tree: any): void {
+    process(tree: Jmx.Folder): void {
+      log.debug("Processing tree", tree);
       this.rbacTasks.getACLMBean().then((aclMBean) => {
-        let mbeans = {};
+        let mbeans: MBeans = {};
         this.flattenMBeanTree(mbeans, tree);
-        switch (this.jolokiaStatus.listMethod) {
+        let listMethod = this.jolokiaStatus.listMethod;
+        switch (listMethod) {
           case JVM.JolokiaListMethod.LIST_WITH_RBAC:
             log.debug("Process JMX tree: list with RBAC mode");
             this.processWithRBAC(mbeans);
+            log.debug("Processed tree mbeans with RBAC", mbeans);
             break;
           case JVM.JolokiaListMethod.LIST_GENERAL:
           case JVM.JolokiaListMethod.LIST_CANT_DETERMINE:
           default:
             log.debug("Process JMX tree: general mode");
             this.processGeneral(aclMBean, mbeans);
+            log.debug("Processed tree mbeans", mbeans);
             break;
         }
       });
     }
 
-    private flattenMBeanTree(mbeans: any, tree: any): void {
+    private flattenMBeanTree(mbeans: MBeans, tree: Jmx.Folder): void {
       if (!Core.isBlank(tree.objectName)) {
         mbeans[tree.objectName] = tree;
       }
-      if (tree.children && tree.children.length > 0) {
-        tree.children.forEach((child) => this.flattenMBeanTree(mbeans, child));
+      if (tree.isFolder()) {
+        tree.children.forEach((child) => this.flattenMBeanTree(mbeans, child as Jmx.Folder));
       }
     }
 
-    private processWithRBAC(mbeans: any): void {
+    private processWithRBAC(mbeans: MBeans): void {
       // we already have everything related to RBAC in place, except 'addClass' property
-      _.forEach(mbeans, (mbean, mbeanName) => {
-        let toAdd = mbean.mbean && mbean.mbean.canInvoke ? "can-invoke" : "cant-invoke";
-        mbeans[mbeanName]['addClass'] = this.stripClasses(mbeans[mbeanName]['addClass']);
-        mbeans[mbeanName]['addClass'] = this.addClass(mbeans[mbeanName]['addClass'], toAdd);
+      _.forEach(mbeans, (node: Jmx.Folder, mbeanName: string) => {
+        let mbean = node.mbean;
+        let canInvoke = mbean && (_.isNil(mbean.canInvoke) || mbean.canInvoke);
+        this.addCanInvokeToClass(node, canInvoke);
       });
-      log.debug("Processed tree mbeans with RBAC", mbeans);
     }
 
-    private processGeneral(aclMBean: string, mbeans: any): void {
+    private processGeneral(aclMBean: string, mbeans: MBeans): void {
       let requests = [];
       let bulkRequest = {};
       _.forEach(mbeans, (mbean, mbeanName) => {
@@ -59,10 +64,10 @@ namespace RBAC {
             arguments: [mbeanName]
           });
           if (mbean.mbean && mbean.mbean.op) {
-            let ops = mbean.mbean.op as Core.JMXOperations;
+            let ops = mbean.mbean.op;
             mbean.mbean.opByString = {};
             let opList: string[] = [];
-            _.forEach(ops, (op: any, opName: string) => {
+            _.forEach(ops, (op: Core.JMXOperation, opName: string) => {
               if (_.isArray(op)) {
                 _.forEach(op, (op) => this.addOperation(mbean, opList, opName, op));
               } else {
@@ -83,10 +88,9 @@ namespace RBAC {
         (response) => {
           let mbean = response.request.arguments[0];
           if (mbean && _.isString(mbean)) {
+            let canInvoke = response.value;
             mbeans[mbean]['canInvoke'] = response.value;
-            let toAdd = response.value ? "can-invoke" : "cant-invoke";
-            mbeans[mbean]['addClass'] = this.stripClasses(mbeans[mbean]['addClass']);
-            mbeans[mbean]['addClass'] = this.addClass(mbeans[mbean]['addClass'], toAdd);
+            this.addCanInvokeToClass(mbeans[mbean], canInvoke);
           } else {
             let responseMap = response.value;
             _.forEach(responseMap, (operations, mbeanName) => {
@@ -99,11 +103,21 @@ namespace RBAC {
         { error: (response) => { /* silently ignore */ } }));
     }
 
-    private addOperation(mbean: any, opList: string[], opName: string, op: Core.JMXOperation) {
+    private addOperation(mbean: Jmx.Folder, opList: string[], opName: string, op: Core.JMXOperation) {
       let operationString = Core.operationToString(opName, op.args);
       // enrich the mbean by indexing the full operation string so we can easily look it up later
       mbean.mbean.opByString[operationString] = op;
       opList.push(operationString);
+    }
+
+    private addCanInvokeToClass(mbean: any, canInvoke: boolean): void {
+      let toAdd = canInvoke ? "can-invoke" : "cant-invoke";
+      mbean['addClass'] = this.stripClasses(mbean['addClass']);
+      mbean['addClass'] = this.addClass(mbean['addClass'], toAdd);
+      if (!canInvoke) {
+        // change the tree node icon to lock here
+        mbean.icon = 'fa fa-lock';
+      }
     }
 
     private stripClasses(css: string): string {

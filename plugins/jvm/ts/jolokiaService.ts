@@ -199,18 +199,28 @@ namespace JVM {
   _module.factory('jolokiaUrl', [(): string | boolean => getJolokiaUrl()]);
 
   // holds the status returned from the last jolokia call and hints for jolokia.list optimization
-  _module.factory('jolokiaStatus', (): JolokiaStatus => {
+  _module.factory('jolokiaStatus', createJolokiaStatus);
+
+  _module.factory('jolokiaParams', createJolokiaParams);
+
+  _module.factory('jolokia', createJolokia);
+
+  function createJolokiaStatus(): JolokiaStatus {
+    'ngInject';
+
     return {
       xhr: null,
       listMethod: JolokiaListMethod.LIST_GENERAL,
       listMBean: JOLOKIA_RBAC_LIST_MBEAN
     };
-  });
+  }
 
-  _module.factory('jolokiaParams', ["jolokiaUrl", "localStorage", (
+  function createJolokiaParams(
     jolokiaUrl: string,
-    localStorage: Storage) => {
-    let answer = {
+    localStorage: Storage): Jolokia.IParams {
+    'ngInject';
+
+    let answer: Jolokia.IParams = {
       canonicalNaming: false,
       ignoreErrors: true,
       maxCollectionSize: DEFAULT_MAX_COLLECTION_SIZE,
@@ -225,9 +235,80 @@ namespace JVM {
     }
     answer['url'] = jolokiaUrl;
     return answer;
-  }]);
+  }
 
-  export function getBeforeSend(): (xhr: JQueryXHR) => any {
+  function createJolokia(
+    localStorage: Storage,
+    jolokiaStatus: JolokiaStatus,
+    jolokiaParams: Jolokia.IParams,
+    jolokiaUrl: string,
+    $window): Jolokia.IJolokia {
+    'ngInject';
+
+    let jolokia: Jolokia.IJolokia = null;
+
+    if (jolokiaUrl) {
+      $.ajaxSetup({ beforeSend: getBeforeSend() });
+
+      Core.executePostLoginTasks();
+
+      let modal = null;
+      if (jolokiaParams['ajaxError'] == null) {
+        jolokiaParams['ajaxError'] = (xhr: JQueryXHR, textStatus: string, error: string) => {
+          if (xhr.status === 401 || xhr.status === 403) {
+            // logged out
+            $window.location.href = 'auth/logout';
+            Core.executePreLogoutTasks(() => {
+              Core.executePostLogoutTasks(() => {
+                log.debug("Executing logout callback after successfully executed postLogoutTasks");
+              });
+            });
+          } else {
+            jolokiaStatus.xhr = xhr;
+          }
+        };
+      }
+
+      jolokia = new Jolokia(jolokiaParams);
+      jolokia.stop();
+
+      if ('updateRate' in localStorage) {
+        if (localStorage['updateRate'] > 0) {
+          jolokia.start(localStorage['updateRate']);
+        }
+      }
+
+      // let's check if we can call faster jolokia.list()
+      checkJolokiaOptimization(jolokia, jolokiaStatus);
+    } else {
+      log.debug("Use dummy Jolokia");
+      // empty jolokia that returns nothing
+      jolokia = {
+        isDummy: true,
+        running: false,
+        request: (req: any, opts?: Jolokia.IParams) => null,
+        register: (req: any, opts?: Jolokia.IParams) => null as number,
+        list: (path, opts?) => null,
+        search: (mBeanPatter, opts?) => null,
+        getAttribute: (mbean, attribute, path?, opts?) => null,
+        setAttribute: (mbean, attribute, value, path?, opts?) => { },
+        version: (opts?) => null as Jolokia.IVersion,
+        execute: (mbean, operation, ...args) => null,
+        start: (period) => {
+          (jolokia as DummyJolokia).running = true;
+        },
+        stop: () => {
+          (jolokia as DummyJolokia).running = false;
+        },
+        isRunning: () => (jolokia as DummyJolokia).running,
+        jobs: () => []
+      } as DummyJolokia;
+    }
+
+    return jolokia;
+  }
+
+  function getBeforeSend(): (xhr: JQueryXHR) => any {
     // Just set Authorization for now...
     let headers = ['Authorization'];
     let connectionOptions = getConnectionOptions();
@@ -247,98 +328,30 @@ namespace JVM {
     }
   }
 
-  _module.factory('jolokia', ["$location", "localStorage", "jolokiaStatus", "$rootScope", "userDetails",
-    "jolokiaParams", "jolokiaUrl", "$uibModal", "$window", (
-      $location: ng.ILocationService,
-      localStorage: Storage,
-      jolokiaStatus: JolokiaStatus,
-      $rootScope,
-      userDetails: Core.UserDetails,
-      jolokiaParams,
-      jolokiaUrl: string,
-      $uibModal,
-      $window): Jolokia.IJolokia => {
-
-      let jolokia: Jolokia.IJolokia = null;
-
-      if (jolokiaUrl) {
-        $.ajaxSetup({ beforeSend: getBeforeSend() });
-
-        Core.executePostLoginTasks();
-
-        let modal = null;
-        if (jolokiaParams['ajaxError'] == null) {
-          jolokiaParams['ajaxError'] = (xhr: JQueryXHR, textStatus: string, error: string) => {
-            if (xhr.status === 401 || xhr.status === 403) {
-              // logged out
-              $window.location.href = 'auth/logout';
-              Core.executePreLogoutTasks(() => {
-                Core.executePostLogoutTasks(() => {
-                  log.debug("Executing logout callback after successfully executed postLogoutTasks");
-                });
-              });
-            } else {
-              jolokiaStatus.xhr = xhr;
-            }
-          };
-        }
-
-        jolokia = new Jolokia(jolokiaParams);
-        jolokia.stop();
-
-        if ('updateRate' in localStorage) {
-          if (localStorage['updateRate'] > 0) {
-            jolokia.start(localStorage['updateRate']);
-          }
-        }
-
-        // let's check if we can call faster jolokia.list()
-        checkJolokiaOptimization(jolokia, jolokiaStatus);
-      } else {
-        log.debug("Use dummy Jolokia");
-        // empty jolokia that returns nothing
-        jolokia = <DummyJolokia>{
-          isDummy: true,
-          running: false,
-          request: (req: any, opts?: Jolokia.IParams) => null,
-          register: (req: any, opts?: Jolokia.IParams) => null as number,
-          list: (path, opts?) => null,
-          search: (mBeanPatter, opts?) => null,
-          getAttribute: (mbean, attribute, path?, opts?) => null,
-          setAttribute: (mbean, attribute, value, path?, opts?) => { },
-          version: (opts?) => null as Jolokia.IVersion,
-          execute: (mbean, operation, ...args) => null,
-          start: (period) => {
-            (jolokia as DummyJolokia).running = true;
-          },
-          stop: () => {
-            (jolokia as DummyJolokia).running = false;
-          },
-          isRunning: () => (jolokia as DummyJolokia).running,
-          jobs: () => []
-        };
-      }
-
-      return jolokia;
-    }]);
-
   /**
-   * Queries available server-side MBean to check if can call optimized jolokia.list() operation
+   * Queries available server-side MBean to check if we can call optimized jolokia.list() operation
    * @param jolokia {Jolokia.IJolokia}
    * @param jolokiaStatus {JolokiaStatus}
    */
-  export function checkJolokiaOptimization(jolokia: Jolokia.IJolokia, jolokiaStatus: JolokiaStatus): void {
+  function checkJolokiaOptimization(jolokia: Jolokia.IJolokia, jolokiaStatus: JolokiaStatus): void {
+    log.debug("Checking if we can call optimized jolokia.list() operation");
     jolokia.list(
       Core.escapeMBeanPath(jolokiaStatus.listMBean),
-      Core.onSuccess((response) => {
-        if (angular.isObject(response['op'])) {
-          jolokiaStatus.listMethod = JolokiaListMethod.LIST_WITH_RBAC;
-        } else {
-          // we could get 403 error, mark the method as special case, equal in practice with LIST_GENERAL
-          jolokiaStatus.listMethod = JolokiaListMethod.LIST_CANT_DETERMINE;
-        }
-        log.debug("Jolokia list method:", jolokiaStatus.listMethod);
-      }, {}));
+      Core.onSuccess(
+        (response) => {
+          if (angular.isObject(response['op'])) {
+            jolokiaStatus.listMethod = JolokiaListMethod.LIST_WITH_RBAC;
+          } else {
+            // we could get 403 error, mark the method as special case, equal in practice with LIST_GENERAL
+            jolokiaStatus.listMethod = JolokiaListMethod.LIST_CANT_DETERMINE;
+          }
+          log.debug("Jolokia list method:", jolokiaStatus.listMethod);
+        },
+        {
+          error: (response) => {
+            log.error("Failed to query Jolokia list mbean", response.error);
+          }
+        }));
   }
 
   export interface JolokiaStatus {

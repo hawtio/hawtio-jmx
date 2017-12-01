@@ -4,6 +4,7 @@
 namespace Jmx {
 
   const log: Logging.Logger = Logger.get("workspace");
+  const logTree: Logging.Logger = Logger.get("workspace-tree");
 
   const HAWTIO_REGISTRY_MBEAN: string = "hawtio:type=Registry";
   const HAWTIO_TREE_WATCHER_MBEAN: string = "hawtio:type=TreeWatcher";
@@ -31,7 +32,7 @@ namespace Jmx {
     public mbeanServicesToDomain = {};
     public attributeColumnDefs = {};
     public onClickRowHandlers = {};
-    public treePostProcessors = {};
+    public treePostProcessors: { [name: string]: (tree: Folder) => void } = {};
     public topLevelTabs: any = undefined
     public subLevelTabs = [];
     public keyToNodeMap = {};
@@ -93,7 +94,7 @@ namespace Jmx {
       const child = new Workspace(this.jolokia, this.jolokiaStatus, this.jmxTreeLazyLoadRegistry,
         this.$location, this.$compile, this.$templateCache, this.localStorage, this.$rootScope, this.HawtioNav);
       // lets copy across all the properties just in case
-      angular.forEach(this, (value, key) => child[key] = value);
+      _.forEach(this, (value, key) => child[key] = value);
       child.$location = location;
       return child;
     }
@@ -106,15 +107,20 @@ namespace Jmx {
       this.localStorage[key] = value;
     }
 
-    public jolokiaList(callback, flags): any {
-      if (this.jolokiaStatus.listMethod != JVM.JolokiaListMethod.LIST_WITH_RBAC) {
-        return this.jolokia.list(null, Core.onSuccess(callback, flags));
-      } else {
-        flags.maxDepth = 9;
-        let res = this.jolokia.execute(this.jolokiaStatus.listMBean, "list()", Core.onSuccess(callback, flags));
-        if (res) {
-          return this.unwindResponseWithRBACCache(res);
-        }
+    private jolokiaList(callback, flags): void {
+      let listMethod = this.jolokiaStatus.listMethod;
+      switch (listMethod) {
+        case JVM.JolokiaListMethod.LIST_WITH_RBAC:
+          log.debug("Invoking Jolokia list mbean in RBAC mode");
+          flags.maxDepth = 9;
+          this.jolokia.execute(this.jolokiaStatus.listMBean, "list()", Core.onSuccess(callback, flags));
+          break;
+        case JVM.JolokiaListMethod.LIST_GENERAL:
+        case JVM.JolokiaListMethod.LIST_CANT_DETERMINE:
+        default:
+          log.debug("Invoking Jolokia list mbean in general mode");
+          this.jolokia.list(null, Core.onSuccess(callback, flags));
+          break;
       }
     }
 
@@ -135,7 +141,7 @@ namespace Jmx {
           log.debug("Error fetching JMX tree: ", response);
         }
       };
-      log.debug("jolokia: ", this.jolokia);
+      log.debug("jolokia:", this.jolokia);
       this.jolokiaList((response) => {
         this.jolokiaStatus.xhr = null;
         workspace.treeFetched = true;
@@ -149,13 +155,13 @@ namespace Jmx {
      * @method addTreePostProcessor
      * @param {Function} processor
      */
-    public addTreePostProcessor(processor: (tree: any) => void) {
+    public addTreePostProcessor(processor: (tree: Folder) => void) {
       let numKeys = _.keys(this.treePostProcessors).length;
       let nextKey = numKeys + 1;
       return this.addNamedTreePostProcessor(nextKey + '', processor);
     }
 
-    public addNamedTreePostProcessor(name: string, processor: (tree: any) => void) {
+    public addNamedTreePostProcessor(name: string, processor: (tree: Folder) => void) {
       this.treePostProcessors[name] = processor;
       let tree = this.tree;
       if (this.treeFetched && tree) {
@@ -230,14 +236,14 @@ namespace Jmx {
      * Processes response from jolokia list - if it contains "domains" and "cache" properties
      * @param response
      */
-    public unwindResponseWithRBACCache(response: any): any {
+    public unwindResponseWithRBACCache(response: any): Core.JMXDomains {
       if (response['domains'] && response['cache']) {
         // post process cached RBAC info
         for (let domainName in response['domains']) {
           let domainClass = Core.escapeDots(domainName);
           let domain = response['domains'][domainName] as Core.JMXDomain;
           for (let mbeanName in domain) {
-            if (angular.isString(domain[mbeanName])) {
+            if (_.isString(domain[mbeanName])) {
               domain[mbeanName] = response['cache']["" + domain[mbeanName]] as Core.JMXMBean;
             }
           }
@@ -247,8 +253,8 @@ namespace Jmx {
       return response;
     }
 
-    public populateTree(response: { value: any }): void {
-      log.debug("JMX tree has been loaded, data: ", response.value);
+    public populateTree(response: { value: Core.JMXDomains }): void {
+      log.debug("JMX tree has been loaded, data:", response.value);
 
       this.mbeanTypesToDomain = {};
       this.mbeanServicesToDomain = {};
@@ -256,8 +262,8 @@ namespace Jmx {
 
       let newTree = new Folder('MBeans');
       newTree.key = this.rootId;
-      let domains = response.value as Core.JMXDomains;
-      angular.forEach(domains, (domain, domainName) => {
+      let domains = response.value;
+      _.forEach(domains, (domain, domainName) => {
         // domain name is displayed in the tree, so let's escape it here
         // Core.escapeHtml() and _.escape() cannot be used, as escaping '"' breaks Camel tree...
         this.populateDomainFolder(newTree, this.escapeTagOnly(domainName), domain);
@@ -270,8 +276,8 @@ namespace Jmx {
       this.tree = newTree;
 
       let processors = this.treePostProcessors;
-      _.forIn(processors, (fn: (Folder) => void, key) => {
-        log.debug("Running tree post processor: ", key);
+      _.forIn(processors, (fn: (tree: Folder) => void, key: string) => {
+        log.debug("Running tree post processor:", key);
         fn(newTree);
       });
 
@@ -290,15 +296,15 @@ namespace Jmx {
         folder.key = this.rootId + this.separator + folderNames.join(this.separator);
       }
       folder.folderNames = folderNames;
-      log.debug("    folder: domain=" + folder.domain + ", key=" + folder.key);
+      logTree.debug("    folder: domain=" + folder.domain + ", key=" + folder.key);
     }
 
     private populateDomainFolder(tree: Folder, domainName: string, domain: Core.JMXDomain): void {
-      log.debug("JMX tree domain: " + domainName);
+      logTree.debug("JMX tree domain: " + domainName);
       let domainClass = Core.escapeDots(domainName);
       let folder = this.folderGetOrElse(tree, domainName);
       this.initFolder(folder, domainName, [domainName]);
-      angular.forEach(domain, (mbean, mbeanName) => {
+      _.forEach(domain, (mbean, mbeanName) => {
         this.populateMBeanFolder(folder, domainClass, mbeanName, mbean);
       });
     }
@@ -325,13 +331,13 @@ namespace Jmx {
     }
 
     private populateMBeanFolder(domainFolder: Folder, domainClass: string, mbeanName: string, mbean: Core.JMXMBean): void {
-      log.debug("  JMX tree mbean: " + mbeanName);
+      logTree.debug("  JMX tree mbean: " + mbeanName);
 
       let entries = {};
       let paths = [];
       let typeName = null;
       let serviceName = null;
-      mbeanName.split(',').forEach(prop => {
+      mbeanName.split(',').forEach((prop) => {
         // do not use split('=') as it splits wrong when there is a space in the mbean name
         let kv = this.splitMBeanProperty(prop);
         let propKey = kv[0];
@@ -396,10 +402,7 @@ namespace Jmx {
     }
 
     private folderGetOrElse(folder: Folder, name: string): Folder {
-      if (folder) {
-        return folder.getOrElse(name);
-      }
-      return null;
+      return folder ? folder.getOrElse(name) : null;
     }
 
     private splitMBeanProperty(property: string): [string, string] {
@@ -418,7 +421,7 @@ namespace Jmx {
       let typeKey = _.filter(_.keys(folder.entries), key => key.toLowerCase().indexOf("type") >= 0);
       if (typeKey.length) {
         // last path
-        angular.forEach(typeKey, key => {
+        _.forEach(typeKey, key => {
           let typeName = folder.entries[key];
           if (!folder.ancestorHasEntry(key, typeName)) {
             classes += " " + domainClass + this.separator + typeName;
@@ -953,12 +956,13 @@ namespace Jmx {
       let tree = this.tree;
       if (tree) {
         let children = tree.children;
-        if (angular.isArray(children) && children.length > 0) {
+        if (_.isArray(children) && children.length > 0) {
           answer = true;
         }
       }
       return answer;
     }
+
     hasFabricMBean() {
       return this.hasDomainAndProperties('io.fabric8', { type: 'Fabric' });
     }

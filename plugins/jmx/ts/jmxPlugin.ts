@@ -67,7 +67,7 @@ namespace Jmx {
       pageTitle,
       $templateCache: ng.ITemplateCacheService) => {
 
-    log.debug('loaded');
+    log.debug('JMX plugin loaded');
 
     viewRegistry['jmx'] = layoutTree;
     viewRegistry['{ "tab": "notree" }'] = layoutFull;

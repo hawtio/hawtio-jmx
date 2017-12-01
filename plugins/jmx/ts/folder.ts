@@ -182,7 +182,7 @@ namespace Jmx {
     tooltip:string = null;
     entity:any = null;
     version:string = null;
-    mbean:Core.JMXMBean = null;
+    mbean: Core.JMXMBean & { opByString?: { [name: string]: any } } = null;
 
     get(key: string): NodeSelection {
       return _.find(this.children, child => child.text === key);

@@ -137,7 +137,7 @@ namespace Jmx {
       $scope.lastKey = null;
     }
     $scope.nid = $location.search()['nid'];
-    log.debug("nid: ", $scope.nid);
+    log.debug("attribute - nid: ", $scope.nid);
 
     let updateTable = _.debounce(updateTableContents, 50, { leading: false, trailing: true });
 
@@ -362,7 +362,7 @@ namespace Jmx {
                 $scope.mbeanCount = mbeans.length;
               }
             } else {
-              console.log("Too many type names ", typeNames);
+              log.debug("Too many type names ", typeNames);
             }
           }
         }
