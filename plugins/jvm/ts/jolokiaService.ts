@@ -335,23 +335,15 @@ namespace JVM {
    */
   function checkJolokiaOptimization(jolokia: Jolokia.IJolokia, jolokiaStatus: JolokiaStatus): void {
     log.debug("Checking if we can call optimized jolokia.list() operation");
-    jolokia.list(
-      Core.escapeMBeanPath(jolokiaStatus.listMBean),
-      Core.onSuccess(
-        (response) => {
-          if (angular.isObject(response['op'])) {
-            jolokiaStatus.listMethod = JolokiaListMethod.LIST_WITH_RBAC;
-          } else {
-            // we could get 403 error, mark the method as special case, equal in practice with LIST_GENERAL
-            jolokiaStatus.listMethod = JolokiaListMethod.LIST_CANT_DETERMINE;
-          }
-          log.debug("Jolokia list method:", jolokiaStatus.listMethod);
-        },
-        {
-          error: (response) => {
-            log.error("Failed to query Jolokia list mbean", response.error);
-          }
-        }));
+    // NOTE: Sync XHR call to Jolokia is required here to resolve the available list method immediately
+    let response = jolokia.list(Core.escapeMBeanPath(jolokiaStatus.listMBean), {});
+    if (response && _.isObject(response['op'])) {
+      jolokiaStatus.listMethod = JolokiaListMethod.LIST_WITH_RBAC;
+    } else {
+      // we could get 403 error, mark the method as special case, equal in practice with LIST_GENERAL
+      jolokiaStatus.listMethod = JolokiaListMethod.LIST_CANT_DETERMINE;
+    }
+    log.debug("Jolokia list method:", jolokiaStatus.listMethod);
   }
 
   export interface JolokiaStatus {

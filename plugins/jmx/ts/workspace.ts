@@ -206,7 +206,7 @@ namespace Jmx {
       }
     }
 
-    public maybeUpdatePlugins(response: any): void {
+    public maybeUpdatePlugins(response: Jolokia.IResponse): void {
       if (this.pluginUpdateCounter === null) {
         this.pluginUpdateCounter = response.value;
         return;
@@ -218,7 +218,7 @@ namespace Jmx {
       }
     }
 
-    public maybeReloadTree(response: any): void {
+    public maybeReloadTree(response: Jolokia.IResponse): void {
       let counter = response.value;
       if (this.treeWatcherCounter === null) {
         this.treeWatcherCounter = counter;

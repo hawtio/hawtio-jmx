@@ -94,7 +94,7 @@ namespace Jmx {
       lazyLoad: function (node: Folder, addNodes: (nodes: NodeSelection[]) => void) {
         const plugin = Jmx.findLazyLoadingFunction(workspace, node) as (workspace: Workspace, folder: Folder, onComplete: (children: NodeSelection[]) => void) => void;
         if (plugin) {
-          log.debug('Lazy loading folder ', node.text);
+          log.debug('Lazy loading folder', node.text);
           plugin(workspace, node, children => addNodes(children));
         }
         // It seems to be required, as the lazyLoad property deletion done
