@@ -50,8 +50,11 @@ namespace Jmx {
     }
 
     private addOperation(operations: Operation[], operationMap: { [name: string]: Operation },
-      opName: string, op: { args: OperationArgument[], desc: string }): void {
-      let operation = new Operation(opName, op.args, op.desc);
+      opName: string, op: { args: any[], desc: string }): void {
+      let operation = new Operation(
+        opName,
+        op.args.map((arg) => _.assign(new OperationArgument(), arg)),
+        op.desc);
       operations.push(operation);
       operationMap[operation.name] = operation;
     }

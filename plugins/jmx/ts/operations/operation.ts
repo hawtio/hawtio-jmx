@@ -12,35 +12,34 @@ namespace Jmx {
       this.args = args;
       this.description = description;
       this.name = Operation.buildName(method, args);
-      this.readableName = Operation.buildReadableName(this.name);
+      this.readableName = Operation.buildReadableName(method, args);
       this.canInvoke = true;
     }
 
-    private static buildName(method: string, args: OperationArgument[]) {
+    private static buildName(method: string, args: OperationArgument[]): string {
       return method + "(" + args.map(arg => arg.type).join() + ")";
     }
 
-    private static buildReadableName(name: string) {
-      let startParamsIndex = name.indexOf('(') + 1;
-      let endParamsIndex = name.indexOf(')');
-      if (startParamsIndex === endParamsIndex) {
-        return name;
-      }
-      let paramsStr = name.substring(startParamsIndex, endParamsIndex);
-      let params = paramsStr.split(',');
-      let readableParams = params.map(param => {
-        let lastDotIndex = param.lastIndexOf('.');
-        return lastDotIndex > 0 ? param.substr(lastDotIndex + 1) : param;
-      });
-      let readableParamsStr = readableParams.join(', ');
-      return name.replace(paramsStr, readableParamsStr);
+    private static buildReadableName(method: string, args: OperationArgument[]): string {
+      return method + "(" + args.map(arg => arg.readableType()).join(', ') + ")";
     }
   }
 
-  export interface OperationArgument {
+  export class OperationArgument {
     name: string;
     type: string;
     desc: string;
+
+    constructor() { }
+
+    readableType(): string {
+      let lastDotIndex = this.type.lastIndexOf('.');
+      let answer = lastDotIndex > 0 ? this.type.substr(lastDotIndex + 1) : this.type;
+      if (_.startsWith(this.type, '[') && _.endsWith(this.type, ';')) {
+        answer = _.trimEnd(answer, ';') + '[]';
+      }
+      return answer;
+    }
   }
 
 }
