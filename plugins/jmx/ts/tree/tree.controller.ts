@@ -88,6 +88,7 @@ namespace Jmx {
     }
 
     populateTree(): void {
+      log.debug("TreeController: populateTree");
       enableTree(this.$scope, this.$location, this.workspace, $('#jmxtree'),
         this.workspace.tree.children);
       setTimeout(() => this.updateSelectionFromURL(), 50);

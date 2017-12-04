@@ -35,7 +35,7 @@ namespace Jmx {
       } else {
         arg.desc = '';
       }
-      return arg.desc + 'Type: ' + arg.type;
+      return arg.desc + 'Type: ' + arg.readableType();
     }
 
     private static convertToHtmlInputType(javaType: string): string {

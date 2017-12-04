@@ -5,44 +5,41 @@ namespace Jmx {
     args: OperationArgument[];
     description: string;
     name: string;
-    simpleName: string;
+    readableName: string;
     canInvoke: boolean;
 
     constructor(method: string, args: OperationArgument[], description: string) {
       this.args = args;
       this.description = description;
       this.name = Operation.buildName(method, args);
-      this.simpleName = Operation.buildSimpleName(this.name);
+      this.readableName = Operation.buildReadableName(method, args);
       this.canInvoke = true;
     }
 
-    private static buildName(method: string, args: OperationArgument[]) {
+    private static buildName(method: string, args: OperationArgument[]): string {
       return method + "(" + args.map(arg => arg.type).join() + ")";
     }
 
-    private static buildSimpleName(name: string) {
-      let startParamsIndex = name.indexOf('(') + 1;
-      let endParamsIndex = name.indexOf(')');
-      if (startParamsIndex === endParamsIndex) {
-        return name;
-      } else {
-        let paramsStr = name.substring(startParamsIndex, endParamsIndex);
-        let params = paramsStr.split(',');
-        let simpleParams = params.map(param => {
-          let lastDotIndex = param.lastIndexOf('.');
-          return lastDotIndex > 0 ? param.substr(lastDotIndex + 1) : param;
-        });
-        let simpleParamsStr = simpleParams.join(', ');
-        let simpleOperationName = name.replace(paramsStr, simpleParamsStr);
-        return simpleOperationName;
-      }
+    private static buildReadableName(method: string, args: OperationArgument[]): string {
+      return method + "(" + args.map(arg => arg.readableType()).join(', ') + ")";
     }
   }
 
-  export interface OperationArgument {
+  export class OperationArgument {
     name: string;
     type: string;
     desc: string;
+
+    constructor() { }
+
+    readableType(): string {
+      let lastDotIndex = this.type.lastIndexOf('.');
+      let answer = lastDotIndex > 0 ? this.type.substr(lastDotIndex + 1) : this.type;
+      if (_.startsWith(this.type, '[') && _.endsWith(this.type, ';')) {
+        answer = _.trimEnd(answer, ';') + '[]';
+      }
+      return answer;
+    }
   }
 
 }

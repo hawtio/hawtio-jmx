@@ -11,7 +11,7 @@
     <label class="col-sm-2 control-label" for="{{formField.label}}">{{formField.label}}</label>
     <div class="col-sm-10">
       <input type="{{formField.type}}" id="{{formField.label}}" ng-class="{'form-control': formField.type !== 'checkbox'}"
-        ng-model="formField.value">
+        ng-model="formField.value" ng-disabled="!$ctrl.operation.canInvoke">
       <span class="help-block">{{formField.helpText}}</span>
     </div>
   </div>

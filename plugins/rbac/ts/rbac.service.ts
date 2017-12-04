@@ -2,8 +2,6 @@
 
 namespace RBAC {
 
-  export const TREE_POSTPROCESSOR_NAME = "rbacTreePostprocessor";
-
   export class RBACTasksFactory {
     static create(postLoginTasks: Core.Tasks, jolokia: Jolokia.IJolokia, $q: ng.IQService): RBACTasks {
       'ngInject';

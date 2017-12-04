@@ -5,12 +5,14 @@
 /// <reference path="../../jmx/ts/workspace.ts"/>
 /// <reference path="../../jvm/ts/jolokiaService.ts"/>
 /// <reference path="models.ts"/>
-/// <reference path="rbacHelpers.ts"/>
 /// <reference path="rbac.directive.ts"/>
 /// <reference path="rbac.service.ts"/>
 /// <reference path="jmxTreeProcessor.ts"/>
 
 namespace RBAC {
+
+  export const pluginName: string = "hawtio-rbac";
+  export const log: Logging.Logger = Logger.get(pluginName);
 
   export const _module = angular
     .module(pluginName, [])
@@ -18,12 +20,17 @@ namespace RBAC {
     .service('rbacTasks', RBACTasksFactory.create)
     .service('rbacACLMBean', RBACACLMBeanFactory.create);
 
-  _module.run(["jolokia", "jolokiaStatus", "rbacTasks", "preLogoutTasks", "workspace", (
+  const TREE_POSTPROCESSOR_NAME = "rbacTreePostprocessor";
+
+  _module.run(addTreePostProcessor);
+
+  function addTreePostProcessor(
     jolokia: Jolokia.IJolokia,
     jolokiaStatus: JVM.JolokiaStatus,
     rbacTasks: RBACTasks,
     preLogoutTasks: Core.Tasks,
-    workspace: Jmx.Workspace) => {
+    workspace: Jmx.Workspace): void {
+    'ngInject';
 
     preLogoutTasks.addTask("resetRBAC", () => {
       log.debug("Resetting RBAC tasks");
@@ -31,13 +38,12 @@ namespace RBAC {
       workspace.removeNamedTreePostProcessor(TREE_POSTPROCESSOR_NAME);
     });
 
-    // add info to the JMX tree if we have access to invoke on mbeans
-    // or not
+    // add info to the JMX tree if we have access to invoke on mbeans or not
     let processor = new JmxTreeProcessor(jolokia, jolokiaStatus, rbacTasks, workspace);
     rbacTasks.addTask("JMXTreePostProcess",
       () => workspace.addNamedTreePostProcessor(TREE_POSTPROCESSOR_NAME,
-        (tree) => processor.process(tree)));
-  }]);
+        (tree: Jmx.Folder) => processor.process(tree)));
+  }
 
   hawtioPluginLoader.addModule(pluginName);
 }

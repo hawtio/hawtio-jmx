@@ -12,7 +12,7 @@ namespace Jmx {
 
     getOperations(mbeanName: string): ng.IPromise<Operation[]> {
       return this.loadOperations(mbeanName)
-        .then(operations => _.sortBy(operations, operation => operation.simpleName));
+        .then(operations => _.sortBy(operations, operation => operation.readableName));
     }
 
     private loadOperations(mbeanName: string): ng.IPromise<Operation[]> {
@@ -50,10 +50,42 @@ namespace Jmx {
     }
 
     private addOperation(operations: Operation[], operationMap: { [name: string]: Operation },
-      opName: string, op: { args: OperationArgument[], desc: string }): void {
-      let operation = new Operation(opName, op.args, op.desc);
+      opName: string, op: { args: any[], desc: string }): void {
+      let operation = new Operation(
+        opName,
+        op.args.map((arg) => _.assign(new OperationArgument(), arg)),
+        op.desc);
       operations.push(operation);
       operationMap[operation.name] = operation;
+    }
+
+    private fetchPermissions(operationMap: { [name: string]: Operation }, mbeanName: string): ng.IPromise<void> {
+      return this.$q((resolve, reject) =>
+        this.rbacACLMBean.then((rbacACLMBean) => {
+          this.jolokia.request(
+            {
+              type: 'exec',
+              mbean: rbacACLMBean,
+              operation: 'canInvoke(java.util.Map)',
+              arguments: [{ [mbeanName]: _.values(operationMap).map((op) => op.name) }]
+            },
+            Core.onSuccess(
+              (response) => {
+                log.debug("rbacACLMBean canInvoke operations response:", response);
+                let ops = response.value;
+                _.forEach(ops[mbeanName], (canInvoke: RBAC.OperationCanInvoke, opName: string) => {
+                  operationMap[opName].canInvoke = canInvoke.CanInvoke;
+                });
+                log.debug("Got operations:", operationMap);
+                resolve();
+              },
+              {
+                error: (response) =>
+                  log.debug('OperationsService.fetchPermissions() failed:', response)
+              }
+            )
+          );
+        }));
     }
 
     getOperation(mbeanName: string, operationName): ng.IPromise<Operation> {
@@ -78,35 +110,6 @@ namespace Jmx {
           });
       });
     };
-
-    private fetchPermissions(operationMap: { [name: string]: Operation }, mbeanName: string): ng.IPromise<void> {
-      return this.$q((resolve, reject) =>
-        this.rbacACLMBean.then((rbacACLMBean) => {
-          this.jolokia.request(
-            {
-              type: 'exec',
-              mbean: rbacACLMBean,
-              operation: 'canInvoke(java.util.Map)',
-              arguments: [{ [mbeanName]: _.values(operationMap).map((op) => op.name) }]
-            },
-            Core.onSuccess(
-              (response) => {
-                log.debug("rbacACLMBean canInvoke operations response:", response);
-                let ops = response.value;
-                _.forEach(ops[mbeanName], (canInvoke: RBAC.OperationCanInvoke, opName: string) =>
-                  operationMap[opName].canInvoke = canInvoke.CanInvoke
-                );
-                log.debug("Got operations:", operationMap);
-                resolve();
-              },
-              {
-                error: (response) =>
-                  log.debug('OperationsService.fetchPermissions() failed:', response)
-              }
-            )
-          );
-        }));
-    }
 
   }
 
