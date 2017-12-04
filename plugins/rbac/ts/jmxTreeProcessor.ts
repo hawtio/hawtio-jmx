@@ -44,7 +44,7 @@ namespace RBAC {
     }
 
     private processWithRBAC(mbeans: MBeans): void {
-      // we already have everything related to RBAC in place, except 'addClass' property
+      // we already have everything related to RBAC in place, except 'class' property
       _.forEach(mbeans, (node: Jmx.Folder, mbeanName: string) => {
         let mbean = node.mbean;
         let canInvoke = mbean && (_.isNil(mbean.canInvoke) || mbean.canInvoke);
@@ -112,8 +112,8 @@ namespace RBAC {
 
     private addCanInvokeToClass(mbean: any, canInvoke: boolean): void {
       let toAdd = canInvoke ? "can-invoke" : "cant-invoke";
-      mbean['addClass'] = this.stripClasses(mbean['addClass']);
-      mbean['addClass'] = this.addClass(mbean['addClass'], toAdd);
+      mbean['class'] = this.stripClasses(mbean['class']);
+      mbean['class'] = this.addClass(mbean['class'], toAdd);
       if (!canInvoke) {
         // change the tree node icon to lock here
         mbean.icon = 'fa fa-lock';
