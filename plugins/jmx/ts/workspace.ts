@@ -276,13 +276,17 @@ namespace Jmx {
       this.tree = newTree;
 
       let processors = this.treePostProcessors;
-      _.forIn(processors, (fn: (tree: Folder) => void, key: string) => {
+      _.forIn(processors, (processor: (tree: Folder) => void, key: string) => {
         log.debug("Running tree post processor:", key);
-        fn(newTree);
+        processor(newTree);
       });
 
       this.maybeMonitorPlugins();
 
+      this.jmxTreeUpdated();
+    }
+
+    jmxTreeUpdated() {
       let rootScope = this.$rootScope;
       if (rootScope) {
         rootScope.$broadcast('jmxTreeUpdated');

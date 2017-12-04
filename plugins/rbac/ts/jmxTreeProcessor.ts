@@ -31,6 +31,8 @@ namespace RBAC {
             log.debug("Processed tree mbeans", mbeans);
             break;
         }
+        // publish 'jmxTreeUpdated' event to apply the tree changes
+        this.workspace.jmxTreeUpdated();
       });
     }
 

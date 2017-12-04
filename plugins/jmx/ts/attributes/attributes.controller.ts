@@ -608,19 +608,14 @@ namespace Jmx {
     };
 
     function folderIconClass(row: any): string {
-      // TODO lets ignore the classes property for now
-      // as we don't have an easy way to know if there is an icon defined for an icon or not
-      // and we want to make sure there always is an icon shown
-      /*
-       let classes = (row.getProperty("addClass") || "").trim();
-       if (classes) {
-       return classes;
-       }
-       */
       if (!row.getProperty) {
         return '';
       }
-      return row.getProperty('objectName') ? 'fa fa-cog' : 'pficon pficon-folder-close';
+      if (!row.getProperty('objectName')) {
+        return 'pficon pficon-folder-close';
+      }
+      let mbean = row.getProperty('mbean');
+      return _.isNil(mbean) || _.isNil(mbean.canInvoke) || mbean.canInvoke ? 'fa fa-cog' : 'fa fa-lock';
     }
 
     function gotoFolder(row: any): void {
