@@ -577,6 +577,22 @@ declare namespace Diagnostics {
 }
 declare namespace Diagnostics {
 }
+declare namespace JVM {
+}
+declare module JVM {
+    var HeaderController: angular.IModule;
+}
+declare namespace JVM {
+}
+/**
+ * @module JVM
+ */
+declare module JVM {
+}
+declare namespace JVM {
+}
+declare namespace JVM {
+}
 declare namespace Jmx {
     function createDashboardLink(widgetType: any, widget: any): string;
     function getWidgetType(widget: any): {
@@ -815,22 +831,6 @@ declare namespace Jmx {
 declare namespace Jmx {
     var DonutChartController: angular.IModule;
 }
-declare namespace JVM {
-}
-declare module JVM {
-    var HeaderController: angular.IModule;
-}
-declare namespace JVM {
-}
-/**
- * @module JVM
- */
-declare module JVM {
-}
-declare namespace JVM {
-}
-declare namespace JVM {
-}
 declare namespace RBAC {
     class JmxTreeProcessor {
         private jolokia;
@@ -858,9 +858,10 @@ declare namespace RBAC {
         constructor(workspace: Jmx.Workspace);
         static factory(workspace: Jmx.Workspace): HawtioShow;
         link(scope: ng.IScope, element: ng.IAugmentedJQuery, attr: ng.IAttributes): void;
-        private getOp(objectName, methodName, argumentTypes);
-        private getArguments(op, objectName, methodName, argumentTypes);
-        private applyInvokeRights(element, value, mode);
+        private applyInvokeRights(element, objectName, attr);
+        private getCanInvokeOperation(methodName, argumentTypes);
+        private getArguments(canInvokeOp, objectName, methodName, argumentTypes);
+        private changeDisplay(element, invokeRights, mode);
     }
 }
 declare namespace RBAC {
