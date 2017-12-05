@@ -28,34 +28,41 @@ namespace RBAC {
 
     link(scope: ng.IScope, element: ng.IAugmentedJQuery, attr: ng.IAttributes): void {
       let objectName = attr['objectName'];
-      if (!objectName) {
+      let objectNameModel = attr['objectNameModel'];
+      log.debug("hawtio-show: object-name=", objectName, "object-name-model=", objectNameModel);
+      if (!objectName && !objectNameModel) {
         return;
       }
-      scope.$watch(() => {
-        let methodName = attr['methodName'];
-        let argumentTypes = attr['argumentTypes'];
-        let mode = attr['mode'] || HIDE;
-        let op = this.getOp(objectName, methodName, argumentTypes);
-        let args = this.getArguments(op, objectName, methodName, argumentTypes);
-        objectName = args[0];
-        methodName = args[1];
-        if (objectName) {
-          let mbean = Core.parseMBean(objectName);
-          let folder = this.workspace.findMBeanWithProperties(mbean.domain, mbean.attributes);
-          if (folder) {
-            let invokeRights;
-            if (methodName) {
-              invokeRights = this.workspace.hasInvokeRights(folder, methodName);
-            } else {
-              invokeRights = this.workspace.hasInvokeRights(folder);
-            }
-            this.applyInvokeRights(element, invokeRights, mode);
+
+      if (objectName) {
+        this.applyInvokeRights(element, objectName, attr);
+      } else {
+        scope.$watch<string>(objectNameModel, (newValue, oldValue) => {
+          if (newValue !== oldValue) {
+            this.applyInvokeRights(element, newValue, attr);
           }
-        }
-      });
+        });
+      }
     }
 
-    private getOp(objectName: string, methodName: string, argumentTypes: string): string {
+    private applyInvokeRights(element: ng.IAugmentedJQuery, objectName: string, attr: ng.IAttributes): void {
+      let methodName = attr['methodName'];
+      let argumentTypes = attr['argumentTypes'];
+      let mode = attr['mode'] || HIDE;
+      let canInvokeOp = this.getCanInvokeOperation(methodName, argumentTypes);
+      let args = this.getArguments(canInvokeOp, objectName, methodName, argumentTypes);
+      let mbean = Core.parseMBean(objectName);
+      let folder = this.workspace.findMBeanWithProperties(mbean.domain, mbean.attributes);
+      if (!folder) {
+        return;
+      }
+      let invokeRights = methodName ?
+        this.workspace.hasInvokeRights(folder, methodName) :
+        this.workspace.hasInvokeRights(folder);
+      this.changeDisplay(element, invokeRights, mode);
+    }
+
+    private getCanInvokeOperation(methodName: string, argumentTypes: string): string {
       let answer = MBEAN_ONLY;
       if (!Core.isBlank(methodName)) {
         answer = OVERLOADED_METHOD;
@@ -66,14 +73,15 @@ namespace RBAC {
       return answer;
     }
 
-    private getArguments(op: string, objectName: string, methodName: string, argumentTypes: string): Array<string> {
+    private getArguments(canInvokeOp: string, objectName: string, methodName: string,
+      argumentTypes: string): string[] {
       let args = [];
-      if (op === MBEAN_ONLY) {
+      if (canInvokeOp === MBEAN_ONLY) {
         args.push(objectName);
-      } else if (op === OVERLOADED_METHOD) {
+      } else if (canInvokeOp === OVERLOADED_METHOD) {
         args.push(objectName);
         args.push(methodName);
-      } else if (op === EXACT_METHOD) {
+      } else if (canInvokeOp === EXACT_METHOD) {
         args.push(objectName);
         args.push(methodName);
         args.push(argumentTypes.split(',').map((s) => s.trim()));
@@ -81,8 +89,8 @@ namespace RBAC {
       return args;
     }
 
-    private applyInvokeRights(element: ng.IAugmentedJQuery, value: boolean, mode: string): void {
-      if (value) {
+    private changeDisplay(element: ng.IAugmentedJQuery, invokeRights: boolean, mode: string): void {
+      if (invokeRights) {
         if (mode === INVERSE) {
           element.css({ display: 'none' });
         }
