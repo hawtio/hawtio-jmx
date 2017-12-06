@@ -549,6 +549,9 @@ namespace Jmx {
     }
 
     function addHandlerFunctions(data: any[]): void {
+      if (!data) {
+        return;
+      }
       data.forEach((item) => {
         item['inDashboard'] = $scope.inDashboard;
         item['getDashboardWidgets'] = () => getDashboardWidgets(item);
