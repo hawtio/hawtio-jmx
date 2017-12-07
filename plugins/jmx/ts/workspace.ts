@@ -765,56 +765,57 @@ namespace Jmx {
       return true;
     }
 
-    public hasInvokeRightsForName(objectName: string, ...methods: Array<string>) {
-      // allow invoke by default, same as in hasInvokeRight() below???
-      let canInvoke = true;
-      if (objectName) {
-        let mbean = Core.parseMBean(objectName);
-        if (mbean) {
-          let mbeanFolder = this.findMBeanWithProperties(mbean.domain, mbean.attributes);
-          if (mbeanFolder) {
-            return this.hasInvokeRights.apply(this, [mbeanFolder].concat(methods));
-          } else {
-            log.debug("Failed to find mbean folder with name " + objectName);
-          }
-        } else {
-          log.debug("Failed to parse mbean name " + objectName);
-        }
+    public hasInvokeRightsForName(objectName: string, ...methods: string[]): boolean {
+      // allow invoke by default, same as in hasInvokeRight() below
+      if (!objectName) {
+        return true;
       }
-      return canInvoke;
+      let mbean = Core.parseMBean(objectName);
+      if (!mbean) {
+        log.debug("Failed to parse mbean name", objectName);
+        return true;
+      }
+      let mbeanFolder = this.findMBeanWithProperties(mbean.domain, mbean.attributes);
+      if (!mbeanFolder) {
+        log.debug("Failed to find mbean folder with name", objectName);
+        return true;
+      }
+      return this.hasInvokeRights.apply(this, [mbeanFolder].concat(methods));
     }
 
-    public hasInvokeRights(selection: NodeSelection, ...methods: Array<string>): boolean {
+    public hasInvokeRights(selection: NodeSelection, ...methods: string[]): boolean {
+      if (!selection) {
+        return true;
+      }
+      let selectionFolder = selection as Folder;
+      let mbean = selectionFolder.mbean;
+      if (!mbean) {
+        return true;
+      }
       let canInvoke = true;
-      if (selection) {
-        let selectionFolder = selection as Folder;
-        let mbean = selectionFolder.mbean;
-        if (mbean) {
-          if (angular.isDefined(mbean.canInvoke)) {
-            canInvoke = mbean.canInvoke;
-          }
-          if (canInvoke && methods && methods.length > 0) {
-            let opsByString = mbean['opByString'];
-            let ops = mbean['op'];
-            if (opsByString && ops) {
-              methods.forEach((method) => {
-                if (!canInvoke) {
-                  return;
-                }
-                let op = null;
-                if (_.endsWith(method, ')')) {
-                  op = opsByString[method];
-                } else {
-                  op = ops[method];
-                }
-                if (!op) {
-                  log.debug("Could not find method:", method, " to check permissions, skipping");
-                  return;
-                }
-                canInvoke = this.resolveCanInvoke(op);
-              });
+      if (angular.isDefined(mbean.canInvoke)) {
+        canInvoke = mbean.canInvoke;
+      }
+      if (canInvoke && methods && methods.length > 0) {
+        let opsByString = mbean['opByString'];
+        let ops = mbean['op'];
+        if (opsByString && ops) {
+          methods.forEach((method) => {
+            if (!canInvoke) {
+              return;
             }
-          }
+            let op = null;
+            if (_.endsWith(method, ')')) {
+              op = opsByString[method];
+            } else {
+              op = ops[method];
+            }
+            if (!op) {
+              log.debug("Could not find method:", method, " to check permissions, skipping");
+              return;
+            }
+            canInvoke = this.resolveCanInvoke(op);
+          });
         }
       }
       return canInvoke;
