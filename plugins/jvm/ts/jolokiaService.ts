@@ -242,7 +242,7 @@ namespace JVM {
     jolokiaStatus: JolokiaStatus,
     jolokiaParams: Jolokia.IParams,
     jolokiaUrl: string,
-    $window): Jolokia.IJolokia {
+    authService: Auth.AuthService): Jolokia.IJolokia {
     'ngInject';
 
     let jolokia: Jolokia.IJolokia = null;
@@ -256,8 +256,11 @@ namespace JVM {
       if (jolokiaParams['ajaxError'] == null) {
         jolokiaParams['ajaxError'] = (xhr: JQueryXHR, textStatus: string, error: string) => {
           if (xhr.status === 401 || xhr.status === 403) {
-            // logged out
-            $window.location.href = 'auth/logout';
+            if (window.opener) {
+              window.close(); // close window connected to remote server
+            } else {
+              authService.logout(); // just logout
+            }
             Core.executePreLogoutTasks(() => {
               Core.executePostLogoutTasks(() => {
                 log.debug("Executing logout callback after successfully executed postLogoutTasks");
