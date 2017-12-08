@@ -33,6 +33,7 @@ namespace Jmx {
               text: (trigger) => item.readableName
             });
             setTimeout(() => clipboard.destroy(), 1000);
+            Core.notification('success', 'Method name copied');
           }
         },
         {
@@ -42,6 +43,7 @@ namespace Jmx {
               text: (trigger) => this.buildJolokiaUrl(item)
             });
             setTimeout(() => clipboard.destroy(), 1000);
+            Core.notification('success', 'Jolokia URL copied');
           }
         }
       ];
