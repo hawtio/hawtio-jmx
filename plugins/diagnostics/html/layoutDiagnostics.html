@@ -4,17 +4,17 @@
     <li ng-class='{active : isActive("/diagnostics/jfr")}'
         ng-show="isJfrEnabled">
       <a ng-href="#"
-         ng-click="goto('/diagnostics/jfr')"><i class="pficon-history"></i> Flight Recorder</a>
+         ng-click="goto('/diagnostics/jfr')">Flight Recorder</a>
     </li>
     <li ng-class='{active : isActive("/diagnostics/heap")}'
         ng-show="isHeapEnabled">
       <a ng-href="#"
-         ng-click="goto('/diagnostics/heap')"><i class="pficon-memory"></i> Heap Use</a>
+         ng-click="goto('/diagnostics/heap')">Heap Use</a>
     </li>
     <li ng-class='{active : isActive("/diagnostics/flags")}'
         ng-show="isFlagsEnabled">
       <a ng-href="#"
-         ng-click="goto('/diagnostics/flags')"><i class="pficon-settings"></i> JVM Flags</a>
+         ng-click="goto('/diagnostics/flags')">JVM Flags</a>
     </li>
   </ul>
   <div class="row-fluid">
