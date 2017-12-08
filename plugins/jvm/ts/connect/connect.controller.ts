@@ -75,12 +75,17 @@ namespace JVM {
       let errors = validateConnectionForm(connection);
       
       if (Object.keys(errors).length === 0) {
-        // connection is secure if username has a value
-        connection.secure = connection.userName !== null && connection.userName.trim() !== '';
-          
         // save connection without username and password values
         connection.userName = '';
         connection.password = '';
+
+        connectService.testConnection(connection)
+        .then(successMesssage => {
+          connection.secure = false;
+        })
+        .catch(errorMesssage => {
+          connection.secure = true;
+        });
         
         if (model.isAddAction()) {
           $scope.connections.unshift(connection);
@@ -101,7 +106,7 @@ namespace JVM {
         .then(successMesssage => {
           $scope.model.test.ok = true;
           $scope.model.test.message = successMesssage;
-      })
+        })
         .catch(errorMesssage => {
           $scope.model.test.ok = false;
           $scope.model.test.message = errorMesssage;
@@ -134,6 +139,7 @@ namespace JVM {
     }
 
     function connect(action, connection: Core.ConnectOptions) {
+      $scope.showErrorMessage = false;
       if (connection.secure) {
         $scope.connection = angular.extend({}, connection);
         modalInstance = $uibModal.open({
@@ -146,21 +152,13 @@ namespace JVM {
     }
 
     $scope.login = function(connection: Core.ConnectOptions) {
-      if ($scope.credentialsOk) {
-        connectService.connect(connection);
-        modalInstance.close();
-      } else {
-        $scope.showErrorMessage = true;
-      }
-    }
-
-    $scope.checkCredentials = function(connection: Core.ConnectOptions) {
+      connectService.connect(connection);
       connectService.testConnection(connection)
       .then(successMesssage => {
-        $scope.credentialsOk = true;
+        modalInstance.close();
       })
       .catch(errorMesssage => {
-        $scope.credentialsOk = false;
+        $scope.showErrorMessage = true;
       });
     }
 

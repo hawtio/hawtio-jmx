@@ -518,8 +518,8 @@ declare namespace Jmx {
         moveIfViewInvalid(): boolean;
         updateSelectionNode(node: NodeSelection): void;
         private matchesProperties(entries, properties);
-        hasInvokeRightsForName(objectName: string, ...methods: Array<string>): any;
-        hasInvokeRights(selection: NodeSelection, ...methods: Array<string>): boolean;
+        hasInvokeRightsForName(objectName: string, ...methods: string[]): boolean;
+        hasInvokeRights(selection: NodeSelection, ...methods: string[]): boolean;
         private resolveCanInvoke(op);
         treeContainsDomainAndProperties(domainName: string, properties?: any): boolean;
         private matches(folder, properties, propertiesCount);
@@ -576,22 +576,6 @@ declare namespace Diagnostics {
 declare namespace Diagnostics {
 }
 declare namespace Diagnostics {
-}
-declare namespace JVM {
-}
-declare module JVM {
-    var HeaderController: angular.IModule;
-}
-declare namespace JVM {
-}
-/**
- * @module JVM
- */
-declare module JVM {
-}
-declare namespace JVM {
-}
-declare namespace JVM {
 }
 declare namespace Jmx {
     function createDashboardLink(widgetType: any, widget: any): string;
@@ -830,6 +814,22 @@ declare namespace Jmx {
 }
 declare namespace Jmx {
     var DonutChartController: angular.IModule;
+}
+declare namespace JVM {
+}
+declare module JVM {
+    var HeaderController: angular.IModule;
+}
+declare namespace JVM {
+}
+/**
+ * @module JVM
+ */
+declare module JVM {
+}
+declare namespace JVM {
+}
+declare namespace JVM {
 }
 declare namespace RBAC {
     class JmxTreeProcessor {
