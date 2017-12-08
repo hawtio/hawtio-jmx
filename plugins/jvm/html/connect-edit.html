@@ -60,7 +60,7 @@
     </div>
     <div class="form-group">
       <div class="col-sm-offset-3 col-sm-8">
-        <button type="button" class="btn btn-primary" ng-click="testConnection(model.connection)" ng-disabled="model.test.ok">
+        <button type="button" class="btn btn-default" ng-click="testConnection(model.connection)">
           Test Connection
         </button>
         <span class="jvm-connection-test-msg" ng-show="model.test.message">
@@ -72,7 +72,7 @@
   </div>
   <div class="modal-footer">
     <button type="button" class="btn btn-default" ng-click="$dismiss()">Cancel</button>
-    <button type="submit" class="btn btn-primary" ng-show="!model.connection.name" ng-disabled="!model.test.ok">Add</button>
-    <button type="submit" class="btn btn-primary" ng-show="model.connection.name" ng-disabled="!model.test.ok">Save</button>
+    <button type="submit" class="btn btn-primary" ng-show="!model.connection.name">Add</button>
+    <button type="submit" class="btn btn-primary" ng-show="model.connection.name">Save</button>
   </div>
 </form>

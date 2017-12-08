@@ -27,6 +27,7 @@ namespace JVM {
           },
           ajaxError: response => {
             reject(response.status === 403 ? 'Incorrect username or password' : 'Connection failed');
+            console.clear();
           }
         });
       });
