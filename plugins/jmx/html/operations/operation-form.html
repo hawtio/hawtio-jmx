@@ -23,6 +23,11 @@
 </form>
 
 <div ng-show="$ctrl.operationResult">
-  <p>Result:</p>
+  <p>
+    Result:
+    <button type="button" class="btn btn-default jmx-operation-result-copy" ng-click="$ctrl.copyResult()">
+      <span class="fa fa-clipboard"></span>
+    </button>
+  </p>
   <pre class="jmx-operation-result" ng-class="{'jmx-operation-error': $ctrl.operationFailed}">{{$ctrl.operationResult}}</pre>
 </div>
