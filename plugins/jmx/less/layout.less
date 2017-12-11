@@ -1,4 +1,4 @@
-@import (reference) "main.less";
+@import (reference) 'main.less';
 
 .tree-nav-layout {
   height: 100%;
@@ -20,7 +20,6 @@
     height: 100%;
 
     .rg-right {
-
       @grabber-width: 7px;
       @grabber-height: 30px;
 
@@ -40,56 +39,61 @@
     }
   }
 
-  .tree-nav-sidebar-header {
+  tree-header {
     flex: 0 0 auto;
     padding: 5px 10px;
 
-    .form-froup, .tree-nav-buttons {
-      display: inline-flex;
-      margin-left: 8px;
-      vertical-align: middle;
+    .tree-nav-sidebar-header {
+      .form-froup,
+      .tree-nav-buttons {
+        display: inline-flex;
+        margin-left: 8px;
+        vertical-align: middle;
 
-      .badge {
-        font-size: 10px;
-        margin-left: 0px;
-        margin-right: 8px;
-        margin-bottom: 4px;
+        .badge {
+          font-size: 10px;
+          margin-left: 0px;
+          margin-right: 8px;
+          margin-bottom: 4px;
 
-        &.positive {
-          color: #b58100;
-          background-color: #fbeabc;
-          text-shadow: 1px 1px 0 rgba(255, 255, 255, 0.5);
+          &.positive {
+            color: #b58100;
+            background-color: #fbeabc;
+            text-shadow: 1px 1px 0 rgba(255, 255, 255, 0.5);
+          }
         }
       }
-    }
 
-    .fa {
-      font-size: 1.2em;
-      cursor: pointer;
-      margin-top: 4px;
-      margin-bottom: 4px;
+      .fa {
+        font-size: 1.2em;
+        cursor: pointer;
+        margin-top: 4px;
+        margin-bottom: 4px;
 
-      &:not(:last-of-type) {
-        margin-right: 5px;
+        &:not(:last-of-type) {
+          margin-right: 5px;
+        }
       }
     }
   }
 
-  .tree-nav-sidebar-content {
+  tree {
     flex: 1 1 auto;
     overflow-y: auto;
 
-    ul {
-      margin-bottom: 5px;
-    }
+    .tree-nav-sidebar-content {
+      ul {
+        margin-bottom: 5px;
+      }
 
-    .treeview {
-      margin-left: 0;
-      margin-right: 0;
+      .treeview {
+        margin-left: 0;
+        margin-right: 0;
 
-      .icon {
-        width: unset;
-        font-size: 11px;
+        .icon {
+          width: unset;
+          font-size: 11px;
+        }
       }
     }
   }
