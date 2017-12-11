@@ -1,6 +1,6 @@
 /// <reference path="jvmPlugin.ts"/>
 
-module JVM {
+namespace JVM {
 
   export var HeaderController = _module.controller("JVM.HeaderController", ["$scope", "ConnectOptions", ($scope, ConnectOptions) => {
     if (ConnectOptions) {

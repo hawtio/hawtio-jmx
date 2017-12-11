@@ -41,7 +41,7 @@ namespace JVM {
 
 }
 
-module Core {
+namespace Core {
 
   /**
    * Creates a jolokia object for connecting to the container with the given remote jolokia URL,

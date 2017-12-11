@@ -2,7 +2,7 @@
  * @module Threads
  */
 /// <reference path="./threadsPlugin.ts"/>
-module Threads {
+namespace Threads {
 
   _module.controller("Threads.ToolbarController", ["$scope", "$rootScope", "jolokia", ($scope, $rootScope, jolokia) => {
     $scope.$on('ThreadControllerSupport', ($event, support) => {

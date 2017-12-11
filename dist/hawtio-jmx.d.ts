@@ -3,6 +3,72 @@
 /// <reference types="jquery" />
 /// <reference types="core" />
 /// <reference types="angular-route" />
+declare namespace JVM {
+    const rootPath = "plugins/jvm";
+    const templatePath: string;
+    const pluginName = "hawtio-jvm";
+    const log: Logging.Logger;
+    const connectControllerKey = "jvmConnectSettings";
+    const connectionSettingsKey: string;
+    const logoPath = "img/icons/jvm/";
+    const logoRegistry: {
+        'jetty': string;
+        'tomcat': string;
+        'generic': string;
+    };
+}
+declare namespace JVM {
+    /**
+     * Adds common properties and functions to the scope
+     * @method configureScope
+     * @for Jvm
+     * @param {*} $scope
+     * @param {ng.ILocationService} $location
+     * @param {Core.Workspace} workspace
+     */
+    function configureScope($scope: any, $location: any, workspace: any): void;
+    function hasLocalMBean(workspace: any): any;
+    function hasDiscoveryMBean(workspace: any): any;
+}
+declare namespace Core {
+    /**
+     * Creates a jolokia object for connecting to the container with the given remote jolokia URL,
+     * username and password
+     * @method createJolokia
+     * @for Core
+     * @static
+     * @param {String} url
+     * @param {String} username
+     * @param {String} password
+     * @return {Object}
+     */
+    function createJolokia(url: string, username: string, password: string): Jolokia.IJolokia;
+    function getRecentConnections(localStorage: any): any;
+    function addRecentConnection(localStorage: any, name: any): void;
+    function removeRecentConnection(localStorage: any, name: any): void;
+    function clearConnections(): void;
+    function isRemoteConnection(): boolean;
+    function connectToServer(localStorage: any, options: Core.ConnectToServerOptions): void;
+    /**
+     * Loads all of the available connections from local storage
+     * @returns {Core.ConnectionMap}
+     */
+    function loadConnections(): Core.ConnectOptions[];
+    /**
+     * Saves the connection map to local storage
+     * @param map
+     */
+    function saveConnections(connections: Core.ConnectOptions[]): void;
+    function getConnectionNameParameter(): any;
+    /**
+     * Returns the connection options for the given connection name from localStorage
+     */
+    function getConnectOptions(name: string, localStorage?: WindowLocalStorage): ConnectOptions;
+    /**
+     * Creates the Jolokia URL string for the given connection options
+     */
+    function createServerConnectionUrl(options: Core.ConnectOptions): string;
+}
 declare namespace Jmx {
     /**
      * a NodeSelection interface so we can expose things like the objectName and the MBean's entries
@@ -205,72 +271,6 @@ declare namespace JVM {
     function ConnectController($scope: any, $location: ng.ILocationService, localStorage: Storage, workspace: Jmx.Workspace, $uibModal: any, connectService: ConnectService): void;
 }
 declare namespace JVM {
-    const rootPath = "plugins/jvm";
-    const templatePath: string;
-    const pluginName = "hawtio-jvm";
-    const log: Logging.Logger;
-    const connectControllerKey = "jvmConnectSettings";
-    const connectionSettingsKey: string;
-    const logoPath = "img/icons/jvm/";
-    const logoRegistry: {
-        'jetty': string;
-        'tomcat': string;
-        'generic': string;
-    };
-}
-declare namespace JVM {
-    /**
-     * Adds common properties and functions to the scope
-     * @method configureScope
-     * @for Jvm
-     * @param {*} $scope
-     * @param {ng.ILocationService} $location
-     * @param {Core.Workspace} workspace
-     */
-    function configureScope($scope: any, $location: any, workspace: any): void;
-    function hasLocalMBean(workspace: any): any;
-    function hasDiscoveryMBean(workspace: any): any;
-}
-declare module Core {
-    /**
-     * Creates a jolokia object for connecting to the container with the given remote jolokia URL,
-     * username and password
-     * @method createJolokia
-     * @for Core
-     * @static
-     * @param {String} url
-     * @param {String} username
-     * @param {String} password
-     * @return {Object}
-     */
-    function createJolokia(url: string, username: string, password: string): Jolokia.IJolokia;
-    function getRecentConnections(localStorage: any): any;
-    function addRecentConnection(localStorage: any, name: any): void;
-    function removeRecentConnection(localStorage: any, name: any): void;
-    function clearConnections(): void;
-    function isRemoteConnection(): boolean;
-    function connectToServer(localStorage: any, options: Core.ConnectToServerOptions): void;
-    /**
-     * Loads all of the available connections from local storage
-     * @returns {Core.ConnectionMap}
-     */
-    function loadConnections(): Core.ConnectOptions[];
-    /**
-     * Saves the connection map to local storage
-     * @param map
-     */
-    function saveConnections(connections: Core.ConnectOptions[]): void;
-    function getConnectionNameParameter(): any;
-    /**
-     * Returns the connection options for the given connection name from localStorage
-     */
-    function getConnectOptions(name: string, localStorage?: WindowLocalStorage): ConnectOptions;
-    /**
-     * Creates the Jolokia URL string for the given connection options
-     */
-    function createServerConnectionUrl(options: Core.ConnectOptions): string;
-}
-declare namespace JVM {
     class ConnectService {
         private $q;
         private $window;
@@ -310,43 +310,6 @@ declare namespace JVM {
         isDummy: boolean;
         running: boolean;
     }
-}
-declare namespace Jmx {
-    const pluginName = "hawtio-jmx";
-    const log: Logging.Logger;
-    let currentProcessId: string;
-    const templatePath = "plugins/jmx/html";
-    /**
-     * Returns the Folder object for the given domain name and type name or null if it can not be found
-     * @method getMBeanTypeFolder
-     * @for Core
-     * @static
-     * @param {Workspace} workspace
-     * @param {String} domain
-     * @param {String} typeName}
-     * @return {Folder}
-     */
-    function getMBeanTypeFolder(workspace: Workspace, domain: string, typeName: string): Folder;
-    /**
-     * Returns the JMX objectName for the given jmx domain and type name
-     * @method getMBeanTypeObjectName
-     * @for Core
-     * @static
-     * @param {Workspace} workspace
-     * @param {String} domain
-     * @param {String} typeName
-     * @return {String}
-     */
-    function getMBeanTypeObjectName(workspace: Workspace, domain: string, typeName: string): string;
-    /**
-     * Creates a remote workspace given a remote jolokia for querying the JMX MBeans inside the jolokia
-     * @param remoteJolokia
-     * @param remoteJolokiaStatus
-     * @param $location
-     * @param localStorage
-     * @return {Workspace}
-     */
-    function createRemoteWorkspace(remoteJolokia: Jolokia.IJolokia, remoteJolokiaStatus: JVM.JolokiaStatus, $location: ng.ILocationService, localStorage: Storage, $rootScope?: ng.IRootScopeService, $compile?: ng.ICompileService, $templateCache?: ng.ITemplateCacheService, HawtioNav?: HawtioMainNav.Registry): Workspace;
 }
 declare namespace Jmx {
     /**
@@ -550,32 +513,42 @@ declare namespace Jmx {
         isOsgiCompendiumFolder(): boolean;
     }
 }
-declare namespace Diagnostics {
+declare namespace Jmx {
+    const pluginName = "hawtio-jmx";
     const log: Logging.Logger;
+    let currentProcessId: string;
+    const templatePath = "plugins/jmx/html";
     /**
-     * Adds common properties and functions to the scope
-     * @method configureScope
-     * @for Diagnostics
-     * @param {*} $scope
-     * @param {ng.ILocationService} $location
-     * @param {Core.Workspace} workspace
+     * Returns the Folder object for the given domain name and type name or null if it can not be found
+     * @method getMBeanTypeFolder
+     * @for Core
+     * @static
+     * @param {Workspace} workspace
+     * @param {String} domain
+     * @param {String} typeName}
+     * @return {Folder}
      */
-    function configureScope($scope: any, $location: any, workspace: any): void;
-    function hasHotspotDiagnostic(workspace: any): any;
-    function hasDiagnosticFunction(workspace: Jmx.Workspace, operation: string): Core.JMXOperation;
-    function initialTab(workspace: Jmx.Workspace): string;
-    function findMyPid(title: any): string;
-}
-declare namespace Diagnostics {
-    const _module: angular.IModule;
-}
-declare namespace Diagnostics {
-}
-declare namespace Diagnostics {
-}
-declare namespace Diagnostics {
-}
-declare namespace Diagnostics {
+    function getMBeanTypeFolder(workspace: Workspace, domain: string, typeName: string): Folder;
+    /**
+     * Returns the JMX objectName for the given jmx domain and type name
+     * @method getMBeanTypeObjectName
+     * @for Core
+     * @static
+     * @param {Workspace} workspace
+     * @param {String} domain
+     * @param {String} typeName
+     * @return {String}
+     */
+    function getMBeanTypeObjectName(workspace: Workspace, domain: string, typeName: string): string;
+    /**
+     * Creates a remote workspace given a remote jolokia for querying the JMX MBeans inside the jolokia
+     * @param remoteJolokia
+     * @param remoteJolokiaStatus
+     * @param $location
+     * @param localStorage
+     * @return {Workspace}
+     */
+    function createRemoteWorkspace(remoteJolokia: Jolokia.IJolokia, remoteJolokiaStatus: JVM.JolokiaStatus, $location: ng.ILocationService, localStorage: Storage, $rootScope?: ng.IRootScopeService, $compile?: ng.ICompileService, $templateCache?: ng.ITemplateCacheService, HawtioNav?: HawtioMainNav.Registry): Workspace;
 }
 declare namespace Jmx {
     function createDashboardLink(widgetType: any, widget: any): string;
@@ -816,9 +789,36 @@ declare namespace Jmx {
 declare namespace Jmx {
     var DonutChartController: angular.IModule;
 }
+declare namespace Diagnostics {
+    const log: Logging.Logger;
+    /**
+     * Adds common properties and functions to the scope
+     * @method configureScope
+     * @for Diagnostics
+     * @param {*} $scope
+     * @param {ng.ILocationService} $location
+     * @param {Core.Workspace} workspace
+     */
+    function configureScope($scope: any, $location: any, workspace: any): void;
+    function hasHotspotDiagnostic(workspace: any): any;
+    function hasDiagnosticFunction(workspace: Jmx.Workspace, operation: string): Core.JMXOperation;
+    function initialTab(workspace: Jmx.Workspace): string;
+    function findMyPid(title: any): string;
+}
+declare namespace Diagnostics {
+    const _module: angular.IModule;
+}
+declare namespace Diagnostics {
+}
+declare namespace Diagnostics {
+}
+declare namespace Diagnostics {
+}
+declare namespace Diagnostics {
+}
 declare namespace JVM {
 }
-declare module JVM {
+declare namespace JVM {
     var HeaderController: angular.IModule;
 }
 declare namespace JVM {
@@ -826,7 +826,7 @@ declare namespace JVM {
 /**
  * @module JVM
  */
-declare module JVM {
+declare namespace JVM {
 }
 declare namespace JVM {
 }
@@ -891,7 +891,7 @@ declare namespace Threads {
     var mbean: string;
     var _module: angular.IModule;
 }
-declare module Threads {
+declare namespace Threads {
     class ThreadsService {
         private $q;
         private jolokia;
@@ -900,10 +900,10 @@ declare module Threads {
         getThreads(): angular.IPromise<any[]>;
     }
 }
-declare module Threads {
+declare namespace Threads {
 }
 /**
  * @module Threads
  */
-declare module Threads {
+declare namespace Threads {
 }

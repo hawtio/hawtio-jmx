@@ -1,7 +1,7 @@
 /// <reference path="./threadsPlugin.ts"/>
 /// <reference path="./threads.service.ts"/>
 
-module Threads {
+namespace Threads {
 
   _module.controller('ThreadsController', ['$scope', '$uibModal', 'threadsService', ($scope, $uibModal,
     threadsService: ThreadsService) => {

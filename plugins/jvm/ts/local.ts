@@ -3,7 +3,7 @@
 /**
  * @module JVM
  */
-module JVM {
+namespace JVM {
 
   _module.controller("JVM.JVMsController", ["$scope", "$window", "$location", "localStorage", "workspace", "jolokia", "mbeanName", ($scope, $window, $location, localStorage:Storage, workspace, jolokia, mbeanName) => {
 

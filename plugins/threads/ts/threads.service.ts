@@ -1,6 +1,6 @@
 /// <reference path="./threadsPlugin.ts"/>
 
-module Threads {
+namespace Threads {
 
   export class ThreadsService {
 
