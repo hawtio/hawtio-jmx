@@ -339,7 +339,7 @@ namespace JVM {
   function checkJolokiaOptimization(jolokia: Jolokia.IJolokia, jolokiaStatus: JolokiaStatus): void {
     log.debug("Checking if we can call optimized jolokia.list() operation");
     // NOTE: Sync XHR call to Jolokia is required here to resolve the available list method immediately
-    let response = jolokia.list(Core.escapeMBeanPath(jolokiaStatus.listMBean), {});
+    let response = jolokia.list(Core.escapeMBeanPath(jolokiaStatus.listMBean), Core.onSuccess(null));
     if (response && _.isObject(response['op'])) {
       jolokiaStatus.listMethod = JolokiaListMethod.LIST_WITH_RBAC;
     } else {
