@@ -13,19 +13,21 @@ namespace Jmx {
     }
 
     $onInit(): void {
-      this.$scope.$watch('filter', (filter, previous) => {
-        if (filter !== previous) {
-          this.search(filter);
+      this.$scope.$watch(angular.bind(this, () => this.filter),
+        (filter, previous) => {
+          if (filter !== previous) {
+            this.search(filter);
+          }
         }
-      });
+      );
     }
 
     private search(filter: string): void {
-      let doSearch = (filter: string) => {
+      const doSearch = (filter: string) => {
         const result = this.tree().search(filter, {
           ignoreCase: true,
           exactMatch: false,
-          revealResults: true
+          revealResults: true,
         });
         this.result.length = 0;
         this.result.push(...result);
@@ -34,7 +36,6 @@ namespace Jmx {
       _.debounce(doSearch, 300, { leading: false, trailing: true })(filter);
     }
 
-    // TODO: the tree should ideally be initialised synchronously
     private tree(): any {
       return ($('#jmxtree') as any).treeview(true);
     }
@@ -94,5 +95,4 @@ namespace Jmx {
       setTimeout(() => this.updateSelectionFromURL(), 50);
     }
   }
-
 }
