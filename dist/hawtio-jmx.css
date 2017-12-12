@@ -317,50 +317,50 @@ div.tree-nav-layout .sidebar-pf .rg-right {
   height: 30px;
   width: 7px;
 }
-.tree-nav-layout tree-header {
+.tree-nav-layout .tree-nav-sidebar-header {
   flex: 0 0 auto;
   padding: 5px 10px;
 }
-.tree-nav-layout tree-header .tree-nav-sidebar-header .form-froup,
-.tree-nav-layout tree-header .tree-nav-sidebar-header .tree-nav-buttons {
+.tree-nav-layout .tree-nav-sidebar-header .form-froup,
+.tree-nav-layout .tree-nav-sidebar-header .tree-nav-buttons {
   display: inline-flex;
   margin-left: 8px;
   vertical-align: middle;
 }
-.tree-nav-layout tree-header .tree-nav-sidebar-header .form-froup .badge,
-.tree-nav-layout tree-header .tree-nav-sidebar-header .tree-nav-buttons .badge {
+.tree-nav-layout .tree-nav-sidebar-header .form-froup .badge,
+.tree-nav-layout .tree-nav-sidebar-header .tree-nav-buttons .badge {
   font-size: 10px;
   margin-left: 0px;
   margin-right: 8px;
   margin-bottom: 4px;
 }
-.tree-nav-layout tree-header .tree-nav-sidebar-header .form-froup .badge.positive,
-.tree-nav-layout tree-header .tree-nav-sidebar-header .tree-nav-buttons .badge.positive {
+.tree-nav-layout .tree-nav-sidebar-header .form-froup .badge.positive,
+.tree-nav-layout .tree-nav-sidebar-header .tree-nav-buttons .badge.positive {
   color: #b58100;
   background-color: #fbeabc;
   text-shadow: 1px 1px 0 rgba(255, 255, 255, 0.5);
 }
-.tree-nav-layout tree-header .tree-nav-sidebar-header .fa {
+.tree-nav-layout .tree-nav-sidebar-header .fa {
   font-size: 1.2em;
   cursor: pointer;
   margin-top: 4px;
   margin-bottom: 4px;
 }
-.tree-nav-layout tree-header .tree-nav-sidebar-header .fa:not(:last-of-type) {
+.tree-nav-layout .tree-nav-sidebar-header .fa:not(:last-of-type) {
   margin-right: 5px;
 }
-.tree-nav-layout tree {
+.tree-nav-layout .tree-nav-sidebar-content {
   flex: 1 1 auto;
   overflow-y: auto;
 }
-.tree-nav-layout tree .tree-nav-sidebar-content ul {
+.tree-nav-layout .tree-nav-sidebar-content ul {
   margin-bottom: 5px;
 }
-.tree-nav-layout tree .tree-nav-sidebar-content .treeview {
+.tree-nav-layout .tree-nav-sidebar-content .treeview {
   margin-left: 0;
   margin-right: 0;
 }
-.tree-nav-layout tree .tree-nav-sidebar-content .treeview .icon {
+.tree-nav-layout .tree-nav-sidebar-content .treeview .icon {
   width: unset;
   font-size: 11px;
 }

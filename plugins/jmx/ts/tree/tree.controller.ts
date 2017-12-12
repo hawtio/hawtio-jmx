@@ -8,8 +8,12 @@ namespace Jmx {
     filter: string = '';
     result: any[] = [];
 
-    constructor(private $scope) {
+    constructor(
+      private $scope,
+      private $element: JQuery) {
       'ngInject';
+      // it's not possible to declare classes to the component host tag in AngularJS
+      $element.addClass('tree-nav-sidebar-header');
     }
 
     $onInit(): void {
@@ -55,8 +59,11 @@ namespace Jmx {
       private $scope,
       private $location: ng.ILocationService,
       private workspace: Workspace,
-      private $route: angular.route.IRouteService) {
-      'ngInject';
+      private $route: angular.route.IRouteService,
+      private $element: JQuery) {
+        'ngInject';
+        // it's not possible to declare classes to the component host tag in AngularJS
+        $element.addClass('tree-nav-sidebar-content');
     }
 
     $onInit(): void {
