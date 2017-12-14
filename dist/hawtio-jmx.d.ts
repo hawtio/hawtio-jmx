@@ -577,86 +577,6 @@ declare namespace Diagnostics {
 }
 declare namespace Diagnostics {
 }
-declare namespace JVM {
-}
-declare namespace JVM {
-    var HeaderController: angular.IModule;
-}
-declare namespace JVM {
-}
-/**
- * @module JVM
- */
-declare namespace JVM {
-}
-declare namespace JVM {
-}
-declare namespace JVM {
-}
-declare namespace RBAC {
-    class JmxTreeProcessor {
-        private jolokia;
-        private jolokiaStatus;
-        private rbacTasks;
-        private workspace;
-        constructor(jolokia: Jolokia.IJolokia, jolokiaStatus: JVM.JolokiaStatus, rbacTasks: RBACTasks, workspace: Jmx.Workspace);
-        process(tree: Jmx.Folder): void;
-        private flattenMBeanTree(mbeans, tree);
-        private processWithRBAC(mbeans);
-        private processGeneral(aclMBean, mbeans);
-        private addOperation(mbean, opList, opName, op);
-        private addCanInvokeToClass(mbean, canInvoke);
-        private stripClasses(css);
-        private addClass(css, _class);
-    }
-}
-/**
- * @namespace RBAC
- */
-declare namespace RBAC {
-    interface RBACTasks extends Core.Tasks {
-        initialize(mbean: string): void;
-        getACLMBean(): ng.IPromise<string>;
-    }
-    interface OperationCanInvoke {
-        CanInvoke: boolean;
-        Method: string;
-        ObjectName: string;
-    }
-}
-declare namespace RBAC {
-    /**
-     * Directive that sets an element's visibility to hidden if the user cannot invoke the supplied operation
-     */
-    class HawtioShow implements ng.IDirective {
-        private workspace;
-        restrict: string;
-        constructor(workspace: Jmx.Workspace);
-        static factory(workspace: Jmx.Workspace): HawtioShow;
-        link(scope: ng.IScope, element: ng.IAugmentedJQuery, attr: ng.IAttributes): void;
-        private applyInvokeRights(element, objectName, attr);
-        private getCanInvokeOperation(methodName, argumentTypes);
-        private getArguments(canInvokeOp, objectName, methodName, argumentTypes);
-        private changeDisplay(element, invokeRights, mode);
-    }
-}
-declare namespace RBAC {
-    class RBACTasksFactory {
-        static create(postLoginTasks: Core.Tasks, jolokia: Jolokia.IJolokia, $q: ng.IQService): RBACTasks;
-    }
-    class RBACACLMBeanFactory {
-        static create(rbacTasks: RBACTasks): ng.IPromise<string>;
-    }
-}
-/**
- * @namespace RBAC
- * @main RBAC
- */
-declare namespace RBAC {
-    const pluginName: string;
-    const log: Logging.Logger;
-    const _module: angular.IModule;
-}
 declare namespace Jmx {
     function createDashboardLink(widgetType: any, widget: any): string;
     function getWidgetType(widget: any): {
@@ -726,6 +646,20 @@ declare namespace Jmx {
 }
 declare namespace Jmx {
     function AttributesController($scope: any, $element: any, $location: ng.ILocationService, workspace: Workspace, jmxWidgets: any, jmxWidgetTypes: any, $templateCache: ng.ITemplateCacheService, localStorage: Storage, $browser: any, $timeout: ng.ITimeoutService, attributesService: AttributesService): void;
+}
+/**
+ * @namespace RBAC
+ */
+declare namespace RBAC {
+    interface RBACTasks extends Core.Tasks {
+        initialize(mbean: string): void;
+        getACLMBean(): ng.IPromise<string>;
+    }
+    interface OperationCanInvoke {
+        CanInvoke: boolean;
+        Method: string;
+        ObjectName: string;
+    }
 }
 declare namespace Jmx {
     class AttributesService {
@@ -883,6 +817,72 @@ declare namespace Jmx {
 }
 declare namespace Jmx {
     var DonutChartController: angular.IModule;
+}
+declare namespace JVM {
+}
+declare namespace JVM {
+    var HeaderController: angular.IModule;
+}
+declare namespace JVM {
+}
+/**
+ * @module JVM
+ */
+declare namespace JVM {
+}
+declare namespace JVM {
+}
+declare namespace JVM {
+}
+declare namespace RBAC {
+    class JmxTreeProcessor {
+        private jolokia;
+        private jolokiaStatus;
+        private rbacTasks;
+        private workspace;
+        constructor(jolokia: Jolokia.IJolokia, jolokiaStatus: JVM.JolokiaStatus, rbacTasks: RBACTasks, workspace: Jmx.Workspace);
+        process(tree: Jmx.Folder): void;
+        private flattenMBeanTree(mbeans, tree);
+        private processWithRBAC(mbeans);
+        private processGeneral(aclMBean, mbeans);
+        private addOperation(mbean, opList, opName, op);
+        private addCanInvokeToClass(mbean, canInvoke);
+        private stripClasses(css);
+        private addClass(css, _class);
+    }
+}
+declare namespace RBAC {
+    /**
+     * Directive that sets an element's visibility to hidden if the user cannot invoke the supplied operation
+     */
+    class HawtioShow implements ng.IDirective {
+        private workspace;
+        restrict: string;
+        constructor(workspace: Jmx.Workspace);
+        static factory(workspace: Jmx.Workspace): HawtioShow;
+        link(scope: ng.IScope, element: ng.IAugmentedJQuery, attr: ng.IAttributes): void;
+        private applyInvokeRights(element, objectName, attr);
+        private getCanInvokeOperation(methodName, argumentTypes);
+        private getArguments(canInvokeOp, objectName, methodName, argumentTypes);
+        private changeDisplay(element, invokeRights, mode);
+    }
+}
+declare namespace RBAC {
+    class RBACTasksFactory {
+        static create(postLoginTasks: Core.Tasks, jolokia: Jolokia.IJolokia, $q: ng.IQService): RBACTasks;
+    }
+    class RBACACLMBeanFactory {
+        static create(rbacTasks: RBACTasks): ng.IPromise<string>;
+    }
+}
+/**
+ * @namespace RBAC
+ * @main RBAC
+ */
+declare namespace RBAC {
+    const pluginName: string;
+    const log: Logging.Logger;
+    const _module: angular.IModule;
 }
 declare namespace Threads {
     var pluginName: string;
