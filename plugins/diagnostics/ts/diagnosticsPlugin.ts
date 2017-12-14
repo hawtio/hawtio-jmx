@@ -11,8 +11,6 @@ namespace Diagnostics {
     $routeProvider.when('/diagnostics/jfr', {templateUrl: templatePath + 'jfr.html'}).when('/diagnostics/heap', {templateUrl: templatePath + 'heap.html'}).when('/diagnostics/flags', {templateUrl: templatePath + 'flags.html'});
   }]);
 
-  _module.constant('mbeanName', 'com.sun.management:type=DiagnosticCommand');
-
   _module.run(["$location", "workspace", "viewRegistry", "layoutFull", "helpRegistry", "preferencesRegistry", ($location, workspace: Jmx.Workspace, viewRegistry, layoutFull, helpRegistry, preferencesRegistry) => {
 
     viewRegistry[pluginName] = templatePath + 'layoutDiagnostics.html';
