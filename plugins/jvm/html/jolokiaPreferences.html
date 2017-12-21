@@ -1,6 +1,9 @@
 <div ng-controller="JVM.JolokiaPreferences">
+  <div class="alert alert-success jvm-jolokia-preferences-alert" ng-if="showAlert">
+    <span class="pficon pficon-ok"></span>
+    Settings applied successfully!
+  </div>
   <div hawtio-form-2="config" entity="entity"></div>
-
   <div class="form-group">
     <div class="row">
       <div class="col-sm-offset-2 col-sm-10">
@@ -9,5 +12,4 @@
       </div>
     </div>
   </div>
-
 </div>

@@ -623,6 +623,9 @@ declare namespace Jmx {
         objectName: string;
         constructor($scope: any);
     }
+    const headerComponent: angular.IComponentOptions;
+}
+declare namespace Jmx {
     class TabController {
         private $scope;
         private $route;
@@ -636,9 +639,6 @@ declare namespace Jmx {
         goto(path: string): ng.ILocationService;
         editChart(): ng.ILocationService | boolean;
     }
-}
-declare namespace Jmx {
-    const headerComponent: angular.IComponentOptions;
     const tabComponent: angular.IComponentOptions;
 }
 declare namespace Jmx {
@@ -764,15 +764,6 @@ declare namespace Jmx {
     const operationsModule: string;
 }
 declare namespace Jmx {
-    function findLazyLoadingFunction(workspace: Workspace, folder: any): (workspace: Workspace, folder: Folder, onComplete: (children: NodeSelection[]) => void) => void;
-    function registerLazyLoadHandler(domain: string, lazyLoaderFactory: (folder: Folder) => any): void;
-    function unregisterLazyLoadHandler(domain: string, lazyLoaderFactory: (folder: Folder) => any): void;
-    function updateTreeSelectionFromURL($location: any, treeElement: any, activateIfNoneSelected?: boolean): void;
-    function updateTreeSelectionFromURLAndAutoSelect($location: any, treeElement: any, autoSelect: (Folder) => NodeSelection, activateIfNoneSelected?: boolean): void;
-    function getUniqueTypeNames(children: NodeSelection[]): string[];
-    function enableTree($scope: any, $location: ng.ILocationService, workspace: Workspace, treeElement: any, children: Array<NodeSelection>): void;
-}
-declare namespace Jmx {
     class TreeHeaderController {
         private $scope;
         private $element;
@@ -785,6 +776,9 @@ declare namespace Jmx {
         expandAll(): any;
         contractAll(): any;
     }
+    const treeHeaderComponent: angular.IComponentOptions;
+}
+declare namespace Jmx {
     class TreeController {
         private $scope;
         private $location;
@@ -797,9 +791,6 @@ declare namespace Jmx {
         updateSelectionFromURL(): void;
         populateTree(): void;
     }
-}
-declare namespace Jmx {
-    const treeHeaderComponent: angular.IComponentOptions;
     const treeComponent: angular.IComponentOptions;
 }
 declare namespace Jmx {
@@ -817,6 +808,15 @@ declare namespace Jmx {
 }
 declare namespace Jmx {
     var DonutChartController: angular.IModule;
+}
+declare namespace Jmx {
+    function findLazyLoadingFunction(workspace: Workspace, folder: any): (workspace: Workspace, folder: Folder, onComplete: (children: NodeSelection[]) => void) => void;
+    function registerLazyLoadHandler(domain: string, lazyLoaderFactory: (folder: Folder) => any): void;
+    function unregisterLazyLoadHandler(domain: string, lazyLoaderFactory: (folder: Folder) => any): void;
+    function updateTreeSelectionFromURL($location: any, treeElement: any, activateIfNoneSelected?: boolean): void;
+    function updateTreeSelectionFromURLAndAutoSelect($location: any, treeElement: any, autoSelect: (Folder) => NodeSelection, activateIfNoneSelected?: boolean): void;
+    function getUniqueTypeNames(children: NodeSelection[]): string[];
+    function enableTree($scope: any, $location: ng.ILocationService, workspace: Workspace, treeElement: any, children: Array<NodeSelection>): void;
 }
 declare namespace JVM {
 }

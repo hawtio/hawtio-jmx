@@ -1,3 +1,4 @@
+/// <reference path="tree-header.component.ts"/>
 /// <reference path="tree.component.ts"/>
 
 namespace Jmx {

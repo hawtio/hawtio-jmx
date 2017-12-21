@@ -2,6 +2,8 @@
 
 namespace JVM {
 
+  const SHOW_ALERT = 'showJolokiaPreferencesAlert';
+  
   _module.controller("JVM.JolokiaPreferences", ["$scope", "localStorage", "jolokiaParams", "$window", ($scope, localStorage, jolokiaParams, $window) => {
 
     var config = {
@@ -58,8 +60,13 @@ namespace JVM {
       }
     });
 
+    $scope.showAlert = !!$window.sessionStorage.getItem(SHOW_ALERT);
+    $window.sessionStorage.removeItem(SHOW_ALERT);
+    
     $scope.reboot = () => {
+      $window.sessionStorage.setItem(SHOW_ALERT, 'true');
       $window.location.reload();
     }
+
   }]);
 }

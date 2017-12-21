@@ -6036,7 +6036,6 @@ var Diagnostics;
     Diagnostics._module.config(["$routeProvider", function ($routeProvider) {
             $routeProvider.when('/diagnostics/jfr', { templateUrl: templatePath + 'jfr.html' }).when('/diagnostics/heap', { templateUrl: templatePath + 'heap.html' }).when('/diagnostics/flags', { templateUrl: templatePath + 'flags.html' });
         }]);
-    Diagnostics._module.constant('mbeanName', 'com.sun.management:type=DiagnosticCommand');
     Diagnostics._module.run(["$location", "workspace", "viewRegistry", "layoutFull", "helpRegistry", "preferencesRegistry", function ($location, workspace, viewRegistry, layoutFull, helpRegistry, preferencesRegistry) {
             viewRegistry[pluginName] = templatePath + 'layoutDiagnostics.html';
             helpRegistry.addUserDoc('diagnostics', 'plugins/diagnostics/doc/help.md');
@@ -6619,7 +6618,7 @@ var Jmx;
         }
     ];
 })(Jmx || (Jmx = {}));
-/// <reference path="../jmxPlugin.ts"/>
+/// <reference path="../folder.ts"/>
 var Jmx;
 (function (Jmx) {
     var HeaderController = /** @class */ (function () {
@@ -6635,6 +6634,14 @@ var Jmx;
         return HeaderController;
     }());
     Jmx.HeaderController = HeaderController;
+    Jmx.headerComponent = {
+        templateUrl: 'plugins/jmx/html/common/header.html',
+        controller: HeaderController
+    };
+})(Jmx || (Jmx = {}));
+/// <reference path="../workspace.ts"/>
+var Jmx;
+(function (Jmx) {
     var TabController = /** @class */ (function () {
         TabController.$inject = ["$scope", "$route", "$location", "layoutTree", "layoutFull", "viewRegistry", "workspace"];
         function TabController($scope, $route, $location, layoutTree, layoutFull, viewRegistry, workspace) {
@@ -6665,21 +6672,13 @@ var Jmx;
         return TabController;
     }());
     Jmx.TabController = TabController;
-})(Jmx || (Jmx = {}));
-/// <reference path="../jmxPlugin.ts"/>
-/// <reference path="common.controller.ts"/>
-var Jmx;
-(function (Jmx) {
-    Jmx.headerComponent = {
-        templateUrl: 'plugins/jmx/html/common/header.html',
-        controller: Jmx.HeaderController
-    };
     Jmx.tabComponent = {
         templateUrl: 'plugins/jmx/html/common/tab.html',
-        controller: Jmx.TabController
+        controller: TabController
     };
 })(Jmx || (Jmx = {}));
-/// <reference path="common.component.ts"/>
+/// <reference path="header.component.ts"/>
+/// <reference path="tab.component.ts"/>
 var Jmx;
 (function (Jmx) {
     Jmx.commonModule = angular
@@ -7711,148 +7710,6 @@ var Jmx;
         .service('operationsService', Jmx.OperationsService)
         .name;
 })(Jmx || (Jmx = {}));
-/// <reference path="folder.ts"/>
-/// <reference path="workspace.ts"/>
-var Jmx;
-(function (Jmx) {
-    function findLazyLoadingFunction(workspace, folder) {
-        var factories = workspace.jmxTreeLazyLoadRegistry[folder.domain];
-        var lazyFunction = null;
-        if (factories && factories.length) {
-            angular.forEach(factories, function (customLoader) {
-                if (!lazyFunction) {
-                    lazyFunction = customLoader(folder);
-                }
-            });
-        }
-        return lazyFunction;
-    }
-    Jmx.findLazyLoadingFunction = findLazyLoadingFunction;
-    function registerLazyLoadHandler(domain, lazyLoaderFactory) {
-        if (!Core.lazyLoaders) {
-            Core.lazyLoaders = {};
-        }
-        var array = Core.lazyLoaders[domain];
-        if (!array) {
-            array = [];
-            Core.lazyLoaders[domain] = array;
-        }
-        array.push(lazyLoaderFactory);
-    }
-    Jmx.registerLazyLoadHandler = registerLazyLoadHandler;
-    function unregisterLazyLoadHandler(domain, lazyLoaderFactory) {
-        if (Core.lazyLoaders) {
-            var array = Core.lazyLoaders[domain];
-            if (array) {
-                array.remove(lazyLoaderFactory);
-            }
-        }
-    }
-    Jmx.unregisterLazyLoadHandler = unregisterLazyLoadHandler;
-    function updateTreeSelectionFromURL($location, treeElement, activateIfNoneSelected) {
-        if (activateIfNoneSelected === void 0) { activateIfNoneSelected = false; }
-        updateTreeSelectionFromURLAndAutoSelect($location, treeElement, null, activateIfNoneSelected);
-    }
-    Jmx.updateTreeSelectionFromURL = updateTreeSelectionFromURL;
-    function updateTreeSelectionFromURLAndAutoSelect($location, treeElement, autoSelect, activateIfNoneSelected) {
-        if (activateIfNoneSelected === void 0) { activateIfNoneSelected = false; }
-        var tree = treeElement.treeview(true);
-        var node;
-        // If there is a node id then select that one
-        var key = $location.search()['nid'];
-        if (key) {
-            node = _.find(tree.getNodes(), { id: key });
-        }
-        // Else optionally select the first node if there is no selection
-        if (!node && activateIfNoneSelected && tree.getSelected().length === 0) {
-            var children = tree.getNodes();
-            if (children.length > 0) {
-                node = children[0];
-                // invoke any auto select function, and use its result as new first, if any returned
-                if (autoSelect) {
-                    var result = autoSelect(node);
-                    if (result) {
-                        node = result;
-                    }
-                }
-            }
-        }
-        // Finally update the tree with the result node
-        if (node) {
-            tree.revealNode(node, { silent: true });
-            tree.selectNode(node, { silent: false });
-            tree.expandNode(node, { levels: 1, silent: true });
-        }
-        // Word-around to avoid collapsed parent node on re-parenting
-        tree.getExpanded().forEach(function (node) { return tree.revealNode(node, { silent: true }); });
-    }
-    Jmx.updateTreeSelectionFromURLAndAutoSelect = updateTreeSelectionFromURLAndAutoSelect;
-    function getUniqueTypeNames(children) {
-        var typeNameMap = {};
-        angular.forEach(children, function (mbean) {
-            var typeName = mbean.typeName;
-            if (typeName) {
-                typeNameMap[typeName] = mbean;
-            }
-        });
-        // only query if all the typenames are the same
-        return Object.keys(typeNameMap);
-    }
-    Jmx.getUniqueTypeNames = getUniqueTypeNames;
-    function enableTree($scope, $location, workspace, treeElement, children) {
-        treeElement.treeview({
-            lazyLoad: function (node, addNodes) {
-                var plugin = Jmx.findLazyLoadingFunction(workspace, node);
-                if (plugin) {
-                    Jmx.log.debug('Lazy loading folder', node.text);
-                    plugin(workspace, node, function (children) { return addNodes(children); });
-                }
-                // It seems to be required, as the lazyLoad property deletion done
-                // by the treeview component does not seem to work
-                node.lazyLoad = false;
-            },
-            onNodeSelected: function (event, node) {
-                // We need to clear any selected node state that may leave outside
-                // this tree element sub-graph so that the current selection is
-                // correctly taken into account when leaving for a wider tree graph,
-                // like when leaving the ActiveMQ or Camel trees to go to the JMX tree.
-                var clearSelection = function (n) {
-                    if (n.state && n.id !== node.id) {
-                        n.state.selected = false;
-                    }
-                    if (n.children) {
-                        n.children.forEach(clearSelection);
-                    }
-                };
-                clearSelection(workspace.tree);
-                // Expand one level down
-                // Lazy loaded node are automatically expanded once the children get added
-                if (!node.lazyLoad) {
-                    treeElement.treeview('expandNode', [node, { levels: 1, silent: true }]);
-                }
-                // Update the workspace state
-                // The treeview component clones the node passed with the event
-                // so let's lookup the original one
-                var selection = treeElement.treeview('getSelected')[0];
-                workspace.updateSelectionNode(selection);
-                Core.$apply($scope);
-            },
-            levels: 1,
-            data: children,
-            collapseIcon: 'fa fa-angle-down',
-            expandIcon: 'fa fa-angle-right',
-            nodeIcon: 'pficon pficon-folder-close',
-            showImage: true,
-            highlightSearchResults: true,
-            searchResultColor: '#b58100',
-            searchResultBackColor: '#fbeabc',
-            preventUnselect: true
-        });
-    }
-    Jmx.enableTree = enableTree;
-})(Jmx || (Jmx = {}));
-/// <reference path="../jmxPlugin.ts"/>
-/// <reference path="../treeHelpers.ts"/>
 var Jmx;
 (function (Jmx) {
     var TreeHeaderController = /** @class */ (function () {
@@ -7901,6 +7758,13 @@ var Jmx;
         return TreeHeaderController;
     }());
     Jmx.TreeHeaderController = TreeHeaderController;
+    Jmx.treeHeaderComponent = {
+        templateUrl: 'plugins/jmx/html/tree/header.html',
+        controller: TreeHeaderController
+    };
+})(Jmx || (Jmx = {}));
+var Jmx;
+(function (Jmx) {
     var TreeController = /** @class */ (function () {
         TreeController.$inject = ["$scope", "$location", "workspace", "$route", "$element"];
         function TreeController($scope, $location, workspace, $route, $element) {
@@ -7948,19 +7812,12 @@ var Jmx;
         return TreeController;
     }());
     Jmx.TreeController = TreeController;
-})(Jmx || (Jmx = {}));
-/// <reference path="tree.controller.ts"/>
-var Jmx;
-(function (Jmx) {
-    Jmx.treeHeaderComponent = {
-        templateUrl: 'plugins/jmx/html/tree/header.html',
-        controller: Jmx.TreeHeaderController
-    };
     Jmx.treeComponent = {
         templateUrl: 'plugins/jmx/html/tree/content.html',
-        controller: Jmx.TreeController
+        controller: TreeController
     };
 })(Jmx || (Jmx = {}));
+/// <reference path="tree-header.component.ts"/>
 /// <reference path="tree.component.ts"/>
 var Jmx;
 (function (Jmx) {
@@ -8616,6 +8473,146 @@ var Jmx;
             Core.register(jolokia, $scope, $scope.reqs, Core.onSuccess($scope.render));
         }]);
 })(Jmx || (Jmx = {}));
+/// <reference path="folder.ts"/>
+/// <reference path="workspace.ts"/>
+var Jmx;
+(function (Jmx) {
+    function findLazyLoadingFunction(workspace, folder) {
+        var factories = workspace.jmxTreeLazyLoadRegistry[folder.domain];
+        var lazyFunction = null;
+        if (factories && factories.length) {
+            angular.forEach(factories, function (customLoader) {
+                if (!lazyFunction) {
+                    lazyFunction = customLoader(folder);
+                }
+            });
+        }
+        return lazyFunction;
+    }
+    Jmx.findLazyLoadingFunction = findLazyLoadingFunction;
+    function registerLazyLoadHandler(domain, lazyLoaderFactory) {
+        if (!Core.lazyLoaders) {
+            Core.lazyLoaders = {};
+        }
+        var array = Core.lazyLoaders[domain];
+        if (!array) {
+            array = [];
+            Core.lazyLoaders[domain] = array;
+        }
+        array.push(lazyLoaderFactory);
+    }
+    Jmx.registerLazyLoadHandler = registerLazyLoadHandler;
+    function unregisterLazyLoadHandler(domain, lazyLoaderFactory) {
+        if (Core.lazyLoaders) {
+            var array = Core.lazyLoaders[domain];
+            if (array) {
+                array.remove(lazyLoaderFactory);
+            }
+        }
+    }
+    Jmx.unregisterLazyLoadHandler = unregisterLazyLoadHandler;
+    function updateTreeSelectionFromURL($location, treeElement, activateIfNoneSelected) {
+        if (activateIfNoneSelected === void 0) { activateIfNoneSelected = false; }
+        updateTreeSelectionFromURLAndAutoSelect($location, treeElement, null, activateIfNoneSelected);
+    }
+    Jmx.updateTreeSelectionFromURL = updateTreeSelectionFromURL;
+    function updateTreeSelectionFromURLAndAutoSelect($location, treeElement, autoSelect, activateIfNoneSelected) {
+        if (activateIfNoneSelected === void 0) { activateIfNoneSelected = false; }
+        var tree = treeElement.treeview(true);
+        var node;
+        // If there is a node id then select that one
+        var key = $location.search()['nid'];
+        if (key) {
+            node = _.find(tree.getNodes(), { id: key });
+        }
+        // Else optionally select the first node if there is no selection
+        if (!node && activateIfNoneSelected && tree.getSelected().length === 0) {
+            var children = tree.getNodes();
+            if (children.length > 0) {
+                node = children[0];
+                // invoke any auto select function, and use its result as new first, if any returned
+                if (autoSelect) {
+                    var result = autoSelect(node);
+                    if (result) {
+                        node = result;
+                    }
+                }
+            }
+        }
+        // Finally update the tree with the result node
+        if (node) {
+            tree.revealNode(node, { silent: true });
+            tree.selectNode(node, { silent: false });
+            tree.expandNode(node, { levels: 1, silent: true });
+        }
+        // Word-around to avoid collapsed parent node on re-parenting
+        tree.getExpanded().forEach(function (node) { return tree.revealNode(node, { silent: true }); });
+    }
+    Jmx.updateTreeSelectionFromURLAndAutoSelect = updateTreeSelectionFromURLAndAutoSelect;
+    function getUniqueTypeNames(children) {
+        var typeNameMap = {};
+        angular.forEach(children, function (mbean) {
+            var typeName = mbean.typeName;
+            if (typeName) {
+                typeNameMap[typeName] = mbean;
+            }
+        });
+        // only query if all the typenames are the same
+        return Object.keys(typeNameMap);
+    }
+    Jmx.getUniqueTypeNames = getUniqueTypeNames;
+    function enableTree($scope, $location, workspace, treeElement, children) {
+        treeElement.treeview({
+            lazyLoad: function (node, addNodes) {
+                var plugin = Jmx.findLazyLoadingFunction(workspace, node);
+                if (plugin) {
+                    Jmx.log.debug('Lazy loading folder', node.text);
+                    plugin(workspace, node, function (children) { return addNodes(children); });
+                }
+                // It seems to be required, as the lazyLoad property deletion done
+                // by the treeview component does not seem to work
+                node.lazyLoad = false;
+            },
+            onNodeSelected: function (event, node) {
+                // We need to clear any selected node state that may leave outside
+                // this tree element sub-graph so that the current selection is
+                // correctly taken into account when leaving for a wider tree graph,
+                // like when leaving the ActiveMQ or Camel trees to go to the JMX tree.
+                var clearSelection = function (n) {
+                    if (n.state && n.id !== node.id) {
+                        n.state.selected = false;
+                    }
+                    if (n.children) {
+                        n.children.forEach(clearSelection);
+                    }
+                };
+                clearSelection(workspace.tree);
+                // Expand one level down
+                // Lazy loaded node are automatically expanded once the children get added
+                if (!node.lazyLoad) {
+                    treeElement.treeview('expandNode', [node, { levels: 1, silent: true }]);
+                }
+                // Update the workspace state
+                // The treeview component clones the node passed with the event
+                // so let's lookup the original one
+                var selection = treeElement.treeview('getSelected')[0];
+                workspace.updateSelectionNode(selection);
+                Core.$apply($scope);
+            },
+            levels: 1,
+            data: children,
+            collapseIcon: 'fa fa-angle-down',
+            expandIcon: 'fa fa-angle-right',
+            nodeIcon: 'pficon pficon-folder-close',
+            showImage: true,
+            highlightSearchResults: true,
+            searchResultColor: '#b58100',
+            searchResultBackColor: '#fbeabc',
+            preventUnselect: true
+        });
+    }
+    Jmx.enableTree = enableTree;
+})(Jmx || (Jmx = {}));
 /// <reference path="jvmPlugin.ts"/>
 var JVM;
 (function (JVM) {
@@ -8723,6 +8720,7 @@ var JVM;
 /// <reference path="./jvmPlugin.ts"/>
 var JVM;
 (function (JVM) {
+    var SHOW_ALERT = 'showJolokiaPreferencesAlert';
     JVM._module.controller("JVM.JolokiaPreferences", ["$scope", "localStorage", "jolokiaParams", "$window", function ($scope, localStorage, jolokiaParams, $window) {
             var config = {
                 properties: {
@@ -8775,7 +8773,10 @@ var JVM;
                     }
                 }
             });
+            $scope.showAlert = !!$window.sessionStorage.getItem(SHOW_ALERT);
+            $window.sessionStorage.removeItem(SHOW_ALERT);
             $scope.reboot = function () {
+                $window.sessionStorage.setItem(SHOW_ALERT, 'true');
                 $window.location.reload();
             };
         }]);
@@ -8876,15 +8877,11 @@ var JVM;
 var JVM;
 (function (JVM) {
     JVM._module.controller("JVM.ResetController", ["$scope", "localStorage", function ($scope, localStorage) {
+            $scope.showAlert = false;
             $scope.doClearConnectSettings = function () {
-                var doReset = function () {
-                    delete localStorage[JVM.connectControllerKey];
-                    delete localStorage[JVM.connectionSettingsKey];
-                    setTimeout(function () {
-                        window.location.reload();
-                    }, 10);
-                };
-                doReset();
+                delete localStorage[JVM.connectControllerKey];
+                delete localStorage[JVM.connectionSettingsKey];
+                $scope.showAlert = true;
             };
         }]);
 })(JVM || (JVM = {}));
@@ -9725,11 +9722,11 @@ $templateCache.put('plugins/jvm/html/connect-login.html','<div class="modal-head
 $templateCache.put('plugins/jvm/html/connect.html','<div ng-controller="ConnectController">\n\n  <h1>Remote</h1>\n\n  <div class="row">\n    <div class="col-md-7">\n      <div class="toolbar-pf">\n        <form class="toolbar-pf-actions" ng-submit="addConnection()">\n          <div class="form-group">\n            <button type="button" class="btn btn-default" ng-click="showAddConnectionModal()">\n              Add connection\n            </button>\n          </div>\n        </form>\n      </div>\n      <pf-list-view class="jvm-connection-list"\n        items="connections" config="config" action-buttons="actionButtons" menu-actions="actionDropDown">\n        <div class="list-view-pf-description">\n          <div class="list-group-item-heading">\n            {{item.name}}\n          </div>\n          <div class="list-group-item-text">\n            {{item | connectionUrl}}\n          </div>\n        </div>\n      </pf-list-view>\n    </div>\n    <div class="col-md-5">\n      <div class="panel panel-default">\n        <div class="panel-heading">\n          <h3 class="panel-title">Instructions</h3>\n        </div>\n        <div class="panel-body">\n          <p>\n            This page allows you to connect to remote processes which <strong>already have a\n            <a href="http://jolokia.org/" target="_blank">jolokia agent</a> running inside them</strong>. You will need to\n            know the host name, port and path of the jolokia agent to be able to connect.\n          </p>\n          <p>\n            If the process you wish to connect to does not have a jolokia agent inside, please refer to the\n            <a href="http://jolokia.org/agent.html" target="_blank">jolokia documentation</a> for how to add a JVM, servlet\n            or OSGi based agent inside it.\n          </p>\n          <p>\n            If you are using <a href="http://fabric8.io/" target="_blank">Fabric8</a>,\n            <a href="http://www.jboss.org/products/fuse" target="_blank">JBoss Fuse</a>, or <a href="http://activemq.apache.org"\n              target="_blank">Apache ActiveMQ</a>; then a jolokia agent is included by default (use context path of jolokia\n            agent, usually\n            <code>jolokia</code>). Or you can always just deploy hawtio inside the process (which includes the jolokia agent,\n            use Jolokia servlet mapping inside hawtio context path, usually <code>hawtio/jolokia</code>).\n          </p>\n          <p ng-show="hasLocalMBean()">\n            Use the <strong><a href="#/jvm/local">Local Tab</a></strong> to connect to processes locally on this machine\n            (which will install a jolokia agent automatically if required).\n          </p>\n          <p ng-show="!hasLocalMBean()">\n            The <strong>Local Tab</strong> is not currently enabled or visible because either the server side\n            <strong>hawtio-local-jvm-mbean plugin</strong> is not installed or this JVM cannot find the\n            <strong>com.sun.tools.attach.VirtualMachine</strong> API usually found in the <strong>tools.jar</strong>. Please\n            see the <a href="http://hawt.io/faq/index.html" target="_blank">FAQ entry</a> for more details.\n          </p>\n        </div>\n      </div>\n    </div>\n  </div>\n</div>\n');
 $templateCache.put('plugins/jvm/html/discover.html','<div ng-controller="JVM.DiscoveryController">\n\n  <h1>Discover</h1>\n\n  <div class="row toolbar-pf">\n    <div class="col-sm-12">\n      <form class="toolbar-pf-actions">\n        <div class="form-group">\n          <input type="text" class="form-control" ng-model="filter" placeholder="Filter..." autocomplete="off">\n        </div>\n        <div class="form-group">\n          <button class="btn btn-default" ng-click="fetch()" title="Refresh"><i class="fa fa-refresh"></i> Refresh</button>\n        </div>\n      </form>\n    </div>\n  </div>\n\n  <div ng-if="discovering">\n    <div class="spinner spinner-lg loading-page"></div>\n    <div class="row">\n      <div class="col-sm-12">\n        <div class="loading-message">\n          Please wait, discovering agents ...\n        </div>\n      </div>\n    </div>\n  </div>\n\n  <div class="row main-content">\n    <div class="col-sm-12">\n      <div ng-show="!discovering">\n        <div class="loading-message" ng-show="agents.length === 0">\n          No agents discovered.\n        </div>\n        <div ng-show="agents.length > 0">\n          <ul class="discovery zebra-list">\n            <li ng-repeat="agent in agents track by $index" ng-show="filterMatches(agent)">\n\n              <div class="inline-block">\n                <img ng-src="{{getLogo(agent)}}">\n              </div>\n\n              <div class="inline-block">\n                <p ng-hide="!hasName(agent)">\n                <span class="strong"\n                      ng-show="agent.server_vendor">\n                  {{agent.server_vendor}} {{_.startCase(agent.server_product)}} {{agent.server_version}}\n                </span>\n                </p>\n              <span ng-class="getAgentIdClass(agent)">\n                <strong ng-show="hasName(agent)">Agent ID: </strong>{{agent.agent_id}}<br/>\n                <strong ng-show="hasName(agent)">Agent Version: </strong><span ng-hide="hasName(agent)"> Version: </span>{{agent.agent_version}}</span><br/>\n                <strong ng-show="hasName(agent)">Agent Description: </strong><span\n                  ng-hide="hasName(agent)"> Description: </span>{{agent.agent_description}}</span><br/>\n\n                <p ng-hide="!agent.url"><strong>Agent URL: </strong><a ng-href="{{agent.url}}"\n                                                                      target="_blank">{{agent.url}}</a>\n                </p>\n              </div>\n\n              <div class="inline-block lock" ng-show="agent.secured">\n                <i class="fa fa-lock" title="A valid username and password will be required to connect"></i>\n              </div>\n\n              <div class="inline-block" ng-hide="!agent.url">\n                <div class="connect-button"\n                    ng-click="gotoServer($event, agent)"\n                    hawtio-template-popover\n                    content="authPrompt"\n                    trigger="manual"\n                    placement="auto"\n                    data-title="Please enter your username and password">\n                  <i ng-show="agent.url" class="icon-play-circle"></i>\n                </div>\n              </div>\n\n            </li>\n          </ul>\n        </div>\n      </div>\n    </div>\n  </div>\n\n  <script type="text/ng-template" id="authPrompt">\n    <div class="auth-form">\n      <form name="authForm">\n        <input type="text"\n                class="input-sm"\n                placeholder="Username..."\n                ng-model="agent.username"\n                required>\n        <input type="password"\n                class="input-sm"\n                placeholder="Password..."\n                ng-model="agent.password"\n                required>\n        <button ng-disabled="!authForm.$valid"\n                ng-click="connectWithCredentials($event, agent)"\n                class="btn btn-success">\n          <i class="fa fa-share"></i> Connect\n        </button>\n        <button class="btn" ng-click="closePopover($event)"><i class="fa fa-remove"></i></button>\n      </form>\n    </div>\n  </script>\n\n</div>\n');
 $templateCache.put('plugins/jvm/html/jolokiaError.html','<div class="modal-header">\n  <h3 class="modal-title">The connection to jolokia failed!</h3>\n</div>\n<div class="modal-body">\n  <div ng-show="responseText">\n    <p>The connection to jolokia has failed with the following error, also check the javascript console for more details.</p>\n    <div hawtio-editor="responseText" readonly="true"></div>\n  </div>\n  <div ng-hide="responseText">\n    <p>The connection to jolokia has failed for an unknown reason, check the javascript console for more details.</p>\n  </div>\n</div>\n<div class="modal-footer">\n  <button ng-show="ConnectOptions.returnTo" class="btn" ng-click="goBack()">Back</button>\n  <button class="btn btn-primary" ng-click="retry()">Retry</button>\n</div>\n');
-$templateCache.put('plugins/jvm/html/jolokiaPreferences.html','<div ng-controller="JVM.JolokiaPreferences">\n  <div hawtio-form-2="config" entity="entity"></div>\n\n  <div class="form-group">\n    <div class="row">\n      <div class="col-sm-offset-2 col-sm-10">\n        <button class="btn btn-primary" ng-click="reboot()">Apply</button>\n        <span class="help-block">Restart hawtio with the new values in effect</span>\n      </div>\n    </div>\n  </div>\n\n</div>\n');
+$templateCache.put('plugins/jvm/html/jolokiaPreferences.html','<div ng-controller="JVM.JolokiaPreferences">\n  <div class="alert alert-success jvm-jolokia-preferences-alert" ng-if="showAlert">\n    <span class="pficon pficon-ok"></span>\n    Settings applied successfully!\n  </div>\n  <div hawtio-form-2="config" entity="entity"></div>\n  <div class="form-group">\n    <div class="row">\n      <div class="col-sm-offset-2 col-sm-10">\n        <button class="btn btn-primary" ng-click="reboot()">Apply</button>\n        <span class="help-block">Restart hawtio with the new values in effect</span>\n      </div>\n    </div>\n  </div>\n</div>\n');
 $templateCache.put('plugins/jvm/html/layoutConnect.html','<div class="jvm-nav-main">\n  <ul class="nav nav-tabs" ng-controller="JVM.NavController">\n    <li ng-class=\'{active : isActive("/jvm/connect")}\'>\n        <a ng-href="#" ng-click="goto(\'/jvm/connect\')">Remote</a>\n    </li>\n    <li ng-class=\'{active : isActive("/jvm/local")}\' ng-show="isLocalEnabled">\n      <a ng-href="#" ng-click="goto(\'/jvm/local\')">Local</a>\n    </li>\n    <li ng-class=\'{active : isActive("/jvm/discover")}\' ng-show="isDiscoveryEnabled">\n        <a ng-href="#" ng-click="goto(\'/jvm/discover\')">Discover</a>\n    </li>\n  </ul>\n  <div class="contents" ng-view></div>\n</div>\n');
 $templateCache.put('plugins/jvm/html/local.html','<div ng-controller="JVM.JVMsController">\n\n  <h1>Local</h1>\n\n  <div class="row toolbar-pf">\n    <div class="col-sm-12">\n      <form class="toolbar-pf-actions">\n        <div class="form-group">\n          <input type="text" class="form-control" ng-model="filter" placeholder="Filter..." autocomplete="off">\n        </div>\n        <div class="form-group">\n          <button class="btn btn-default" ng-click="fetch()" title="Refresh"><i class="fa fa-refresh"></i> Refresh</button>\n        </div>\n      </form>\n    </div>\n  </div>\n\n  <div ng-hide="initDone">\n    <div class="spinner spinner-lg loading-page"></div>\n    <div class="row">\n      <div class="col-sm-12">\n        <div class="loading-message">\n          Please wait, discovering local JVM processes ...\n        </div>\n      </div>\n    </div>\n  </div>\n\n  <div ng-hide=\'data.length > 0\' class=\'row\'>\n    {{status}}\n  </div>\n\n  <div ng-show=\'data.length > 0\' class="row">\n    <table class=\'centered table table-bordered table-condensed table-striped\'>\n      <thead>\n      <tr>\n        <th style="width: 70px">PID</th>\n        <th>Name</th>\n        <th style="width: 300px">Agent URL</th>\n        <th style="width: 50px"></th>\n      </tr>\n      </thead>\n      <tbody>\n      <tr ng-repeat="jvm in data track by $index" ng-show="filterMatches(jvm)">\n        <td>{{jvm.id}}</td>\n        <td title="{{jvm.displayName}}">{{jvm.alias}}</td>\n        <td><a href=\'\' title="Connect to this agent"\n               ng-click="connectTo(jvm.url, jvm.scheme, jvm.hostname, jvm.port, jvm.path)">{{jvm.agentUrl}}</a></td>\n        <td>\n          <a class=\'btn control-button\' href="" title="Stop agent" ng-show="jvm.agentUrl"\n             ng-click="stopAgent(jvm.id)"><i class="fa fa-off"></i></a>\n          <a class=\'btn control-button\' href="" title="Start agent" ng-hide="jvm.agentUrl"\n             ng-click="startAgent(jvm.id)"><i class="icon-play-circle"></i></a>\n        </td>\n      </tr>\n\n      </tbody>\n    </table>\n\n  </div>\n\n\n</div>\n');
 $templateCache.put('plugins/jvm/html/navbarHeaderExtension.html','<style>\n  .navbar-header-hawtio-jvm {\n    float: left;\n    margin: 0;\n  }\n\n  .navbar-header-hawtio-jvm h4 {\n    color: white;\n    margin: 0px;\n  }\n\n  .navbar-header-hawtio-jvm li {\n    list-style-type: none;\n    display: inline-block;\n    margin-right: 10px;\n    margin-top: 4px;\n  }\n</style>\n<ul class="navbar-header-hawtio-jvm" ng-controller="JVM.HeaderController">\n  <li ng-show="containerName"><h4 ng-bind="containerName"></h4></li>\n  <li ng-show="goBack"><strong><a href="" ng-click="goBack()">Back</a></strong></li>\n</ul>\n');
-$templateCache.put('plugins/jvm/html/reset.html','<div ng-controller="JVM.ResetController">\n  <form class="form-horizontal">\n    <fieldset>\n      <div class="form-group">\n        <label class="col-sm-2 control-label">\n          <strong>\n            <span class="pficon pficon-warning-triangle-o"></span> Clear saved connections\n          </strong>\n        </label>\n        <div class="col-sm-10">\n          <button class="btn btn-danger" ng-click="doClearConnectSettings()">Clear saved connections</button>\n          <span class="help-block">Wipe all saved connection settings stored by {{branding.appName}} in your browser\'s local storage</span>\n        </div>\n      </div>\n    </fieldset>\n  </form>\n</div>\n\n');
+$templateCache.put('plugins/jvm/html/reset.html','<div ng-controller="JVM.ResetController">\n  <div class="alert alert-success jvm-reset-connections-alert" ng-if="showAlert">\n    <span class="pficon pficon-ok"></span>\n    Connections cleared successfully!\n  </div>\n  <h3>Clear saved connections</h3>\n  <p>\n    Clear all saved connection settings stored in your browser\'s local storage.\n  </p>\n  <p>\n    <button class="btn btn-danger" ng-click="doClearConnectSettings()">Clear saved connections</button>\n  </p>\n</div>');
 $templateCache.put('plugins/threads/html/threads.html','<div id="threads-page" class="table-view" ng-controller="ThreadsController">\n\n  <h1>Threads</h1>\n\n  <pf-toolbar config="toolbarConfig"></pf-toolbar>\n\n  <pf-table-view class="threads-table" config="tableConfig" dt-options="tableDtOptions"\n    colummns="tableColumns" items="filteredThreads" action-buttons="tableActionButtons">\n  </pf-table-view>\n\n  <script type="text/ng-template" id="threadModalContent.html">\n    <div class="modal-header">\n      <button type="button" class="close" aria-label="Close" ng-click="$close()">\n        <span class="pficon pficon-close" aria-hidden="true"></span>\n      </button>\n      <h4 class="modal-title">Thread</h4>\n    </div>\n    <div class="modal-body">\n      <div class="row">\n        <div class="col-md-12">\n          <dl class="dl-horizontal">\n            <dt>ID</dt>\n            <dd>{{thread.threadId}}</dd>\n            <dt>Name</dt>\n            <dd>{{thread.threadName}}</dd>\n            <dt>Waited Count</dt>\n            <dd>{{thread.waitedCount}}</dd>\n            <dt>Waited Time</dt>\n            <dd>{{thread.waitedTime}} ms</dd>\n            <dt>Blocked Count</dt>\n            <dd>{{thread.blockedCount}}</dd>\n            <dt>Blocked Time</dt>\n            <dd>{{thread.blockedTime}} ms</dd>\n            <div ng-show="thread.lockInfo != null">\n              <dt>Lock Name</dt>\n              <dd>{{thread.lockName}}</dd>\n              <dt>Lock Class Name</dt>\n              <dd>{{thread.lockInfo.className}}</dd>\n              <dt>Lock Identity Hash Code</dt>\n              <dd>{{thread.lockInfo.identityHashCode}}</dd>\n            </div>\n            <div ng-show="thread.lockOwnerId > 0">\n              <dt>Waiting for lock owned by</dt>\n              <dd><a href="" ng-click="selectThreadById(thread.lockOwnerId)">{{thread.lockOwnerId}} - {{thread.lockOwnerName}}</a></dd>\n            </div>\n            <div ng-show="thread.lockedSynchronizers.length > 0">\n              <dt>Locked Synchronizers</dt>\n              <dd>\n                <ol class="list-unstyled">\n                  <li ng-repeat="synchronizer in thread.lockedSynchronizers">\n                    <span title="Class Name">{{synchronizer.className}}</span> -\n                    <span title="Identity Hash Code">{{synchronizer.identityHashCode}}</span>\n                  </li>\n                </ol>\n              </dd>\n            </div>\n          </dl>\n        </div>\n      </div>\n      <div class="row" ng-show="thread.lockedMonitors.length > 0">\n        <div class="col-md-12">\n          <dl>\n            <dt>Locked Monitors</dt>\n            <dd>\n              <ol class="zebra-list">\n                <li ng-repeat="monitor in thread.lockedMonitors">\n                  Frame: <strong>{{monitor.lockedStackDepth}}</strong>\n                  <span class="green">{{monitor.lockedStackFrame.className}}</span>\n                  <span class="bold">.</span>\n                  <span class="blue bold">{{monitor.lockedStackFrame.methodName}}</span>\n                  &nbsp;({{monitor.lockedStackFrame.fileName}}<span ng-show="frame.lineNumber > 0">:{{monitor.lockedStackFrame.lineNumber}}</span>)\n                  <span class="orange" ng-show="monitor.lockedStackFrame.nativeMethod">(Native)</span>\n                </li>\n              </ol>\n            </dd>\n          </dl>\n        </div>\n      </div>\n      <div class="row">\n        <div class="col-md-12">\n          <dl>\n            <dt>Stack Trace</dt>\n            <dd>\n              <ol class="zebra-list">\n                <li ng-repeat="frame in thread.stackTrace">\n                  <span class="green">{{frame.className}}</span>\n                  <span class="bold">.</span>\n                  <span class="blue bold">{{frame.methodName}}</span>\n                  &nbsp;({{frame.fileName}}<span ng-show="frame.lineNumber > 0">:{{frame.lineNumber}}</span>)\n                  <span class="orange" ng-show="frame.nativeMethod">(Native)</span>\n                </li>\n              </ol>\n            </dd>\n          </dl>            \n        </div>\n      </div>\n    </div>\n  </script>\n\n</div>\n');
 $templateCache.put('plugins/jmx/html/attributes/attributes.html','<script type="text/ng-template" id="gridTemplate">\n  <table class="table table-striped table-bordered table-hover jmx-attributes-table"\n    ng-class="{\'ht-table-extra-columns\': hasExtraColumns}"\n    hawtio-simple-table="gridOptions">\n  </table>\n</script>\n\n<div class="table-view" ng-controller="Jmx.AttributesController">\n\n  <h2>Attributes</h2>\n  \n  <div ng-if="gridData.length > 0">\n    <div compile="attributes"></div>\n  </div>\n\n  <!-- modal dialog to show/edit the attribute -->\n  <div hawtio-confirm-dialog="showAttributeDialog" ok-button-text="Update"\n       show-ok-button="{{entity.rw ? \'true\' : \'false\'}}" on-ok="onUpdateAttribute()" on-cancel="onCancelAttribute()"\n       cancel-button-text="Close" title="Attribute: {{entity.key}}" optional-size="lg">\n    <div class="dialog-body">\n      <!-- have a form for view and another for edit -->\n      <div simple-form ng-hide="!entity.rw" name="attributeEditor" mode="edit" entity=\'entity\' data=\'attributeSchemaEdit\'></div>\n      <div simple-form ng-hide="entity.rw" name="attributeViewer" mode="view" entity=\'entity\' data=\'attributeSchemaView\'></div>\n    </div>\n  </div>\n\n</div>\n');
 $templateCache.put('plugins/jmx/html/common/header.html','<div class="jmx-header">\n  <h1>\n    {{$ctrl.title}}\n    <small class="text-muted">{{$ctrl.objectName}}</small>\n  </h1>\n</div>\n');

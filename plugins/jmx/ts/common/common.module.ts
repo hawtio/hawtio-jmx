@@ -1,4 +1,5 @@
-/// <reference path="common.component.ts"/>
+/// <reference path="header.component.ts"/>
+/// <reference path="tab.component.ts"/>
 
 namespace Jmx {
 

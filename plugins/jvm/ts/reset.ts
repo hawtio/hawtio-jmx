@@ -1,17 +1,17 @@
 /// <reference path="./jvmPlugin.ts"/>
 
 namespace JVM {
+  
   _module.controller("JVM.ResetController", ["$scope", "localStorage", ($scope, localStorage) => {
+    
+    $scope.showAlert = false;
+
     $scope.doClearConnectSettings = () => {
-      var doReset = () => {
-        delete localStorage[JVM.connectControllerKey];
-        delete localStorage[JVM.connectionSettingsKey];
-        setTimeout(() => {
-          window.location.reload();
-        }, 10);
-      };
-      doReset();
+      delete localStorage[JVM.connectControllerKey];
+      delete localStorage[JVM.connectionSettingsKey];
+      $scope.showAlert = true;
     };
 
   }]);
+
 }
