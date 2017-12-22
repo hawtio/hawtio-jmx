@@ -1,37 +1,24 @@
-<div ng-controller="Jmx.ChartEditController">
+<div class="jmx-charts-edit-view" ng-controller="Jmx.ChartEditController">
   <form>
-    <fieldset>
-      <div class="control-group" ng-show="canEditChart()">
-        <input type="submit" class="btn" value="View Chart" ng-click="viewChart()"
-               ng-disabled="!selectedAttributes.length && !selectedMBeans.length"/>
-      </div>
-      <div class="control-group">
-        <table class="table">
-          <thead>
-          <tr>
-            <th ng-show="showAttributes()">Attributes</th>
-            <th ng-show="showElements()">Elements</th>
-          </tr>
-          </thead>
-          <tbody>
-          <tr>
-            <td ng-show="showAttributes()">
-              <select id="attributes" size="20" multiple ng-multiple="true" ng-model="selectedAttributes"
-                      ng-options="name | humanize for (name, value) in metrics"></select>
-            </td>
-            <td ng-show="showElements()">
-              <select id="mbeans" size="20" multiple ng-multiple="true" ng-model="selectedMBeans"
-                      ng-options="name for (name, value) in mbeans"></select>
-            </td>
-          </tr>
-          </tbody>
-        </table>
+    <div class="form-group" ng-show="canEditChart()">
+      <button type="submit" class="btn btn-primary" ng-click="viewChart()" ng-disabled="!selectedAttributes.length && !selectedMBeans.length">
+        View Chart
+      </button>
+    </div>
 
-        <div class="alert" ng-show="!canEditChart()">
-          <button type="button" class="close" data-dismiss="alert">×</button>
-          <strong>No numeric metrics available!</strong> Try select another item to chart on.
-        </div>
+    <div class="row">
+      <div class="form-group col-md-6" ng-show="showAttributes()">
+        <label for="attributes">Attributes</label>
+        <select id="attributes" class="form-control" size="20" multiple ng-multiple="true" ng-model="selectedAttributes" ng-options="name | humanize for (name, value) in metrics"></select>
       </div>
-    </fieldset>
+      <div class="form-group col-md-6" ng-show="showElements()">
+        <label for="mbeans">Elements</label>
+        <select id="mbeans" class="form-control" size="20" multiple ng-multiple="true" ng-model="selectedMBeans" ng-options="name for (name, value) in mbeans"></select>
+      </div>
+    </div>
+
+    <p ng-if="!canEditChart()">
+      No numeric metrics available. Please select another item to chart on.
+    </p>
   </form>
 </div>

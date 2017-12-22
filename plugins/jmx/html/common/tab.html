@@ -5,7 +5,7 @@
   <li ng-class="{active: $ctrl.isTabActive('/jmx/operations')}">
     <a href="#" ng-click="$ctrl.goto('/jmx/operations')">Operations</a>
   </li>
-  <li ng-class="{active: $ctrl.isTabActive('/jmx/charts')}">
+  <li ng-class="{active: $ctrl.isTabActive('/jmx/charts') || $ctrl.isTabActive('/jmx/chartEdit')}">
     <a href="#" ng-click="$ctrl.goto('/jmx/charts')">Chart</a>
   </li>
 </ul>

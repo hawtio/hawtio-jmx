@@ -248,6 +248,9 @@ table.jmx-attributes-table th:nth-child(2) {
   opacity: .2;
   z-index: 2;
 }
+.jmx-charts-edit-view {
+  margin-top: 20px;
+}
 
 fs-donut svg g text.value {
   font-size: 40px;
