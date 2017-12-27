@@ -17,9 +17,6 @@ namespace Jmx {
   }
 
   export function registerLazyLoadHandler(domain: string, lazyLoaderFactory: (folder: Folder) => any) {
-    if (!Core.lazyLoaders) {
-      Core.lazyLoaders = {};
-    }
     var array = Core.lazyLoaders[domain];
     if (!array) {
       array = [];

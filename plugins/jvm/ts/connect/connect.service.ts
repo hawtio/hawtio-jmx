@@ -11,7 +11,7 @@ namespace JVM {
     testConnection(connection: Core.ConnectOptions): ng.IPromise<string> {
       return this.$q((resolve, reject) => {
         new Jolokia({
-          url: Core.createServerConnectionUrl(connection),
+          url: createServerConnectionUrl(connection),
           method: 'post',
           mimeType: 'application/json',
           username: connection.userName ? connection.userName.toString() : '',

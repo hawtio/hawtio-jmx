@@ -28,7 +28,7 @@ namespace JVM {
       angular.extend(options, urlObject);
       options.userName = agent.username;
       options.password = agent.password;
-      Core.connectToServer(localStorage, options);
+      connectToServer(localStorage, options);
     };
 
     $scope.connectWithCredentials = ($event, agent) => {

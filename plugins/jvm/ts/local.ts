@@ -75,7 +75,7 @@ namespace JVM {
       con.name = "local";
 
       log.debug("Connecting to local JVM agent: " + url);
-      Core.connectToServer(localStorage, con);
+      connectToServer(localStorage, con);
       Core.$apply($scope);
     };
 

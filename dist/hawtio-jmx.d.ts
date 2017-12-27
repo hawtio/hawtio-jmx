@@ -230,8 +230,6 @@ declare namespace JVM {
     function configureScope($scope: any, $location: any, workspace: any): void;
     function hasLocalMBean(workspace: any): any;
     function hasDiscoveryMBean(workspace: any): any;
-}
-declare namespace Core {
     /**
      * Creates a jolokia object for connecting to the container with the given remote jolokia URL,
      * username and password
@@ -264,7 +262,7 @@ declare namespace Core {
     /**
      * Returns the connection options for the given connection name from localStorage
      */
-    function getConnectOptions(name: string, localStorage?: WindowLocalStorage): ConnectOptions;
+    function getConnectOptions(name: string, localStorage?: WindowLocalStorage): Core.ConnectOptions;
     /**
      * Creates the Jolokia URL string for the given connection options
      */

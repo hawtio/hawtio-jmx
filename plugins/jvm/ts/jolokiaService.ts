@@ -48,9 +48,9 @@ namespace JVM {
         _.merge(options, jolokiaURI.query(true));
         _.assign(options, query);
         log.debug("options: ", options);
-        let connections = Core.loadConnections();
+        let connections = loadConnections();
         connections.push(options);
-        Core.saveConnections(connections);
+        saveConnections(connections);
         uri.hash("").query({
           con: name
         });
@@ -137,7 +137,7 @@ namespace JVM {
       // this will fail any if (ConnectOptions) check
       return null;
     }
-    let answer = Core.getConnectOptions(name);
+    let answer = getConnectOptions(name);
     // search for passed credentials when connecting to remote server
     try {
       if (window['credentials']) {
@@ -158,7 +158,7 @@ namespace JVM {
       log.debug("Using discovered URL");
       answer = discoveredUrl;
     } else {
-      answer = Core.createServerConnectionUrl(ConnectOptions);
+      answer = createServerConnectionUrl(ConnectOptions);
       log.debug("Using configured URL");
     }
     if (!answer) {
@@ -242,7 +242,7 @@ namespace JVM {
     jolokiaStatus: JolokiaStatus,
     jolokiaParams: Jolokia.IParams,
     jolokiaUrl: string,
-    authService: Auth.AuthService): Jolokia.IJolokia {
+    authService: Core.AuthService): Jolokia.IJolokia {
     'ngInject';
 
     let jolokia: Jolokia.IJolokia = null;

@@ -24,7 +24,7 @@ namespace JVM {
       viewRegistry,
       layoutFull,
       helpRegistry,
-      preferencesRegistry: HawtioPreferences.PreferencesRegistry,
+      preferencesRegistry: Core.PreferencesRegistry,
       ConnectOptions: Core.ConnectOptions,
       locationChangeStartTasks: Core.ParameterizedTasks,
       dash,

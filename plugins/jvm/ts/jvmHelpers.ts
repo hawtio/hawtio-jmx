@@ -39,10 +39,6 @@ namespace JVM {
     return workspace.treeContainsDomainAndProperties('jolokia', {type: 'Discovery'});
   }
 
-}
-
-namespace Core {
-
   /**
    * Creates a jolokia object for connecting to the container with the given remote jolokia URL,
    * username and password
@@ -66,7 +62,7 @@ namespace Core {
 
   export function getRecentConnections(localStorage) {
     if (Core.isBlank(localStorage['recentConnections'])) {
-      Core.clearConnections();
+      clearConnections();
     }
     return angular.fromJson(localStorage['recentConnections']);
   }
@@ -156,7 +152,7 @@ namespace Core {
   /**
    * Returns the connection options for the given connection name from localStorage
    */
-  export function getConnectOptions(name:string, localStorage = Core.getLocalStorage()): ConnectOptions {
+  export function getConnectOptions(name:string, localStorage = Core.getLocalStorage()): Core.ConnectOptions {
     if (!name) {
       return null;
     }

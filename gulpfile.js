@@ -113,7 +113,6 @@ gulp.task('connect', ['watch'], function() {
       dir: '.'
 
     }],
-    fallback: 'index.html',
     liveReload: {
       enabled: true
     }
@@ -121,8 +120,7 @@ gulp.task('connect', ['watch'], function() {
   hawtio.use('/', function(req, res, next) {
           var path = req.originalUrl;
           if (path === '/') {
-            res.writeHead(302, {Location: '/hawtio'});
-            res.end();
+            res.redirect('/hawtio');
           } else if (s.startsWith(path, '/plugins/') && s.endsWith(path, 'html')) {
             // avoid returning these files, they should get pulled from js
             console.log("returning 404 for: ", path);

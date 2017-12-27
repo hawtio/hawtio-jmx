@@ -93,7 +93,7 @@ namespace JVM {
           angular.extend(originalConnection, connection);
         }
         
-        Core.saveConnections($scope.connections);
+        saveConnections($scope.connections);
         
         modalInstance.close();
       } else {
@@ -124,7 +124,7 @@ namespace JVM {
       })
       .result.then(() => {
         $scope.connections.splice($scope.connections.indexOf(connection), 1);
-        Core.saveConnections($scope.connections);
+        saveConnections($scope.connections);
       });
     };
 
@@ -177,7 +177,7 @@ namespace JVM {
       window.close();
     }
 
-    $scope.connections = Core.loadConnections();    
+    $scope.connections = loadConnections();    
   }
 
 }
