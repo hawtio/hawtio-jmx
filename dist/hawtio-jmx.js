@@ -6507,259 +6507,6 @@ var Diagnostics;
             Diagnostics.configureScope($scope, $location, workspace);
         }]);
 })(Diagnostics || (Diagnostics = {}));
-/// <reference path="jvmPlugin.ts"/>
-var JVM;
-(function (JVM) {
-    JVM._module.controller("JVM.DiscoveryController", ["$scope", "localStorage", "jolokia", function ($scope, localStorage, jolokia) {
-            $scope.discovering = true;
-            $scope.agents = undefined;
-            $scope.$watch('agents', function (newValue, oldValue) {
-                if (newValue !== oldValue) {
-                    $scope.selectedAgent = _.find($scope.agents, function (a) { return a['selected']; });
-                }
-            }, true);
-            $scope.closePopover = function ($event) {
-                $($event.currentTarget).parents('.popover').prev().popover('hide');
-            };
-            function doConnect(agent) {
-                if (!agent.url) {
-                    Core.notification('warning', 'No URL available to connect to agent');
-                    return;
-                }
-                var options = Core.createConnectOptions();
-                options.name = agent.agent_description;
-                var urlObject = Core.parseUrl(agent.url);
-                angular.extend(options, urlObject);
-                options.userName = agent.username;
-                options.password = agent.password;
-                JVM.connectToServer(localStorage, options);
-            }
-            ;
-            $scope.connectWithCredentials = function ($event, agent) {
-                $scope.closePopover($event);
-                doConnect(agent);
-            };
-            $scope.gotoServer = function ($event, agent) {
-                if (agent.secured) {
-                    $($event.currentTarget).popover('show');
-                }
-                else {
-                    doConnect(agent);
-                }
-            };
-            $scope.getElementId = function (agent) {
-                return agent.agent_id.dasherize().replace(/\./g, "-");
-            };
-            $scope.getLogo = function (agent) {
-                if (agent.server_product) {
-                    return JVM.logoRegistry[agent.server_product];
-                }
-                return JVM.logoRegistry['generic'];
-            };
-            $scope.filterMatches = function (agent) {
-                if (Core.isBlank($scope.filter)) {
-                    return true;
-                }
-                else {
-                    var needle = $scope.filter.toLowerCase();
-                    var haystack = angular.toJson(agent).toLowerCase();
-                    return haystack.indexOf(needle) !== 0;
-                }
-            };
-            $scope.getAgentIdClass = function (agent) {
-                if ($scope.hasName(agent)) {
-                    return "";
-                }
-                return "strong";
-            };
-            $scope.hasName = function (agent) {
-                if (agent.server_vendor && agent.server_product && agent.server_version) {
-                    return true;
-                }
-                return false;
-            };
-            $scope.render = function (response) {
-                $scope.discovering = false;
-                if (response) {
-                    var responseJson = angular.toJson(response, true);
-                    if ($scope.responseJson !== responseJson) {
-                        $scope.responseJson = responseJson;
-                        $scope.agents = response;
-                    }
-                }
-                Core.$apply($scope);
-            };
-            $scope.fetch = function () {
-                $scope.discovering = true;
-                // use 10 sec timeout
-                jolokia.execute('jolokia:type=Discovery', 'lookupAgentsWithTimeout(int)', 10 * 1000, Core.onSuccess($scope.render));
-            };
-            $scope.fetch();
-        }]);
-})(JVM || (JVM = {}));
-/// <reference path="jvmPlugin.ts"/>
-var JVM;
-(function (JVM) {
-    JVM.HeaderController = JVM._module.controller("JVM.HeaderController", ["$scope", "ConnectOptions", function ($scope, ConnectOptions) {
-            if (ConnectOptions) {
-                $scope.containerName = ConnectOptions.name || "";
-                if (ConnectOptions.returnTo) {
-                    $scope.goBack = function () {
-                        window.location.href = ConnectOptions.returnTo;
-                    };
-                }
-            }
-        }]);
-})(JVM || (JVM = {}));
-/// <reference path="jvmPlugin.ts"/>
-var JVM;
-(function (JVM) {
-    JolokiaPreferences.$inject = ["$scope", "localStorage", "jolokiaParams", "$window"];
-    var SHOW_ALERT = 'showJolokiaPreferencesAlert';
-    function JolokiaPreferences($scope, localStorage, jolokiaParams, $window) {
-        'ngInject';
-        // Initialize tooltips
-        $('[data-toggle="tooltip"]').tooltip();
-        Core.initPreferenceScope($scope, localStorage, {
-            'updateRate': {
-                'value': 5000,
-                'post': function (newValue) {
-                    $scope.$emit('UpdateRate', newValue);
-                }
-            },
-            'maxDepth': {
-                'value': JVM.DEFAULT_MAX_DEPTH,
-                'converter': parseInt,
-                'formatter': parseInt,
-                'post': function (newValue) {
-                    jolokiaParams.maxDepth = newValue;
-                    localStorage['jolokiaParams'] = angular.toJson(jolokiaParams);
-                }
-            },
-            'maxCollectionSize': {
-                'value': JVM.DEFAULT_MAX_COLLECTION_SIZE,
-                'converter': parseInt,
-                'formatter': parseInt,
-                'post': function (newValue) {
-                    jolokiaParams.maxCollectionSize = newValue;
-                    localStorage['jolokiaParams'] = angular.toJson(jolokiaParams);
-                }
-            }
-        });
-        $scope.showAlert = !!$window.sessionStorage.getItem(SHOW_ALERT);
-        $window.sessionStorage.removeItem(SHOW_ALERT);
-        $scope.reboot = function () {
-            $window.sessionStorage.setItem(SHOW_ALERT, 'true');
-            $window.location.reload();
-        };
-    }
-    JVM.JolokiaPreferences = JolokiaPreferences;
-    JVM._module.controller("JVM.JolokiaPreferences", JolokiaPreferences);
-})(JVM || (JVM = {}));
-/// <reference path="jvmPlugin.ts"/>
-/**
- * @module JVM
- */
-var JVM;
-(function (JVM) {
-    JVM._module.controller("JVM.JVMsController", ["$scope", "$window", "$location", "localStorage", "workspace", "jolokia", "mbeanName", function ($scope, $window, $location, localStorage, workspace, jolokia, mbeanName) {
-            JVM.configureScope($scope, $location, workspace);
-            $scope.data = [];
-            $scope.deploying = false;
-            $scope.status = '';
-            $scope.initDone = false;
-            $scope.filter = '';
-            $scope.filterMatches = function (jvm) {
-                if (Core.isBlank($scope.filter)) {
-                    return true;
-                }
-                else {
-                    return jvm.alias.toLowerCase().has($scope.filter.toLowerCase());
-                }
-            };
-            $scope.fetch = function () {
-                jolokia.request({
-                    type: 'exec', mbean: mbeanName,
-                    operation: 'listLocalJVMs()',
-                    arguments: []
-                }, {
-                    success: render,
-                    error: function (response) {
-                        $scope.data = [];
-                        $scope.initDone = true;
-                        $scope.status = 'Could not discover local JVM processes: ' + response.error;
-                        Core.$apply($scope);
-                    }
-                });
-            };
-            $scope.stopAgent = function (pid) {
-                jolokia.request({
-                    type: 'exec', mbean: mbeanName,
-                    operation: 'stopAgent(java.lang.String)',
-                    arguments: [pid]
-                }, Core.onSuccess(function () {
-                    $scope.fetch();
-                }));
-            };
-            $scope.startAgent = function (pid) {
-                jolokia.request({
-                    type: 'exec', mbean: mbeanName,
-                    operation: 'startAgent(java.lang.String)',
-                    arguments: [pid]
-                }, Core.onSuccess(function () {
-                    $scope.fetch();
-                }));
-            };
-            $scope.connectTo = function (url, scheme, host, port, path) {
-                // we only need the port and path from the url, as we got the rest
-                var options = {};
-                options["scheme"] = scheme;
-                options["host"] = host;
-                options["port"] = port;
-                options["path"] = path;
-                // add empty username as we dont need login
-                options["userName"] = "";
-                options["password"] = "";
-                // connect to root by default as we do not want to show welcome page
-                options["view"] = "#/";
-                var con = Core.createConnectToServerOptions(options);
-                con.name = "local";
-                JVM.log.debug("Connecting to local JVM agent: " + url);
-                JVM.connectToServer(localStorage, con);
-                Core.$apply($scope);
-            };
-            function render(response) {
-                $scope.initDone = true;
-                $scope.data = response.value;
-                if ($scope.data.length === 0) {
-                    $scope.status = 'Could not discover local JVM processes';
-                }
-                Core.$apply($scope);
-            }
-            $scope.fetch();
-        }]);
-})(JVM || (JVM = {}));
-/// <reference path="./jvmPlugin.ts"/>
-var JVM;
-(function (JVM) {
-    JVM._module.controller("JVM.NavController", ["$scope", "$location", "workspace", function ($scope, $location, workspace) {
-            JVM.configureScope($scope, $location, workspace);
-            $scope.isLocalEnabled = JVM.hasLocalMBean(workspace);
-            $scope.isDiscoveryEnabled = JVM.hasDiscoveryMBean(workspace);
-        }]);
-})(JVM || (JVM = {}));
-/// <reference path="./jvmPlugin.ts"/>
-var JVM;
-(function (JVM) {
-    JVM._module.controller("JVM.ResetController", ["$scope", "localStorage", function ($scope, localStorage) {
-            $scope.showAlert = false;
-            $scope.doClearConnectSettings = function () {
-                delete localStorage[JVM.connectControllerKey];
-                delete localStorage[JVM.connectionSettingsKey];
-                $scope.showAlert = true;
-            };
-        }]);
-})(JVM || (JVM = {}));
 var Jmx;
 (function (Jmx) {
     function createDashboardLink(widgetType, widget) {
@@ -8860,6 +8607,259 @@ var Jmx;
     }
     Jmx.enableTree = enableTree;
 })(Jmx || (Jmx = {}));
+/// <reference path="jvmPlugin.ts"/>
+var JVM;
+(function (JVM) {
+    JVM._module.controller("JVM.DiscoveryController", ["$scope", "localStorage", "jolokia", function ($scope, localStorage, jolokia) {
+            $scope.discovering = true;
+            $scope.agents = undefined;
+            $scope.$watch('agents', function (newValue, oldValue) {
+                if (newValue !== oldValue) {
+                    $scope.selectedAgent = _.find($scope.agents, function (a) { return a['selected']; });
+                }
+            }, true);
+            $scope.closePopover = function ($event) {
+                $($event.currentTarget).parents('.popover').prev().popover('hide');
+            };
+            function doConnect(agent) {
+                if (!agent.url) {
+                    Core.notification('warning', 'No URL available to connect to agent');
+                    return;
+                }
+                var options = Core.createConnectOptions();
+                options.name = agent.agent_description;
+                var urlObject = Core.parseUrl(agent.url);
+                angular.extend(options, urlObject);
+                options.userName = agent.username;
+                options.password = agent.password;
+                JVM.connectToServer(localStorage, options);
+            }
+            ;
+            $scope.connectWithCredentials = function ($event, agent) {
+                $scope.closePopover($event);
+                doConnect(agent);
+            };
+            $scope.gotoServer = function ($event, agent) {
+                if (agent.secured) {
+                    $($event.currentTarget).popover('show');
+                }
+                else {
+                    doConnect(agent);
+                }
+            };
+            $scope.getElementId = function (agent) {
+                return agent.agent_id.dasherize().replace(/\./g, "-");
+            };
+            $scope.getLogo = function (agent) {
+                if (agent.server_product) {
+                    return JVM.logoRegistry[agent.server_product];
+                }
+                return JVM.logoRegistry['generic'];
+            };
+            $scope.filterMatches = function (agent) {
+                if (Core.isBlank($scope.filter)) {
+                    return true;
+                }
+                else {
+                    var needle = $scope.filter.toLowerCase();
+                    var haystack = angular.toJson(agent).toLowerCase();
+                    return haystack.indexOf(needle) !== 0;
+                }
+            };
+            $scope.getAgentIdClass = function (agent) {
+                if ($scope.hasName(agent)) {
+                    return "";
+                }
+                return "strong";
+            };
+            $scope.hasName = function (agent) {
+                if (agent.server_vendor && agent.server_product && agent.server_version) {
+                    return true;
+                }
+                return false;
+            };
+            $scope.render = function (response) {
+                $scope.discovering = false;
+                if (response) {
+                    var responseJson = angular.toJson(response, true);
+                    if ($scope.responseJson !== responseJson) {
+                        $scope.responseJson = responseJson;
+                        $scope.agents = response;
+                    }
+                }
+                Core.$apply($scope);
+            };
+            $scope.fetch = function () {
+                $scope.discovering = true;
+                // use 10 sec timeout
+                jolokia.execute('jolokia:type=Discovery', 'lookupAgentsWithTimeout(int)', 10 * 1000, Core.onSuccess($scope.render));
+            };
+            $scope.fetch();
+        }]);
+})(JVM || (JVM = {}));
+/// <reference path="jvmPlugin.ts"/>
+var JVM;
+(function (JVM) {
+    JVM.HeaderController = JVM._module.controller("JVM.HeaderController", ["$scope", "ConnectOptions", function ($scope, ConnectOptions) {
+            if (ConnectOptions) {
+                $scope.containerName = ConnectOptions.name || "";
+                if (ConnectOptions.returnTo) {
+                    $scope.goBack = function () {
+                        window.location.href = ConnectOptions.returnTo;
+                    };
+                }
+            }
+        }]);
+})(JVM || (JVM = {}));
+/// <reference path="jvmPlugin.ts"/>
+var JVM;
+(function (JVM) {
+    JolokiaPreferences.$inject = ["$scope", "localStorage", "jolokiaParams", "$window"];
+    var SHOW_ALERT = 'showJolokiaPreferencesAlert';
+    function JolokiaPreferences($scope, localStorage, jolokiaParams, $window) {
+        'ngInject';
+        // Initialize tooltips
+        $('[data-toggle="tooltip"]').tooltip();
+        Core.initPreferenceScope($scope, localStorage, {
+            'updateRate': {
+                'value': 5000,
+                'post': function (newValue) {
+                    $scope.$emit('UpdateRate', newValue);
+                }
+            },
+            'maxDepth': {
+                'value': JVM.DEFAULT_MAX_DEPTH,
+                'converter': parseInt,
+                'formatter': parseInt,
+                'post': function (newValue) {
+                    jolokiaParams.maxDepth = newValue;
+                    localStorage['jolokiaParams'] = angular.toJson(jolokiaParams);
+                }
+            },
+            'maxCollectionSize': {
+                'value': JVM.DEFAULT_MAX_COLLECTION_SIZE,
+                'converter': parseInt,
+                'formatter': parseInt,
+                'post': function (newValue) {
+                    jolokiaParams.maxCollectionSize = newValue;
+                    localStorage['jolokiaParams'] = angular.toJson(jolokiaParams);
+                }
+            }
+        });
+        $scope.showAlert = !!$window.sessionStorage.getItem(SHOW_ALERT);
+        $window.sessionStorage.removeItem(SHOW_ALERT);
+        $scope.reboot = function () {
+            $window.sessionStorage.setItem(SHOW_ALERT, 'true');
+            $window.location.reload();
+        };
+    }
+    JVM.JolokiaPreferences = JolokiaPreferences;
+    JVM._module.controller("JVM.JolokiaPreferences", JolokiaPreferences);
+})(JVM || (JVM = {}));
+/// <reference path="jvmPlugin.ts"/>
+/**
+ * @module JVM
+ */
+var JVM;
+(function (JVM) {
+    JVM._module.controller("JVM.JVMsController", ["$scope", "$window", "$location", "localStorage", "workspace", "jolokia", "mbeanName", function ($scope, $window, $location, localStorage, workspace, jolokia, mbeanName) {
+            JVM.configureScope($scope, $location, workspace);
+            $scope.data = [];
+            $scope.deploying = false;
+            $scope.status = '';
+            $scope.initDone = false;
+            $scope.filter = '';
+            $scope.filterMatches = function (jvm) {
+                if (Core.isBlank($scope.filter)) {
+                    return true;
+                }
+                else {
+                    return jvm.alias.toLowerCase().has($scope.filter.toLowerCase());
+                }
+            };
+            $scope.fetch = function () {
+                jolokia.request({
+                    type: 'exec', mbean: mbeanName,
+                    operation: 'listLocalJVMs()',
+                    arguments: []
+                }, {
+                    success: render,
+                    error: function (response) {
+                        $scope.data = [];
+                        $scope.initDone = true;
+                        $scope.status = 'Could not discover local JVM processes: ' + response.error;
+                        Core.$apply($scope);
+                    }
+                });
+            };
+            $scope.stopAgent = function (pid) {
+                jolokia.request({
+                    type: 'exec', mbean: mbeanName,
+                    operation: 'stopAgent(java.lang.String)',
+                    arguments: [pid]
+                }, Core.onSuccess(function () {
+                    $scope.fetch();
+                }));
+            };
+            $scope.startAgent = function (pid) {
+                jolokia.request({
+                    type: 'exec', mbean: mbeanName,
+                    operation: 'startAgent(java.lang.String)',
+                    arguments: [pid]
+                }, Core.onSuccess(function () {
+                    $scope.fetch();
+                }));
+            };
+            $scope.connectTo = function (url, scheme, host, port, path) {
+                // we only need the port and path from the url, as we got the rest
+                var options = {};
+                options["scheme"] = scheme;
+                options["host"] = host;
+                options["port"] = port;
+                options["path"] = path;
+                // add empty username as we dont need login
+                options["userName"] = "";
+                options["password"] = "";
+                // connect to root by default as we do not want to show welcome page
+                options["view"] = "#/";
+                var con = Core.createConnectToServerOptions(options);
+                con.name = "local";
+                JVM.log.debug("Connecting to local JVM agent: " + url);
+                JVM.connectToServer(localStorage, con);
+                Core.$apply($scope);
+            };
+            function render(response) {
+                $scope.initDone = true;
+                $scope.data = response.value;
+                if ($scope.data.length === 0) {
+                    $scope.status = 'Could not discover local JVM processes';
+                }
+                Core.$apply($scope);
+            }
+            $scope.fetch();
+        }]);
+})(JVM || (JVM = {}));
+/// <reference path="./jvmPlugin.ts"/>
+var JVM;
+(function (JVM) {
+    JVM._module.controller("JVM.NavController", ["$scope", "$location", "workspace", function ($scope, $location, workspace) {
+            JVM.configureScope($scope, $location, workspace);
+            $scope.isLocalEnabled = JVM.hasLocalMBean(workspace);
+            $scope.isDiscoveryEnabled = JVM.hasDiscoveryMBean(workspace);
+        }]);
+})(JVM || (JVM = {}));
+/// <reference path="./jvmPlugin.ts"/>
+var JVM;
+(function (JVM) {
+    JVM._module.controller("JVM.ResetController", ["$scope", "localStorage", function ($scope, localStorage) {
+            $scope.showAlert = false;
+            $scope.doClearConnectSettings = function () {
+                delete localStorage[JVM.connectControllerKey];
+                delete localStorage[JVM.connectionSettingsKey];
+                $scope.showAlert = true;
+            };
+        }]);
+})(JVM || (JVM = {}));
 var RBAC;
 (function (RBAC) {
     var JmxTreeProcessor = /** @class */ (function () {

@@ -279,14 +279,6 @@ fs-donut svg g text.units {
   height: 100%;
   display: flex;
 }
-.tree-nav-layout .spinner {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  z-index: 9999999999;
-  margin-left: -15px;
-  margin-top: -15px;
-}
 .tree-nav-layout .sidebar-pf {
   display: flex;
   flex-direction: column;
@@ -340,6 +332,14 @@ div.tree-nav-layout .sidebar-pf .rg-right {
 .tree-nav-layout .tree-nav-sidebar-content {
   flex: 1 1 auto;
   overflow-y: auto;
+}
+.tree-nav-layout .tree-nav-sidebar-content .spinner {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: 9999999999;
+  margin-left: -15px;
+  margin-top: -15px;
 }
 .tree-nav-layout .tree-nav-sidebar-content ul {
   margin-bottom: 5px;

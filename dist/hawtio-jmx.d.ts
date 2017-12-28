@@ -575,23 +575,6 @@ declare namespace Diagnostics {
 }
 declare namespace Diagnostics {
 }
-declare namespace JVM {
-}
-declare namespace JVM {
-    var HeaderController: angular.IModule;
-}
-declare namespace JVM {
-    function JolokiaPreferences($scope: any, localStorage: any, jolokiaParams: any, $window: any): void;
-}
-/**
- * @module JVM
- */
-declare namespace JVM {
-}
-declare namespace JVM {
-}
-declare namespace JVM {
-}
 declare namespace Jmx {
     function createDashboardLink(widgetType: any, widget: any): string;
     function getWidgetType(widget: any): {
@@ -832,6 +815,23 @@ declare namespace Jmx {
     function updateTreeSelectionFromURLAndAutoSelect($location: any, treeElement: any, autoSelect: (Folder) => NodeSelection, activateIfNoneSelected?: boolean): void;
     function getUniqueTypeNames(children: NodeSelection[]): string[];
     function enableTree($scope: any, $location: ng.ILocationService, workspace: Workspace, treeElement: any, children: Array<NodeSelection>): void;
+}
+declare namespace JVM {
+}
+declare namespace JVM {
+    var HeaderController: angular.IModule;
+}
+declare namespace JVM {
+    function JolokiaPreferences($scope: any, localStorage: any, jolokiaParams: any, $window: any): void;
+}
+/**
+ * @module JVM
+ */
+declare namespace JVM {
+}
+declare namespace JVM {
+}
+declare namespace JVM {
 }
 declare namespace RBAC {
     class JmxTreeProcessor {
