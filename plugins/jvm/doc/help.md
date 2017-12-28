@@ -1,4 +1,4 @@
-### Connect
+## Connect
 
 The Connect tab allows you to connect to local and remote Jolokia instances so you can examine JVMs.
 

@@ -1,38 +1,15 @@
-/// <reference path="./jvmPlugin.ts"/>
+/// <reference path="jvmPlugin.ts"/>
 
 namespace JVM {
 
   const SHOW_ALERT = 'showJolokiaPreferencesAlert';
   
-  _module.controller("JVM.JolokiaPreferences", ["$scope", "localStorage", "jolokiaParams", "$window", ($scope, localStorage, jolokiaParams, $window) => {
+  export function JolokiaPreferences($scope, localStorage, jolokiaParams, $window) {
+    'ngInject';
 
-    var config = {
-      properties: {
-        updateRate: {
-          type: 'number',
-          description: 'The period between polls to jolokia to fetch JMX data',
-          enum: {
-            'Off': 0,
-            '5 Seconds': '5000',
-            '10 Seconds': '10000',
-            '30 Seconds': '30000',
-            '60 seconds': '60000'
-          }
-        },
-        maxDepth: {
-          type: 'number',
-          description: 'The number of levels jolokia will marshal an object to json on the server side before returning'
-        },
-        maxCollectionSize: {
-          type: 'number',
-          description: 'The maximum number of elements in an array that jolokia will marshal in a response'
-        }
-      }
-    };
-
-    $scope.entity = $scope;
-    $scope.config = config;
-
+    // Initialize tooltips
+    (<any>$('[data-toggle="tooltip"]')).tooltip();
+    
     Core.initPreferenceScope($scope, localStorage, {
       'updateRate': {
         'value': 5000,
@@ -68,5 +45,8 @@ namespace JVM {
       $window.location.reload();
     }
 
-  }]);
+  }
+
+  _module.controller("JVM.JolokiaPreferences", JolokiaPreferences);
+
 }

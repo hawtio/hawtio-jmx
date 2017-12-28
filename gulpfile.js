@@ -17,7 +17,7 @@ var config = {
   logLevel: argv.debug ? logger.DEBUG : logger.INFO,
   ts: ['plugins/**/*.ts'],
   less: ['plugins/**/*.less'],
-  templates: ['plugins/**/*.html', 'plugins/**/doc/*.md'],
+  templates: ['plugins/**/*.html', 'plugins/**/*.md'],
   templateModule: 'hawtio-jmx-templates',
   dist: argv.out || './dist/',
   js: 'hawtio-jmx.js',
@@ -113,6 +113,7 @@ gulp.task('connect', ['watch'], function() {
       dir: '.'
 
     }],
+    fallback: 'index.html',
     liveReload: {
       enabled: true
     }
