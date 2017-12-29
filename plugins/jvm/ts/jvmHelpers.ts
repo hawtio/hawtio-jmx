@@ -13,8 +13,8 @@ namespace JVM {
   export function configureScope($scope, $location, workspace) {
 
     $scope.isActive = (href) => {
-      var tidy = Core.trimLeading(href, "#");
-      var loc = $location.path();
+      const tidy = Core.trimLeading(href, "#");
+      const loc = $location.path();
       return loc === tidy;
     };
 
@@ -51,7 +51,7 @@ namespace JVM {
    * @return {Object}
    */
   export function createJolokia(url: string, username: string, password: string) {
-    var jolokiaParams:Jolokia.IParams = {
+    const jolokiaParams:Jolokia.IParams = {
       url: url,
       username: username,
       password: password,
@@ -68,13 +68,14 @@ namespace JVM {
   }
 
   export function addRecentConnection(localStorage, name) {
-    var recent = getRecentConnections(localStorage);
-    recent = _.take(_.uniq(recent.push(name)), 5);
+    let recent = getRecentConnections(localStorage);
+    recent.push(name);
+    recent = _.take(_.uniq(recent), 5);
     localStorage['recentConnections'] = angular.toJson(recent);
   }
 
   export function removeRecentConnection(localStorage, name) {
-    var recent = getRecentConnections(localStorage);
+    let recent = getRecentConnections(localStorage);
     recent = _.without(recent, name);
     localStorage['recentConnections'] = angular.toJson(recent);
   }
@@ -89,18 +90,20 @@ namespace JVM {
 
   export function connectToServer(localStorage, options:Core.ConnectToServerOptions) {
     log.debug("Connecting with options: ", StringHelpers.toString(options));
-    var clone = angular.extend({}, options);
+    const clone = angular.extend({}, options);
     addRecentConnection(localStorage, clone.name);
     if (!('userName' in clone)) {
-      var userDetails = <Core.UserDetails> HawtioCore.injector.get('userDetails');
+      const userDetails = <Core.UserDetails> HawtioCore.injector.get('userDetails');
       clone.userName = userDetails.username;
       clone.password = userDetails.password;
     }
-    var $window:ng.IWindowService = HawtioCore.injector.get<ng.IWindowService>('$window');
-    var url = (clone.view || '/') + '?con=' + clone.name;
+    //must save to local storage, to be picked up by new tab
+    saveConnection(clone);
+    const $window:ng.IWindowService = HawtioCore.injector.get<ng.IWindowService>('$window');
+    let url = (clone.view || '/') + '?con=' + clone.name;
     url = url.replace(/\?/g, "&");
     url = url.replace(/&/, "?");
-    var newWindow = $window.open(url, 'wnd');
+    const newWindow = $window.open(url, clone.name);
     newWindow['con'] = clone.name;
     newWindow['userDetails'] = {
       username: clone.userName,
@@ -109,15 +112,28 @@ namespace JVM {
     };
   }
 
+  export function saveConnection(options: Core.ConnectOptions) {
+    const connections = loadConnections();
+
+    let existingIndex=_.findIndex(connections, (element) => {return element.name === options.name});
+    if(existingIndex != -1) {
+      connections[existingIndex] = options;
+    } else {
+      connections.unshift(options);
+    }
+    saveConnections(connections);
+  }
+
+
 
   /**
    * Loads all of the available connections from local storage
    * @returns {Core.ConnectionMap}
    */
   export function loadConnections(): Core.ConnectOptions[] {
-    var localStorage = Core.getLocalStorage();
+    const localStorage = Core.getLocalStorage();
     try {
-      var connections = <Core.ConnectOptions[]> angular.fromJson(localStorage[Core.connectionSettingsKey]);
+      const connections = <Core.ConnectOptions[]> angular.fromJson(localStorage[Core.connectionSettingsKey]);
       if (!connections) {
         // nothing found on local storage
         return <Core.ConnectOptions[]> [];
@@ -138,7 +154,7 @@ namespace JVM {
 
   /**
    * Saves the connection map to local storage
-   * @param map
+   * @param connections array of all connections to be stored
    */
   export function saveConnections(connections: Core.ConnectOptions[]) {
     Logger.get("Core").debug("Saving connection array: ", StringHelpers.toString(connections));
@@ -165,12 +181,12 @@ namespace JVM {
    */
   export function createServerConnectionUrl(options:Core.ConnectOptions) {
     Logger.get("Core").debug("Connect to server, options: ", StringHelpers.toString(options));
-    var answer:string = null;
+    let answer:string = null;
     if (options.jolokiaUrl) {
       answer = <string>options.jolokiaUrl;
     }
     if (answer === null) {
-      var uri = new URI();
+      const uri = new URI();
       uri.protocol(<string> options.scheme || 'http')
          .host(<string> options.host || 'localhost')
          .port(<string> (options.port || '80'))

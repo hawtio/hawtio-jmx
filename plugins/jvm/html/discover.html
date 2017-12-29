@@ -39,7 +39,9 @@
             <strong ng-show="hasName(agent)">Agent ID: </strong>{{agent.agent_id}}<br/>
             <strong ng-show="hasName(agent)">Agent Version: </strong><span ng-hide="hasName(agent)"> Version: </span>{{agent.agent_version}}</span><br/>
             <strong ng-show="hasName(agent)">Agent Description: </strong><span
-              ng-hide="hasName(agent)"> Description: </span>{{agent.agent_description}}</span><br/>
+              ng-hide="hasName(agent)"> Description: {{agent.agent_description}}</span><br/>
+                <div ng-hide="!agent.startTime"><strong>JVM Started: </strong>{{agent.startTime | date: 'yyyy-MM-dd HH:mm:ss'}}</div>
+                <div ng-hide="!agent.command"><strong>Java Command: </strong>{{agent.command}}</div>
 
             <p ng-hide="!agent.url"><strong>Agent URL: </strong><a ng-href="{{agent.url}}"
                                                                   target="_blank">{{agent.url}}</a>
@@ -47,7 +49,7 @@
           </div>
 
           <div class="inline-block lock" ng-show="agent.secured">
-            <i class="fa fa-lock" title="A valid username and password will be required to connect"></i>
+            <i class="fa-4x pficon-locked" title="A valid username and password will be required to connect"></i>
           </div>
 
           <div class="inline-block" ng-hide="!agent.url">
@@ -58,7 +60,7 @@
                 trigger="manual"
                 placement="auto"
                 data-title="Please enter your username and password">
-              <i ng-show="agent.url" class="icon-play-circle"></i>
+              <i ng-show="agent.url" class="fa-4x pficon-running" tooltip="Connect to process"></i>
             </div>
           </div>
 

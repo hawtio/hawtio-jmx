@@ -17,19 +17,32 @@ namespace JVM {
       (<any>$)($event.currentTarget).parents('.popover').prev().popover('hide');
     };
 
+    function getMoreJvmDetails(agents){
+        for(let key in agents) {
+            const agent=agents[key];
+            if(agent.url && !agent.secured ) {
+                const dedicatedJolokia=createJolokia(agent.url, agent.username, agent.password);
+                agent.startTime=dedicatedJolokia.getAttribute('java.lang:type=Runtime', 'StartTime');
+                if(!$scope.hasName(agent)){//only look for command if agent vm is not known
+                    agent.command=dedicatedJolokia.getAttribute('java.lang:type=Runtime', 'SystemProperties', 'sun.java.command');
+                }
+            }
+        }
+    }
+
     function doConnect(agent) {
       if (!agent.url) {
         Core.notification('warning', 'No URL available to connect to agent');
         return;
       }
-      var options:Core.ConnectToServerOptions = Core.createConnectOptions();
-      options.name = agent.agent_description;
-      var urlObject = Core.parseUrl(agent.url);
+      const options:Core.ConnectToServerOptions = Core.createConnectOptions();
+      options.name = agent.agent_description  || 'discover-' + agent.agent_id;
+      const urlObject = Core.parseUrl(agent.url);
       angular.extend(options, urlObject);
       options.userName = agent.username;
       options.password = agent.password;
       connectToServer(localStorage, options);
-    };
+    }
 
     $scope.connectWithCredentials = ($event, agent) => {
       $scope.closePopover($event);
@@ -59,8 +72,8 @@ namespace JVM {
       if (Core.isBlank($scope.filter)) {
         return true;
       } else {
-        var needle = $scope.filter.toLowerCase();
-        var haystack = angular.toJson(agent).toLowerCase();
+        const needle = $scope.filter.toLowerCase();
+        const haystack = angular.toJson(agent).toLowerCase();
         return haystack.indexOf(needle) !== 0;
       }
     };
@@ -73,23 +86,22 @@ namespace JVM {
     };
 
     $scope.hasName = (agent) => {
-      if (agent.server_vendor && agent.server_product && agent.server_version) {
-        return true;
-      }
-      return false;
+      return !!(agent.server_vendor && agent.server_product && agent.server_version);
+
     };
 
     $scope.render = (response) => {
       $scope.discovering = false;
       if (response) {
-        var responseJson = angular.toJson(response, true);
+        const responseJson = angular.toJson(response, true);
         if ($scope.responseJson !== responseJson) {
           $scope.responseJson = responseJson;
           $scope.agents = response;
+          getMoreJvmDetails($scope.agents);
         }
       }
       Core.$apply($scope);
-    }
+    };
 
     $scope.fetch = () => {
       $scope.discovering = true;
