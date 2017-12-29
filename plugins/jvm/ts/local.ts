@@ -5,7 +5,7 @@
  */
 namespace JVM {
 
-  _module.controller("JVM.JVMsController", ["$scope", "$window", "$location", "localStorage", "workspace", "jolokia", "mbeanName", ($scope, $window, $location, localStorage:Storage, workspace, jolokia, mbeanName) => {
+  _module.controller("JVM.JVMsController", ["$scope", "$location", "localStorage", "workspace", "jolokia", "mbeanName", ($scope, $location, localStorage: Storage, workspace, jolokia, mbeanName) => {
 
     JVM.configureScope($scope, $location, workspace);
     $scope.data = [];
@@ -13,6 +13,11 @@ namespace JVM {
     $scope.status = '';
     $scope.initDone = false;
     $scope.filter = '';
+    const listRequest = {
+        type: 'exec', mbean: mbeanName,
+        operation: 'listLocalJVMs()',
+        arguments: []
+      };
 
     $scope.filterMatches = (jvm) => {
       if (Core.isBlank($scope.filter)) {
@@ -23,11 +28,7 @@ namespace JVM {
     };
 
     $scope.fetch = () => {
-      jolokia.request({
-        type: 'exec', mbean: mbeanName,
-        operation: 'listLocalJVMs()',
-        arguments: []
-      }, {
+      jolokia.request(listRequest, {
         success: render,
         error: (response) => {
           $scope.data = [];
@@ -39,28 +40,24 @@ namespace JVM {
     };
 
     $scope.stopAgent = (pid) => {
-      jolokia.request({
+      jolokia.request([{
         type: 'exec', mbean: mbeanName,
         operation: 'stopAgent(java.lang.String)',
         arguments: [pid]
-      }, Core.onSuccess(function() {
-        $scope.fetch()
-      }));
+      }, listRequest], Core.onSuccess(renderIfList));
     };
 
     $scope.startAgent = (pid) => {
-      jolokia.request({
+      jolokia.request([{
         type: 'exec', mbean: mbeanName,
         operation: 'startAgent(java.lang.String)',
         arguments: [pid]
-      }, Core.onSuccess(function() {
-        $scope.fetch()
-      }));
+      },listRequest], Core.onSuccess(renderIfList));
     };
 
     $scope.connectTo = (url, scheme, host, port, path) => {
       // we only need the port and path from the url, as we got the rest
-      var options = {};
+      const options = {};
       options["scheme"] = scheme;
       options["host"] = host;
       options["port"] = port;
@@ -71,13 +68,23 @@ namespace JVM {
       // connect to root by default as we do not want to show welcome page
       options["view"] = "#/";
 
-      var con = Core.createConnectToServerOptions(options);
-      con.name = "local";
+      const con = Core.createConnectToServerOptions(options);
+      con.name = "local-" + port;
 
       log.debug("Connecting to local JVM agent: " + url);
       connectToServer(localStorage, con);
       Core.$apply($scope);
     };
+
+    /**
+     * Since the requests are bundled, check the operation in callback to decide on
+     * how to respond to success
+     */
+    function renderIfList(response) {
+        if ( response.request.operation.indexOf( "listLocalJVMs" ) > -1 ) {
+           render( response );
+        }
+    }
 
     function render(response) {
       $scope.initDone = true;
