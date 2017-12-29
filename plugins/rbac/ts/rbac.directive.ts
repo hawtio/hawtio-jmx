@@ -38,7 +38,7 @@ namespace RBAC {
         this.applyInvokeRights(element, objectName, attr);
       } else {
         scope.$watch<string>(objectNameModel, (newValue, oldValue) => {
-          if (newValue !== oldValue) {
+          if (newValue && newValue !== oldValue) {
             this.applyInvokeRights(element, newValue, attr);
           }
         });

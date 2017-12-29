@@ -9037,7 +9037,7 @@ var RBAC;
             }
             else {
                 scope.$watch(objectNameModel, function (newValue, oldValue) {
-                    if (newValue !== oldValue) {
+                    if (newValue && newValue !== oldValue) {
                         _this.applyInvokeRights(element, newValue, attr);
                     }
                 });
