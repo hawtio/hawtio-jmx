@@ -751,7 +751,13 @@ namespace Jmx {
         $location.search(q);
       }
       // Broadcast an event so other parts of the UI can update accordingly
-      this.$rootScope.$broadcast('jmxTreeClicked', this.selection);
+      this.broadcastSelectionNode();
+    }
+
+    public broadcastSelectionNode(): void {
+      if (this.selection) {
+        this.$rootScope.$broadcast('jmxTreeClicked', this.selection);
+      }
     }
 
     private matchesProperties(entries, properties): boolean {

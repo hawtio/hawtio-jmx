@@ -248,6 +248,7 @@ declare namespace JVM {
     function clearConnections(): void;
     function isRemoteConnection(): boolean;
     function connectToServer(localStorage: any, options: Core.ConnectToServerOptions): void;
+    function saveConnection(options: Core.ConnectOptions): void;
     /**
      * Loads all of the available connections from local storage
      * @returns {Core.ConnectionMap}
@@ -255,7 +256,7 @@ declare namespace JVM {
     function loadConnections(): Core.ConnectOptions[];
     /**
      * Saves the connection map to local storage
-     * @param map
+     * @param connections array of all connections to be stored
      */
     function saveConnections(connections: Core.ConnectOptions[]): void;
     function getConnectionNameParameter(): any;
@@ -515,6 +516,7 @@ declare namespace Jmx {
         selectionConfigKey(prefix?: string): string;
         moveIfViewInvalid(): boolean;
         updateSelectionNode(node: NodeSelection): void;
+        broadcastSelectionNode(): void;
         private matchesProperties(entries, properties);
         hasInvokeRightsForName(objectName: string, ...methods: string[]): boolean;
         hasInvokeRights(selection: NodeSelection, ...methods: string[]): boolean;
@@ -783,7 +785,8 @@ declare namespace Jmx {
         private workspace;
         private $route;
         private $element;
-        constructor($scope: any, $location: ng.ILocationService, workspace: Workspace, $route: angular.route.IRouteService, $element: JQuery);
+        private $timeout;
+        constructor($scope: any, $location: ng.ILocationService, workspace: Workspace, $route: angular.route.IRouteService, $element: JQuery, $timeout: ng.ITimeoutService);
         $onInit(): void;
         treeFetched(): boolean;
         updateSelectionFromURL(): void;

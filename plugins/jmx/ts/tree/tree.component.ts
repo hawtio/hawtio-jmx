@@ -7,7 +7,8 @@ namespace Jmx {
       private $location: ng.ILocationService,
       private workspace: Workspace,
       private $route: angular.route.IRouteService,
-      private $element: JQuery) {
+      private $element: JQuery,
+      private $timeout: ng.ITimeoutService) {
       'ngInject';
       // it's not possible to declare classes to the component host tag in AngularJS
       $element.addClass('tree-nav-sidebar-content');
@@ -46,7 +47,10 @@ namespace Jmx {
       log.debug("TreeController: populateTree");
       enableTree(this.$scope, this.$location, this.workspace, $('#jmxtree'),
         this.workspace.tree.children);
-      setTimeout(() => this.updateSelectionFromURL(), 50);
+      this.$timeout(() => {
+        this.updateSelectionFromURL();
+        this.workspace.broadcastSelectionNode();
+      });
     }
   }
 

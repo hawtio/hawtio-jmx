@@ -4325,7 +4325,8 @@ var JVM;
     JVM.getRecentConnections = getRecentConnections;
     function addRecentConnection(localStorage, name) {
         var recent = getRecentConnections(localStorage);
-        recent = _.take(_.uniq(recent.push(name)), 5);
+        recent.push(name);
+        recent = _.take(_.uniq(recent), 5);
         localStorage['recentConnections'] = angular.toJson(recent);
     }
     JVM.addRecentConnection = addRecentConnection;
@@ -4352,11 +4353,13 @@ var JVM;
             clone.userName = userDetails.username;
             clone.password = userDetails.password;
         }
+        //must save to local storage, to be picked up by new tab
+        saveConnection(clone);
         var $window = HawtioCore.injector.get('$window');
         var url = (clone.view || '/') + '?con=' + clone.name;
         url = url.replace(/\?/g, "&");
         url = url.replace(/&/, "?");
-        var newWindow = $window.open(url, 'wnd');
+        var newWindow = $window.open(url, clone.name);
         newWindow['con'] = clone.name;
         newWindow['userDetails'] = {
             username: clone.userName,
@@ -4365,6 +4368,18 @@ var JVM;
         };
     }
     JVM.connectToServer = connectToServer;
+    function saveConnection(options) {
+        var connections = loadConnections();
+        var existingIndex = _.findIndex(connections, function (element) { return element.name === options.name; });
+        if (existingIndex != -1) {
+            connections[existingIndex] = options;
+        }
+        else {
+            connections.unshift(options);
+        }
+        saveConnections(connections);
+    }
+    JVM.saveConnection = saveConnection;
     /**
      * Loads all of the available connections from local storage
      * @returns {Core.ConnectionMap}
@@ -4396,7 +4411,7 @@ var JVM;
     JVM.loadConnections = loadConnections;
     /**
      * Saves the connection map to local storage
-     * @param map
+     * @param connections array of all connections to be stored
      */
     function saveConnections(connections) {
         Logger.get("Core").debug("Saving connection array: ", StringHelpers.toString(connections));
@@ -5685,7 +5700,12 @@ var Jmx;
                 $location.search(q);
             }
             // Broadcast an event so other parts of the UI can update accordingly
-            this.$rootScope.$broadcast('jmxTreeClicked', this.selection);
+            this.broadcastSelectionNode();
+        };
+        Workspace.prototype.broadcastSelectionNode = function () {
+            if (this.selection) {
+                this.$rootScope.$broadcast('jmxTreeClicked', this.selection);
+            }
         };
         Workspace.prototype.matchesProperties = function (entries, properties) {
             if (!entries)
@@ -7763,14 +7783,15 @@ var Jmx;
 var Jmx;
 (function (Jmx) {
     var TreeController = /** @class */ (function () {
-        TreeController.$inject = ["$scope", "$location", "workspace", "$route", "$element"];
-        function TreeController($scope, $location, workspace, $route, $element) {
+        TreeController.$inject = ["$scope", "$location", "workspace", "$route", "$element", "$timeout"];
+        function TreeController($scope, $location, workspace, $route, $element, $timeout) {
             'ngInject';
             this.$scope = $scope;
             this.$location = $location;
             this.workspace = workspace;
             this.$route = $route;
             this.$element = $element;
+            this.$timeout = $timeout;
             // it's not possible to declare classes to the component host tag in AngularJS
             $element.addClass('tree-nav-sidebar-content');
         }
@@ -7804,7 +7825,10 @@ var Jmx;
             var _this = this;
             Jmx.log.debug("TreeController: populateTree");
             Jmx.enableTree(this.$scope, this.$location, this.workspace, $('#jmxtree'), this.workspace.tree.children);
-            setTimeout(function () { return _this.updateSelectionFromURL(); }, 50);
+            this.$timeout(function () {
+                _this.updateSelectionFromURL();
+                _this.workspace.broadcastSelectionNode();
+            });
         };
         return TreeController;
     }());
@@ -8621,20 +8645,31 @@ var JVM;
             $scope.closePopover = function ($event) {
                 $($event.currentTarget).parents('.popover').prev().popover('hide');
             };
+            function getMoreJvmDetails(agents) {
+                for (var key in agents) {
+                    var agent = agents[key];
+                    if (agent.url && !agent.secured) {
+                        var dedicatedJolokia = JVM.createJolokia(agent.url, agent.username, agent.password);
+                        agent.startTime = dedicatedJolokia.getAttribute('java.lang:type=Runtime', 'StartTime');
+                        if (!$scope.hasName(agent)) {
+                            agent.command = dedicatedJolokia.getAttribute('java.lang:type=Runtime', 'SystemProperties', 'sun.java.command');
+                        }
+                    }
+                }
+            }
             function doConnect(agent) {
                 if (!agent.url) {
                     Core.notification('warning', 'No URL available to connect to agent');
                     return;
                 }
                 var options = Core.createConnectOptions();
-                options.name = agent.agent_description;
+                options.name = agent.agent_description || 'discover-' + agent.agent_id;
                 var urlObject = Core.parseUrl(agent.url);
                 angular.extend(options, urlObject);
                 options.userName = agent.username;
                 options.password = agent.password;
                 JVM.connectToServer(localStorage, options);
             }
-            ;
             $scope.connectWithCredentials = function ($event, agent) {
                 $scope.closePopover($event);
                 doConnect(agent);
@@ -8673,10 +8708,7 @@ var JVM;
                 return "strong";
             };
             $scope.hasName = function (agent) {
-                if (agent.server_vendor && agent.server_product && agent.server_version) {
-                    return true;
-                }
-                return false;
+                return !!(agent.server_vendor && agent.server_product && agent.server_version);
             };
             $scope.render = function (response) {
                 $scope.discovering = false;
@@ -8685,6 +8717,7 @@ var JVM;
                     if ($scope.responseJson !== responseJson) {
                         $scope.responseJson = responseJson;
                         $scope.agents = response;
+                        getMoreJvmDetails($scope.agents);
                     }
                 }
                 Core.$apply($scope);
@@ -8762,13 +8795,18 @@ var JVM;
  */
 var JVM;
 (function (JVM) {
-    JVM._module.controller("JVM.JVMsController", ["$scope", "$window", "$location", "localStorage", "workspace", "jolokia", "mbeanName", function ($scope, $window, $location, localStorage, workspace, jolokia, mbeanName) {
+    JVM._module.controller("JVM.JVMsController", ["$scope", "$location", "localStorage", "workspace", "jolokia", "mbeanName", function ($scope, $location, localStorage, workspace, jolokia, mbeanName) {
             JVM.configureScope($scope, $location, workspace);
             $scope.data = [];
             $scope.deploying = false;
             $scope.status = '';
             $scope.initDone = false;
             $scope.filter = '';
+            var listRequest = {
+                type: 'exec', mbean: mbeanName,
+                operation: 'listLocalJVMs()',
+                arguments: []
+            };
             $scope.filterMatches = function (jvm) {
                 if (Core.isBlank($scope.filter)) {
                     return true;
@@ -8778,11 +8816,7 @@ var JVM;
                 }
             };
             $scope.fetch = function () {
-                jolokia.request({
-                    type: 'exec', mbean: mbeanName,
-                    operation: 'listLocalJVMs()',
-                    arguments: []
-                }, {
+                jolokia.request(listRequest, {
                     success: render,
                     error: function (response) {
                         $scope.data = [];
@@ -8793,22 +8827,18 @@ var JVM;
                 });
             };
             $scope.stopAgent = function (pid) {
-                jolokia.request({
-                    type: 'exec', mbean: mbeanName,
-                    operation: 'stopAgent(java.lang.String)',
-                    arguments: [pid]
-                }, Core.onSuccess(function () {
-                    $scope.fetch();
-                }));
+                jolokia.request([{
+                        type: 'exec', mbean: mbeanName,
+                        operation: 'stopAgent(java.lang.String)',
+                        arguments: [pid]
+                    }, listRequest], Core.onSuccess(renderIfList));
             };
             $scope.startAgent = function (pid) {
-                jolokia.request({
-                    type: 'exec', mbean: mbeanName,
-                    operation: 'startAgent(java.lang.String)',
-                    arguments: [pid]
-                }, Core.onSuccess(function () {
-                    $scope.fetch();
-                }));
+                jolokia.request([{
+                        type: 'exec', mbean: mbeanName,
+                        operation: 'startAgent(java.lang.String)',
+                        arguments: [pid]
+                    }, listRequest], Core.onSuccess(renderIfList));
             };
             $scope.connectTo = function (url, scheme, host, port, path) {
                 // we only need the port and path from the url, as we got the rest
@@ -8823,11 +8853,20 @@ var JVM;
                 // connect to root by default as we do not want to show welcome page
                 options["view"] = "#/";
                 var con = Core.createConnectToServerOptions(options);
-                con.name = "local";
+                con.name = "local-" + port;
                 JVM.log.debug("Connecting to local JVM agent: " + url);
                 JVM.connectToServer(localStorage, con);
                 Core.$apply($scope);
             };
+            /**
+             * Since the requests are bundled, check the operation in callback to decide on
+             * how to respond to success
+             */
+            function renderIfList(response) {
+                if (response.request.operation.indexOf("listLocalJVMs") > -1) {
+                    render(response);
+                }
+            }
             function render(response) {
                 $scope.initDone = true;
                 $scope.data = response.value;
@@ -9695,11 +9734,11 @@ $templateCache.put('plugins/jvm/html/connect-delete-warning.html','<div class="m
 $templateCache.put('plugins/jvm/html/connect-edit.html','<div class="modal-header">\n  <button type="button" class="close" aria-label="Close" ng-click="$dismiss()">\n    <span class="pficon pficon-close" aria-hidden="true"></span>\n  </button>\n  <h4 class="modal-title" ng-show="!model.name">Add Connection</h4>\n  <h4 class="modal-title" ng-show="model.name">Edit Connection</h4>\n</div>\n<form name="connectForm" class="form-horizontal jvm-connection-form" ng-submit="saveConnection(model)">\n  <div class="modal-body">\n    <p class="fields-status-pf">The fields marked with\n      <span class="required-pf">*</span> are required.</p>\n    <div class="form-group" ng-class="{\'has-error\': model.errors.name}">\n      <label class="col-sm-3 control-label required-pf" for="connection-name">Name</label>\n      <div class="col-sm-8">\n        <input type="text" id="connection-name" class="form-control" name="name" ng-model="model.connection.name" pf-focused="!model.connection.name">\n        <span class="help-block" ng-show="model.errors.name">{{model.errors.name}}</span>\n      </div>\n    </div>\n    <div class="form-group">\n      <label class="col-sm-3 control-label required-pf" for="connection-scheme">Scheme</label>\n      <div class="col-sm-8">\n        <select id="connection-scheme" class="form-control" name="scheme" ng-model="model.connection.scheme">\n          <option>http</option>\n          <option>https</option>\n        </select>\n      </div>\n    </div>\n    <div class="form-group" ng-class="{\'has-error\': model.errors.host}">\n      <label class="col-sm-3 control-label required-pf" for="connection-host">Host</label>\n      <div class="col-sm-8">\n        <input type="text" id="connection-host" class="form-control" name="host" ng-model="model.connection.host" ng-change="">\n        <span class="help-block" ng-show="model.errors.host">{{model.errors.host}}</span>\n      </div>\n    </div>\n    <div class="form-group">\n      <label class="col-sm-3 control-label" for="connection-port">Port</label>\n      <div class="col-sm-8">\n        <input type="number" id="connection-port" class="form-control" name="port" ng-model="model.connection.port" ng-change="resetTestConnection()">\n      </div>\n    </div>\n    <div class="form-group">\n      <label class="col-sm-3 control-label" for="connection-path">Path</label>\n      <div class="col-sm-8">\n        <input type="text" id="connection-path" class="form-control" name="path" ng-model="model.connection.path" ng-change="resetTestConnection()">\n      </div>\n    </div>\n    <div class="form-group">\n      <label class="col-sm-3 control-label" for="connection-path">Username</label>\n      <div class="col-sm-8">\n        <input type="text" id="connection-username" class="form-control" name="userName" ng-model="model.connection.userName" ng-change="resetTestConnection()">\n        <span class="help-block">Username is not saved</span>\n      </div>\n    </div>\n    <div class="form-group">\n      <label class="col-sm-3 control-label" for="connection-path">Password</label>\n      <div class="col-sm-8">\n        <input type="password" id="connection-password" class="form-control" name="password" ng-model="model.connection.password" ng-change="resetTestConnection()">\n        <span class="help-block">Password is not saved</span>\n      </div>\n    </div>\n    <div class="form-group">\n      <div class="col-sm-offset-3 col-sm-8">\n        <button type="button" class="btn btn-default" ng-click="testConnection(model.connection)">\n          Test Connection\n        </button>\n        <span class="jvm-connection-test-msg" ng-show="model.test.message">\n          <span class="pficon" ng-class="{\'pficon-ok\': model.test.ok, \'pficon-warning-triangle-o\': !model.test.ok}"></span>\n          {{model.test.message}}\n        </span>\n      </div>\n    </div>\n  </div>\n  <div class="modal-footer">\n    <button type="button" class="btn btn-default" ng-click="$dismiss()">Cancel</button>\n    <button type="submit" class="btn btn-primary" ng-show="!model.connection.name">Add</button>\n    <button type="submit" class="btn btn-primary" ng-show="model.connection.name">Save</button>\n  </div>\n</form>');
 $templateCache.put('plugins/jvm/html/connect-login.html','<div class="modal-header">\n  <button type="button" class="close" aria-label="Close" ng-click="$dismiss()">\n    <span class="pficon pficon-close" aria-hidden="true"></span>\n  </button>\n  <h4 class="modal-title">Log In</h4>\n</div>\n<form name="connectForm" class="form-horizontal" ng-submit="login(connection)">\n  <div class="modal-body">\n    <div class="alert alert-danger" ng-show="showErrorMessage">\n      <span class="pficon pficon-error-circle-o"></span> Incorrect username or password\n    </div>\n    <div class="form-group">\n      <label class="col-sm-3 control-label" for="connection-username">Username</label>\n      <div class="col-sm-8">\n        <input type="text" id="connection-username" class="form-control" name="userName"\n               ng-model="connection.userName" autofocus>\n      </div>\n    </div>\n    <div class="form-group">\n      <label class="col-sm-3 control-label" for="connection-password">Password</label>\n      <div class="col-sm-8">\n        <input type="password" id="connection-password" class="form-control" name="password"\n               ng-model="connection.password">\n      </div>\n    </div>\n  </div>\n  <div class="modal-footer">\n    <button type="button" class="btn btn-default" ng-click="$dismiss()">Cancel</button>\n    <button type="submit" class="btn btn-primary">Log In</button>\n  </div>\n</form>\n');
 $templateCache.put('plugins/jvm/html/connect.html','<div ng-controller="ConnectController">\n\n  <h1>Remote</h1>\n\n  <div class="row">\n    <div class="col-md-7">\n      <div class="toolbar-pf">\n        <form class="toolbar-pf-actions" ng-submit="addConnection()">\n          <div class="form-group">\n            <button type="button" class="btn btn-default" ng-click="showAddConnectionModal()">\n              Add connection\n            </button>\n          </div>\n        </form>\n      </div>\n      <pf-list-view class="jvm-connection-list"\n        items="connections" config="config" action-buttons="actionButtons" menu-actions="actionDropDown">\n        <div class="list-view-pf-description">\n          <div class="list-group-item-heading">\n            {{item.name}}\n          </div>\n          <div class="list-group-item-text">\n            {{item | connectionUrl}}\n          </div>\n        </div>\n      </pf-list-view>\n    </div>\n    <div class="col-md-5">\n      <div class="panel panel-default">\n        <div class="panel-heading">\n          <h3 class="panel-title">Instructions</h3>\n        </div>\n        <div class="panel-body">\n          <p>\n            This page allows you to connect to remote processes which <strong>already have a\n            <a href="http://jolokia.org/" target="_blank">jolokia agent</a> running inside them</strong>. You will need to\n            know the host name, port and path of the jolokia agent to be able to connect.\n          </p>\n          <p>\n            If the process you wish to connect to does not have a jolokia agent inside, please refer to the\n            <a href="http://jolokia.org/agent.html" target="_blank">jolokia documentation</a> for how to add a JVM, servlet\n            or OSGi based agent inside it.\n          </p>\n          <p>\n            If you are using <a href="http://fabric8.io/" target="_blank">Fabric8</a>,\n            <a href="http://www.jboss.org/products/fuse" target="_blank">JBoss Fuse</a>, or <a href="http://activemq.apache.org"\n              target="_blank">Apache ActiveMQ</a>; then a jolokia agent is included by default (use context path of jolokia\n            agent, usually\n            <code>jolokia</code>). Or you can always just deploy hawtio inside the process (which includes the jolokia agent,\n            use Jolokia servlet mapping inside hawtio context path, usually <code>hawtio/jolokia</code>).\n          </p>\n          <p ng-show="hasLocalMBean()">\n            Use the <strong><a href="#/jvm/local">Local Tab</a></strong> to connect to processes locally on this machine\n            (which will install a jolokia agent automatically if required).\n          </p>\n          <p ng-show="!hasLocalMBean()">\n            The <strong>Local Tab</strong> is not currently enabled or visible because either the server side\n            <strong>hawtio-local-jvm-mbean plugin</strong> is not installed or this JVM cannot find the\n            <strong>com.sun.tools.attach.VirtualMachine</strong> API usually found in the <strong>tools.jar</strong>. Please\n            see the <a href="http://hawt.io/faq/index.html" target="_blank">FAQ entry</a> for more details.\n          </p>\n        </div>\n      </div>\n    </div>\n  </div>\n</div>\n');
-$templateCache.put('plugins/jvm/html/discover.html','<div ng-controller="JVM.DiscoveryController">\n\n  <h1>Discover</h1>\n\n  <p ng-if="discovering">Please wait, discovering agents...</p>\n  \n  <div ng-if="!discovering">\n    <p ng-show="agents.length === 0">\n      No agents discovered.\n    </p>\n    <div ng-show="agents.length > 0">\n      <div class="row toolbar-pf">\n        <div class="col-sm-12">\n          <form class="toolbar-pf-actions">\n            <div class="form-group">\n              <input type="text" class="form-control" ng-model="filter" placeholder="Filter..." autocomplete="off">\n            </div>\n            <div class="form-group">\n              <button class="btn btn-default" ng-click="fetch()" title="Refresh"><i class="fa fa-refresh"></i> Refresh</button>\n            </div>\n          </form>\n        </div>\n      </div>\n      <ul class="discovery zebra-list">\n        <li ng-repeat="agent in agents track by $index" ng-show="filterMatches(agent)">\n\n          <div class="inline-block">\n            <img ng-src="{{getLogo(agent)}}">\n          </div>\n\n          <div class="inline-block">\n            <p ng-hide="!hasName(agent)">\n            <span class="strong"\n                  ng-show="agent.server_vendor">\n              {{agent.server_vendor}} {{_.startCase(agent.server_product)}} {{agent.server_version}}\n            </span>\n            </p>\n          <span ng-class="getAgentIdClass(agent)">\n            <strong ng-show="hasName(agent)">Agent ID: </strong>{{agent.agent_id}}<br/>\n            <strong ng-show="hasName(agent)">Agent Version: </strong><span ng-hide="hasName(agent)"> Version: </span>{{agent.agent_version}}</span><br/>\n            <strong ng-show="hasName(agent)">Agent Description: </strong><span\n              ng-hide="hasName(agent)"> Description: </span>{{agent.agent_description}}</span><br/>\n\n            <p ng-hide="!agent.url"><strong>Agent URL: </strong><a ng-href="{{agent.url}}"\n                                                                  target="_blank">{{agent.url}}</a>\n            </p>\n          </div>\n\n          <div class="inline-block lock" ng-show="agent.secured">\n            <i class="fa fa-lock" title="A valid username and password will be required to connect"></i>\n          </div>\n\n          <div class="inline-block" ng-hide="!agent.url">\n            <div class="connect-button"\n                ng-click="gotoServer($event, agent)"\n                hawtio-template-popover\n                content="authPrompt"\n                trigger="manual"\n                placement="auto"\n                data-title="Please enter your username and password">\n              <i ng-show="agent.url" class="icon-play-circle"></i>\n            </div>\n          </div>\n\n        </li>\n      </ul>\n    </div>\n  </div>\n\n  <script type="text/ng-template" id="authPrompt">\n    <div class="auth-form">\n      <form name="authForm">\n        <input type="text"\n                class="input-sm"\n                placeholder="Username..."\n                ng-model="agent.username"\n                required>\n        <input type="password"\n                class="input-sm"\n                placeholder="Password..."\n                ng-model="agent.password"\n                required>\n        <button ng-disabled="!authForm.$valid"\n                ng-click="connectWithCredentials($event, agent)"\n                class="btn btn-success">\n          <i class="fa fa-share"></i> Connect\n        </button>\n        <button class="btn" ng-click="closePopover($event)"><i class="fa fa-remove"></i></button>\n      </form>\n    </div>\n  </script>\n\n</div>\n');
+$templateCache.put('plugins/jvm/html/discover.html','<div ng-controller="JVM.DiscoveryController">\n\n  <h1>Discover</h1>\n\n  <p ng-if="discovering">Please wait, discovering agents...</p>\n  \n  <div ng-if="!discovering">\n    <p ng-show="agents.length === 0">\n      No agents discovered.\n    </p>\n    <div ng-show="agents.length > 0">\n      <div class="row toolbar-pf">\n        <div class="col-sm-12">\n          <form class="toolbar-pf-actions">\n            <div class="form-group">\n              <input type="text" class="form-control" ng-model="filter" placeholder="Filter..." autocomplete="off">\n            </div>\n            <div class="form-group">\n              <button class="btn btn-default" ng-click="fetch()" title="Refresh"><i class="fa fa-refresh"></i> Refresh</button>\n            </div>\n          </form>\n        </div>\n      </div>\n      <ul class="discovery zebra-list">\n        <li ng-repeat="agent in agents track by $index" ng-show="filterMatches(agent)">\n\n          <div class="inline-block">\n            <img ng-src="{{getLogo(agent)}}">\n          </div>\n\n          <div class="inline-block">\n            <p ng-hide="!hasName(agent)">\n            <span class="strong"\n                  ng-show="agent.server_vendor">\n              {{agent.server_vendor}} {{_.startCase(agent.server_product)}} {{agent.server_version}}\n            </span>\n            </p>\n          <span ng-class="getAgentIdClass(agent)">\n            <strong ng-show="hasName(agent)">Agent ID: </strong>{{agent.agent_id}}<br/>\n            <strong ng-show="hasName(agent)">Agent Version: </strong><span ng-hide="hasName(agent)"> Version: </span>{{agent.agent_version}}</span><br/>\n            <strong ng-show="hasName(agent)">Agent Description: </strong><span\n              ng-hide="hasName(agent)"> Description: {{agent.agent_description}}</span><br/>\n                <div ng-hide="!agent.startTime"><strong>JVM Started: </strong>{{agent.startTime | date: \'yyyy-MM-dd HH:mm:ss\'}}</div>\n                <div ng-hide="!agent.command"><strong>Java Command: </strong>{{agent.command}}</div>\n\n            <p ng-hide="!agent.url"><strong>Agent URL: </strong><a ng-href="{{agent.url}}"\n                                                                  target="_blank">{{agent.url}}</a>\n            </p>\n          </div>\n\n          <div class="inline-block lock" ng-show="agent.secured">\n            <i class="fa-4x pficon-locked" title="A valid username and password will be required to connect"></i>\n          </div>\n\n          <div class="inline-block" ng-hide="!agent.url">\n            <div class="connect-button"\n                ng-click="gotoServer($event, agent)"\n                hawtio-template-popover\n                content="authPrompt"\n                trigger="manual"\n                placement="auto"\n                data-title="Please enter your username and password">\n              <i ng-show="agent.url" class="fa-4x pficon-running" tooltip="Connect to process"></i>\n            </div>\n          </div>\n\n        </li>\n      </ul>\n    </div>\n  </div>\n\n  <script type="text/ng-template" id="authPrompt">\n    <div class="auth-form">\n      <form name="authForm">\n        <input type="text"\n                class="input-sm"\n                placeholder="Username..."\n                ng-model="agent.username"\n                required>\n        <input type="password"\n                class="input-sm"\n                placeholder="Password..."\n                ng-model="agent.password"\n                required>\n        <button ng-disabled="!authForm.$valid"\n                ng-click="connectWithCredentials($event, agent)"\n                class="btn btn-success">\n          <i class="fa fa-share"></i> Connect\n        </button>\n        <button class="btn" ng-click="closePopover($event)"><i class="fa fa-remove"></i></button>\n      </form>\n    </div>\n  </script>\n\n</div>\n');
 $templateCache.put('plugins/jvm/html/jolokia-preferences.html','<div ng-controller="JVM.JolokiaPreferences">\n  <div class="alert alert-success jvm-jolokia-preferences-alert" ng-if="showAlert">\n    <span class="pficon pficon-ok"></span>\n    Settings applied successfully!\n  </div>\n  <form class="form-horizontal jvm-jolokia-preferences-form">\n    <div class="form-group">\n      <label class="col-md-2 control-label" for="updateRate">\n        Update rate\n        <span class="pficon pficon-info" data-toggle="tooltip" data-placement="top" title="The period between polls to jolokia to fetch JMX data"></span>\n      </label>\n      <div class="col-md-6">\n        <select id="updateRate" class="form-control" ng-model="updateRate">\n          <option value="0">Off</option>\n          <option value="5000">5 Seconds</option>\n          <option value="10000">10 Seconds</option>\n          <option value="30000">30 Seconds</option>\n          <option value="60000">60 seconds</option>\n        </select>\n      </div>\n    </div>\n    <div class="form-group">\n      <label class="col-md-2 control-label" for="maxDepth">\n        Max depth\n        <span class="pficon pficon-info" data-toggle="tooltip" data-placement="top" title="The number of levels jolokia will marshal an object to json on the server side before returning"></span>\n      </label>\n      <div class="col-sm-6">\n        <input type="number" id="maxDepth" class="form-control" ng-model="maxDepth">\n      </div>\n    </div>\n    <div class="form-group">\n      <label class="col-md-2 control-label" for="maxCollectionSize">\n        Max collection size\n        <span class="pficon pficon-info" data-toggle="tooltip" data-placement="top" title="The maximum number of elements in an array that jolokia will marshal in a response"></span>\n      </label>\n      <div class="col-sm-6">\n        <input type="number" id="maxCollectionSize" class="form-control" ng-model="maxCollectionSize">\n      </div>\n    </div>\n    <div class="form-group">\n      <label class="col-md-2">\n      </label>\n      <div class="col-md-6">\n        <button type="button" class="btn btn-primary" ng-click="reboot()">Apply</button>\n        <span class="help-block">Restart hawtio with the new values in effect</span>\n      </div>\n    </div>\n  </form>\n</div>');
 $templateCache.put('plugins/jvm/html/jolokiaError.html','<div class="modal-header">\n  <h3 class="modal-title">The connection to jolokia failed!</h3>\n</div>\n<div class="modal-body">\n  <div ng-show="responseText">\n    <p>The connection to jolokia has failed with the following error, also check the javascript console for more details.</p>\n    <div hawtio-editor="responseText" readonly="true"></div>\n  </div>\n  <div ng-hide="responseText">\n    <p>The connection to jolokia has failed for an unknown reason, check the javascript console for more details.</p>\n  </div>\n</div>\n<div class="modal-footer">\n  <button ng-show="ConnectOptions.returnTo" class="btn" ng-click="goBack()">Back</button>\n  <button class="btn btn-primary" ng-click="retry()">Retry</button>\n</div>\n');
 $templateCache.put('plugins/jvm/html/layoutConnect.html','<div class="jvm-nav-main">\n  <ul class="nav nav-tabs" ng-controller="JVM.NavController">\n    <li ng-class=\'{active : isActive("/jvm/connect")}\'>\n        <a ng-href="#" ng-click="goto(\'/jvm/connect\')">Remote</a>\n    </li>\n    <li ng-class=\'{active : isActive("/jvm/local")}\' ng-show="isLocalEnabled">\n      <a ng-href="#" ng-click="goto(\'/jvm/local\')">Local</a>\n    </li>\n    <li ng-class=\'{active : isActive("/jvm/discover")}\' ng-show="isDiscoveryEnabled">\n        <a ng-href="#" ng-click="goto(\'/jvm/discover\')">Discover</a>\n    </li>\n  </ul>\n  <div class="contents" ng-view></div>\n</div>\n');
-$templateCache.put('plugins/jvm/html/local.html','<div ng-controller="JVM.JVMsController">\n  <h1>Local</h1>\n  <p ng-if="!initDone">\n    Please wait, discovering local JVM processes...\n  </p>\n  <div ng-if="initDone">\n    <p ng-if=\'status\'>\n      {{status}}\n    </p>\n    <div ng-if=\'data.length > 0\'>\n      <div class="row toolbar-pf">\n        <div class="col-sm-12">\n          <form class="toolbar-pf-actions">\n            <div class="form-group">\n              <input type="text" class="form-control" ng-model="filter" placeholder="Filter..." autocomplete="off">\n            </div>  \n            <div class="form-group">\n              <button class="btn btn-default" ng-click="fetch()" title="Refresh"><i class="fa fa-refresh"></i> Refresh</button>\n            </div>  \n          </form>  \n        </div>  \n      </div>  \n      <table class=\'centered table table-bordered table-condensed table-striped\'>\n        <thead>\n        <tr>\n          <th style="width: 70px">PID</th>\n          <th>Name</th>\n          <th style="width: 300px">Agent URL</th>\n          <th style="width: 50px"></th>\n        </tr>\n        </thead>\n        <tbody>\n        <tr ng-repeat="jvm in data track by $index" ng-show="filterMatches(jvm)">\n          <td>{{jvm.id}}</td>\n          <td title="{{jvm.displayName}}">{{jvm.alias}}</td>\n          <td><a href=\'\' title="Connect to this agent"\n                 ng-click="connectTo(jvm.url, jvm.scheme, jvm.hostname, jvm.port, jvm.path)">{{jvm.agentUrl}}</a></td>\n          <td>\n            <a class=\'btn control-button\' href="" title="Stop agent" ng-show="jvm.agentUrl"\n               ng-click="stopAgent(jvm.id)"><i class="fa fa-off"></i></a>\n            <a class=\'btn control-button\' href="" title="Start agent" ng-hide="jvm.agentUrl"\n               ng-click="startAgent(jvm.id)"><i class="icon-play-circle"></i></a>\n          </td>\n        </tr>\n        </tbody>\n      </table>\n    </div>\n  </div>\n</div>\n');
+$templateCache.put('plugins/jvm/html/local.html','<div ng-controller="JVM.JVMsController">\n  <h1>Local</h1>\n  <p ng-if="!initDone">\n    Please wait, discovering local JVM processes...\n  </p>\n  <div ng-if="initDone">\n    <p ng-if=\'status\'>\n      {{status}}\n    </p>\n    <div ng-if=\'data.length > 0\'>\n      <div class="row toolbar-pf">\n        <div class="col-sm-12">\n          <form class="toolbar-pf-actions">\n            <div class="form-group">\n              <input type="text" class="form-control" ng-model="filter" placeholder="Filter..." autocomplete="off">\n            </div>  \n            <div class="form-group">\n              <button class="btn btn-default" ng-click="fetch()" title="Refresh"><i class="fa fa-refresh"></i> Refresh</button>\n            </div>  \n          </form>  \n        </div>  \n      </div>  \n      <table class=\'centered table table-bordered table-condensed table-striped\'>\n        <thead>\n        <tr>\n          <th style="width: 70px">PID</th>\n          <th>Name</th>\n          <th style="width: 300px">Agent URL</th>\n          <th style="width: 50px"></th>\n        </tr>\n        </thead>\n        <tbody>\n        <tr ng-repeat="jvm in data track by $index" ng-show="filterMatches(jvm)">\n          <td>{{jvm.id}}</td>\n          <td title="{{jvm.displayName}}">{{jvm.alias}}</td>\n          <td><a href=\'\' title="Connect to this agent"\n                 ng-click="connectTo(jvm.url, jvm.scheme, jvm.hostname, jvm.port, jvm.path)">{{jvm.agentUrl}}</a></td>\n          <td>\n            <a class=\'btn control-button\' href="" title="Stop agent" ng-show="jvm.agentUrl"\n             ng-click="stopAgent(jvm.id)"><i class="pficon-close"></i></a>\n            <a class=\'btn control-button\' href="" title="Start agent" ng-hide="jvm.agentUrl"\n             ng-click="startAgent(jvm.id)"><i class="pficon-running"></i></a>\n          </td>\n        </tr>\n        </tbody>\n      </table>\n    </div>\n  </div>\n</div>\n');
 $templateCache.put('plugins/jvm/html/navbarHeaderExtension.html','<style>\n  .navbar-header-hawtio-jvm {\n    float: left;\n    margin: 0;\n  }\n\n  .navbar-header-hawtio-jvm h4 {\n    color: white;\n    margin: 0px;\n  }\n\n  .navbar-header-hawtio-jvm li {\n    list-style-type: none;\n    display: inline-block;\n    margin-right: 10px;\n    margin-top: 4px;\n  }\n</style>\n<ul class="navbar-header-hawtio-jvm" ng-controller="JVM.HeaderController">\n  <li ng-show="containerName"><h4 ng-bind="containerName"></h4></li>\n  <li ng-show="goBack"><strong><a href="" ng-click="goBack()">Back</a></strong></li>\n</ul>\n');
 $templateCache.put('plugins/jvm/html/reset.html','<div ng-controller="JVM.ResetController">\n  <div class="alert alert-success jvm-reset-connections-alert" ng-if="showAlert">\n    <span class="pficon pficon-ok"></span>\n    Connections cleared successfully!\n  </div>\n  <h3>Clear saved connections</h3>\n  <p>\n    Clear all saved connection settings stored in your browser\'s local storage.\n  </p>\n  <p>\n    <button class="btn btn-danger" ng-click="doClearConnectSettings()">Clear saved connections</button>\n  </p>\n</div>');
 $templateCache.put('plugins/threads/html/threads.html','<div id="threads-page" class="table-view" ng-controller="ThreadsController">\n\n  <h1>Threads</h1>\n\n  <pf-toolbar config="toolbarConfig"></pf-toolbar>\n\n  <pf-table-view class="threads-table" config="tableConfig" dt-options="tableDtOptions"\n    colummns="tableColumns" items="filteredThreads" action-buttons="tableActionButtons">\n  </pf-table-view>\n\n  <script type="text/ng-template" id="threadModalContent.html">\n    <div class="modal-header">\n      <button type="button" class="close" aria-label="Close" ng-click="$close()">\n        <span class="pficon pficon-close" aria-hidden="true"></span>\n      </button>\n      <h4 class="modal-title">Thread</h4>\n    </div>\n    <div class="modal-body">\n      <div class="row">\n        <div class="col-md-12">\n          <dl class="dl-horizontal">\n            <dt>ID</dt>\n            <dd>{{thread.threadId}}</dd>\n            <dt>Name</dt>\n            <dd>{{thread.threadName}}</dd>\n            <dt>Waited Count</dt>\n            <dd>{{thread.waitedCount}}</dd>\n            <dt>Waited Time</dt>\n            <dd>{{thread.waitedTime}} ms</dd>\n            <dt>Blocked Count</dt>\n            <dd>{{thread.blockedCount}}</dd>\n            <dt>Blocked Time</dt>\n            <dd>{{thread.blockedTime}} ms</dd>\n            <div ng-show="thread.lockInfo != null">\n              <dt>Lock Name</dt>\n              <dd>{{thread.lockName}}</dd>\n              <dt>Lock Class Name</dt>\n              <dd>{{thread.lockInfo.className}}</dd>\n              <dt>Lock Identity Hash Code</dt>\n              <dd>{{thread.lockInfo.identityHashCode}}</dd>\n            </div>\n            <div ng-show="thread.lockOwnerId > 0">\n              <dt>Waiting for lock owned by</dt>\n              <dd><a href="" ng-click="selectThreadById(thread.lockOwnerId)">{{thread.lockOwnerId}} - {{thread.lockOwnerName}}</a></dd>\n            </div>\n            <div ng-show="thread.lockedSynchronizers.length > 0">\n              <dt>Locked Synchronizers</dt>\n              <dd>\n                <ol class="list-unstyled">\n                  <li ng-repeat="synchronizer in thread.lockedSynchronizers">\n                    <span title="Class Name">{{synchronizer.className}}</span> -\n                    <span title="Identity Hash Code">{{synchronizer.identityHashCode}}</span>\n                  </li>\n                </ol>\n              </dd>\n            </div>\n          </dl>\n        </div>\n      </div>\n      <div class="row" ng-show="thread.lockedMonitors.length > 0">\n        <div class="col-md-12">\n          <dl>\n            <dt>Locked Monitors</dt>\n            <dd>\n              <ol class="zebra-list">\n                <li ng-repeat="monitor in thread.lockedMonitors">\n                  Frame: <strong>{{monitor.lockedStackDepth}}</strong>\n                  <span class="green">{{monitor.lockedStackFrame.className}}</span>\n                  <span class="bold">.</span>\n                  <span class="blue bold">{{monitor.lockedStackFrame.methodName}}</span>\n                  &nbsp;({{monitor.lockedStackFrame.fileName}}<span ng-show="frame.lineNumber > 0">:{{monitor.lockedStackFrame.lineNumber}}</span>)\n                  <span class="orange" ng-show="monitor.lockedStackFrame.nativeMethod">(Native)</span>\n                </li>\n              </ol>\n            </dd>\n          </dl>\n        </div>\n      </div>\n      <div class="row">\n        <div class="col-md-12">\n          <dl>\n            <dt>Stack Trace</dt>\n            <dd>\n              <ol class="zebra-list">\n                <li ng-repeat="frame in thread.stackTrace">\n                  <span class="green">{{frame.className}}</span>\n                  <span class="bold">.</span>\n                  <span class="blue bold">{{frame.methodName}}</span>\n                  &nbsp;({{frame.fileName}}<span ng-show="frame.lineNumber > 0">:{{frame.lineNumber}}</span>)\n                  <span class="orange" ng-show="frame.nativeMethod">(Native)</span>\n                </li>\n              </ol>\n            </dd>\n          </dl>            \n        </div>\n      </div>\n    </div>\n  </script>\n\n</div>\n');
