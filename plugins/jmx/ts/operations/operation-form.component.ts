@@ -85,14 +85,6 @@ namespace Jmx {
         });
     }
 
-    copyResult(): void {
-      let clipboard = new window.Clipboard('.jmx-operation-result-copy', {
-        text: (trigger) => this.operationResult
-      });
-      setTimeout(() => clipboard.destroy(), 1000);
-      Core.notification('success', 'Result copied');
-    }
-
   }
 
   export const operationFormComponent: angular.IComponentOptions = {

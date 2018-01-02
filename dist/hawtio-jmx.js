@@ -6765,7 +6765,7 @@ var Jmx;
                 'jolokia': {
                     label: 'Jolokia&nbsp;URL',
                     type: 'string',
-                    readOnly: 'true'
+                    formTemplate: "\n            <div class=\"hawtio-clipboard-container\">\n              <button hawtio-clipboard=\"#attribute-jolokia-url\" class=\"btn btn-default\">\n                <i class=\"fa fa-clipboard\" aria-hidden=\"true\"></i>\n              </button>\n              <input type=\"text\" id=\"attribute-jolokia-url\" class='form-control' style=\"padding-right: 26px\" value=\"{{entity.jolokia}}\" readonly='true'>\n            </div>\n          "
                 }
             }
         };
@@ -6898,17 +6898,11 @@ var Jmx;
                 description: 'Value',
                 label: "Value",
                 type: 'string',
-                formTemplate: "<textarea class='form-control' rows='" + rows + "' readonly='true'></textarea>"
-            };
-            $scope.attributeSchemaView.properties.copyAttrValueViewToClipboard = {
-                label: '&nbsp;',
-                type: 'string',
-                formTemplate: "\n          <button class=\"btn btn-sm btn-default btn-clipboard pull-right\" data-clipboard-text=\"{{entity.attrValueView}}\"\n                  title=\"Copy value to clipboard\" aria-label=\"Copy value to clipboard\">\n            <i class=\"fa fa-clipboard\" aria-hidden=\"true\"></i>\n          </button>\n        "
+                formTemplate: "\n          <div class=\"hawtio-clipboard-container\">\n            <button hawtio-clipboard=\"#attribute-value\" class=\"btn btn-default avoid-scrollbar\">\n              <i class=\"fa fa-clipboard\" aria-hidden=\"true\"></i>\n            </button>\n            <textarea id=\"attribute-value\" class='form-control' style=\"overflow-y: scroll\" rows='" + rows + "' readonly='true'>{{entity.attrValueView}}</textarea>\n          </div>\n        "
             };
             // just to be safe, then delete not needed part of the schema
             if ($scope.attributeSchemaView) {
                 delete $scope.attributeSchemaView.properties.attrValueEdit;
-                delete $scope.attributeSchemaView.properties.copyAttrValueEditToClipboard;
             }
         }
         function initAttributeSchemaEdit($scope, rows) {
@@ -6924,17 +6918,11 @@ var Jmx;
                 description: 'Value',
                 label: "Value",
                 type: 'string',
-                formTemplate: "<textarea class='form-control' rows='" + rows + "'></textarea>"
-            };
-            $scope.attributeSchemaEdit.properties.copyAttrValueEditToClipboard = {
-                label: '&nbsp;',
-                type: 'string',
-                formTemplate: "\n          <button class=\"btn btn-sm btn-default btn-clipboard pull-right\" data-clipboard-text=\"{{entity.attrValueEdit}}\"\n                  title=\"Copy value to clipboard\" aria-label=\"Copy value to clipboard\">\n            <i class=\"fa fa-clipboard\" aria-hidden=\"true\"></i>\n          </button>\n        "
+                formTemplate: "\n          <div class=\"hawtio-clipboard-container\">\n            <button hawtio-clipboard=\"#attribute-value\" class=\"btn btn-default avoid-scrollbar\">\n              <i class=\"fa fa-clipboard\" aria-hidden=\"true\"></i>\n            </button>\n            <textarea id=\"attribute-value\" class='form-control' style=\"overflow-y: scroll\" rows='" + rows + "'>{{entity.attrValueEdit}}</textarea>\n          </div>\n        "
             };
             // just to be safe, then delete not needed part of the schema
             if ($scope.attributeSchemaEdit) {
                 delete $scope.attributeSchemaEdit.properties.attrValueView;
-                delete $scope.attributeSchemaEdit.properties.copyAttrValueViewToClipboard;
             }
         }
         function operationComplete() {
@@ -7573,7 +7561,7 @@ var Jmx;
                 {
                     name: 'Copy method name',
                     actionFn: function (action, item) {
-                        var clipboard = new window.Clipboard('.jmx-operations-list-view .dropdown-menu a', {
+                        var clipboard = new Clipboard('.jmx-operations-list-view .dropdown-menu a', {
                             text: function (trigger) { return item.readableName; }
                         });
                         setTimeout(function () { return clipboard.destroy(); }, 1000);
@@ -7583,7 +7571,7 @@ var Jmx;
                 {
                     name: 'Copy Jolokia URL',
                     actionFn: function (action, item) {
-                        var clipboard = new window.Clipboard('.jmx-operations-list-view .dropdown-menu a', {
+                        var clipboard = new Clipboard('.jmx-operations-list-view .dropdown-menu a', {
                             text: function (trigger) { return _this.buildJolokiaUrl(item); }
                         });
                         setTimeout(function () { return clipboard.destroy(); }, 1000);
@@ -7694,14 +7682,6 @@ var Jmx;
                 _this.operationResult = error.trim();
                 _this.isExecuting = false;
             });
-        };
-        OperationFormController.prototype.copyResult = function () {
-            var _this = this;
-            var clipboard = new window.Clipboard('.jmx-operation-result-copy', {
-                text: function (trigger) { return _this.operationResult; }
-            });
-            setTimeout(function () { return clipboard.destroy(); }, 1000);
-            Core.notification('success', 'Result copied');
         };
         return OperationFormController;
     }());
@@ -9745,10 +9725,10 @@ $templateCache.put('plugins/threads/html/threads.html','<div id="threads-page" c
 $templateCache.put('plugins/jmx/html/attributes/attributes.html','<script type="text/ng-template" id="gridTemplate">\n  <table class="table table-striped table-bordered table-hover jmx-attributes-table"\n    ng-class="{\'ht-table-extra-columns\': hasExtraColumns}"\n    hawtio-simple-table="gridOptions">\n  </table>\n</script>\n\n<div class="table-view" ng-controller="Jmx.AttributesController">\n\n  <h2>Attributes</h2>\n  \n  <div ng-if="gridData.length > 0">\n    <div compile="attributes"></div>\n  </div>\n\n  <!-- modal dialog to show/edit the attribute -->\n  <div hawtio-confirm-dialog="showAttributeDialog" ok-button-text="Update"\n       show-ok-button="{{entity.rw ? \'true\' : \'false\'}}" on-ok="onUpdateAttribute()" on-cancel="onCancelAttribute()"\n       cancel-button-text="Close" title="Attribute: {{entity.key}}" optional-size="lg">\n    <div class="dialog-body">\n      <!-- have a form for view and another for edit -->\n      <div simple-form ng-hide="!entity.rw" name="attributeEditor" mode="edit" entity=\'entity\' data=\'attributeSchemaEdit\'></div>\n      <div simple-form ng-hide="entity.rw" name="attributeViewer" mode="view" entity=\'entity\' data=\'attributeSchemaView\'></div>\n    </div>\n  </div>\n\n</div>\n');
 $templateCache.put('plugins/jmx/html/common/header.html','<div class="jmx-header">\n  <h1>\n    {{$ctrl.title}}\n    <small class="text-muted">{{$ctrl.objectName}}</small>\n  </h1>\n</div>\n');
 $templateCache.put('plugins/jmx/html/common/tab.html','<ul class="nav nav-tabs">\n  <li ng-class="{active: $ctrl.isTabActive(\'/jmx/attributes\')}">\n    <a href="#" ng-click="$ctrl.goto(\'/jmx/attributes\')">Attributes</a>\n  </li>\n  <li ng-class="{active: $ctrl.isTabActive(\'/jmx/operations\')}">\n    <a href="#" ng-click="$ctrl.goto(\'/jmx/operations\')">Operations</a>\n  </li>\n  <li ng-class="{active: $ctrl.isTabActive(\'/jmx/charts\') || $ctrl.isTabActive(\'/jmx/chartEdit\')}">\n    <a href="#" ng-click="$ctrl.goto(\'/jmx/charts\')">Chart</a>\n  </li>\n</ul>\n');
-$templateCache.put('plugins/jmx/html/operations/operation-form.html','<p ng-hide="$ctrl.operation.args.length">\n  This JMX operation requires no arguments. Click the \'Execute\' button to invoke the operation.\n</p>\n<p ng-show="$ctrl.operation.args.length">\n  This JMX operation requires some parameters. Fill in the fields below and click the \'Execute\' button\n  to invoke the operation.\n</p>\n\n<form class="form-horizontal" ng-submit="$ctrl.execute()">\n  <div class="form-group" ng-repeat="formField in $ctrl.formFields">\n    <label class="col-sm-2 control-label" for="{{formField.label}}">{{formField.label}}</label>\n    <div class="col-sm-10">\n      <input type="{{formField.type}}" id="{{formField.label}}" ng-class="{\'form-control\': formField.type !== \'checkbox\'}"\n        ng-model="formField.value" ng-disabled="!$ctrl.operation.canInvoke">\n      <span class="help-block">{{formField.helpText}}</span>\n    </div>\n  </div>\n  <div class="form-group">\n    <div ng-class="{\'col-sm-offset-2 col-sm-10\': $ctrl.operation.args.length, \'col-sm-12\': !$ctrl.operation.args.length}">\n      <button type="submit" class="btn btn-primary" ng-disabled="!$ctrl.operation.canInvoke || $ctrl.isExecuting">Execute</button>\n    </div>\n  </div>\n</form>\n\n<div ng-show="$ctrl.operationResult">\n  <p>\n    Result:\n    <button type="button" class="btn btn-default jmx-operation-result-copy" ng-click="$ctrl.copyResult()">\n      <span class="fa fa-clipboard"></span>\n    </button>\n  </p>\n  <pre class="jmx-operation-result" ng-class="{\'jmx-operation-error\': $ctrl.operationFailed}">{{$ctrl.operationResult}}</pre>\n</div>\n');
-$templateCache.put('plugins/jmx/html/operations/operations.html','<h2>Operations</h2>\n<p ng-if="$ctrl.operations.length === 0">\n  This MBean has no JMX operations.\n</p>\n<div ng-if="$ctrl.operations.length > 0">\n  <p>\n    This MBean supports the following JMX operations. Expand an item in the list to invoke that operation.\n  </p>\n  <pf-list-view class="jmx-operations-list-view" items="$ctrl.operations" config="$ctrl.config"\n    menu-actions="$ctrl.menuActions">\n    <div class="list-view-pf-stacked">\n      <div class="list-group-item-heading">\n        <span class="pficon pficon-locked" ng-if="!item.canInvoke"></span>\n        {{item.readableName}}\n      </div>\n      <div class="list-group-item-text">\n        {{item.description}}\n      </div>\n    </div>\n    <list-expanded-content>\n      <operation-form operation="$parent.item"></operation-form>\n    </list-expanded-content>\n  </pf-list-view>\n</div>\n');
 $templateCache.put('plugins/jmx/html/tree/content.html','<div class="tree-nav-sidebar-content">\n  <div class="spinner spinner-lg" ng-hide="$ctrl.treeFetched()"></div>\n  <div id="jmxtree" class="treeview-pf-hover treeview-pf-select"></div>\n</div>\n');
 $templateCache.put('plugins/jmx/html/tree/header.html','<div class="tree-nav-sidebar-header">\n  <form role="form" class="search-pf has-button">\n    <div class="form-group has-clear">\n      <div class="search-pf-input-group">\n        <label for="input-search" class="sr-only">Search Tree:</label>\n        <input id="input-search" type="search" class="form-control" placeholder="Search tree:"\n          ng-model="$ctrl.filter">\n        <button type="button" class="clear" aria-hidden="true"\n          ng-hide="$ctrl.filter.length === 0"\n          ng-click="$ctrl.filter = \'\'">\n          <span class="pficon pficon-close"></span>\n        </button>\n      </div>\n    </div>\n    <div class="form-group tree-nav-buttons">\n      <span class="badge" ng-class="{positive: $ctrl.result.length > 0}"\n        ng-show="$ctrl.filter.length > 0">\n        {{$ctrl.result.length}}\n      </span>\n      <i class="fa fa-plus-square-o" title="Expand All" ng-click="$ctrl.expandAll()"></i>\n      <i class="fa fa-minus-square-o" title="Collapse All" ng-click="$ctrl.contractAll()"></i>\n    </div>\n  </form>\n</div>\n');
+$templateCache.put('plugins/jmx/html/operations/operation-form.html','<p ng-hide="$ctrl.operation.args.length">\n  This JMX operation requires no arguments. Click the \'Execute\' button to invoke the operation.\n</p>\n<p ng-show="$ctrl.operation.args.length">\n  This JMX operation requires some parameters. Fill in the fields below and click the \'Execute\' button\n  to invoke the operation.\n</p>\n\n<form class="form-horizontal" ng-submit="$ctrl.execute()">\n  <div class="form-group" ng-repeat="formField in $ctrl.formFields">\n    <label class="col-sm-2 control-label" for="{{formField.label}}">{{formField.label}}</label>\n    <div class="col-sm-10">\n      <input type="{{formField.type}}" id="{{formField.label}}" ng-class="{\'form-control\': formField.type !== \'checkbox\'}"\n        ng-model="formField.value" ng-disabled="!$ctrl.operation.canInvoke">\n      <span class="help-block">{{formField.helpText}}</span>\n    </div>\n  </div>\n  <div class="form-group">\n    <div ng-class="{\'col-sm-offset-2 col-sm-10\': $ctrl.operation.args.length, \'col-sm-12\': !$ctrl.operation.args.length}">\n      <button type="submit" class="btn btn-primary" ng-disabled="!$ctrl.operation.canInvoke || $ctrl.isExecuting">Execute</button>\n    </div>\n  </div>\n</form>\n\n<form ng-show="$ctrl.operationResult">\n  <div class="form-group">\n    <label>Result</label>\n    <div class="hawtio-clipboard-container">\n      <button hawtio-clipboard="#operation-result" class="btn btn-default btn-lg">\n        <i class="fa fa-clipboard" aria-hidden="true"></i>\n      </button>\n      <pre ng-class="{\'jmx-operation-error\': $ctrl.operationFailed}">{{$ctrl.operationResult}}</pre>\n    </div>\n    <textarea id="operation-result" class="hawtio-clipboard-hidden-target">{{$ctrl.operationResult}}</textarea>\n  </div>\n</form>\n');
+$templateCache.put('plugins/jmx/html/operations/operations.html','<h2>Operations</h2>\n<p ng-if="$ctrl.operations.length === 0">\n  This MBean has no JMX operations.\n</p>\n<div ng-if="$ctrl.operations.length > 0">\n  <p>\n    This MBean supports the following JMX operations. Expand an item in the list to invoke that operation.\n  </p>\n  <pf-list-view class="jmx-operations-list-view" items="$ctrl.operations" config="$ctrl.config"\n    menu-actions="$ctrl.menuActions">\n    <div class="list-view-pf-stacked">\n      <div class="list-group-item-heading">\n        <span class="pficon pficon-locked" ng-if="!item.canInvoke"></span>\n        {{item.readableName}}\n      </div>\n      <div class="list-group-item-text">\n        {{item.description}}\n      </div>\n    </div>\n    <list-expanded-content>\n      <operation-form operation="$parent.item"></operation-form>\n    </list-expanded-content>\n  </pf-list-view>\n</div>\n');
 $templateCache.put('plugins/diagnostics/doc/help.md','## Diagnostics\n\nThe Diagnostics plugin diagnostic information about the JVM provided by the JVM DiagnosticCommand and HotspotDiangostic interfaces. The functionality is similar to the Diagnostic Commands view in Java Mission Control (jmc) or the command line tool jcmd. The plugin will provide corresponding jcmd commands in some scenarios\n\n### Flight recorder\n\nThe Java Flight Recorder can be used to record diagnostics from a running Java process.  \n\n#### Unlock\nCommercial features must be enabled in order to use the flight recorder. The padlock will be locked and no operations are available if commercial options are not enabled. Click the padlock to unlock and enable flight recordings. Note: Running commercial opions on a production system requires a valid license\n\n#### Start\nStarts a recording. \n\n#### Dump\nDumps the contents of the current recording to disk. The file path will be listed in a table below.\n\n#### Stop\nStops the current recording\n\n#### Settings\nHide/show the options pane\n\n### Class Histogram\n\nClass histogram retrieves the number of instances of loaded classes and the amount of bytes they take up. \nIf the operation is repeated it will also show the difference since last run.\n\n### JVM flags\nThis table shows the JVM diagnostic flag settings. Your are also able to modify the settings in a running JVM ');
 $templateCache.put('plugins/jmx/doc/help.md','## JMX\n\nThe [JMX](#/jmx/attributes) plugin in [hawtio](http://hawt.io "hawtio") gives a raw view of the underlying JMX metric data, allowing access to the entire JMX domain tree of MBeans.\n');
 $templateCache.put('plugins/jvm/doc/help.md','## Connect\n\nThe Connect tab allows you to connect to local and remote Jolokia instances so you can examine JVMs.\n\nThe "Remote" sub-tab is used to manually add connection details for a Jolokia instance.  You can store connection details and quickly recall the details of a connection and connect.\n\nThe use proxy option should often be enabled, as hawtio is running in your browser; usually due to CORS; you cannot open a different host or port from your browser (due to browse security restrictions); so we have to use a proxy servlet inside the hawtio web app to proxy all requests for a different jolokia server - so we can communicate with a different jolokia agent.\nIf you use the hawtio Chrome Extension this isn\u2019t required; since Chrome Extensions are allowed to connect to any host/port.\n\nThe "Local" sub-tab lists local JVMs running on your machine and allows you to install the Jolokia JVM agent into a running JVM and connect to it.\nFor this to actually work you need to have your JDK\'s "tools.jar" in the classpath, along with Jolokia\'s JVM agent jar.\n\nThe "Discover" sub-tab lists all JVMs which Jolokia could discover in the network, using its built-in discovery.\n');

@@ -92,7 +92,14 @@ namespace Jmx {
         'jolokia': {
           label: 'Jolokia&nbsp;URL',
           type: 'string',
-          readOnly: 'true'
+          formTemplate: `
+            <div class="hawtio-clipboard-container">
+              <button hawtio-clipboard="#attribute-jolokia-url" class="btn btn-default">
+                <i class="fa fa-clipboard" aria-hidden="true"></i>
+              </button>
+              <input type="text" id="attribute-jolokia-url" class='form-control' style="padding-right: 26px" value="{{entity.jolokia}}" readonly='true'>
+            </div>
+          `
         }
       }
     };
@@ -244,22 +251,18 @@ namespace Jmx {
         description: 'Value',
         label: "Value",
         type: 'string',
-        formTemplate: `<textarea class='form-control' rows='${rows}' readonly='true'></textarea>`
-      };
-      $scope.attributeSchemaView.properties.copyAttrValueViewToClipboard = {
-        label: '&nbsp;',
-        type: 'string',
         formTemplate: `
-          <button class="btn btn-sm btn-default btn-clipboard pull-right" data-clipboard-text="{{entity.attrValueView}}"
-                  title="Copy value to clipboard" aria-label="Copy value to clipboard">
-            <i class="fa fa-clipboard" aria-hidden="true"></i>
-          </button>
+          <div class="hawtio-clipboard-container">
+            <button hawtio-clipboard="#attribute-value" class="btn btn-default avoid-scrollbar">
+              <i class="fa fa-clipboard" aria-hidden="true"></i>
+            </button>
+            <textarea id="attribute-value" class='form-control' style="overflow-y: scroll" rows='${rows}' readonly='true'>{{entity.attrValueView}}</textarea>
+          </div>
         `
       };
       // just to be safe, then delete not needed part of the schema
       if ($scope.attributeSchemaView) {
         delete $scope.attributeSchemaView.properties.attrValueEdit;
-        delete $scope.attributeSchemaView.properties.copyAttrValueEditToClipboard;
       }
     }
 
@@ -276,22 +279,18 @@ namespace Jmx {
         description: 'Value',
         label: "Value",
         type: 'string',
-        formTemplate: `<textarea class='form-control' rows='${rows}'></textarea>`
-      };
-      $scope.attributeSchemaEdit.properties.copyAttrValueEditToClipboard = {
-        label: '&nbsp;',
-        type: 'string',
         formTemplate: `
-          <button class="btn btn-sm btn-default btn-clipboard pull-right" data-clipboard-text="{{entity.attrValueEdit}}"
-                  title="Copy value to clipboard" aria-label="Copy value to clipboard">
-            <i class="fa fa-clipboard" aria-hidden="true"></i>
-          </button>
+          <div class="hawtio-clipboard-container">
+            <button hawtio-clipboard="#attribute-value" class="btn btn-default avoid-scrollbar">
+              <i class="fa fa-clipboard" aria-hidden="true"></i>
+            </button>
+            <textarea id="attribute-value" class='form-control' style="overflow-y: scroll" rows='${rows}'>{{entity.attrValueEdit}}</textarea>
+          </div>
         `
       };
       // just to be safe, then delete not needed part of the schema
       if ($scope.attributeSchemaEdit) {
         delete $scope.attributeSchemaEdit.properties.attrValueView;
-        delete $scope.attributeSchemaEdit.properties.copyAttrValueViewToClipboard;
       }
     }
 

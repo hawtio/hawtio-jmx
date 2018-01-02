@@ -22,12 +22,15 @@
   </div>
 </form>
 
-<div ng-show="$ctrl.operationResult">
-  <p>
-    Result:
-    <button type="button" class="btn btn-default jmx-operation-result-copy" ng-click="$ctrl.copyResult()">
-      <span class="fa fa-clipboard"></span>
-    </button>
-  </p>
-  <pre class="jmx-operation-result" ng-class="{'jmx-operation-error': $ctrl.operationFailed}">{{$ctrl.operationResult}}</pre>
-</div>
+<form ng-show="$ctrl.operationResult">
+  <div class="form-group">
+    <label>Result</label>
+    <div class="hawtio-clipboard-container">
+      <button hawtio-clipboard="#operation-result" class="btn btn-default btn-lg">
+        <i class="fa fa-clipboard" aria-hidden="true"></i>
+      </button>
+      <pre ng-class="{'jmx-operation-error': $ctrl.operationFailed}">{{$ctrl.operationResult}}</pre>
+    </div>
+    <textarea id="operation-result" class="hawtio-clipboard-hidden-target">{{$ctrl.operationResult}}</textarea>
+  </div>
+</form>

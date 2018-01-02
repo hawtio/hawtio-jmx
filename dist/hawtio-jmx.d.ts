@@ -756,7 +756,6 @@ declare namespace Jmx {
         private static convertToHtmlInputType(javaType);
         private static getDefaultValue(javaType);
         execute(): void;
-        copyResult(): void;
     }
     const operationFormComponent: angular.IComponentOptions;
 }
