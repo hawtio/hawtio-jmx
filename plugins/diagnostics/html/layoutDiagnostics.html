@@ -9,12 +9,12 @@
     <li ng-class='{active : isActive("/diagnostics/heap")}'
         ng-show="isHeapEnabled">
       <a ng-href="#"
-         ng-click="goto('/diagnostics/heap')">Heap Use</a>
+         ng-click="goto('/diagnostics/heap')">Class Histogram</a>
     </li>
     <li ng-class='{active : isActive("/diagnostics/flags")}'
         ng-show="isFlagsEnabled">
       <a ng-href="#"
-         ng-click="goto('/diagnostics/flags')">JVM Flags</a>
+         ng-click="goto('/diagnostics/flags')">Hotspot Diagnostic</a>
     </li>
   </ul>
   <div class="row-fluid">

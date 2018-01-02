@@ -1,5 +1,7 @@
 /// <reference path="./diagnosticsPlugin.ts"/>
 /// <reference path="./diagnosticHelpers.ts"/>
+
+
 namespace Diagnostics {
 
   interface ClassStats {
@@ -26,6 +28,8 @@ namespace Diagnostics {
     tableConfig: any;
     tableDtOptions: any;
     tableColumns : Array<any>;
+    closeMessageForGood : (key: string) => void;
+    isMessageVisible : (key: string) => boolean;
   }
 
   _module.controller("Diagnostics.HeapController", ["$scope", "jolokia", ($scope: HeapControllerScope, jolokia: Jolokia.IJolokia) => {
@@ -97,6 +101,15 @@ namespace Diagnostics {
         }
       });
     };
+
+    $scope.closeMessageForGood = (key : string) => {
+      localStorage[key] = "false";
+    };
+
+    $scope.isMessageVisible = (key: string) => {
+      return localStorage[key] !== "false";
+    };
+
 
 
     function render(response) {

@@ -1,10 +1,10 @@
 <div ng-controller="Diagnostics.HeapController" class="table-view">
   <h1>Class Histogram</h1>
-  <div class="alert alert-warning alert-dismissable">
+  <div class="alert alert-warning alert-dismissable" ng-show="isMessageVisible('showClassHistogramWarning')">
     <button type="button"
             class="close"
             data-dismiss="alert"
-            aria-hidden="true"><span class="pficon pficon-close"></span></button>
+            aria-hidden="true" ng-click="closeMessageForGood('showClassHistogramWarning')"><span class="pficon pficon-close"></span></button>
     <span class="pficon pficon-warning-triangle-o"></span>
     <strong>Please note:</strong> Retrieving class histogram may be very
     expensive, depending on the size and layout of the heap.
