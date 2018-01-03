@@ -4,7 +4,7 @@
        hawtio-auto-columns=".jfr-column">
 
     <div class="jfr-column">
-      <div class="alert alert-warning alert-dismissable" ng-show="isVisible('jfrShowUnlockWarning')">
+      <div class="alert alert-warning alert-dismissable" ng-show="!jfrEnabled && isMessageVisible('jfrShowUnlockWarning')">
         <button type="button"
            class="close"
            data-dismiss="alert"
@@ -15,7 +15,7 @@
         href="http://www.oracle.com/technetwork/java/javaseproducts/overview/index.html"
         class="alert-link">license</a>.
       </div>
-      <div class="alert alert-info alert-dismissable" ng-show="isVisible('jfrShowJcmd')">
+      <div class="alert alert-info alert-dismissable" ng-show="isMessageVisible('jfrShowJcmd')">
         <button type="button"
                 class="close"
                 data-dismiss="alert"

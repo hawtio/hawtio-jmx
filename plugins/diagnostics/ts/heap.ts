@@ -1,7 +1,5 @@
 /// <reference path="./diagnosticsPlugin.ts"/>
 /// <reference path="./diagnosticHelpers.ts"/>
-
-
 namespace Diagnostics {
 
   interface ClassStats {
