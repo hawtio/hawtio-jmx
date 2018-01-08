@@ -62,9 +62,11 @@ namespace Diagnostics {
     settingsVisible: boolean;
     toggleSettingsVisible: () => void;
     jcmd: string;
+    closeMessageForGood: (key: string) => void;
+    isMessageVisible: (key: string) => boolean;
   }
 
-  let JfrController = _module.controller("Diagnostics.JfrController", ["$scope", "$location", "workspace", "jolokia", ($scope: JfrControllerScope, $location: ng.ILocationService, workspace: Jmx.Workspace, jolokia: Jolokia.IJolokia) => {
+  let JfrController = _module.controller("Diagnostics.JfrController", ["$scope", "$location", "workspace", "jolokia", "localStorage", ($scope: JfrControllerScope, $location: ng.ILocationService, workspace: Jmx.Workspace, jolokia: Jolokia.IJolokia, localStorage: Storage) => {
 
     function render(response) {
 
@@ -246,6 +248,13 @@ namespace Diagnostics {
         });
 
 
+    };
+    $scope.closeMessageForGood = (key : string) => {
+      localStorage[key] = "false";
+    };
+
+    $scope.isMessageVisible = (key: string) => {
+      return localStorage[key] !== "false";
     };
 
     $scope.stopRecording = () => {
