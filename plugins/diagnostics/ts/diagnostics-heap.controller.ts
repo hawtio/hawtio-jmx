@@ -1,8 +1,8 @@
-/// <reference path="./diagnosticsPlugin.ts"/>
-/// <reference path="./diagnosticHelpers.ts"/>
+/// <reference path="./diagnostics.service.ts"/>
+
 namespace Diagnostics {
 
-  interface ClassStats {
+  export interface ClassStats {
     num: string;
     count: string;
     bytes: string;
@@ -11,7 +11,7 @@ namespace Diagnostics {
     deltaBytes: string;
   }
 
-  interface HeapControllerScope extends ng.IScope {
+  export interface HeapControllerScope extends ng.IScope {
     classHistogram: string;
     status: string;
     loading: boolean;
@@ -25,12 +25,14 @@ namespace Diagnostics {
     byteCounts: any;
     tableConfig: any;
     tableDtOptions: any;
-    tableColumns : Array<any>;
-    closeMessageForGood : (key: string) => void;
-    isMessageVisible : (key: string) => boolean;
+    tableColumns: Array<any>;
+    closeMessageForGood: (key: string) => void;
+    isMessageVisible: (key: string) => boolean;
   }
 
-  _module.controller("Diagnostics.HeapController", ["$scope", "jolokia", ($scope: HeapControllerScope, jolokia: Jolokia.IJolokia) => {
+  export function DiagnosticsHeapController($scope: HeapControllerScope, jolokia: Jolokia.IJolokia,
+    diagnosticsService: DiagnosticsService) {
+    'ngInject';
 
     $scope.classHistogram = '';
     $scope.status = '';
@@ -80,7 +82,7 @@ namespace Diagnostics {
 
     $scope.loading = false;
     $scope.lastLoaded = 'n/a';
-    $scope.pid = findMyPid($scope.pageTitle);
+    $scope.pid = diagnosticsService.findMyPid($scope.pageTitle);
 
     $scope.loadClassStats = () => {
       $scope.loading = true;
@@ -91,24 +93,22 @@ namespace Diagnostics {
         operation: 'gcClassHistogram([Ljava.lang.String;)',
         arguments: ['']
       }, {
-        success: render,
-        error: (response) => {
-          $scope.status = 'Could not get class histogram : ' + response.error;
-          $scope.loading = false;
-          Core.$apply($scope);
-        }
-      });
+          success: render,
+          error: (response) => {
+            $scope.status = 'Could not get class histogram : ' + response.error;
+            $scope.loading = false;
+            Core.$apply($scope);
+          }
+        });
     };
 
-    $scope.closeMessageForGood = (key : string) => {
+    $scope.closeMessageForGood = (key: string) => {
       localStorage[key] = "false";
     };
 
     $scope.isMessageVisible = (key: string) => {
       return localStorage[key] !== "false";
     };
-
-
 
     function render(response) {
       $scope.classHistogram = response.value;
@@ -191,7 +191,6 @@ namespace Diagnostics {
 
     }
 
-
-  }]);
+  }
 
 }

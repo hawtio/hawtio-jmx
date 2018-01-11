@@ -2,7 +2,23 @@
 /// <reference types="angular" />
 /// <reference types="jquery" />
 /// <reference types="core" />
+/// <reference types="forms" />
 /// <reference types="angular-route" />
+declare namespace Diagnostics {
+    interface JvmFlag {
+        name: string;
+        value: any;
+        writeable: boolean;
+        origin: string;
+        deregisterWatch: any;
+        dataType: string;
+    }
+    interface JvmFlagsScope extends ng.IScope {
+        flags: Array<JvmFlag>;
+        tableDef: any;
+    }
+    function DiagnosticsFlagsController($scope: JvmFlagsScope, jolokia: Jolokia.IJolokia): void;
+}
 declare namespace Jmx {
     /**
      * a NodeSelection interface so we can expose things like the objectName and the MBean's entries
@@ -551,31 +567,95 @@ declare namespace Jmx {
     }
 }
 declare namespace Diagnostics {
+    class DiagnosticsService {
+        private workspace;
+        private configManager;
+        constructor(workspace: Jmx.Workspace, configManager: Core.ConfigManager);
+        getTabs(): any[];
+        private hasHotspotDiagnostic();
+        private hasDiagnosticFunction(operation);
+        findMyPid(title: any): string;
+    }
+}
+declare namespace Diagnostics {
+    interface ClassStats {
+        num: string;
+        count: string;
+        bytes: string;
+        name: string;
+        deltaCount: string;
+        deltaBytes: string;
+    }
+    interface HeapControllerScope extends ng.IScope {
+        classHistogram: string;
+        status: string;
+        loading: boolean;
+        pid: string;
+        lastLoaded: any;
+        loadClassStats: () => void;
+        classes: Array<ClassStats>;
+        tableDef: any;
+        pageTitle: string;
+        instanceCounts: any;
+        byteCounts: any;
+        tableConfig: any;
+        tableDtOptions: any;
+        tableColumns: Array<any>;
+        closeMessageForGood: (key: string) => void;
+        isMessageVisible: (key: string) => boolean;
+    }
+    function DiagnosticsHeapController($scope: HeapControllerScope, jolokia: Jolokia.IJolokia, diagnosticsService: DiagnosticsService): void;
+}
+declare namespace Diagnostics {
+    interface JfrSettings {
+        limitType: string;
+        limitValue: string;
+        recordingNumber: string;
+        dumpOnExit: boolean;
+        name: string;
+        filename: string;
+    }
+    interface Recording {
+        number: string;
+        size: string;
+        file: string;
+        time: number;
+    }
+    interface JfrControllerScope extends ng.IScope {
+        forms: any;
+        jfrEnabled: boolean;
+        isRecording: boolean;
+        isRunning: boolean;
+        jfrSettings: JfrSettings;
+        unlock: () => void;
+        startRecording: () => void;
+        stopRecording: () => void;
+        dumpRecording: () => void;
+        formConfig: Forms.FormConfiguration;
+        recordings: Array<Recording>;
+        pid: string;
+        jfrStatus: string;
+        pageTitle: string;
+        settingsVisible: boolean;
+        toggleSettingsVisible: () => void;
+        jcmd: string;
+        closeMessageForGood: (key: string) => void;
+        isMessageVisible: (key: string) => boolean;
+    }
+    function DiagnosticsJfrController($scope: JfrControllerScope, $location: ng.ILocationService, workspace: Jmx.Workspace, jolokia: Jolokia.IJolokia, localStorage: Storage, diagnosticsService: DiagnosticsService): void;
+}
+declare namespace Diagnostics {
+    function DiagnosticsLayoutController($location: any, diagnosticsService: any): void;
+}
+declare namespace Diagnostics {
+    function DiagnosticsConfig(configManager: Core.ConfigManager): void;
+}
+declare namespace Diagnostics {
+    function DiagnosticsInit($rootScope: ng.IScope, viewRegistry: any, helpRegistry: any, workspace: Jmx.Workspace, diagnosticsService: DiagnosticsService): void;
+}
+declare namespace Diagnostics {
     const log: Logging.Logger;
-    /**
-     * Adds common properties and functions to the scope
-     * @method configureScope
-     * @for Diagnostics
-     * @param {*} $scope
-     * @param {ng.ILocationService} $location
-     * @param {Core.Workspace} workspace
-     */
-    function configureScope($scope: any, $location: any, workspace: any): void;
-    function hasHotspotDiagnostic(workspace: any): any;
-    function hasDiagnosticFunction(workspace: Jmx.Workspace, operation: string): Core.JMXOperation;
-    function initialTab(workspace: Jmx.Workspace): string;
-    function findMyPid(title: any): string;
-}
-declare namespace Diagnostics {
     const _module: angular.IModule;
-}
-declare namespace Diagnostics {
-}
-declare namespace Diagnostics {
-}
-declare namespace Diagnostics {
-}
-declare namespace Diagnostics {
 }
 declare namespace Jmx {
     function createDashboardLink(widgetType: any, widget: any): string;

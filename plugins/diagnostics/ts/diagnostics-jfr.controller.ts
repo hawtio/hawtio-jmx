@@ -1,4 +1,5 @@
-/// <reference path="diagnosticsPlugin.ts"/>
+/// <reference path="diagnostics.service.ts"/>
+
 namespace Diagnostics {
 
   function splitResponse(response: string) {
@@ -28,7 +29,7 @@ namespace Diagnostics {
     ];
   }
 
-  interface JfrSettings {
+  export interface JfrSettings {
     limitType: string;
     limitValue: string;
     recordingNumber: string;
@@ -37,14 +38,14 @@ namespace Diagnostics {
     filename: string;
   }
 
-  interface Recording {
+  export interface Recording {
     number: string;
     size: string;
     file: string;
     time: number;
   }
 
-  interface JfrControllerScope extends ng.IScope {
+  export interface JfrControllerScope extends ng.IScope {
     forms: any;
     jfrEnabled: boolean;
     isRecording: boolean;
@@ -66,103 +67,12 @@ namespace Diagnostics {
     isMessageVisible: (key: string) => boolean;
   }
 
-  let JfrController = _module.controller("Diagnostics.JfrController", ["$scope", "$location", "workspace", "jolokia", "localStorage", ($scope: JfrControllerScope, $location: ng.ILocationService, workspace: Jmx.Workspace, jolokia: Jolokia.IJolokia, localStorage: Storage) => {
-
-    function render(response) {
-
-
-      let statusString = response.value;
-      $scope.jfrEnabled = statusString.indexOf("not enabled") == -1;
-      $scope.isRunning = statusString.indexOf("(running)") > -1;
-      $scope.isRecording = $scope.isRunning || statusString.indexOf("(stopped)") > -1;
-      if ((statusString.indexOf("Use JFR.") > -1 || statusString
-          .indexOf("Use VM.") > -1)
-        && $scope.pid) {
-        statusString = statusString.replace("Use ",
-          "Use command line: jcmd " + $scope.pid + " ");
-      }
-      $scope.jfrStatus = statusString;
-      if ($scope.isRecording) {
-        let regex = /recording=(\d+) name="(.+?)"/g;
-        if ($scope.isRunning) { //if there are several recordings (some stopped), make sure we parse the running one
-          regex = /recording=(\d+) name="(.+?)".+?\(running\)/g;
-        }
-
-        const parsed = regex.exec(statusString);
-        $scope.jfrSettings.recordingNumber = parsed[1];
-        $scope.jfrSettings.name = parsed[2];
-        const parsedFilename = statusString.match(/filename="(.+)"/);
-        if (parsedFilename && parsedFilename[1]) {
-          $scope.jfrSettings.filename = parsedFilename[1];
-        } else {
-          $scope.jfrSettings.filename = 'recording' + parsed[1] + '.jfr';
-        }
-
-      }
-      Core.$apply($scope);
-    }
-
-    function addRecording(recording: Recording, recordings: Array<Recording>) {
-      for (let i = 0; i < recordings.length; i++) {
-        if (recordings[i].file === recording.file) {
-          recordings[i] = recording;
-          return;
-        }
-      }
-      recordings.push(recording);
-    }
-
-    function showArguments(arguments: Array<any>) {
-      let result = '';
-      let first = true;
-      for (let i = 0; i < arguments.length; i++) {
-        if (first) {
-          first = false;
-        } else {
-          result += ',';
-        }
-        result += arguments[i];
-      }
-      return result;
-    }
-
-    function executeDiagnosticFunction(operation: string, jcmd: string, arguments, callback) {
-      Diagnostics.log.debug(Date.now() + " Invoking operation "
-        + operation + " with arguments" + arguments + " settings: " + JSON.stringify($scope.jfrSettings));
-      $scope.jcmd = 'jcmd ' + $scope.pid + ' ' + jcmd + ' ' + showArguments(arguments);
-      jolokia.request([{
-        type: "exec",
-        operation: operation,
-        mbean: 'com.sun.management:type=DiagnosticCommand',
-        arguments: arguments
-      }, {
-        type: 'exec',
-        operation: 'jfrCheck([Ljava.lang.String;)',
-        mbean: 'com.sun.management:type=DiagnosticCommand',
-        arguments: ['']
-      }], Core.onSuccess(function (response) {
-
-        Diagnostics.log.debug("Diagnostic Operation "
-          + operation + " was successful" + response.value);
-        if (response.request.operation.indexOf("jfrCheck") > -1) {
-          render(response);
-        } else {
-          if (callback) {
-            callback(response.value);
-          }
-          Core.$apply($scope);
-        }
-      }, {
-        error: function (response) {
-          Diagnostics.log.warn("Diagnostic Operation "
-            + operation + " failed", response);
-        }
-      }));
-    }
-
+  export function DiagnosticsJfrController($scope: JfrControllerScope, $location: ng.ILocationService,
+    workspace: Jmx.Workspace, jolokia: Jolokia.IJolokia, localStorage: Storage, diagnosticsService: DiagnosticsService) {
+    'ngInject';
 
     $scope.forms = {};
-    $scope.pid = findMyPid($scope.pageTitle);
+    $scope.pid = diagnosticsService.findMyPid($scope.pageTitle);
     $scope.recordings = [];
     $scope.settingsVisible = false;
 
@@ -174,7 +84,6 @@ namespace Diagnostics {
       recordingNumber: '',
       filename: ''
     };
-
 
     $scope.formConfig = <Forms.FormConfiguration>{
       properties: <Forms.FormProperties>{
@@ -249,7 +158,7 @@ namespace Diagnostics {
 
 
     };
-    $scope.closeMessageForGood = (key : string) => {
+    $scope.closeMessageForGood = (key: string) => {
       localStorage[key] = "false";
     };
 
@@ -278,5 +187,95 @@ namespace Diagnostics {
     }], Core.onSuccess(render));
 
 
-  }]);
+    function render(response) {
+      let statusString = response.value;
+      $scope.jfrEnabled = statusString.indexOf("not enabled") == -1;
+      $scope.isRunning = statusString.indexOf("(running)") > -1;
+      $scope.isRecording = $scope.isRunning || statusString.indexOf("(stopped)") > -1;
+      if ((statusString.indexOf("Use JFR.") > -1 || statusString
+        .indexOf("Use VM.") > -1)
+        && $scope.pid) {
+        statusString = statusString.replace("Use ",
+          "Use command line: jcmd " + $scope.pid + " ");
+      }
+      $scope.jfrStatus = statusString;
+      if ($scope.isRecording) {
+        let regex = /recording=(\d+) name="(.+?)"/g;
+        if ($scope.isRunning) { //if there are several recordings (some stopped), make sure we parse the running one
+          regex = /recording=(\d+) name="(.+?)".+?\(running\)/g;
+        }
+
+        const parsed = regex.exec(statusString);
+        $scope.jfrSettings.recordingNumber = parsed[1];
+        $scope.jfrSettings.name = parsed[2];
+        const parsedFilename = statusString.match(/filename="(.+)"/);
+        if (parsedFilename && parsedFilename[1]) {
+          $scope.jfrSettings.filename = parsedFilename[1];
+        } else {
+          $scope.jfrSettings.filename = 'recording' + parsed[1] + '.jfr';
+        }
+
+      }
+      Core.$apply($scope);
+    }
+
+    function addRecording(recording: Recording, recordings: Array<Recording>) {
+      for (let i = 0; i < recordings.length; i++) {
+        if (recordings[i].file === recording.file) {
+          recordings[i] = recording;
+          return;
+        }
+      }
+      recordings.push(recording);
+    }
+
+    function showArguments(arguments: Array<any>) {
+      let result = '';
+      let first = true;
+      for (let i = 0; i < arguments.length; i++) {
+        if (first) {
+          first = false;
+        } else {
+          result += ',';
+        }
+        result += arguments[i];
+      }
+      return result;
+    }
+
+    function executeDiagnosticFunction(operation: string, jcmd: string, arguments, callback) {
+      Diagnostics.log.debug(Date.now() + " Invoking operation "
+        + operation + " with arguments" + arguments + " settings: " + JSON.stringify($scope.jfrSettings));
+      $scope.jcmd = 'jcmd ' + $scope.pid + ' ' + jcmd + ' ' + showArguments(arguments);
+      jolokia.request([{
+        type: "exec",
+        operation: operation,
+        mbean: 'com.sun.management:type=DiagnosticCommand',
+        arguments: arguments
+      }, {
+        type: 'exec',
+        operation: 'jfrCheck([Ljava.lang.String;)',
+        mbean: 'com.sun.management:type=DiagnosticCommand',
+        arguments: ['']
+      }], Core.onSuccess(function (response) {
+        Diagnostics.log.debug("Diagnostic Operation "
+          + operation + " was successful" + response.value);
+        if (response.request.operation.indexOf("jfrCheck") > -1) {
+          render(response);
+        } else {
+          if (callback) {
+            callback(response.value);
+          }
+          Core.$apply($scope);
+        }
+      }, {
+        error: function (response) {
+          Diagnostics.log.warn("Diagnostic Operation "
+            + operation + " failed", response);
+        }
+      }));
+    }
+
+  }
+
 }

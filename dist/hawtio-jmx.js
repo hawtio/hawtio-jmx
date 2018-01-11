@@ -3856,6 +3856,103 @@ var __extends = (this && this.__extends) || (function () {
         d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
     };
 })();
+var Diagnostics;
+(function (Diagnostics) {
+    DiagnosticsFlagsController.$inject = ["$scope", "jolokia"];
+    function DiagnosticsFlagsController($scope, jolokia) {
+        'ngInject';
+        var readRequest = {
+            type: 'read',
+            mbean: 'com.sun.management:type=HotSpotDiagnostic',
+            arguments: []
+        };
+        $scope.flags = [];
+        $scope.tableDef = tableDef();
+        Core.register(jolokia, $scope, [readRequest], Core.onSuccess(render));
+        function render(response) {
+            //remove watches on previous content
+            for (var i = 0; i < $scope.flags.length; i++) {
+                $scope.flags[i].deregisterWatch();
+            }
+            $scope.flags = response.value.DiagnosticOptions;
+            for (var i = 0; i < $scope.flags.length; i++) {
+                var flag = $scope.flags[i];
+                flag.value = parseValue(flag.value); //convert to typed value
+                if (flag.writeable) {
+                    flag.dataType = typeof (flag.value);
+                }
+                else {
+                    flag.dataType = "readonly";
+                }
+                flag.deregisterWatch = $scope.$watch('flags[' + i + ']', function (newValue, oldValue) {
+                    if (newValue.value != oldValue.value) {
+                        jolokia.request([{
+                                type: 'exec',
+                                mbean: 'com.sun.management:type=HotSpotDiagnostic',
+                                operation: 'setVMOption(java.lang.String,java.lang.String)',
+                                arguments: [newValue.name, newValue.value]
+                            }, readRequest], Core.onSuccess(function (response) {
+                            if (response.request.type === "read") {
+                                render(response);
+                            }
+                            else {
+                                Diagnostics.log.info("Set VM option " + newValue.name + "=" + newValue.value);
+                            }
+                        }));
+                    }
+                }, true);
+            }
+            Core.$apply($scope);
+        }
+        function parseValue(value) {
+            if (typeof (value) === "string") {
+                if (value.match(/true/)) {
+                    return true;
+                }
+                else if (value.match(/false/)) {
+                    return false;
+                }
+                else if (value.match(/\d+/)) {
+                    return Number(value);
+                }
+            }
+            return value;
+        }
+        function tableDef() {
+            return {
+                selectedItems: [],
+                data: 'flags',
+                showFilter: true,
+                filterOptions: {
+                    filterText: ''
+                },
+                showSelectionCheckbox: false,
+                enableRowClickSelection: true,
+                multiSelect: false,
+                primaryKeyFn: function (entity, idx) {
+                    return entity.name;
+                },
+                columnDefs: [
+                    {
+                        field: 'name',
+                        displayName: 'VM Flag',
+                        resizable: true
+                    }, {
+                        field: 'origin',
+                        displayName: 'Origin',
+                        resizable: true
+                    }, {
+                        field: 'value',
+                        displayName: 'Value',
+                        resizable: true,
+                        cellTemplate: '<div ng-switch on="row.entity.dataType"><span ng-switch-when="readonly">{{row.entity.value}}</span><input ng-switch-when="boolean" type="checkbox" ng-model="row.entity.value"></input><input ng-switch-when="string" type="text" ng-model="row.entity.value"></input><input ng-switch-when="number" type="number" ng-model="row.entity.value"></input></div>'
+                    }
+                ]
+            };
+        }
+    }
+    Diagnostics.DiagnosticsFlagsController = DiagnosticsFlagsController;
+})(Diagnostics || (Diagnostics = {}));
 var Jmx;
 (function (Jmx) {
     /**
@@ -5980,343 +6077,208 @@ var Jmx;
 /// <reference path="../../jmx/ts/workspace.ts"/>
 var Diagnostics;
 (function (Diagnostics) {
-    Diagnostics.log = Logger.get("Diagnostics");
-    /**
-     * Adds common properties and functions to the scope
-     * @method configureScope
-     * @for Diagnostics
-     * @param {*} $scope
-     * @param {ng.ILocationService} $location
-     * @param {Core.Workspace} workspace
-     */
-    function configureScope($scope, $location, workspace) {
-        $scope.isActive = function (href) {
-            var tidy = Core.trimLeading(href, "#");
-            var loc = $location.path();
-            return loc === tidy;
+    var DiagnosticsService = /** @class */ (function () {
+        DiagnosticsService.$inject = ["workspace", "configManager"];
+        function DiagnosticsService(workspace, configManager) {
+            'ngInject';
+            this.workspace = workspace;
+            this.configManager = configManager;
+        }
+        DiagnosticsService.prototype.getTabs = function () {
+            var tabs = [];
+            if (this.hasDiagnosticFunction('jfrCheck') && this.configManager.isRouteEnabled('/diagnostics/jfr')) {
+                tabs.push(new Core.HawtioTab('Flight Recorder', '/diagnostics/jfr'));
+            }
+            if (this.hasDiagnosticFunction('gcClassHistogram') && this.configManager.isRouteEnabled('/diagnostics/heap')) {
+                tabs.push(new Core.HawtioTab('Class Histogram', '/diagnostics/heap'));
+            }
+            if (this.hasHotspotDiagnostic() && this.configManager.isRouteEnabled('/diagnostics/flags')) {
+                tabs.push(new Core.HawtioTab('Hotspot Diagnostic', '/diagnostics/flags'));
+            }
+            return tabs;
         };
-        $scope.isValid = function (link) {
-            return link && link.isValid(workspace);
+        DiagnosticsService.prototype.hasHotspotDiagnostic = function () {
+            return this.workspace.treeContainsDomainAndProperties('com.sun.management', { type: 'HotSpotDiagnostic' });
         };
-        $scope.goto = function (path) {
-            $location.path(path);
+        DiagnosticsService.prototype.hasDiagnosticFunction = function (operation) {
+            var diagnostics = this.workspace.findMBeanWithProperties('com.sun.management', { type: 'DiagnosticCommand' });
+            return diagnostics && diagnostics.mbean && diagnostics.mbean.op && diagnostics.mbean.op[operation];
         };
-        $scope.isJfrEnabled = hasDiagnosticFunction(workspace, 'jfrCheck');
-        $scope.isHeapEnabled = hasDiagnosticFunction(workspace, 'gcClassHistogram');
-        $scope.isFlagsEnabled = hasHotspotDiagnostic(workspace);
-    }
-    Diagnostics.configureScope = configureScope;
-    function hasHotspotDiagnostic(workspace) {
-        return workspace.treeContainsDomainAndProperties('com.sun.management', { type: 'HotSpotDiagnostic' });
-    }
-    Diagnostics.hasHotspotDiagnostic = hasHotspotDiagnostic;
-    function hasDiagnosticFunction(workspace, operation) {
-        var diagnostics = workspace.findMBeanWithProperties('com.sun.management', { type: 'DiagnosticCommand' });
-        return diagnostics && diagnostics.mbean && diagnostics.mbean.op && diagnostics.mbean.op[operation];
-    }
-    Diagnostics.hasDiagnosticFunction = hasDiagnosticFunction;
-    function initialTab(workspace) {
-        if (hasDiagnosticFunction(workspace, 'jfrCheck')) {
-            return '/jfr';
-        }
-        else if (hasDiagnosticFunction(workspace, 'gcClassHistogram')) {
-            return '/heap';
-        }
-        else if (hasHotspotDiagnostic(workspace)) {
-            return '/flags';
-        }
-        else {
-            return '';
-        }
-    }
-    Diagnostics.initialTab = initialTab;
-    function findMyPid(title) {
-        //snatch PID from window title
-        var regex = /pid:(\d+)/g;
-        var pid = regex.exec(title);
-        if (pid && pid[1]) {
-            return pid[1];
-        }
-        else {
-            return null;
-        }
-    }
-    Diagnostics.findMyPid = findMyPid;
+        DiagnosticsService.prototype.findMyPid = function (title) {
+            //snatch PID from window title
+            var regex = /pid:(\d+)/g;
+            var pid = regex.exec(title);
+            if (pid && pid[1]) {
+                return pid[1];
+            }
+            else {
+                return null;
+            }
+        };
+        return DiagnosticsService;
+    }());
+    Diagnostics.DiagnosticsService = DiagnosticsService;
 })(Diagnostics || (Diagnostics = {}));
-/// <reference path="diagnosticHelpers.ts"/>
+/// <reference path="./diagnostics.service.ts"/>
 var Diagnostics;
 (function (Diagnostics) {
-    var rootPath = 'plugins/diagnostics';
-    var templatePath = rootPath + '/html/';
-    var pluginName = 'diagnostics';
-    Diagnostics._module = angular.module(pluginName, ['datatable', 'hawtio-forms']);
-    Diagnostics._module.config(["$routeProvider", function ($routeProvider) {
-            $routeProvider.when('/diagnostics/jfr', { templateUrl: templatePath + 'jfr.html' }).when('/diagnostics/heap', { templateUrl: templatePath + 'heap.html' }).when('/diagnostics/flags', { templateUrl: templatePath + 'flags.html' });
-        }]);
-    Diagnostics._module.run(["$location", "workspace", "viewRegistry", "layoutFull", "helpRegistry", "preferencesRegistry", function ($location, workspace, viewRegistry, layoutFull, helpRegistry, preferencesRegistry) {
-            viewRegistry[pluginName] = templatePath + 'layoutDiagnostics.html';
-            helpRegistry.addUserDoc('diagnostics', 'plugins/diagnostics/doc/help.md');
-            workspace.topLevelTabs.push({
-                id: "diagnostics",
-                content: "Diagnostics",
-                title: "JVM Diagnostics",
-                isValid: function (workspace) {
-                    return workspace.treeContainsDomainAndProperties("com.sun.management") && Diagnostics.initialTab(workspace);
-                },
-                href: function () {
-                    return '#/diagnostics' + Diagnostics.initialTab(workspace);
-                },
-                isActive: function (workspace) { return workspace.isLinkActive("diagnostics"); }
+    DiagnosticsHeapController.$inject = ["$scope", "jolokia", "diagnosticsService"];
+    function DiagnosticsHeapController($scope, jolokia, diagnosticsService) {
+        'ngInject';
+        $scope.classHistogram = '';
+        $scope.status = '';
+        $scope.classes = [{
+                num: null,
+                count: null,
+                bytes: null,
+                deltaBytes: null,
+                deltaCount: null,
+                name: 'Click refresh to read class histogram'
+            }];
+        $scope.tableConfig = {
+            selectionMatchProp: 'name',
+            showCheckboxes: false
+        };
+        $scope.tableDtOptions = {
+            order: [[0, "asc"]]
+        };
+        $scope.tableColumns = [
+            {
+                header: '#',
+                itemField: 'num'
+            },
+            {
+                header: 'Instances',
+                itemField: 'count'
+            },
+            {
+                header: '<delta',
+                itemField: 'deltaCount'
+            },
+            {
+                header: 'Bytes',
+                itemField: 'bytes'
+            },
+            {
+                header: '<delta',
+                itemField: 'deltaBytes'
+            },
+            {
+                header: 'Class name',
+                itemField: 'name'
+            }
+        ];
+        $scope.loading = false;
+        $scope.lastLoaded = 'n/a';
+        $scope.pid = diagnosticsService.findMyPid($scope.pageTitle);
+        $scope.loadClassStats = function () {
+            $scope.loading = true;
+            Core.$apply($scope);
+            jolokia.request({
+                type: 'exec',
+                mbean: 'com.sun.management:type=DiagnosticCommand',
+                operation: 'gcClassHistogram([Ljava.lang.String;)',
+                arguments: ['']
+            }, {
+                success: render,
+                error: function (response) {
+                    $scope.status = 'Could not get class histogram : ' + response.error;
+                    $scope.loading = false;
+                    Core.$apply($scope);
+                }
             });
-        }]);
-    hawtioPluginLoader.addModule(pluginName);
-})(Diagnostics || (Diagnostics = {}));
-/// <reference path="./diagnosticsPlugin.ts"/>
-var Diagnostics;
-(function (Diagnostics) {
-    Diagnostics._module.controller("Diagnostics.FlagsController", ["$scope", "jolokia", function ($scope, jolokia) {
-            $scope.flags = [];
-            $scope.tableDef = tableDef();
-            var readRequest = {
-                type: 'read',
-                mbean: 'com.sun.management:type=HotSpotDiagnostic',
-                arguments: []
-            };
-            Core.register(jolokia, $scope, [readRequest], Core.onSuccess(render));
-            function render(response) {
-                //remove watches on previous content
-                for (var i = 0; i < $scope.flags.length; i++) {
-                    $scope.flags[i].deregisterWatch();
+        };
+        $scope.closeMessageForGood = function (key) {
+            localStorage[key] = "false";
+        };
+        $scope.isMessageVisible = function (key) {
+            return localStorage[key] !== "false";
+        };
+        function render(response) {
+            $scope.classHistogram = response.value;
+            var lines = response.value.split('\n');
+            var parsed = [];
+            var classCounts = {};
+            var bytesCounts = {};
+            for (var i = 0; i < lines.length; i++) {
+                var values = lines[i].match(/\s*(\d+):\s*(\d+)\s*(\d+)\s*(\S+)\s*/);
+                if (values && values.length >= 5) {
+                    var className = translateJniName(values[4]);
+                    var count = values[2];
+                    var bytes = values[3];
+                    var entry = {
+                        num: values[1],
+                        count: count,
+                        bytes: bytes,
+                        name: className,
+                        deltaCount: findDelta($scope.instanceCounts, className, count),
+                        deltaBytes: findDelta($scope.byteCounts, className, bytes)
+                    };
+                    parsed.push(entry);
+                    classCounts[className] = count;
+                    bytesCounts[className] = bytes;
                 }
-                $scope.flags = response.value.DiagnosticOptions;
-                for (var i = 0; i < $scope.flags.length; i++) {
-                    var flag = $scope.flags[i];
-                    flag.value = parseValue(flag.value); //convert to typed value
-                    if (flag.writeable) {
-                        flag.dataType = typeof (flag.value);
-                    }
-                    else {
-                        flag.dataType = "readonly";
-                    }
-                    flag.deregisterWatch = $scope.$watch('flags[' + i + ']', function (newValue, oldValue) {
-                        if (newValue.value != oldValue.value) {
-                            jolokia.request([{
-                                    type: 'exec',
-                                    mbean: 'com.sun.management:type=HotSpotDiagnostic',
-                                    operation: 'setVMOption(java.lang.String,java.lang.String)',
-                                    arguments: [newValue.name, newValue.value]
-                                }, readRequest], Core.onSuccess(function (response) {
-                                if (response.request.type === "read") {
-                                    render(response);
-                                }
-                                else {
-                                    Diagnostics.log.info("Set VM option " + newValue.name + "=" + newValue.value);
-                                }
-                            }));
-                        }
-                    }, true);
-                }
-                Core.$apply($scope);
             }
-            function parseValue(value) {
-                if (typeof (value) === "string") {
-                    if (value.match(/true/)) {
-                        return true;
-                    }
-                    else if (value.match(/false/)) {
-                        return false;
-                    }
-                    else if (value.match(/\d+/)) {
-                        return Number(value);
-                    }
-                }
-                return value;
-            }
-            function tableDef() {
-                return {
-                    selectedItems: [],
-                    data: 'flags',
-                    showFilter: true,
-                    filterOptions: {
-                        filterText: ''
-                    },
-                    showSelectionCheckbox: false,
-                    enableRowClickSelection: true,
-                    multiSelect: false,
-                    primaryKeyFn: function (entity, idx) {
-                        return entity.name;
-                    },
-                    columnDefs: [
-                        {
-                            field: 'name',
-                            displayName: 'VM Flag',
-                            resizable: true
-                        }, {
-                            field: 'origin',
-                            displayName: 'Origin',
-                            resizable: true
-                        }, {
-                            field: 'value',
-                            displayName: 'Value',
-                            resizable: true,
-                            cellTemplate: '<div ng-switch on="row.entity.dataType"><span ng-switch-when="readonly">{{row.entity.value}}</span><input ng-switch-when="boolean" type="checkbox" ng-model="row.entity.value"></input><input ng-switch-when="string" type="text" ng-model="row.entity.value"></input><input ng-switch-when="number" type="number" ng-model="row.entity.value"></input></div>'
-                        }
-                    ]
-                };
-            }
-        }]);
-})(Diagnostics || (Diagnostics = {}));
-/// <reference path="./diagnosticsPlugin.ts"/>
-/// <reference path="./diagnosticHelpers.ts"/>
-var Diagnostics;
-(function (Diagnostics) {
-    Diagnostics._module.controller("Diagnostics.HeapController", ["$scope", "jolokia", function ($scope, jolokia) {
-            $scope.classHistogram = '';
-            $scope.status = '';
-            $scope.classes = [{
-                    num: null,
-                    count: null,
-                    bytes: null,
-                    deltaBytes: null,
-                    deltaCount: null,
-                    name: 'Click refresh to read class histogram'
-                }];
-            $scope.tableConfig = {
-                selectionMatchProp: 'name',
-                showCheckboxes: false
-            };
-            $scope.tableDtOptions = {
-                order: [[0, "asc"]]
-            };
-            $scope.tableColumns = [
-                {
-                    header: '#',
-                    itemField: 'num'
-                },
-                {
-                    header: 'Instances',
-                    itemField: 'count'
-                },
-                {
-                    header: '<delta',
-                    itemField: 'deltaCount'
-                },
-                {
-                    header: 'Bytes',
-                    itemField: 'bytes'
-                },
-                {
-                    header: '<delta',
-                    itemField: 'deltaBytes'
-                },
-                {
-                    header: 'Class name',
-                    itemField: 'name'
-                }
-            ];
+            $scope.classes = parsed;
+            $scope.instanceCounts = classCounts;
+            $scope.byteCounts = bytesCounts;
             $scope.loading = false;
-            $scope.lastLoaded = 'n/a';
-            $scope.pid = Diagnostics.findMyPid($scope.pageTitle);
-            $scope.loadClassStats = function () {
-                $scope.loading = true;
-                Core.$apply($scope);
-                jolokia.request({
-                    type: 'exec',
-                    mbean: 'com.sun.management:type=DiagnosticCommand',
-                    operation: 'gcClassHistogram([Ljava.lang.String;)',
-                    arguments: ['']
-                }, {
-                    success: render,
-                    error: function (response) {
-                        $scope.status = 'Could not get class histogram : ' + response.error;
-                        $scope.loading = false;
-                        Core.$apply($scope);
-                    }
-                });
-            };
-            function render(response) {
-                $scope.classHistogram = response.value;
-                var lines = response.value.split('\n');
-                var parsed = [];
-                var classCounts = {};
-                var bytesCounts = {};
-                for (var i = 0; i < lines.length; i++) {
-                    var values = lines[i].match(/\s*(\d+):\s*(\d+)\s*(\d+)\s*(\S+)\s*/);
-                    if (values && values.length >= 5) {
-                        var className = translateJniName(values[4]);
-                        var count = values[2];
-                        var bytes = values[3];
-                        var entry = {
-                            num: values[1],
-                            count: count,
-                            bytes: bytes,
-                            name: className,
-                            deltaCount: findDelta($scope.instanceCounts, className, count),
-                            deltaBytes: findDelta($scope.byteCounts, className, bytes)
-                        };
-                        parsed.push(entry);
-                        classCounts[className] = count;
-                        bytesCounts[className] = bytes;
-                    }
-                }
-                $scope.classes = parsed;
-                $scope.instanceCounts = classCounts;
-                $scope.byteCounts = bytesCounts;
-                $scope.loading = false;
-                $scope.lastLoaded = Date.now();
-                Core.$apply($scope);
+            $scope.lastLoaded = Date.now();
+            Core.$apply($scope);
+        }
+        function findDelta(oldCounts, className, newValue) {
+            if (!oldCounts) {
+                return '';
             }
-            function findDelta(oldCounts, className, newValue) {
-                if (!oldCounts) {
-                    return '';
-                }
-                var oldValue = oldCounts[className];
-                if (oldValue) {
-                    return oldValue - newValue;
-                }
-                else {
-                    return newValue;
+            var oldValue = oldCounts[className];
+            if (oldValue) {
+                return oldValue - newValue;
+            }
+            else {
+                return newValue;
+            }
+        }
+        function translateJniName(name) {
+            if (name.length == 1) {
+                switch (name.charAt(0)) {
+                    case 'I':
+                        return 'int';
+                    case 'S':
+                        return 'short';
+                    case 'C':
+                        return 'char';
+                    case 'Z':
+                        return 'boolean';
+                    case 'D':
+                        return 'double';
+                    case 'F':
+                        return 'float';
+                    case 'J':
+                        return 'long';
+                    case 'B':
+                        return 'byte';
                 }
             }
-            function translateJniName(name) {
-                if (name.length == 1) {
-                    switch (name.charAt(0)) {
-                        case 'I':
-                            return 'int';
-                        case 'S':
-                            return 'short';
-                        case 'C':
-                            return 'char';
-                        case 'Z':
-                            return 'boolean';
-                        case 'D':
-                            return 'double';
-                        case 'F':
-                            return 'float';
-                        case 'J':
-                            return 'long';
-                        case 'B':
-                            return 'byte';
-                    }
-                }
-                else {
-                    switch (name.charAt(0)) {
-                        case '[':
-                            return translateJniName(name.substring(1)) + '[]';
-                        case 'L':
-                            if (name.endsWith(';')) {
-                                return translateJniName(name.substring(1, name.indexOf(';')));
-                            }
-                        default:
-                            return name;
-                    }
+            else {
+                switch (name.charAt(0)) {
+                    case '[':
+                        return translateJniName(name.substring(1)) + '[]';
+                    case 'L':
+                        if (name.endsWith(';')) {
+                            return translateJniName(name.substring(1, name.indexOf(';')));
+                        }
+                    default:
+                        return name;
                 }
             }
-        }]);
+        }
+    }
+    Diagnostics.DiagnosticsHeapController = DiagnosticsHeapController;
 })(Diagnostics || (Diagnostics = {}));
-/// <reference path="diagnosticsPlugin.ts"/>
+/// <reference path="diagnostics.service.ts"/>
 var Diagnostics;
 (function (Diagnostics) {
+    DiagnosticsJfrController.$inject = ["$scope", "$location", "workspace", "jolokia", "localStorage", "diagnosticsService"];
     function splitResponse(response) {
         return response.match(/Dumped recording "(.+)",(.+) written to:\r?\n\r?\n(.+)/);
     }
@@ -6340,192 +6302,264 @@ var Diagnostics;
             'name="' + jfrSettings.name + '"'
         ];
     }
-    var JfrController = Diagnostics._module.controller("Diagnostics.JfrController", ["$scope", "$location", "workspace", "jolokia", function ($scope, $location, workspace, jolokia) {
-            function render(response) {
-                var statusString = response.value;
-                $scope.jfrEnabled = statusString.indexOf("not enabled") == -1;
-                $scope.isRunning = statusString.indexOf("(running)") > -1;
-                $scope.isRecording = $scope.isRunning || statusString.indexOf("(stopped)") > -1;
-                if ((statusString.indexOf("Use JFR.") > -1 || statusString
-                    .indexOf("Use VM.") > -1)
-                    && $scope.pid) {
-                    statusString = statusString.replace("Use ", "Use command line: jcmd " + $scope.pid + " ");
-                }
-                $scope.jfrStatus = statusString;
-                if ($scope.isRecording) {
-                    var regex = /recording=(\d+) name="(.+?)"/g;
-                    if ($scope.isRunning) {
-                        regex = /recording=(\d+) name="(.+?)".+?\(running\)/g;
+    function DiagnosticsJfrController($scope, $location, workspace, jolokia, localStorage, diagnosticsService) {
+        'ngInject';
+        $scope.forms = {};
+        $scope.pid = diagnosticsService.findMyPid($scope.pageTitle);
+        $scope.recordings = [];
+        $scope.settingsVisible = false;
+        $scope.jfrSettings = {
+            limitType: 'unlimited',
+            limitValue: '',
+            name: '',
+            dumpOnExit: true,
+            recordingNumber: '',
+            filename: ''
+        };
+        $scope.formConfig = {
+            properties: {
+                name: {
+                    type: "java.lang.String",
+                    tooltip: "Name for this connection",
+                    "input-attributes": {
+                        "placeholder": "Recording name (optional)..."
                     }
-                    var parsed = regex.exec(statusString);
-                    $scope.jfrSettings.recordingNumber = parsed[1];
-                    $scope.jfrSettings.name = parsed[2];
-                    var parsedFilename = statusString.match(/filename="(.+)"/);
-                    if (parsedFilename && parsedFilename[1]) {
-                        $scope.jfrSettings.filename = parsedFilename[1];
+                },
+                limitType: {
+                    type: "java.lang.String",
+                    tooltip: "Duration if any",
+                    enum: ['unlimited', 'duration', 'maxsize']
+                },
+                limitValue: {
+                    type: "java.lang.String",
+                    tooltip: "Limit value. duration: [val]s/m/h, maxsize: [val]kB/MB/GB",
+                    required: false,
+                    "input-attributes": {
+                        "ng-show": "jfrSettings.limitType != 'unlimited'"
                     }
-                    else {
-                        $scope.jfrSettings.filename = 'recording' + parsed[1] + '.jfr';
+                },
+                dumpOnExit: {
+                    type: "java.lang.Boolean",
+                    tooltip: "Automatically dump recording on VM exit"
+                },
+                filename: {
+                    type: "java.lang.String",
+                    tooltip: "Filename",
+                    "input-attributes": {
+                        "placeholder": "Specify file name *.jfr (optional)..."
                     }
-                }
-                Core.$apply($scope);
+                },
             }
-            function addRecording(recording, recordings) {
-                for (var i = 0; i < recordings.length; i++) {
-                    if (recordings[i].file === recording.file) {
-                        recordings[i] = recording;
-                        return;
-                    }
-                }
-                recordings.push(recording);
+        };
+        $scope.unlock = function () {
+            executeDiagnosticFunction('vmUnlockCommercialFeatures()', 'VM.unlock_commercial_features', [], null);
+        };
+        $scope.startRecording = function () {
+            if ($scope.isRecording) {
+                $scope.jfrSettings.name = null;
+                $scope.jfrSettings.filename = null;
             }
-            function showArguments(arguments) {
-                var result = '';
-                var first = true;
-                for (var i = 0; i < arguments.length; i++) {
-                    if (first) {
-                        first = false;
-                    }
-                    else {
-                        result += ',';
-                    }
-                    result += arguments[i];
+            executeDiagnosticFunction('jfrStart([Ljava.lang.String;)', 'JFR.start', [buildStartParams($scope.jfrSettings)], null);
+        };
+        $scope.dumpRecording = function () {
+            executeDiagnosticFunction('jfrDump([Ljava.lang.String;)', 'JFR.dump', [buildDumpParams($scope.jfrSettings)], function (response) {
+                var matches = splitResponse(response);
+                Diagnostics.log.debug("response: " + response
+                    + " split: " + matches + "split2: "
+                    + matches);
+                if (matches) {
+                    var recordingData = {
+                        number: matches[1],
+                        size: matches[2],
+                        file: matches[3],
+                        time: Date.now()
+                    };
+                    Diagnostics.log.debug("data: "
+                        + recordingData);
+                    addRecording(recordingData, $scope.recordings);
                 }
-                return result;
+            });
+        };
+        $scope.closeMessageForGood = function (key) {
+            localStorage[key] = "false";
+        };
+        $scope.isMessageVisible = function (key) {
+            return localStorage[key] !== "false";
+        };
+        $scope.stopRecording = function () {
+            var name = $scope.jfrSettings.name;
+            $scope.jfrSettings.filename = '';
+            $scope.jfrSettings.name = '';
+            executeDiagnosticFunction('jfrStop([Ljava.lang.String;)', 'JFR.stop', ['name="' + name + '"'], null);
+        };
+        $scope.toggleSettingsVisible = function () {
+            $scope.settingsVisible = !$scope.settingsVisible;
+            Core.$apply($scope);
+        };
+        Core.register(jolokia, $scope, [{
+                type: 'exec',
+                operation: 'jfrCheck([Ljava.lang.String;)',
+                mbean: 'com.sun.management:type=DiagnosticCommand',
+                arguments: ['']
+            }], Core.onSuccess(render));
+        function render(response) {
+            var statusString = response.value;
+            $scope.jfrEnabled = statusString.indexOf("not enabled") == -1;
+            $scope.isRunning = statusString.indexOf("(running)") > -1;
+            $scope.isRecording = $scope.isRunning || statusString.indexOf("(stopped)") > -1;
+            if ((statusString.indexOf("Use JFR.") > -1 || statusString
+                .indexOf("Use VM.") > -1)
+                && $scope.pid) {
+                statusString = statusString.replace("Use ", "Use command line: jcmd " + $scope.pid + " ");
             }
-            function executeDiagnosticFunction(operation, jcmd, arguments, callback) {
-                Diagnostics.log.debug(Date.now() + " Invoking operation "
-                    + operation + " with arguments" + arguments + " settings: " + JSON.stringify($scope.jfrSettings));
-                $scope.jcmd = 'jcmd ' + $scope.pid + ' ' + jcmd + ' ' + showArguments(arguments);
-                jolokia.request([{
-                        type: "exec",
-                        operation: operation,
-                        mbean: 'com.sun.management:type=DiagnosticCommand',
-                        arguments: arguments
-                    }, {
-                        type: 'exec',
-                        operation: 'jfrCheck([Ljava.lang.String;)',
-                        mbean: 'com.sun.management:type=DiagnosticCommand',
-                        arguments: ['']
-                    }], Core.onSuccess(function (response) {
-                    Diagnostics.log.debug("Diagnostic Operation "
-                        + operation + " was successful" + response.value);
-                    if (response.request.operation.indexOf("jfrCheck") > -1) {
-                        render(response);
-                    }
-                    else {
-                        if (callback) {
-                            callback(response.value);
-                        }
-                        Core.$apply($scope);
-                    }
+            $scope.jfrStatus = statusString;
+            if ($scope.isRecording) {
+                var regex = /recording=(\d+) name="(.+?)"/g;
+                if ($scope.isRunning) {
+                    regex = /recording=(\d+) name="(.+?)".+?\(running\)/g;
+                }
+                var parsed = regex.exec(statusString);
+                $scope.jfrSettings.recordingNumber = parsed[1];
+                $scope.jfrSettings.name = parsed[2];
+                var parsedFilename = statusString.match(/filename="(.+)"/);
+                if (parsedFilename && parsedFilename[1]) {
+                    $scope.jfrSettings.filename = parsedFilename[1];
+                }
+                else {
+                    $scope.jfrSettings.filename = 'recording' + parsed[1] + '.jfr';
+                }
+            }
+            Core.$apply($scope);
+        }
+        function addRecording(recording, recordings) {
+            for (var i = 0; i < recordings.length; i++) {
+                if (recordings[i].file === recording.file) {
+                    recordings[i] = recording;
+                    return;
+                }
+            }
+            recordings.push(recording);
+        }
+        function showArguments(arguments) {
+            var result = '';
+            var first = true;
+            for (var i = 0; i < arguments.length; i++) {
+                if (first) {
+                    first = false;
+                }
+                else {
+                    result += ',';
+                }
+                result += arguments[i];
+            }
+            return result;
+        }
+        function executeDiagnosticFunction(operation, jcmd, arguments, callback) {
+            Diagnostics.log.debug(Date.now() + " Invoking operation "
+                + operation + " with arguments" + arguments + " settings: " + JSON.stringify($scope.jfrSettings));
+            $scope.jcmd = 'jcmd ' + $scope.pid + ' ' + jcmd + ' ' + showArguments(arguments);
+            jolokia.request([{
+                    type: "exec",
+                    operation: operation,
+                    mbean: 'com.sun.management:type=DiagnosticCommand',
+                    arguments: arguments
                 }, {
-                    error: function (response) {
-                        Diagnostics.log.warn("Diagnostic Operation "
-                            + operation + " failed", response);
-                    }
-                }));
-            }
-            $scope.forms = {};
-            $scope.pid = Diagnostics.findMyPid($scope.pageTitle);
-            $scope.recordings = [];
-            $scope.settingsVisible = false;
-            $scope.jfrSettings = {
-                limitType: 'unlimited',
-                limitValue: '',
-                name: '',
-                dumpOnExit: true,
-                recordingNumber: '',
-                filename: ''
-            };
-            $scope.formConfig = {
-                properties: {
-                    name: {
-                        type: "java.lang.String",
-                        tooltip: "Name for this connection",
-                        "input-attributes": {
-                            "placeholder": "Recording name (optional)..."
-                        }
-                    },
-                    limitType: {
-                        type: "java.lang.String",
-                        tooltip: "Duration if any",
-                        enum: ['unlimited', 'duration', 'maxsize']
-                    },
-                    limitValue: {
-                        type: "java.lang.String",
-                        tooltip: "Limit value. duration: [val]s/m/h, maxsize: [val]kB/MB/GB",
-                        required: false,
-                        "input-attributes": {
-                            "ng-show": "jfrSettings.limitType != 'unlimited'"
-                        }
-                    },
-                    dumpOnExit: {
-                        type: "java.lang.Boolean",
-                        tooltip: "Automatically dump recording on VM exit"
-                    },
-                    filename: {
-                        type: "java.lang.String",
-                        tooltip: "Filename",
-                        "input-attributes": {
-                            "placeholder": "Specify file name *.jfr (optional)..."
-                        }
-                    },
-                }
-            };
-            $scope.unlock = function () {
-                executeDiagnosticFunction('vmUnlockCommercialFeatures()', 'VM.unlock_commercial_features', [], null);
-            };
-            $scope.startRecording = function () {
-                if ($scope.isRecording) {
-                    $scope.jfrSettings.name = null;
-                    $scope.jfrSettings.filename = null;
-                }
-                executeDiagnosticFunction('jfrStart([Ljava.lang.String;)', 'JFR.start', [buildStartParams($scope.jfrSettings)], null);
-            };
-            $scope.dumpRecording = function () {
-                executeDiagnosticFunction('jfrDump([Ljava.lang.String;)', 'JFR.dump', [buildDumpParams($scope.jfrSettings)], function (response) {
-                    var matches = splitResponse(response);
-                    Diagnostics.log.debug("response: " + response
-                        + " split: " + matches + "split2: "
-                        + matches);
-                    if (matches) {
-                        var recordingData = {
-                            number: matches[1],
-                            size: matches[2],
-                            file: matches[3],
-                            time: Date.now()
-                        };
-                        Diagnostics.log.debug("data: "
-                            + recordingData);
-                        addRecording(recordingData, $scope.recordings);
-                    }
-                });
-            };
-            $scope.stopRecording = function () {
-                var name = $scope.jfrSettings.name;
-                $scope.jfrSettings.filename = '';
-                $scope.jfrSettings.name = '';
-                executeDiagnosticFunction('jfrStop([Ljava.lang.String;)', 'JFR.stop', ['name="' + name + '"'], null);
-            };
-            $scope.toggleSettingsVisible = function () {
-                $scope.settingsVisible = !$scope.settingsVisible;
-                Core.$apply($scope);
-            };
-            Core.register(jolokia, $scope, [{
                     type: 'exec',
                     operation: 'jfrCheck([Ljava.lang.String;)',
                     mbean: 'com.sun.management:type=DiagnosticCommand',
                     arguments: ['']
-                }], Core.onSuccess(render));
-        }]);
+                }], Core.onSuccess(function (response) {
+                Diagnostics.log.debug("Diagnostic Operation "
+                    + operation + " was successful" + response.value);
+                if (response.request.operation.indexOf("jfrCheck") > -1) {
+                    render(response);
+                }
+                else {
+                    if (callback) {
+                        callback(response.value);
+                    }
+                    Core.$apply($scope);
+                }
+            }, {
+                error: function (response) {
+                    Diagnostics.log.warn("Diagnostic Operation "
+                        + operation + " failed", response);
+                }
+            }));
+        }
+    }
+    Diagnostics.DiagnosticsJfrController = DiagnosticsJfrController;
 })(Diagnostics || (Diagnostics = {}));
-/// <reference path="./diagnosticsPlugin.ts"/>
+/// <reference path="diagnostics.service.ts"/>
 var Diagnostics;
 (function (Diagnostics) {
-    Diagnostics._module.controller("Diagnostics.NavController", ["$scope", "$location", "workspace", function ($scope, $location, workspace) {
-            Diagnostics.configureScope($scope, $location, workspace);
-        }]);
+    DiagnosticsLayoutController.$inject = ["$location", "diagnosticsService"];
+    function DiagnosticsLayoutController($location, diagnosticsService) {
+        'ngInject';
+        this.tabs = diagnosticsService.getTabs();
+        this.goto = function (tab) {
+            $location.path(tab.path);
+        };
+    }
+    Diagnostics.DiagnosticsLayoutController = DiagnosticsLayoutController;
+})(Diagnostics || (Diagnostics = {}));
+var Diagnostics;
+(function (Diagnostics) {
+    DiagnosticsConfig.$inject = ["configManager"];
+    function DiagnosticsConfig(configManager) {
+        'ngInject';
+        configManager
+            .addRoute('/diagnostics/jfr', { templateUrl: 'plugins/diagnostics/html/jfr.html' })
+            .addRoute('/diagnostics/heap', { templateUrl: 'plugins/diagnostics/html/heap.html' })
+            .addRoute('/diagnostics/flags', { templateUrl: 'plugins/diagnostics/html/flags.html' });
+    }
+    Diagnostics.DiagnosticsConfig = DiagnosticsConfig;
+})(Diagnostics || (Diagnostics = {}));
+/// <reference path="../../jmx/ts/workspace.ts"/>
+/// <reference path="diagnostics.service.ts"/>
+var Diagnostics;
+(function (Diagnostics) {
+    DiagnosticsInit.$inject = ["$rootScope", "viewRegistry", "helpRegistry", "workspace", "diagnosticsService"];
+    function DiagnosticsInit($rootScope, viewRegistry, helpRegistry, workspace, diagnosticsService) {
+        'ngInject';
+        viewRegistry['diagnostics'] = 'plugins/diagnostics/html/layout.html';
+        helpRegistry.addUserDoc('diagnostics', 'plugins/diagnostics/doc/help.md');
+        var unsubscribe = $rootScope.$on('jmxTreeUpdated', function () {
+            unsubscribe();
+            var tabs = diagnosticsService.getTabs();
+            workspace.topLevelTabs.push({
+                id: "diagnostics",
+                content: "Diagnostics",
+                title: "JVM Diagnostics",
+                isValid: function () { return tabs.length > 0; },
+                href: function () { return tabs[0].path; },
+                isActive: function (workspace) { return workspace.isLinkActive("diagnostics"); }
+            });
+        });
+    }
+    Diagnostics.DiagnosticsInit = DiagnosticsInit;
+})(Diagnostics || (Diagnostics = {}));
+/// <reference path="diagnostics.config.ts"/>
+/// <reference path="diagnostics.init.ts"/>
+/// <reference path="diagnostics-layout.controller.ts"/>
+/// <reference path="diagnostics-jfr.controller.ts"/>
+/// <reference path="diagnostics-heap.controller.ts"/>
+/// <reference path="diagnostics-flags.controller.ts"/>
+/// <reference path="diagnostics.service.ts"/>
+var Diagnostics;
+(function (Diagnostics) {
+    var pluginName = 'hawtio-diagnostics';
+    Diagnostics.log = Logger.get(pluginName);
+    Diagnostics._module = angular
+        .module(pluginName, [])
+        .config(Diagnostics.DiagnosticsConfig)
+        .run(Diagnostics.DiagnosticsInit)
+        .controller("DiagnosticsLayoutController", Diagnostics.DiagnosticsLayoutController)
+        .controller("DiagnosticsJfrController", Diagnostics.DiagnosticsJfrController)
+        .controller("DiagnosticsHeapController", Diagnostics.DiagnosticsHeapController)
+        .controller("DiagnosticsFlagsController", Diagnostics.DiagnosticsFlagsController)
+        .service('diagnosticsService', Diagnostics.DiagnosticsService);
+    hawtioPluginLoader.addModule(pluginName);
 })(Diagnostics || (Diagnostics = {}));
 var Jmx;
 (function (Jmx) {
@@ -9725,10 +9759,10 @@ var Threads;
         }]);
 })(Threads || (Threads = {}));
 
-angular.module('hawtio-jmx-templates', []).run(['$templateCache', function($templateCache) {$templateCache.put('plugins/diagnostics/html/flags.html','<div ng-controller="Diagnostics.FlagsController">\n  <h1>Diagnostic Options</h1>\n  <div class="row toolbar-pf">\n    <div class="col-sm-12">\n      <form class="toolbar-pf-actions">\n        <div class="form-group">\n          <input type="text"\n                 class="form-control"\n                 ng-model="tableDef.filterOptions.filterText"\n                 placeholder="Filter..."\n                 autocomplete="off">\n        </div>\n        <div class="form-group">\n          <i class="pficon-close clickable"\n             title="Clear filter"\n             ng-click="tableDef.filterOptions.filterText = \'\'"></i>\n        </div>\n      </form>\n      <table class="table table-condensed table-striped"\n             hawtio-simple-table="tableDef"></table>\n\n    </div>\n  </div>\n</div>');
-$templateCache.put('plugins/diagnostics/html/heap.html','<div ng-controller="Diagnostics.HeapController" class="table-view">\n  <h1>Class Histogram</h1>\n  <div class="alert alert-warning alert-dismissable">\n    <button type="button"\n            class="close"\n            data-dismiss="alert"\n            aria-hidden="true"><span class="pficon pficon-close"></span></button>\n    <span class="pficon pficon-warning-triangle-o"></span>\n    <strong>Please note:</strong> Retrieving class histogram may be very\n    expensive, depending on the size and layout of the heap.\n    Equivalent JCMD Command line: <code>jcmd {{pid}} GC.class_histogram</code>\n  </div>\n  <div class="row toolbar-pf">\n    <div class="col-sm-12">\n      <form class="toolbar-pf-actions">\n        <div class="form-group">\n          <button class="btn btn-default"\n                  ng-click="loadClassStats()"\n                  title="Refresh"><i class="fa fa-refresh"></i> Refresh\n          </button>\n        </div>\n        <div class="form-group">\n          Last loaded: {{lastLoaded | date: \'yyyy-MM-dd hh:mm:ss\'}}\n        </div>\n\n      </form>\n      <pf-table-view ng-if="!loading" class="threads-table" config="tableConfig" dt-options="tableDtOptions"\n                     colummns="tableColumns" items="classes" >\n      </pf-table-view>\n\n      <div ng-if="loading">\n        <div class="spinner spinner-lg loading-page"></div>\n        <div class="row">\n          <div class="col-sm-12">\n            <div class="loading-message">\n              Please wait, loading classes ...\n            </div>\n          </div>\n        </div>\n      </div>\n    </div>\n  </div>\n</div>');
-$templateCache.put('plugins/diagnostics/html/jfr.html','<div ng-controller="Diagnostics.JfrController">\n  <h1>Java Flight Recorder</h1>\n  <div class="row-fluid jfr-column-container"\n       hawtio-auto-columns=".jfr-column">\n\n    <div class="jfr-column">\n      <div class="alert alert-warning alert-dismissable">\n        <button type="button"\n           class="close"\n           data-dismiss="alert"\n           aria-hidden="true"><span class="pficon pficon-close"></span></button>\n        <span class="pficon pficon-warning-triangle-o"></span>\n        <strong>Please note:</strong> Running Java Flight Recorder on\n        production systems requires a <a\n        href="http://www.oracle.com/technetwork/java/javaseproducts/overview/index.html"\n        class="alert-link">license</a>.\n      </div>\n      <div class="alert alert-info alert-dismissable">\n        <button type="button"\n                class="close"\n                data-dismiss="alert"\n                aria-hidden="true"><span class="pficon pficon-close"></span></button>\n        <span class="pficon pficon-info"></span>\n        <strong>Info:</strong>Equivalent command of last action: <code>{{jcmd}}</code>\n      </div>\n      <div class="casettePlayer">\n        <div class="casette">\n          <svg role="img"\n               aria-label="recording indicator"\n               xmlns="http://www.w3.org/2000/svg"\n               version="1.1"\n               viewBox="0 0 24 24"\n               width="25"\n               height="25"\n               id="recordingIndicator">\n            <circle cx="12"\n                    cy="12"\n                    r="11"\n                    fill="red"\n                    ng-show="isRunning">\n              <animate attributeType="XML"\n                       attributeName="fill"\n                       from="#ff0000"\n                       to="#000000"\n                       dur="2s"\n                       repeatCount="indefinite"></animate>\n            </circle>\n          </svg>\n          <div class="cassetteLabelCutCorners"></div>\n          <div class="casetteLabel">\n            {{jfrStatus}}\n            <div class="notLabel">\n              <div class="wrapCog"\n                   ng-class="{\'spinning\': isRunning}">\n                <svg role="img"\n                     aria-label="cassette wheel"\n                     xmlns="http://www.w3.org/2000/svg"\n                     version="1.1"\n                     viewBox="0 0 24 24"\n                     width="50"\n                     height="50"\n                     ng-class="{\'spinning\': isRecording}"\n                     id="leftcog">\n                  <circle cx="12"\n                          cy="12"\n                          r="11"\n                          fill="white"></circle>\n                  <circle cx="12"\n                          cy="12"\n                          r="8"\n                          fill="black"></circle>\n                  <rect x="2"\n                        y="10"\n                        width="20"\n                        height="4"\n                        fill="black"\n                        stroke="none"></rect>\n                  <rect x="2"\n                        y="10"\n                        width="20"\n                        height="4"\n                        fill="black"\n                        stroke="none"\n                        transform="rotate(45,12,12)"></rect>\n                  <rect x="2"\n                        y="10"\n                        width="20"\n                        height="4"\n                        fill="black"\n                        stroke="none"\n                        transform="rotate(90,12,12)"></rect>\n                  <rect x="2"\n                        y="10"\n                        width="20"\n                        height="4"\n                        fill="black"\n                        stroke="none"\n                        transform="rotate(135,12,12)"></rect>\n                </svg>\n              </div>\n              <div class="wrapCog"\n                   ng-class="{\'spinning\': isRunning}"\n                   id="rightCogWrapper">\n                <svg role="img"\n                     aria-label="cassette wheel"\n                     xmlns="http://www.w3.org/2000/svg"\n                     version="1.1"\n                     viewBox="0 0 24 24"\n                     width="50"\n                     height="50"\n                     ng-class="{\'spinning\': isRecording}">\n                  <circle cx="12"\n                          cy="12"\n                          r="11"\n                          fill="white"></circle>\n                  <circle cx="12"\n                          cy="12"\n                          r="8"\n                          fill="black"></circle>\n                  <rect x="2"\n                        y="10"\n                        width="20"\n                        height="4"\n                        fill="black"\n                        stroke="none"></rect>\n                  <rect x="2"\n                        y="10"\n                        width="20"\n                        height="4"\n                        fill="black"\n                        stroke="none"\n                        transform="rotate(45,12,12)"></rect>\n                  <rect x="2"\n                        y="10"\n                        width="20"\n                        height="4"\n                        fill="black"\n                        stroke="none"\n                        transform="rotate(90,12,12)"></rect>\n                  <rect x="2"\n                        y="10"\n                        width="20"\n                        height="4"\n                        fill="black"\n                        stroke="none"\n                        transform="rotate(135,12,12)"></rect>\n                </svg>\n              </div>\n            </div>\n          </div>\n        </div>\n        <div id="casetteButtons">\n\n          <button class="recorderButton btn"\n                  tooltip="Unlock commercial features to be able to record"\n                  ng-click="unlock()"\n                  ng-disabled="jfrEnabled"\n                  ng-class="jfrEnabled ? \'disabledJfrButton\' : \'raisedButton\'">\n            <i class="fa-5x"\n               ng-class="jfrEnabled ? \'pficon-unlocked\' : \'pficon-locked\'"></i>\n          </button>\n          <button class="recorderButton btn"\n                  ng-enabled="!isRunning"\n                  ng-class="!jfrEnabled || isRunning ? \'disabledJfrButton\' : \'raisedButton\'"\n                  tooltip="Start recording"\n                  ng-click="startRecording()"\n                  ng-disabled="isRunning">\n            <div class="recordingSymbol"\n                 id="rec"></div>\n          </button>\n          <button class="recorderButton btn"\n                  title="Dump recording to disk"\n                  ng-class="jfrEnabled && isRecording ? \'raisedButton\' : \'disabledJfrButton\'"\n                  ng-disabled="!isRecording"\n                  tooltip="Dump {{jfrSettings.name}} to disk"\n                  ng-click="dumpRecording()">\n            <i class="pficon-save fa-5x"></i>\n          </button>\n          <button class="recorderButton btn"\n                  ng-disabled="!isRecording"\n                  ng-class="jfrEnabled && isRecording ? \'raisedButton\' : \'disabledJfrButton\'"\n                  tooltip="Stop {{jfrSettings.name}}"\n                  ng-click="stopRecording()">\n            <div class="recordingSymbol"\n                 id="stop"></div>\n          </button>\n          <button class="recorderButton btn"\n                  ng-class="jfrEnabled && !settingsVisible ? \'raisedButton\' : \'disabledJfrButton\'"\n                  tooltip="Show/hide settings"\n                  ng-click="toggleSettingsVisible()">\n            <i class="pficon-settings fa-5x"></i>\n          </button>\n        </div>\n      </div>\n    </div>\n\n    <div class="jfr-column"\n         ng-show="settingsVisible">\n\n\n      <dl>\n        <dt>Recorder Settings</dt>\n        <dd>\n          <div simple-form\n               name="jfrForm"\n               data="formConfig"\n               entity="jfrSettings"></div>\n\n        </dd>\n      </dl>\n\n    </div>\n    <table ng-show="!!recordings.length"\n           class="table table-condensed table-striped">\n      <tr>\n        <th>Rec#</th>\n        <th>Size</th>\n        <th>Time</th>\n        <th>File</th>\n      </tr>\n      <tr ng-repeat="aRecording in recordings">\n        <td>{{aRecording.number}}</td>\n        <td>{{aRecording.size}}</td>\n        <td>{{aRecording.time | date: \'yyyy-MM-dd HH:mm:ss\' }}</td>\n        <td><a href="file://{{aRecording.file}}">{{aRecording.file}}</a></td>\n      </tr>\n    </table>\n\n  </div>\n\n</div>\n');
-$templateCache.put('plugins/diagnostics/html/layoutDiagnostics.html','<div class="jvm-nav-main">\n  <ul class="nav nav-tabs connected"\n      ng-controller="Diagnostics.NavController">\n    <li ng-class=\'{active : isActive("/diagnostics/jfr")}\'\n        ng-show="isJfrEnabled">\n      <a ng-href="#"\n         ng-click="goto(\'/diagnostics/jfr\')">Flight Recorder</a>\n    </li>\n    <li ng-class=\'{active : isActive("/diagnostics/heap")}\'\n        ng-show="isHeapEnabled">\n      <a ng-href="#"\n         ng-click="goto(\'/diagnostics/heap\')">Heap Use</a>\n    </li>\n    <li ng-class=\'{active : isActive("/diagnostics/flags")}\'\n        ng-show="isFlagsEnabled">\n      <a ng-href="#"\n         ng-click="goto(\'/diagnostics/flags\')">JVM Flags</a>\n    </li>\n  </ul>\n  <div class="row-fluid">\n    <div class="contents"\n         ng-view></div>\n  </div>\n</div>\n');
+angular.module('hawtio-jmx-templates', []).run(['$templateCache', function($templateCache) {$templateCache.put('plugins/diagnostics/html/flags.html','<div ng-controller="DiagnosticsFlagsController">\n  <h1>Hotspot Diagnostics</h1>\n  <div class="row toolbar-pf">\n    <div class="col-sm-12">\n      <form class="toolbar-pf-actions">\n        <div class="form-group">\n          <input type="text"\n                 class="form-control"\n                 ng-model="tableDef.filterOptions.filterText"\n                 placeholder="Filter..."\n                 autocomplete="off">\n        </div>\n        <div class="form-group">\n          <i class="pficon-close clickable"\n             title="Clear filter"\n             ng-click="tableDef.filterOptions.filterText = \'\'"></i>\n        </div>\n      </form>\n      <table class="table table-condensed table-striped"\n             hawtio-simple-table="tableDef"></table>\n\n    </div>\n  </div>\n</div>');
+$templateCache.put('plugins/diagnostics/html/heap.html','<div ng-controller="DiagnosticsHeapController" class="table-view">\n  <h1>Class Histogram</h1>\n  <div class="alert alert-warning alert-dismissable" ng-show="isMessageVisible(\'showClassHistogramWarning\')">\n    <button type="button"\n            class="close"\n            data-dismiss="alert"\n            aria-hidden="true" ng-click="closeMessageForGood(\'showClassHistogramWarning\')"><span class="pficon pficon-close"></span></button>\n    <span class="pficon pficon-warning-triangle-o"></span>\n    <strong>Please note:</strong> Retrieving class histogram may be very\n    expensive, depending on the size and layout of the heap.\n    Equivalent JCMD Command line: <code>jcmd {{pid}} GC.class_histogram</code>\n  </div>\n  <div class="row toolbar-pf">\n    <div class="col-sm-12">\n      <form class="toolbar-pf-actions">\n        <div class="form-group">\n          <button class="btn btn-default"\n                  ng-click="loadClassStats()"\n                  title="Refresh"><i class="fa fa-refresh"></i> Refresh\n          </button>\n        </div>\n        <div class="form-group">\n          Last loaded: {{lastLoaded | date: \'yyyy-MM-dd hh:mm:ss\'}}\n        </div>\n\n      </form>\n      <pf-table-view ng-if="!loading" class="threads-table" config="tableConfig" dt-options="tableDtOptions"\n                     colummns="tableColumns" items="classes" >\n      </pf-table-view>\n\n      <div ng-if="loading">\n        <div class="spinner spinner-lg loading-page"></div>\n        <div class="row">\n          <div class="col-sm-12">\n            <div class="loading-message">\n              Please wait, loading classes ...\n            </div>\n          </div>\n        </div>\n      </div>\n    </div>\n  </div>\n</div>');
+$templateCache.put('plugins/diagnostics/html/jfr.html','<div ng-controller="DiagnosticsJfrController">\n  <h1>Flight Recorder</h1>\n  <div class="row-fluid jfr-column-container"\n       hawtio-auto-columns=".jfr-column">\n\n    <div class="jfr-column">\n      <div class="alert alert-warning alert-dismissable" ng-show="!jfrEnabled && isMessageVisible(\'jfrShowUnlockWarning\')">\n        <button type="button"\n           class="close"\n           data-dismiss="alert"\n           aria-hidden="true" ng-click="close(\'jfrShowUnlockWarning\')" ><span class="pficon pficon-close"></span></button>\n        <span class="pficon pficon-warning-triangle-o"></span>\n        <strong>Please note:</strong> Running Java Flight Recorder on\n        production systems requires a <a\n        href="http://www.oracle.com/technetwork/java/javaseproducts/overview/index.html"\n        class="alert-link">license</a>.\n      </div>\n      <div class="alert alert-info alert-dismissable" ng-show="isMessageVisible(\'jfrShowJcmd\')">\n        <button type="button"\n                class="close"\n                data-dismiss="alert"\n                aria-hidden="true" ng-click="close(\'jfrShowJcmd\')"><span class="pficon pficon-close"></span></button>\n        <span class="pficon pficon-info"></span>\n        <strong>Info:</strong>Equivalent command of last action: <code>{{jcmd}}</code>\n      </div>\n      <div class="casettePlayer">\n        <div class="casette">\n          <svg role="img"\n               aria-label="recording indicator"\n               xmlns="http://www.w3.org/2000/svg"\n               version="1.1"\n               viewBox="0 0 24 24"\n               width="25"\n               height="25"\n               id="recordingIndicator">\n            <circle cx="12"\n                    cy="12"\n                    r="11"\n                    fill="red"\n                    ng-show="isRunning">\n              <animate attributeType="XML"\n                       attributeName="fill"\n                       from="#ff0000"\n                       to="#000000"\n                       dur="2s"\n                       repeatCount="indefinite"></animate>\n            </circle>\n          </svg>\n          <div class="cassetteLabelCutCorners"></div>\n          <div class="casetteLabel">\n            {{jfrStatus}}\n            <div class="notLabel">\n              <div class="wrapCog"\n                   ng-class="{\'spinning\': isRunning}">\n                <svg role="img"\n                     aria-label="cassette wheel"\n                     xmlns="http://www.w3.org/2000/svg"\n                     version="1.1"\n                     viewBox="0 0 24 24"\n                     width="50"\n                     height="50"\n                     ng-class="{\'spinning\': isRecording}"\n                     id="leftcog">\n                  <circle cx="12"\n                          cy="12"\n                          r="11"\n                          fill="white"></circle>\n                  <circle cx="12"\n                          cy="12"\n                          r="8"\n                          fill="black"></circle>\n                  <rect x="2"\n                        y="10"\n                        width="20"\n                        height="4"\n                        fill="black"\n                        stroke="none"></rect>\n                  <rect x="2"\n                        y="10"\n                        width="20"\n                        height="4"\n                        fill="black"\n                        stroke="none"\n                        transform="rotate(45,12,12)"></rect>\n                  <rect x="2"\n                        y="10"\n                        width="20"\n                        height="4"\n                        fill="black"\n                        stroke="none"\n                        transform="rotate(90,12,12)"></rect>\n                  <rect x="2"\n                        y="10"\n                        width="20"\n                        height="4"\n                        fill="black"\n                        stroke="none"\n                        transform="rotate(135,12,12)"></rect>\n                </svg>\n              </div>\n              <div class="wrapCog"\n                   ng-class="{\'spinning\': isRunning}"\n                   id="rightCogWrapper">\n                <svg role="img"\n                     aria-label="cassette wheel"\n                     xmlns="http://www.w3.org/2000/svg"\n                     version="1.1"\n                     viewBox="0 0 24 24"\n                     width="50"\n                     height="50"\n                     ng-class="{\'spinning\': isRecording}">\n                  <circle cx="12"\n                          cy="12"\n                          r="11"\n                          fill="white"></circle>\n                  <circle cx="12"\n                          cy="12"\n                          r="8"\n                          fill="black"></circle>\n                  <rect x="2"\n                        y="10"\n                        width="20"\n                        height="4"\n                        fill="black"\n                        stroke="none"></rect>\n                  <rect x="2"\n                        y="10"\n                        width="20"\n                        height="4"\n                        fill="black"\n                        stroke="none"\n                        transform="rotate(45,12,12)"></rect>\n                  <rect x="2"\n                        y="10"\n                        width="20"\n                        height="4"\n                        fill="black"\n                        stroke="none"\n                        transform="rotate(90,12,12)"></rect>\n                  <rect x="2"\n                        y="10"\n                        width="20"\n                        height="4"\n                        fill="black"\n                        stroke="none"\n                        transform="rotate(135,12,12)"></rect>\n                </svg>\n              </div>\n            </div>\n          </div>\n        </div>\n        <div id="casetteButtons">\n\n          <button class="recorderButton btn"\n                  tooltip="Unlock commercial features to be able to record"\n                  ng-click="unlock()"\n                  ng-disabled="jfrEnabled"\n                  ng-class="jfrEnabled ? \'disabledJfrButton\' : \'raisedButton\'">\n            <i class="fa-5x"\n               ng-class="jfrEnabled ? \'pficon-unlocked\' : \'pficon-locked\'"></i>\n          </button>\n          <button class="recorderButton btn"\n                  ng-enabled="!isRunning"\n                  ng-class="!jfrEnabled || isRunning ? \'disabledJfrButton\' : \'raisedButton\'"\n                  tooltip="Start recording"\n                  ng-click="startRecording()"\n                  ng-disabled="isRunning">\n            <div class="recordingSymbol"\n                 id="rec"></div>\n          </button>\n          <button class="recorderButton btn"\n                  title="Dump recording to disk"\n                  ng-class="jfrEnabled && isRecording ? \'raisedButton\' : \'disabledJfrButton\'"\n                  ng-disabled="!isRecording"\n                  tooltip="Dump {{jfrSettings.name}} to disk"\n                  ng-click="dumpRecording()">\n            <i class="pficon-save fa-5x"></i>\n          </button>\n          <button class="recorderButton btn"\n                  ng-disabled="!isRecording"\n                  ng-class="jfrEnabled && isRecording ? \'raisedButton\' : \'disabledJfrButton\'"\n                  tooltip="Stop {{jfrSettings.name}}"\n                  ng-click="stopRecording()">\n            <div class="recordingSymbol"\n                 id="stop"></div>\n          </button>\n          <button class="recorderButton btn"\n                  ng-class="jfrEnabled && !settingsVisible ? \'raisedButton\' : \'disabledJfrButton\'"\n                  tooltip="Show/hide settings"\n                  ng-click="toggleSettingsVisible()">\n            <i class="pficon-settings fa-5x"></i>\n          </button>\n        </div>\n      </div>\n    </div>\n\n    <div class="jfr-column"\n         ng-show="settingsVisible">\n\n\n      <dl>\n        <dt>Recorder Settings</dt>\n        <dd>\n          <div simple-form\n               name="jfrForm"\n               data="formConfig"\n               entity="jfrSettings"></div>\n\n        </dd>\n      </dl>\n\n    </div>\n    <table ng-show="!!recordings.length"\n           class="table table-condensed table-striped">\n      <tr>\n        <th>Rec#</th>\n        <th>Size</th>\n        <th>Time</th>\n        <th>File</th>\n      </tr>\n      <tr ng-repeat="aRecording in recordings">\n        <td>{{aRecording.number}}</td>\n        <td>{{aRecording.size}}</td>\n        <td>{{aRecording.time | date: \'yyyy-MM-dd HH:mm:ss\' }}</td>\n        <td><a href="file://{{aRecording.file}}">{{aRecording.file}}</a></td>\n      </tr>\n    </table>\n\n  </div>\n\n</div>\n');
+$templateCache.put('plugins/diagnostics/html/layout.html','<div class="jvm-nav-main" ng-controller="DiagnosticsLayoutController as $ctrl">\n  <hawtio-tabs tabs="$ctrl.tabs" on-change="$ctrl.goto(tab)"></hawtio-tabs>\n  <div class="row-fluid">\n    <div class="contents"\n         ng-view></div>\n  </div>\n</div>\n');
 $templateCache.put('plugins/jmx/html/areaChart.html','<div ng-controller="Jmx.AreaChartController">\n  <script type="text/ng-template" id="areaChart">\n    <fs-area bind="data" duration="250" interpolate="false" point-radius="5" width="width" height="height" label=""></fs-area>\n  </script>\n  <div compile="template"></div>\n</div>\n');
 $templateCache.put('plugins/jmx/html/chartEdit.html','<div class="jmx-charts-edit-view" ng-controller="Jmx.ChartEditController">\n  <form>\n    <div class="form-group" ng-show="canEditChart()">\n      <button type="submit" class="btn btn-primary" ng-click="viewChart()" ng-disabled="!selectedAttributes.length && !selectedMBeans.length">\n        View Chart\n      </button>\n    </div>\n\n    <div class="row">\n      <div class="form-group col-md-6" ng-show="showAttributes()">\n        <label for="attributes">Attributes</label>\n        <select id="attributes" class="form-control" size="20" multiple ng-multiple="true" ng-model="selectedAttributes" ng-options="name | humanize for (name, value) in metrics"></select>\n      </div>\n      <div class="form-group col-md-6" ng-show="showElements()">\n        <label for="mbeans">Elements</label>\n        <select id="mbeans" class="form-control" size="20" multiple ng-multiple="true" ng-model="selectedMBeans" ng-options="name for (name, value) in mbeans"></select>\n      </div>\n    </div>\n\n    <p ng-if="!canEditChart()">\n      No numeric metrics available. Please select another item to chart on.\n    </p>\n  </form>\n</div>');
 $templateCache.put('plugins/jmx/html/charts.html','<div ng-controller="Jmx.ChartController">\n  <h2>Chart</h2>\n  <div ng-switch="errorMessage()">\n    <div ng-switch-when="metrics">No valid metrics to show for this mbean.</div>\n    <div ng-switch-when="updateRate">Charts aren\'t available when the update rate is set to "No refreshes", go to the <a ng-href="#/preferences{{hash}}">Preferences</a> panel and set a refresh rate to enable charts</div>\n    <div id="charts"></div>\n  </div>\n</div>\n');
@@ -9749,10 +9783,10 @@ $templateCache.put('plugins/threads/html/threads.html','<div id="threads-page" c
 $templateCache.put('plugins/jmx/html/attributes/attributes.html','<script type="text/ng-template" id="gridTemplate">\n  <table class="table table-striped table-bordered table-hover jmx-attributes-table"\n    ng-class="{\'ht-table-extra-columns\': hasExtraColumns}"\n    hawtio-simple-table="gridOptions">\n  </table>\n</script>\n\n<div class="table-view" ng-controller="Jmx.AttributesController">\n\n  <h2>Attributes</h2>\n  \n  <div ng-if="gridData.length > 0">\n    <div compile="attributes"></div>\n  </div>\n\n  <!-- modal dialog to show/edit the attribute -->\n  <div hawtio-confirm-dialog="showAttributeDialog" ok-button-text="Update"\n       show-ok-button="{{entity.rw ? \'true\' : \'false\'}}" on-ok="onUpdateAttribute()" on-cancel="onCancelAttribute()"\n       cancel-button-text="Close" title="Attribute: {{entity.key}}" optional-size="lg">\n    <div class="dialog-body">\n      <!-- have a form for view and another for edit -->\n      <div simple-form ng-hide="!entity.rw" name="attributeEditor" mode="edit" entity=\'entity\' data=\'attributeSchemaEdit\'></div>\n      <div simple-form ng-hide="entity.rw" name="attributeViewer" mode="view" entity=\'entity\' data=\'attributeSchemaView\'></div>\n    </div>\n  </div>\n\n</div>\n');
 $templateCache.put('plugins/jmx/html/common/header.html','<div class="jmx-header">\n  <h1>\n    {{$ctrl.title}}\n    <small class="text-muted">{{$ctrl.objectName}}</small>\n  </h1>\n</div>\n');
 $templateCache.put('plugins/jmx/html/common/tab.html','<ul class="nav nav-tabs">\n  <li ng-class="{active: $ctrl.isTabActive(\'/jmx/attributes\')}">\n    <a href="#" ng-click="$ctrl.goto(\'/jmx/attributes\')">Attributes</a>\n  </li>\n  <li ng-class="{active: $ctrl.isTabActive(\'/jmx/operations\')}">\n    <a href="#" ng-click="$ctrl.goto(\'/jmx/operations\')">Operations</a>\n  </li>\n  <li ng-class="{active: $ctrl.isTabActive(\'/jmx/charts\') || $ctrl.isTabActive(\'/jmx/chartEdit\')}">\n    <a href="#" ng-click="$ctrl.goto(\'/jmx/charts\')">Chart</a>\n  </li>\n</ul>\n');
-$templateCache.put('plugins/jmx/html/operations/operation-form.html','<p ng-hide="$ctrl.operation.args.length">\n  This JMX operation requires no arguments. Click the \'Execute\' button to invoke the operation.\n</p>\n<p ng-show="$ctrl.operation.args.length">\n  This JMX operation requires some parameters. Fill in the fields below and click the \'Execute\' button\n  to invoke the operation.\n</p>\n\n<form class="form-horizontal" ng-submit="$ctrl.execute()">\n  <div class="form-group" ng-repeat="formField in $ctrl.formFields">\n    <label class="col-sm-2 control-label" for="{{formField.label}}">{{formField.label}}</label>\n    <div class="col-sm-10">\n      <input type="{{formField.type}}" id="{{formField.label}}" ng-class="{\'form-control\': formField.type !== \'checkbox\'}"\n        ng-model="formField.value" ng-disabled="!$ctrl.operation.canInvoke">\n      <span class="help-block">{{formField.helpText}}</span>\n    </div>\n  </div>\n  <div class="form-group">\n    <div ng-class="{\'col-sm-offset-2 col-sm-10\': $ctrl.operation.args.length, \'col-sm-12\': !$ctrl.operation.args.length}">\n      <button type="submit" class="btn btn-primary" ng-disabled="!$ctrl.operation.canInvoke || $ctrl.isExecuting">Execute</button>\n    </div>\n  </div>\n</form>\n\n<form ng-show="$ctrl.operationResult">\n  <div class="form-group">\n    <label>Result</label>\n    <div class="hawtio-clipboard-container">\n      <button hawtio-clipboard="#operation-result" class="btn btn-default btn-lg">\n        <i class="fa fa-clipboard" aria-hidden="true"></i>\n      </button>\n      <pre ng-class="{\'jmx-operation-error\': $ctrl.operationFailed}">{{$ctrl.operationResult}}</pre>\n    </div>\n    <textarea id="operation-result" class="hawtio-clipboard-hidden-target">{{$ctrl.operationResult}}</textarea>\n  </div>\n</form>\n');
-$templateCache.put('plugins/jmx/html/operations/operations.html','<h2>Operations</h2>\n<p ng-if="$ctrl.operations.length === 0">\n  This MBean has no JMX operations.\n</p>\n<div ng-if="$ctrl.operations.length > 0">\n  <p>\n    This MBean supports the following JMX operations. Expand an item in the list to invoke that operation.\n  </p>\n  <pf-list-view class="jmx-operations-list-view" items="$ctrl.operations" config="$ctrl.config"\n    menu-actions="$ctrl.menuActions">\n    <div class="list-view-pf-stacked">\n      <div class="list-group-item-heading">\n        <span class="pficon pficon-locked" ng-if="!item.canInvoke"></span>\n        {{item.readableName}}\n      </div>\n      <div class="list-group-item-text">\n        {{item.description}}\n      </div>\n    </div>\n    <list-expanded-content>\n      <operation-form operation="$parent.item"></operation-form>\n    </list-expanded-content>\n  </pf-list-view>\n</div>\n');
 $templateCache.put('plugins/jmx/html/tree/content.html','<div class="tree-nav-sidebar-content">\n  <div class="spinner spinner-lg" ng-hide="$ctrl.treeFetched()"></div>\n  <div id="jmxtree" class="treeview-pf-hover treeview-pf-select"></div>\n</div>\n');
 $templateCache.put('plugins/jmx/html/tree/header.html','<div class="tree-nav-sidebar-header">\n  <form role="form" class="search-pf has-button">\n    <div class="form-group has-clear">\n      <div class="search-pf-input-group">\n        <label for="input-search" class="sr-only">Search Tree:</label>\n        <input id="input-search" type="search" class="form-control" placeholder="Search tree:"\n          ng-model="$ctrl.filter">\n        <button type="button" class="clear" aria-hidden="true"\n          ng-hide="$ctrl.filter.length === 0"\n          ng-click="$ctrl.filter = \'\'">\n          <span class="pficon pficon-close"></span>\n        </button>\n      </div>\n    </div>\n    <div class="form-group tree-nav-buttons">\n      <span class="badge" ng-class="{positive: $ctrl.result.length > 0}"\n        ng-show="$ctrl.filter.length > 0">\n        {{$ctrl.result.length}}\n      </span>\n      <i class="fa fa-plus-square-o" title="Expand All" ng-click="$ctrl.expandAll()"></i>\n      <i class="fa fa-minus-square-o" title="Collapse All" ng-click="$ctrl.contractAll()"></i>\n    </div>\n  </form>\n</div>\n');
+$templateCache.put('plugins/jmx/html/operations/operation-form.html','<p ng-hide="$ctrl.operation.args.length">\n  This JMX operation requires no arguments. Click the \'Execute\' button to invoke the operation.\n</p>\n<p ng-show="$ctrl.operation.args.length">\n  This JMX operation requires some parameters. Fill in the fields below and click the \'Execute\' button\n  to invoke the operation.\n</p>\n\n<form class="form-horizontal" ng-submit="$ctrl.execute()">\n  <div class="form-group" ng-repeat="formField in $ctrl.formFields">\n    <label class="col-sm-2 control-label" for="{{formField.label}}">{{formField.label}}</label>\n    <div class="col-sm-10">\n      <input type="{{formField.type}}" id="{{formField.label}}" ng-class="{\'form-control\': formField.type !== \'checkbox\'}"\n        ng-model="formField.value" ng-disabled="!$ctrl.operation.canInvoke">\n      <span class="help-block">{{formField.helpText}}</span>\n    </div>\n  </div>\n  <div class="form-group">\n    <div ng-class="{\'col-sm-offset-2 col-sm-10\': $ctrl.operation.args.length, \'col-sm-12\': !$ctrl.operation.args.length}">\n      <button type="submit" class="btn btn-primary" ng-disabled="!$ctrl.operation.canInvoke || $ctrl.isExecuting">Execute</button>\n    </div>\n  </div>\n</form>\n\n<form ng-show="$ctrl.operationResult">\n  <div class="form-group">\n    <label>Result</label>\n    <div class="hawtio-clipboard-container">\n      <button hawtio-clipboard="#operation-result" class="btn btn-default btn-lg">\n        <i class="fa fa-clipboard" aria-hidden="true"></i>\n      </button>\n      <pre ng-class="{\'jmx-operation-error\': $ctrl.operationFailed}">{{$ctrl.operationResult}}</pre>\n    </div>\n    <textarea id="operation-result" class="hawtio-clipboard-hidden-target">{{$ctrl.operationResult}}</textarea>\n  </div>\n</form>\n');
+$templateCache.put('plugins/jmx/html/operations/operations.html','<h2>Operations</h2>\n<p ng-if="$ctrl.operations.length === 0">\n  This MBean has no JMX operations.\n</p>\n<div ng-if="$ctrl.operations.length > 0">\n  <p>\n    This MBean supports the following JMX operations. Expand an item in the list to invoke that operation.\n  </p>\n  <pf-list-view class="jmx-operations-list-view" items="$ctrl.operations" config="$ctrl.config"\n    menu-actions="$ctrl.menuActions">\n    <div class="list-view-pf-stacked">\n      <div class="list-group-item-heading">\n        <span class="pficon pficon-locked" ng-if="!item.canInvoke"></span>\n        {{item.readableName}}\n      </div>\n      <div class="list-group-item-text">\n        {{item.description}}\n      </div>\n    </div>\n    <list-expanded-content>\n      <operation-form operation="$parent.item"></operation-form>\n    </list-expanded-content>\n  </pf-list-view>\n</div>\n');
 $templateCache.put('plugins/diagnostics/doc/help.md','## Diagnostics\n\nThe Diagnostics plugin diagnostic information about the JVM provided by the JVM DiagnosticCommand and HotspotDiangostic interfaces. The functionality is similar to the Diagnostic Commands view in Java Mission Control (jmc) or the command line tool jcmd. The plugin will provide corresponding jcmd commands in some scenarios\n\n### Flight recorder\n\nThe Java Flight Recorder can be used to record diagnostics from a running Java process.  \n\n#### Unlock\nCommercial features must be enabled in order to use the flight recorder. The padlock will be locked and no operations are available if commercial options are not enabled. Click the padlock to unlock and enable flight recordings. Note: Running commercial opions on a production system requires a valid license\n\n#### Start\nStarts a recording. \n\n#### Dump\nDumps the contents of the current recording to disk. The file path will be listed in a table below.\n\n#### Stop\nStops the current recording\n\n#### Settings\nHide/show the options pane\n\n### Class Histogram\n\nClass histogram retrieves the number of instances of loaded classes and the amount of bytes they take up. \nIf the operation is repeated it will also show the difference since last run.\n\n### JVM flags\nThis table shows the JVM diagnostic flag settings. Your are also able to modify the settings in a running JVM ');
 $templateCache.put('plugins/jmx/doc/help.md','## JMX\n\nThe [JMX](#/jmx/attributes) plugin in [hawtio](http://hawt.io "hawtio") gives a raw view of the underlying JMX metric data, allowing access to the entire JMX domain tree of MBeans.\n');
 $templateCache.put('plugins/jvm/doc/help.md','## Connect\n\nThe Connect tab allows you to connect to local and remote Jolokia instances so you can examine JVMs.\n\nThe "Remote" sub-tab is used to manually add connection details for a Jolokia instance.  You can store connection details and quickly recall the details of a connection and connect.\n\nThe use proxy option should often be enabled, as hawtio is running in your browser; usually due to CORS; you cannot open a different host or port from your browser (due to browse security restrictions); so we have to use a proxy servlet inside the hawtio web app to proxy all requests for a different jolokia server - so we can communicate with a different jolokia agent.\nIf you use the hawtio Chrome Extension this isn\u2019t required; since Chrome Extensions are allowed to connect to any host/port.\n\nThe "Local" sub-tab lists local JVMs running on your machine and allows you to install the Jolokia JVM agent into a running JVM and connect to it.\nFor this to actually work you need to have your JDK\'s "tools.jar" in the classpath, along with Jolokia\'s JVM agent jar.\n\nThe "Discover" sub-tab lists all JVMs which Jolokia could discover in the network, using its built-in discovery.\n');
