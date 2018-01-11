@@ -12,38 +12,35 @@ namespace Diagnostics {
   }
 
   export interface HeapControllerScope extends ng.IScope {
-    classHistogram: string;
-    status: string;
+    items: Array<ClassStats>;
     loading: boolean;
-    pid: string;
     lastLoaded: any;
-    loadClassStats: () => void;
-    classes: Array<ClassStats>;
-    tableDef: any;
-    pageTitle: string;
-    instanceCounts: any;
-    byteCounts: any;
+    toolbarConfig: any;
     tableConfig: any;
     tableDtOptions: any;
     tableColumns: Array<any>;
-    closeMessageForGood: (key: string) => void;
-    isMessageVisible: (key: string) => boolean;
+    pageConfig: object;
+    loadClassStats: () => void;
   }
 
   export function DiagnosticsHeapController($scope: HeapControllerScope, jolokia: Jolokia.IJolokia,
     diagnosticsService: DiagnosticsService) {
     'ngInject';
 
-    $scope.classHistogram = '';
-    $scope.status = '';
-    $scope.classes = [{
-      num: null,
-      count: null,
-      bytes: null,
-      deltaBytes: null,
-      deltaCount: null,
-      name: 'Click refresh to read class histogram'
-    }];
+    let instanceCounts;
+    let byteCounts;
+
+    $scope.items = [];
+    $scope.loading = false;
+    $scope.lastLoaded = null;
+
+    $scope.toolbarConfig = {
+      actionsConfig: {
+        actionsInclude: true
+      },
+      isTableView: true
+    };
+    
     $scope.tableConfig = {
       selectionMatchProp: 'name',
       showCheckboxes: false
@@ -51,6 +48,10 @@ namespace Diagnostics {
 
     $scope.tableDtOptions = {
       order: [[0, "asc"]]
+    };
+
+    $scope.pageConfig = {
+      pageSize: 20
     };
 
     $scope.tableColumns = [
@@ -76,13 +77,10 @@ namespace Diagnostics {
       },
       {
         header: 'Class name',
-        itemField: 'name'
+        itemField: 'name',
+        templateFn: value => `<span class="table-cell-truncated" title="${value}">${value}</span>`
       }
     ];
-
-    $scope.loading = false;
-    $scope.lastLoaded = 'n/a';
-    $scope.pid = diagnosticsService.findMyPid($scope.pageTitle);
 
     $scope.loadClassStats = () => {
       $scope.loading = true;
@@ -95,23 +93,15 @@ namespace Diagnostics {
       }, {
           success: render,
           error: (response) => {
-            $scope.status = 'Could not get class histogram : ' + response.error;
+            log.error('Failed to get class histogram: ' + response.error);
             $scope.loading = false;
             Core.$apply($scope);
           }
         });
     };
 
-    $scope.closeMessageForGood = (key: string) => {
-      localStorage[key] = "false";
-    };
-
-    $scope.isMessageVisible = (key: string) => {
-      return localStorage[key] !== "false";
-    };
-
     function render(response) {
-      $scope.classHistogram = response.value;
+      const classHistogram = response.value;
       const lines = response.value.split('\n');
       const parsed = [];
       const classCounts = {};
@@ -127,8 +117,8 @@ namespace Diagnostics {
             count: count,
             bytes: bytes,
             name: className,
-            deltaCount: findDelta($scope.instanceCounts, className, count),
-            deltaBytes: findDelta($scope.byteCounts, className, bytes)
+            deltaCount: findDelta(instanceCounts, className, count),
+            deltaBytes: findDelta(byteCounts, className, bytes)
           };
 
           parsed.push(entry);
@@ -136,12 +126,15 @@ namespace Diagnostics {
           bytesCounts[className] = bytes;
         }
       }
-      $scope.classes = parsed;
-      $scope.instanceCounts = classCounts;
-      $scope.byteCounts = bytesCounts;
-      $scope.loading = false;
+      $scope.items = parsed;
       $scope.lastLoaded = Date.now();
+      instanceCounts = classCounts;
+      byteCounts = bytesCounts;
       Core.$apply($scope);
+      setTimeout(() => {
+        $scope.loading = false;
+        Core.$apply($scope);
+      });
     }
 
     function findDelta(oldCounts, className, newValue) {

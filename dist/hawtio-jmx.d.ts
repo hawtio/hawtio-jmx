@@ -587,22 +587,15 @@ declare namespace Diagnostics {
         deltaBytes: string;
     }
     interface HeapControllerScope extends ng.IScope {
-        classHistogram: string;
-        status: string;
+        items: Array<ClassStats>;
         loading: boolean;
-        pid: string;
         lastLoaded: any;
-        loadClassStats: () => void;
-        classes: Array<ClassStats>;
-        tableDef: any;
-        pageTitle: string;
-        instanceCounts: any;
-        byteCounts: any;
+        toolbarConfig: any;
         tableConfig: any;
         tableDtOptions: any;
         tableColumns: Array<any>;
-        closeMessageForGood: (key: string) => void;
-        isMessageVisible: (key: string) => boolean;
+        pageConfig: object;
+        loadClassStats: () => void;
     }
     function DiagnosticsHeapController($scope: HeapControllerScope, jolokia: Jolokia.IJolokia, diagnosticsService: DiagnosticsService): void;
 }

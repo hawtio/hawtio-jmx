@@ -59,7 +59,7 @@ namespace Threads {
       { 
         header: 'Name',
         itemField: 'threadName',
-        templateFn: value => `<span class="table-cell-truncated" title="${value}" ng-click="hello()">${value}</span>`
+        templateFn: value => `<span class="table-cell-truncated" title="${value}">${value}</span>`
       },
       { 
         header: 'Waited Time',

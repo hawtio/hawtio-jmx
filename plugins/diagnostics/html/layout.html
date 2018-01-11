@@ -1,7 +1,6 @@
-<div class="jvm-nav-main" ng-controller="DiagnosticsLayoutController as $ctrl">
-  <hawtio-tabs tabs="$ctrl.tabs" on-change="$ctrl.goto(tab)"></hawtio-tabs>
-  <div class="row-fluid">
-    <div class="contents"
-         ng-view></div>
+<div class="diagnostics-nav-main">
+  <div ng-controller="DiagnosticsLayoutController as $ctrl">
+    <hawtio-tabs tabs="$ctrl.tabs" on-change="$ctrl.goto(tab)"></hawtio-tabs>
   </div>
+  <div class="contents" ng-view></div>
 </div>

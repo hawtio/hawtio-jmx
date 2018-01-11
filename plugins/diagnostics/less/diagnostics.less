@@ -128,4 +128,35 @@
   text-align: right;
 }
 
+.diagnostics-class-histogram-table {
+  tr {
+    td:nth-child(1), td:nth-child(2), td:nth-child(3), td:nth-child(4), td:nth-child(5) {
+      text-align: right;
+    }
+    td:nth-child(6) {
+      max-width: 300px;
+    }
+  }
+}
 
+.diagnostics-nav-main {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: auto;
+
+  .nav-tabs {
+    flex: 0 0 auto;
+    padding-top: 20px;
+    margin-left: 20px;
+    margin-right: 20px;
+  }
+
+  .contents {
+    flex: 1 1 auto;
+    overflow-y: auto;
+    position: relative;
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+}
