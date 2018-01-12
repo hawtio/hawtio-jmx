@@ -1,24 +1,26 @@
 <div ng-controller="DiagnosticsFlagsController">
   <h1>Hotspot Diagnostics</h1>
-  <div class="row toolbar-pf">
-    <div class="col-sm-12">
-      <form class="toolbar-pf-actions">
-        <div class="form-group">
-          <input type="text"
-                 class="form-control"
-                 ng-model="tableDef.filterOptions.filterText"
-                 placeholder="Filter..."
-                 autocomplete="off">
-        </div>
-        <div class="form-group">
-          <i class="pficon-close clickable"
-             title="Clear filter"
-             ng-click="tableDef.filterOptions.filterText = ''"></i>
-        </div>
-      </form>
-      <table class="table table-condensed table-striped"
-             hawtio-simple-table="tableDef"></table>
-
-    </div>
-  </div>
+  <table class="table table-striped table-bordered">
+    <thead>
+      <tr>
+        <th>VM Flag</th>
+        <th>Origin</th>
+        <th>Value</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr ng-repeat="flag in flags track by flag.name">
+        <td>{{flag.name}}</td>
+        <td>{{flag.origin}}</td>
+        <td>
+          <div ng-switch on="flag.dataType">
+            <span ng-switch-when="readonly">{{flag.value}}</span>
+            <input ng-switch-when="boolean" type="checkbox" ng-model="flag.value"></input>
+            <input ng-switch-when="string" type="text" ng-model="flag.value"></input>
+            <input ng-switch-when="number" type="number" ng-model="flag.value"></input>
+          </div>
+        </td>
+      </tr>
+    </tbody>
+  </table>  
 </div>

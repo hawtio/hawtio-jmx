@@ -24,7 +24,7 @@ namespace Diagnostics {
     };
 
     $scope.flags = [];
-    $scope.tableDef = tableDef();
+    // $scope.tableDef = tableDef();
 
     Core.register(jolokia, $scope, [readRequest], Core.onSuccess(render));
 
@@ -79,37 +79,37 @@ namespace Diagnostics {
       return value;
     }
 
-    function tableDef() {
-      return {
-        selectedItems: [],
-        data: 'flags',
-        showFilter: true,
-        filterOptions: {
-          filterText: ''
-        },
-        showSelectionCheckbox: false,
-        enableRowClickSelection: true,
-        multiSelect: false,
-        primaryKeyFn: function (entity, idx) {
-          return entity.name;
-        },
-        columnDefs: [
-          {
-            field: 'name',
-            displayName: 'VM Flag',
-            resizable: true
-          }, {
-            field: 'origin',
-            displayName: 'Origin',
-            resizable: true
-          }, {
-            field: 'value',
-            displayName: 'Value',
-            resizable: true,
-            cellTemplate: '<div ng-switch on="row.entity.dataType"><span ng-switch-when="readonly">{{row.entity.value}}</span><input ng-switch-when="boolean" type="checkbox" ng-model="row.entity.value"></input><input ng-switch-when="string" type="text" ng-model="row.entity.value"></input><input ng-switch-when="number" type="number" ng-model="row.entity.value"></input></div>'
-          }]
-      };
-    }
+    // function tableDef() {
+    //   return {
+    //     selectedItems: [],
+    //     data: 'flags',
+    //     showFilter: true,
+    //     filterOptions: {
+    //       filterText: ''
+    //     },
+    //     showSelectionCheckbox: false,
+    //     enableRowClickSelection: true,
+    //     multiSelect: false,
+    //     primaryKeyFn: function (entity, idx) {
+    //       return entity.name;
+    //     },
+    //     columnDefs: [
+    //       {
+    //         field: 'name',
+    //         displayName: 'VM Flag',
+    //         resizable: true
+    //       }, {
+    //         field: 'origin',
+    //         displayName: 'Origin',
+    //         resizable: true
+    //       }, {
+    //         field: 'value',
+    //         displayName: 'Value',
+    //         resizable: true,
+    //         cellTemplate: '<div ng-switch on="row.entity.dataType"><span ng-switch-when="readonly">{{row.entity.value}}</span><input ng-switch-when="boolean" type="checkbox" ng-model="row.entity.value"></input><input ng-switch-when="string" type="text" ng-model="row.entity.value"></input><input ng-switch-when="number" type="number" ng-model="row.entity.value"></input></div>'
+    //       }]
+    //   };
+    // }
   
   }
 
