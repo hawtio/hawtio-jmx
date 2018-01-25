@@ -857,10 +857,9 @@ declare namespace Jmx {
         private $scope;
         private $location;
         private workspace;
-        private $route;
         private $element;
         private $timeout;
-        constructor($scope: any, $location: ng.ILocationService, workspace: Workspace, $route: angular.route.IRouteService, $element: JQuery, $timeout: ng.ITimeoutService);
+        constructor($scope: any, $location: ng.ILocationService, workspace: Workspace, $element: JQuery, $timeout: ng.ITimeoutService);
         $onInit(): void;
         treeFetched(): boolean;
         updateSelectionFromURL(): void;

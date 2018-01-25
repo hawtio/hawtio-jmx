@@ -8,7 +8,6 @@ namespace Jmx {
       private $scope,
       private $location: ng.ILocationService,
       private workspace: Workspace,
-      private $route: angular.route.IRouteService,
       private $element: JQuery,
       private $timeout: ng.ITimeoutService) {
       'ngInject';
