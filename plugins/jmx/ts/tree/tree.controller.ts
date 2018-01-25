@@ -30,7 +30,7 @@ namespace Jmx {
       updateTreeSelectionFromURL(this.$location, $('#jmxtree'));
     }
 
-    populateTree(): void {
+    private populateTree(): void {
       log.debug('TreeController: populateTree');
       this.removeTree();
       enableTree(this.$scope, this.$location, this.workspace, $('#jmxtree'), this.workspace.tree.children);
@@ -40,7 +40,7 @@ namespace Jmx {
       });
     }
 
-    removeTree(): void {
+    private removeTree(): void {
       const tree = ($('#jmxtree') as any).treeview(true);
       // There is no exposed API to check whether the tree has already been initialized,
       // so let's just check if the methods are presents

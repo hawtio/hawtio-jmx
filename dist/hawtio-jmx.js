@@ -3856,218 +3856,102 @@ var __extends = (this && this.__extends) || (function () {
         d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
     };
 })();
-var JVM;
-(function (JVM) {
-    JVM.rootPath = 'plugins/jvm';
-    JVM.templatePath = UrlHelpers.join(JVM.rootPath, '/html');
-    JVM.pluginName = 'hawtio-jvm';
-    JVM.log = Logger.get(JVM.pluginName);
-    JVM.connectControllerKey = "jvmConnectSettings";
-    JVM.connectionSettingsKey = Core.connectionSettingsKey;
-    JVM.logoPath = 'img/icons/jvm/';
-    JVM.logoRegistry = {
-        'jetty': JVM.logoPath + 'jetty-logo-80x22.png',
-        'tomcat': JVM.logoPath + 'tomcat-logo.gif',
-        'generic': JVM.logoPath + 'java-logo.svg'
-    };
-})(JVM || (JVM = {}));
-/// <reference path="jvmGlobals.ts"/>
-var JVM;
-(function (JVM) {
-    /**
-     * Adds common properties and functions to the scope
-     * @method configureScope
-     * @for Jvm
-     * @param {*} $scope
-     * @param {ng.ILocationService} $location
-     * @param {Core.Workspace} workspace
-     */
-    function configureScope($scope, $location, workspace) {
-        $scope.isActive = function (href) {
-            var tidy = Core.trimLeading(href, "#");
-            var loc = $location.path();
-            return loc === tidy;
+var Diagnostics;
+(function (Diagnostics) {
+    DiagnosticsFlagsController.$inject = ["$scope", "jolokia"];
+    function DiagnosticsFlagsController($scope, jolokia) {
+        'ngInject';
+        var readRequest = {
+            type: 'read',
+            mbean: 'com.sun.management:type=HotSpotDiagnostic',
+            arguments: []
         };
-        $scope.isValid = function (link) {
-            return link && link.isValid(workspace);
-        };
-        $scope.hasLocalMBean = function () {
-            return JVM.hasLocalMBean(workspace);
-        };
-        $scope.goto = function (path) {
-            $location.path(path);
-        };
-    }
-    JVM.configureScope = configureScope;
-    function hasLocalMBean(workspace) {
-        return workspace.treeContainsDomainAndProperties('hawtio', { type: 'JVMList' });
-    }
-    JVM.hasLocalMBean = hasLocalMBean;
-    function hasDiscoveryMBean(workspace) {
-        return workspace.treeContainsDomainAndProperties('jolokia', { type: 'Discovery' });
-    }
-    JVM.hasDiscoveryMBean = hasDiscoveryMBean;
-    /**
-     * Creates a jolokia object for connecting to the container with the given remote jolokia URL,
-     * username and password
-     * @method createJolokia
-     * @for Core
-     * @static
-     * @param {String} url
-     * @param {String} username
-     * @param {String} password
-     * @return {Object}
-     */
-    function createJolokia(url, username, password) {
-        var jolokiaParams = {
-            url: url,
-            username: username,
-            password: password,
-            canonicalNaming: false, ignoreErrors: true, mimeType: 'application/json'
-        };
-        return new Jolokia(jolokiaParams);
-    }
-    JVM.createJolokia = createJolokia;
-    function getRecentConnections(localStorage) {
-        if (Core.isBlank(localStorage['recentConnections'])) {
-            clearConnections();
-        }
-        return angular.fromJson(localStorage['recentConnections']);
-    }
-    JVM.getRecentConnections = getRecentConnections;
-    function addRecentConnection(localStorage, name) {
-        var recent = getRecentConnections(localStorage);
-        recent.push(name);
-        recent = _.take(_.uniq(recent), 5);
-        localStorage['recentConnections'] = angular.toJson(recent);
-    }
-    JVM.addRecentConnection = addRecentConnection;
-    function removeRecentConnection(localStorage, name) {
-        var recent = getRecentConnections(localStorage);
-        recent = _.without(recent, name);
-        localStorage['recentConnections'] = angular.toJson(recent);
-    }
-    JVM.removeRecentConnection = removeRecentConnection;
-    function clearConnections() {
-        localStorage['recentConnections'] = '[]';
-    }
-    JVM.clearConnections = clearConnections;
-    function isRemoteConnection() {
-        return ('con' in new URI().query(true));
-    }
-    JVM.isRemoteConnection = isRemoteConnection;
-    function connectToServer(localStorage, options) {
-        JVM.log.debug("Connecting with options: ", StringHelpers.toString(options));
-        var clone = angular.extend({}, options);
-        addRecentConnection(localStorage, clone.name);
-        if (!('userName' in clone)) {
-            var userDetails = HawtioCore.injector.get('userDetails');
-            clone.userName = userDetails.username;
-            clone.password = userDetails.password;
-        }
-        //must save to local storage, to be picked up by new tab
-        saveConnection(clone);
-        var $window = HawtioCore.injector.get('$window');
-        var url = (clone.view || '/') + '?con=' + clone.name;
-        url = url.replace(/\?/g, "&");
-        url = url.replace(/&/, "?");
-        var newWindow = $window.open(url, clone.name);
-        newWindow['con'] = clone.name;
-        newWindow['userDetails'] = {
-            username: clone.userName,
-            password: clone.password,
-            loginDetails: {}
-        };
-    }
-    JVM.connectToServer = connectToServer;
-    function saveConnection(options) {
-        var connections = loadConnections();
-        var existingIndex = _.findIndex(connections, function (element) { return element.name === options.name; });
-        if (existingIndex != -1) {
-            connections[existingIndex] = options;
-        }
-        else {
-            connections.unshift(options);
-        }
-        saveConnections(connections);
-    }
-    JVM.saveConnection = saveConnection;
-    /**
-     * Loads all of the available connections from local storage
-     * @returns {Core.ConnectionMap}
-     */
-    function loadConnections() {
-        var localStorage = Core.getLocalStorage();
-        try {
-            var connections = angular.fromJson(localStorage[Core.connectionSettingsKey]);
-            if (!connections) {
-                // nothing found on local storage
-                return [];
+        $scope.flags = [];
+        // $scope.tableDef = tableDef();
+        Core.register(jolokia, $scope, [readRequest], Core.onSuccess(render));
+        function render(response) {
+            //remove watches on previous content
+            for (var i = 0; i < $scope.flags.length; i++) {
+                $scope.flags[i].deregisterWatch();
             }
-            else if (!_.isArray(connections)) {
-                // found the legacy connections map
-                delete localStorage[Core.connectionSettingsKey];
-                return [];
+            $scope.flags = response.value.DiagnosticOptions;
+            for (var i = 0; i < $scope.flags.length; i++) {
+                var flag = $scope.flags[i];
+                flag.value = parseValue(flag.value); //convert to typed value
+                if (flag.writeable) {
+                    flag.dataType = typeof (flag.value);
+                }
+                else {
+                    flag.dataType = "readonly";
+                }
+                flag.deregisterWatch = $scope.$watch('flags[' + i + ']', function (newValue, oldValue) {
+                    if (newValue.value != oldValue.value) {
+                        jolokia.request([{
+                                type: 'exec',
+                                mbean: 'com.sun.management:type=HotSpotDiagnostic',
+                                operation: 'setVMOption(java.lang.String,java.lang.String)',
+                                arguments: [newValue.name, newValue.value]
+                            }, readRequest], Core.onSuccess(function (response) {
+                            if (response.request.type === "read") {
+                                render(response);
+                            }
+                            else {
+                                Diagnostics.log.info("Set VM option " + newValue.name + "=" + newValue.value);
+                            }
+                        }));
+                    }
+                }, true);
             }
-            else {
-                // found a valid connections array
-                return connections;
+            Core.$apply($scope);
+        }
+        function parseValue(value) {
+            if (typeof (value) === "string") {
+                if (value.match(/true/)) {
+                    return true;
+                }
+                else if (value.match(/false/)) {
+                    return false;
+                }
+                else if (value.match(/\d+/)) {
+                    return Number(value);
+                }
             }
+            return value;
         }
-        catch (e) {
-            // corrupt config
-            delete localStorage[Core.connectionSettingsKey];
-            return [];
-        }
+        // function tableDef() {
+        //   return {
+        //     selectedItems: [],
+        //     data: 'flags',
+        //     showFilter: true,
+        //     filterOptions: {
+        //       filterText: ''
+        //     },
+        //     showSelectionCheckbox: false,
+        //     enableRowClickSelection: true,
+        //     multiSelect: false,
+        //     primaryKeyFn: function (entity, idx) {
+        //       return entity.name;
+        //     },
+        //     columnDefs: [
+        //       {
+        //         field: 'name',
+        //         displayName: 'VM Flag',
+        //         resizable: true
+        //       }, {
+        //         field: 'origin',
+        //         displayName: 'Origin',
+        //         resizable: true
+        //       }, {
+        //         field: 'value',
+        //         displayName: 'Value',
+        //         resizable: true,
+        //         cellTemplate: '<div ng-switch on="row.entity.dataType"><span ng-switch-when="readonly">{{row.entity.value}}</span><input ng-switch-when="boolean" type="checkbox" ng-model="row.entity.value"></input><input ng-switch-when="string" type="text" ng-model="row.entity.value"></input><input ng-switch-when="number" type="number" ng-model="row.entity.value"></input></div>'
+        //       }]
+        //   };
+        // }
     }
-    JVM.loadConnections = loadConnections;
-    /**
-     * Saves the connection map to local storage
-     * @param connections array of all connections to be stored
-     */
-    function saveConnections(connections) {
-        Logger.get("Core").debug("Saving connection array: ", StringHelpers.toString(connections));
-        localStorage[Core.connectionSettingsKey] = angular.toJson(connections);
-    }
-    JVM.saveConnections = saveConnections;
-    function getConnectionNameParameter() {
-        return new URI().search(true)['con'];
-    }
-    JVM.getConnectionNameParameter = getConnectionNameParameter;
-    /**
-     * Returns the connection options for the given connection name from localStorage
-     */
-    function getConnectOptions(name, localStorage) {
-        if (localStorage === void 0) { localStorage = Core.getLocalStorage(); }
-        if (!name) {
-            return null;
-        }
-        var connections = loadConnections();
-        return _.find(connections, function (connection) { return connection.name === name; });
-    }
-    JVM.getConnectOptions = getConnectOptions;
-    /**
-     * Creates the Jolokia URL string for the given connection options
-     */
-    function createServerConnectionUrl(options) {
-        Logger.get("Core").debug("Connect to server, options: ", StringHelpers.toString(options));
-        var answer = null;
-        if (options.jolokiaUrl) {
-            answer = options.jolokiaUrl;
-        }
-        if (answer === null) {
-            var uri = new URI();
-            uri.protocol(options.scheme || 'http')
-                .host(options.host || 'localhost')
-                .port((options.port || '80'))
-                .path(options.path);
-            answer = UrlHelpers.join('proxy', uri.protocol(), uri.hostname(), uri.port(), uri.path());
-        }
-        Logger.get(JVM.pluginName).debug("Using URL: ", answer);
-        return answer;
-    }
-    JVM.createServerConnectionUrl = createServerConnectionUrl;
-})(JVM || (JVM = {}));
+    Diagnostics.DiagnosticsFlagsController = DiagnosticsFlagsController;
+})(Diagnostics || (Diagnostics = {}));
 var Jmx;
 (function (Jmx) {
     /**
@@ -4455,6 +4339,218 @@ var JVM;
         $scope.connections = JVM.loadConnections();
     }
     JVM.ConnectController = ConnectController;
+})(JVM || (JVM = {}));
+var JVM;
+(function (JVM) {
+    JVM.rootPath = 'plugins/jvm';
+    JVM.templatePath = UrlHelpers.join(JVM.rootPath, '/html');
+    JVM.pluginName = 'hawtio-jvm';
+    JVM.log = Logger.get(JVM.pluginName);
+    JVM.connectControllerKey = "jvmConnectSettings";
+    JVM.connectionSettingsKey = Core.connectionSettingsKey;
+    JVM.logoPath = 'img/icons/jvm/';
+    JVM.logoRegistry = {
+        'jetty': JVM.logoPath + 'jetty-logo-80x22.png',
+        'tomcat': JVM.logoPath + 'tomcat-logo.gif',
+        'generic': JVM.logoPath + 'java-logo.svg'
+    };
+})(JVM || (JVM = {}));
+/// <reference path="jvmGlobals.ts"/>
+var JVM;
+(function (JVM) {
+    /**
+     * Adds common properties and functions to the scope
+     * @method configureScope
+     * @for Jvm
+     * @param {*} $scope
+     * @param {ng.ILocationService} $location
+     * @param {Core.Workspace} workspace
+     */
+    function configureScope($scope, $location, workspace) {
+        $scope.isActive = function (href) {
+            var tidy = Core.trimLeading(href, "#");
+            var loc = $location.path();
+            return loc === tidy;
+        };
+        $scope.isValid = function (link) {
+            return link && link.isValid(workspace);
+        };
+        $scope.hasLocalMBean = function () {
+            return JVM.hasLocalMBean(workspace);
+        };
+        $scope.goto = function (path) {
+            $location.path(path);
+        };
+    }
+    JVM.configureScope = configureScope;
+    function hasLocalMBean(workspace) {
+        return workspace.treeContainsDomainAndProperties('hawtio', { type: 'JVMList' });
+    }
+    JVM.hasLocalMBean = hasLocalMBean;
+    function hasDiscoveryMBean(workspace) {
+        return workspace.treeContainsDomainAndProperties('jolokia', { type: 'Discovery' });
+    }
+    JVM.hasDiscoveryMBean = hasDiscoveryMBean;
+    /**
+     * Creates a jolokia object for connecting to the container with the given remote jolokia URL,
+     * username and password
+     * @method createJolokia
+     * @for Core
+     * @static
+     * @param {String} url
+     * @param {String} username
+     * @param {String} password
+     * @return {Object}
+     */
+    function createJolokia(url, username, password) {
+        var jolokiaParams = {
+            url: url,
+            username: username,
+            password: password,
+            canonicalNaming: false, ignoreErrors: true, mimeType: 'application/json'
+        };
+        return new Jolokia(jolokiaParams);
+    }
+    JVM.createJolokia = createJolokia;
+    function getRecentConnections(localStorage) {
+        if (Core.isBlank(localStorage['recentConnections'])) {
+            clearConnections();
+        }
+        return angular.fromJson(localStorage['recentConnections']);
+    }
+    JVM.getRecentConnections = getRecentConnections;
+    function addRecentConnection(localStorage, name) {
+        var recent = getRecentConnections(localStorage);
+        recent.push(name);
+        recent = _.take(_.uniq(recent), 5);
+        localStorage['recentConnections'] = angular.toJson(recent);
+    }
+    JVM.addRecentConnection = addRecentConnection;
+    function removeRecentConnection(localStorage, name) {
+        var recent = getRecentConnections(localStorage);
+        recent = _.without(recent, name);
+        localStorage['recentConnections'] = angular.toJson(recent);
+    }
+    JVM.removeRecentConnection = removeRecentConnection;
+    function clearConnections() {
+        localStorage['recentConnections'] = '[]';
+    }
+    JVM.clearConnections = clearConnections;
+    function isRemoteConnection() {
+        return ('con' in new URI().query(true));
+    }
+    JVM.isRemoteConnection = isRemoteConnection;
+    function connectToServer(localStorage, options) {
+        JVM.log.debug("Connecting with options: ", StringHelpers.toString(options));
+        var clone = angular.extend({}, options);
+        addRecentConnection(localStorage, clone.name);
+        if (!('userName' in clone)) {
+            var userDetails = HawtioCore.injector.get('userDetails');
+            clone.userName = userDetails.username;
+            clone.password = userDetails.password;
+        }
+        //must save to local storage, to be picked up by new tab
+        saveConnection(clone);
+        var $window = HawtioCore.injector.get('$window');
+        var url = (clone.view || '/') + '?con=' + clone.name;
+        url = url.replace(/\?/g, "&");
+        url = url.replace(/&/, "?");
+        var newWindow = $window.open(url, clone.name);
+        newWindow['con'] = clone.name;
+        newWindow['userDetails'] = {
+            username: clone.userName,
+            password: clone.password,
+            loginDetails: {}
+        };
+    }
+    JVM.connectToServer = connectToServer;
+    function saveConnection(options) {
+        var connections = loadConnections();
+        var existingIndex = _.findIndex(connections, function (element) { return element.name === options.name; });
+        if (existingIndex != -1) {
+            connections[existingIndex] = options;
+        }
+        else {
+            connections.unshift(options);
+        }
+        saveConnections(connections);
+    }
+    JVM.saveConnection = saveConnection;
+    /**
+     * Loads all of the available connections from local storage
+     * @returns {Core.ConnectionMap}
+     */
+    function loadConnections() {
+        var localStorage = Core.getLocalStorage();
+        try {
+            var connections = angular.fromJson(localStorage[Core.connectionSettingsKey]);
+            if (!connections) {
+                // nothing found on local storage
+                return [];
+            }
+            else if (!_.isArray(connections)) {
+                // found the legacy connections map
+                delete localStorage[Core.connectionSettingsKey];
+                return [];
+            }
+            else {
+                // found a valid connections array
+                return connections;
+            }
+        }
+        catch (e) {
+            // corrupt config
+            delete localStorage[Core.connectionSettingsKey];
+            return [];
+        }
+    }
+    JVM.loadConnections = loadConnections;
+    /**
+     * Saves the connection map to local storage
+     * @param connections array of all connections to be stored
+     */
+    function saveConnections(connections) {
+        Logger.get("Core").debug("Saving connection array: ", StringHelpers.toString(connections));
+        localStorage[Core.connectionSettingsKey] = angular.toJson(connections);
+    }
+    JVM.saveConnections = saveConnections;
+    function getConnectionNameParameter() {
+        return new URI().search(true)['con'];
+    }
+    JVM.getConnectionNameParameter = getConnectionNameParameter;
+    /**
+     * Returns the connection options for the given connection name from localStorage
+     */
+    function getConnectOptions(name, localStorage) {
+        if (localStorage === void 0) { localStorage = Core.getLocalStorage(); }
+        if (!name) {
+            return null;
+        }
+        var connections = loadConnections();
+        return _.find(connections, function (connection) { return connection.name === name; });
+    }
+    JVM.getConnectOptions = getConnectOptions;
+    /**
+     * Creates the Jolokia URL string for the given connection options
+     */
+    function createServerConnectionUrl(options) {
+        Logger.get("Core").debug("Connect to server, options: ", StringHelpers.toString(options));
+        var answer = null;
+        if (options.jolokiaUrl) {
+            answer = options.jolokiaUrl;
+        }
+        if (answer === null) {
+            var uri = new URI();
+            uri.protocol(options.scheme || 'http')
+                .host(options.host || 'localhost')
+                .port((options.port || '80'))
+                .path(options.path);
+            answer = UrlHelpers.join('proxy', uri.protocol(), uri.hostname(), uri.port(), uri.path());
+        }
+        Logger.get(JVM.pluginName).debug("Using URL: ", answer);
+        return answer;
+    }
+    JVM.createServerConnectionUrl = createServerConnectionUrl;
 })(JVM || (JVM = {}));
 /// <reference path="../jvmHelpers.ts"/>
 var JVM;
@@ -4924,6 +5020,81 @@ var JVM;
         JVM.log.debug("Jolokia list method:", jolokiaStatus.listMethod);
     }
 })(JVM || (JVM = {}));
+/// <reference path="folder.ts"/>
+/// <reference path="workspace.ts"/>
+var Jmx;
+(function (Jmx) {
+    Jmx.pluginName = 'hawtio-jmx';
+    Jmx.log = Logger.get(Jmx.pluginName);
+    Jmx.currentProcessId = '';
+    Jmx.templatePath = 'plugins/jmx/html';
+    // Add a few functions to the Core namespace
+    /**
+     * Returns the Folder object for the given domain name and type name or null if it can not be found
+     * @method getMBeanTypeFolder
+     * @for Core
+     * @static
+     * @param {Workspace} workspace
+     * @param {String} domain
+     * @param {String} typeName}
+     * @return {Folder}
+     */
+    function getMBeanTypeFolder(workspace, domain, typeName) {
+        if (workspace) {
+            var mbeanTypesToDomain = workspace.mbeanTypesToDomain || {};
+            var types = mbeanTypesToDomain[typeName] || {};
+            var answer = types[domain];
+            if (angular.isArray(answer) && answer.length) {
+                return answer[0];
+            }
+            return answer;
+        }
+        return null;
+    }
+    Jmx.getMBeanTypeFolder = getMBeanTypeFolder;
+    /**
+     * Returns the JMX objectName for the given jmx domain and type name
+     * @method getMBeanTypeObjectName
+     * @for Core
+     * @static
+     * @param {Workspace} workspace
+     * @param {String} domain
+     * @param {String} typeName
+     * @return {String}
+     */
+    function getMBeanTypeObjectName(workspace, domain, typeName) {
+        var folder = getMBeanTypeFolder(workspace, domain, typeName);
+        return Core.pathGet(folder, ["objectName"]);
+    }
+    Jmx.getMBeanTypeObjectName = getMBeanTypeObjectName;
+    /**
+     * Creates a remote workspace given a remote jolokia for querying the JMX MBeans inside the jolokia
+     * @param remoteJolokia
+     * @param remoteJolokiaStatus
+     * @param $location
+     * @param localStorage
+     * @return {Workspace}
+     */
+    function createRemoteWorkspace(remoteJolokia, remoteJolokiaStatus, $location, localStorage, $rootScope, $compile, $templateCache, HawtioNav) {
+        if ($rootScope === void 0) { $rootScope = null; }
+        if ($compile === void 0) { $compile = null; }
+        if ($templateCache === void 0) { $templateCache = null; }
+        if (HawtioNav === void 0) { HawtioNav = null; }
+        // lets create a child workspace object for the remote container
+        var jolokiaStatus = {
+            xhr: null,
+            listMethod: remoteJolokiaStatus.listMethod,
+            listMBean: remoteJolokiaStatus.listMBean
+        };
+        // disable reload notifications
+        var jmxTreeLazyLoadRegistry = Core.lazyLoaders;
+        var profileWorkspace = new Jmx.Workspace(remoteJolokia, jolokiaStatus, jmxTreeLazyLoadRegistry, $location, $compile, $templateCache, localStorage, $rootScope, HawtioNav);
+        Jmx.log.info("Loading the profile using jolokia: " + remoteJolokia);
+        profileWorkspace.loadTree();
+        return profileWorkspace;
+    }
+    Jmx.createRemoteWorkspace = createRemoteWorkspace;
+})(Jmx || (Jmx = {}));
 /// <reference path="../../jvm/ts/jolokiaService.ts"/>
 /// <reference path="jmxHelpers.ts"/>
 var Jmx;
@@ -5901,81 +6072,785 @@ var Jmx;
     }());
     Jmx.Workspace = Workspace;
 })(Jmx || (Jmx = {}));
-/// <reference path="folder.ts"/>
-/// <reference path="workspace.ts"/>
-var Jmx;
-(function (Jmx) {
-    Jmx.pluginName = 'hawtio-jmx';
-    Jmx.log = Logger.get(Jmx.pluginName);
-    Jmx.currentProcessId = '';
-    Jmx.templatePath = 'plugins/jmx/html';
-    // Add a few functions to the Core namespace
-    /**
-     * Returns the Folder object for the given domain name and type name or null if it can not be found
-     * @method getMBeanTypeFolder
-     * @for Core
-     * @static
-     * @param {Workspace} workspace
-     * @param {String} domain
-     * @param {String} typeName}
-     * @return {Folder}
-     */
-    function getMBeanTypeFolder(workspace, domain, typeName) {
-        if (workspace) {
-            var mbeanTypesToDomain = workspace.mbeanTypesToDomain || {};
-            var types = mbeanTypesToDomain[typeName] || {};
-            var answer = types[domain];
-            if (angular.isArray(answer) && answer.length) {
-                return answer[0];
-            }
-            return answer;
+/// <reference path="../../jmx/ts/folder.ts"/>
+/// <reference path="../../jmx/ts/workspace.ts"/>
+var Diagnostics;
+(function (Diagnostics) {
+    var DiagnosticsService = /** @class */ (function () {
+        DiagnosticsService.$inject = ["workspace", "configManager"];
+        function DiagnosticsService(workspace, configManager) {
+            'ngInject';
+            this.workspace = workspace;
+            this.configManager = configManager;
         }
-        return null;
-    }
-    Jmx.getMBeanTypeFolder = getMBeanTypeFolder;
-    /**
-     * Returns the JMX objectName for the given jmx domain and type name
-     * @method getMBeanTypeObjectName
-     * @for Core
-     * @static
-     * @param {Workspace} workspace
-     * @param {String} domain
-     * @param {String} typeName
-     * @return {String}
-     */
-    function getMBeanTypeObjectName(workspace, domain, typeName) {
-        var folder = getMBeanTypeFolder(workspace, domain, typeName);
-        return Core.pathGet(folder, ["objectName"]);
-    }
-    Jmx.getMBeanTypeObjectName = getMBeanTypeObjectName;
-    /**
-     * Creates a remote workspace given a remote jolokia for querying the JMX MBeans inside the jolokia
-     * @param remoteJolokia
-     * @param remoteJolokiaStatus
-     * @param $location
-     * @param localStorage
-     * @return {Workspace}
-     */
-    function createRemoteWorkspace(remoteJolokia, remoteJolokiaStatus, $location, localStorage, $rootScope, $compile, $templateCache, HawtioNav) {
-        if ($rootScope === void 0) { $rootScope = null; }
-        if ($compile === void 0) { $compile = null; }
-        if ($templateCache === void 0) { $templateCache = null; }
-        if (HawtioNav === void 0) { HawtioNav = null; }
-        // lets create a child workspace object for the remote container
-        var jolokiaStatus = {
-            xhr: null,
-            listMethod: remoteJolokiaStatus.listMethod,
-            listMBean: remoteJolokiaStatus.listMBean
+        DiagnosticsService.prototype.getTabs = function () {
+            var tabs = [];
+            if (this.hasDiagnosticFunction('jfrCheck') && this.configManager.isRouteEnabled('/diagnostics/jfr')) {
+                tabs.push(new Core.HawtioTab('Flight Recorder', '/diagnostics/jfr'));
+            }
+            if (this.hasDiagnosticFunction('gcClassHistogram') && this.configManager.isRouteEnabled('/diagnostics/heap')) {
+                tabs.push(new Core.HawtioTab('Class Histogram', '/diagnostics/heap'));
+            }
+            if (this.hasHotspotDiagnostic() && this.configManager.isRouteEnabled('/diagnostics/flags')) {
+                tabs.push(new Core.HawtioTab('Hotspot Diagnostic', '/diagnostics/flags'));
+            }
+            return tabs;
         };
-        // disable reload notifications
-        var jmxTreeLazyLoadRegistry = Core.lazyLoaders;
-        var profileWorkspace = new Jmx.Workspace(remoteJolokia, jolokiaStatus, jmxTreeLazyLoadRegistry, $location, $compile, $templateCache, localStorage, $rootScope, HawtioNav);
-        Jmx.log.info("Loading the profile using jolokia: " + remoteJolokia);
-        profileWorkspace.loadTree();
-        return profileWorkspace;
+        DiagnosticsService.prototype.hasHotspotDiagnostic = function () {
+            return this.workspace.treeContainsDomainAndProperties('com.sun.management', { type: 'HotSpotDiagnostic' });
+        };
+        DiagnosticsService.prototype.hasDiagnosticFunction = function (operation) {
+            var diagnostics = this.workspace.findMBeanWithProperties('com.sun.management', { type: 'DiagnosticCommand' });
+            return diagnostics && diagnostics.mbean && diagnostics.mbean.op && diagnostics.mbean.op[operation];
+        };
+        DiagnosticsService.prototype.findMyPid = function (title) {
+            //snatch PID from window title
+            var regex = /pid:(\d+)/g;
+            var pid = regex.exec(title);
+            if (pid && pid[1]) {
+                return pid[1];
+            }
+            else {
+                return null;
+            }
+        };
+        return DiagnosticsService;
+    }());
+    Diagnostics.DiagnosticsService = DiagnosticsService;
+})(Diagnostics || (Diagnostics = {}));
+/// <reference path="./diagnostics.service.ts"/>
+var Diagnostics;
+(function (Diagnostics) {
+    DiagnosticsHeapController.$inject = ["$scope", "jolokia", "diagnosticsService"];
+    function DiagnosticsHeapController($scope, jolokia, diagnosticsService) {
+        'ngInject';
+        var instanceCounts;
+        var byteCounts;
+        $scope.items = [];
+        $scope.loading = false;
+        $scope.lastLoaded = null;
+        $scope.toolbarConfig = {
+            actionsConfig: {
+                actionsInclude: true
+            },
+            isTableView: true
+        };
+        $scope.tableConfig = {
+            selectionMatchProp: 'name',
+            showCheckboxes: false
+        };
+        $scope.tableDtOptions = {
+            order: [[0, "asc"]]
+        };
+        $scope.pageConfig = {
+            pageSize: 20
+        };
+        $scope.tableColumns = [
+            {
+                header: '#',
+                itemField: 'num'
+            },
+            {
+                header: 'Instances',
+                itemField: 'count'
+            },
+            {
+                header: '<delta',
+                itemField: 'deltaCount'
+            },
+            {
+                header: 'Bytes',
+                itemField: 'bytes'
+            },
+            {
+                header: '<delta',
+                itemField: 'deltaBytes'
+            },
+            {
+                header: 'Class name',
+                itemField: 'name',
+                templateFn: function (value) { return "<span class=\"table-cell-truncated\" title=\"" + value + "\">" + value + "</span>"; }
+            }
+        ];
+        $scope.loadClassStats = function () {
+            $scope.loading = true;
+            Core.$apply($scope);
+            jolokia.request({
+                type: 'exec',
+                mbean: 'com.sun.management:type=DiagnosticCommand',
+                operation: 'gcClassHistogram([Ljava.lang.String;)',
+                arguments: ['']
+            }, {
+                success: render,
+                error: function (response) {
+                    Diagnostics.log.error('Failed to get class histogram: ' + response.error);
+                    $scope.loading = false;
+                    Core.$apply($scope);
+                }
+            });
+        };
+        function render(response) {
+            var classHistogram = response.value;
+            var lines = response.value.split('\n');
+            var parsed = [];
+            var classCounts = {};
+            var bytesCounts = {};
+            for (var i = 0; i < lines.length; i++) {
+                var values = lines[i].match(/\s*(\d+):\s*(\d+)\s*(\d+)\s*(\S+)\s*/);
+                if (values && values.length >= 5) {
+                    var className = translateJniName(values[4]);
+                    var count = values[2];
+                    var bytes = values[3];
+                    var entry = {
+                        num: values[1],
+                        count: count,
+                        bytes: bytes,
+                        name: className,
+                        deltaCount: findDelta(instanceCounts, className, count),
+                        deltaBytes: findDelta(byteCounts, className, bytes)
+                    };
+                    parsed.push(entry);
+                    classCounts[className] = count;
+                    bytesCounts[className] = bytes;
+                }
+            }
+            $scope.items = parsed;
+            $scope.lastLoaded = Date.now();
+            instanceCounts = classCounts;
+            byteCounts = bytesCounts;
+            Core.$apply($scope);
+            setTimeout(function () {
+                $scope.loading = false;
+                Core.$apply($scope);
+            });
+        }
+        function findDelta(oldCounts, className, newValue) {
+            if (!oldCounts) {
+                return '';
+            }
+            var oldValue = oldCounts[className];
+            if (oldValue) {
+                return oldValue - newValue;
+            }
+            else {
+                return newValue;
+            }
+        }
+        function translateJniName(name) {
+            if (name.length == 1) {
+                switch (name.charAt(0)) {
+                    case 'I':
+                        return 'int';
+                    case 'S':
+                        return 'short';
+                    case 'C':
+                        return 'char';
+                    case 'Z':
+                        return 'boolean';
+                    case 'D':
+                        return 'double';
+                    case 'F':
+                        return 'float';
+                    case 'J':
+                        return 'long';
+                    case 'B':
+                        return 'byte';
+                }
+            }
+            else {
+                switch (name.charAt(0)) {
+                    case '[':
+                        return translateJniName(name.substring(1)) + '[]';
+                    case 'L':
+                        if (name.endsWith(';')) {
+                            return translateJniName(name.substring(1, name.indexOf(';')));
+                        }
+                    default:
+                        return name;
+                }
+            }
+        }
     }
-    Jmx.createRemoteWorkspace = createRemoteWorkspace;
-})(Jmx || (Jmx = {}));
+    Diagnostics.DiagnosticsHeapController = DiagnosticsHeapController;
+})(Diagnostics || (Diagnostics = {}));
+/// <reference path="diagnostics.service.ts"/>
+var Diagnostics;
+(function (Diagnostics) {
+    DiagnosticsJfrController.$inject = ["$scope", "$location", "workspace", "jolokia", "localStorage", "diagnosticsService"];
+    function splitResponse(response) {
+        return response.match(/Dumped recording "(.+)",(.+) written to:\r?\n\r?\n(.+)/);
+    }
+    function buildStartParams(jfrSettings) {
+        var params = [];
+        if (jfrSettings.name && jfrSettings.name.length > 0) {
+            params.push('name="' + jfrSettings.name + '"');
+        }
+        if (jfrSettings.filename && jfrSettings.filename.length > 0) {
+            params.push('filename="' + jfrSettings.filename + '"');
+        }
+        params.push('dumponexit=' + jfrSettings.dumpOnExit);
+        if (jfrSettings.limitType != 'unlimited') {
+            params.push(jfrSettings.limitType + '=' + jfrSettings.limitValue);
+        }
+        return params;
+    }
+    function buildDumpParams(jfrSettings) {
+        return [
+            'filename="' + jfrSettings.filename + '"',
+            'name="' + jfrSettings.name + '"'
+        ];
+    }
+    function DiagnosticsJfrController($scope, $location, workspace, jolokia, localStorage, diagnosticsService) {
+        'ngInject';
+        $scope.forms = {};
+        $scope.pid = diagnosticsService.findMyPid($scope.pageTitle);
+        $scope.recordings = [];
+        $scope.settingsVisible = false;
+        $scope.jfrSettings = {
+            limitType: 'unlimited',
+            limitValue: '',
+            name: '',
+            dumpOnExit: true,
+            recordingNumber: '',
+            filename: ''
+        };
+        $scope.formConfig = {
+            properties: {
+                name: {
+                    type: "java.lang.String",
+                    tooltip: "Name for this connection",
+                    "input-attributes": {
+                        "placeholder": "Recording name (optional)..."
+                    }
+                },
+                limitType: {
+                    type: "java.lang.String",
+                    tooltip: "Duration if any",
+                    enum: ['unlimited', 'duration', 'maxsize']
+                },
+                limitValue: {
+                    type: "java.lang.String",
+                    tooltip: "Limit value. duration: [val]s/m/h, maxsize: [val]kB/MB/GB",
+                    required: false,
+                    "input-attributes": {
+                        "ng-show": "jfrSettings.limitType != 'unlimited'"
+                    }
+                },
+                dumpOnExit: {
+                    type: "java.lang.Boolean",
+                    tooltip: "Automatically dump recording on VM exit"
+                },
+                filename: {
+                    type: "java.lang.String",
+                    tooltip: "Filename",
+                    "input-attributes": {
+                        "placeholder": "Specify file name *.jfr (optional)..."
+                    }
+                },
+            }
+        };
+        $scope.unlock = function () {
+            executeDiagnosticFunction('vmUnlockCommercialFeatures()', 'VM.unlock_commercial_features', [], null);
+        };
+        $scope.startRecording = function () {
+            if ($scope.isRecording) {
+                $scope.jfrSettings.name = null;
+                $scope.jfrSettings.filename = null;
+            }
+            executeDiagnosticFunction('jfrStart([Ljava.lang.String;)', 'JFR.start', [buildStartParams($scope.jfrSettings)], null);
+        };
+        $scope.dumpRecording = function () {
+            executeDiagnosticFunction('jfrDump([Ljava.lang.String;)', 'JFR.dump', [buildDumpParams($scope.jfrSettings)], function (response) {
+                var matches = splitResponse(response);
+                Diagnostics.log.debug("response: " + response
+                    + " split: " + matches + "split2: "
+                    + matches);
+                if (matches) {
+                    var recordingData = {
+                        number: matches[1],
+                        size: matches[2],
+                        file: matches[3],
+                        time: Date.now()
+                    };
+                    Diagnostics.log.debug("data: "
+                        + recordingData);
+                    addRecording(recordingData, $scope.recordings);
+                }
+            });
+        };
+        $scope.closeMessageForGood = function (key) {
+            localStorage[key] = "false";
+        };
+        $scope.isMessageVisible = function (key) {
+            return localStorage[key] !== "false";
+        };
+        $scope.stopRecording = function () {
+            var name = $scope.jfrSettings.name;
+            $scope.jfrSettings.filename = '';
+            $scope.jfrSettings.name = '';
+            executeDiagnosticFunction('jfrStop([Ljava.lang.String;)', 'JFR.stop', ['name="' + name + '"'], null);
+        };
+        $scope.toggleSettingsVisible = function () {
+            $scope.settingsVisible = !$scope.settingsVisible;
+            Core.$apply($scope);
+        };
+        Core.register(jolokia, $scope, [{
+                type: 'exec',
+                operation: 'jfrCheck([Ljava.lang.String;)',
+                mbean: 'com.sun.management:type=DiagnosticCommand',
+                arguments: ['']
+            }], Core.onSuccess(render));
+        function render(response) {
+            var statusString = response.value;
+            $scope.jfrEnabled = statusString.indexOf("not enabled") == -1;
+            $scope.isRunning = statusString.indexOf("(running)") > -1;
+            $scope.isRecording = $scope.isRunning || statusString.indexOf("(stopped)") > -1;
+            if ((statusString.indexOf("Use JFR.") > -1 || statusString
+                .indexOf("Use VM.") > -1)
+                && $scope.pid) {
+                statusString = statusString.replace("Use ", "Use command line: jcmd " + $scope.pid + " ");
+            }
+            $scope.jfrStatus = statusString;
+            if ($scope.isRecording) {
+                var regex = /recording=(\d+) name="(.+?)"/g;
+                if ($scope.isRunning) {
+                    regex = /recording=(\d+) name="(.+?)".+?\(running\)/g;
+                }
+                var parsed = regex.exec(statusString);
+                $scope.jfrSettings.recordingNumber = parsed[1];
+                $scope.jfrSettings.name = parsed[2];
+                var parsedFilename = statusString.match(/filename="(.+)"/);
+                if (parsedFilename && parsedFilename[1]) {
+                    $scope.jfrSettings.filename = parsedFilename[1];
+                }
+                else {
+                    $scope.jfrSettings.filename = 'recording' + parsed[1] + '.jfr';
+                }
+            }
+            Core.$apply($scope);
+        }
+        function addRecording(recording, recordings) {
+            for (var i = 0; i < recordings.length; i++) {
+                if (recordings[i].file === recording.file) {
+                    recordings[i] = recording;
+                    return;
+                }
+            }
+            recordings.push(recording);
+        }
+        function showArguments(arguments) {
+            var result = '';
+            var first = true;
+            for (var i = 0; i < arguments.length; i++) {
+                if (first) {
+                    first = false;
+                }
+                else {
+                    result += ',';
+                }
+                result += arguments[i];
+            }
+            return result;
+        }
+        function executeDiagnosticFunction(operation, jcmd, arguments, callback) {
+            Diagnostics.log.debug(Date.now() + " Invoking operation "
+                + operation + " with arguments" + arguments + " settings: " + JSON.stringify($scope.jfrSettings));
+            $scope.jcmd = 'jcmd ' + $scope.pid + ' ' + jcmd + ' ' + showArguments(arguments);
+            jolokia.request([{
+                    type: "exec",
+                    operation: operation,
+                    mbean: 'com.sun.management:type=DiagnosticCommand',
+                    arguments: arguments
+                }, {
+                    type: 'exec',
+                    operation: 'jfrCheck([Ljava.lang.String;)',
+                    mbean: 'com.sun.management:type=DiagnosticCommand',
+                    arguments: ['']
+                }], Core.onSuccess(function (response) {
+                Diagnostics.log.debug("Diagnostic Operation "
+                    + operation + " was successful" + response.value);
+                if (response.request.operation.indexOf("jfrCheck") > -1) {
+                    render(response);
+                }
+                else {
+                    if (callback) {
+                        callback(response.value);
+                    }
+                    Core.$apply($scope);
+                }
+            }, {
+                error: function (response) {
+                    Diagnostics.log.warn("Diagnostic Operation "
+                        + operation + " failed", response);
+                }
+            }));
+        }
+    }
+    Diagnostics.DiagnosticsJfrController = DiagnosticsJfrController;
+})(Diagnostics || (Diagnostics = {}));
+/// <reference path="diagnostics.service.ts"/>
+var Diagnostics;
+(function (Diagnostics) {
+    DiagnosticsLayoutController.$inject = ["$location", "diagnosticsService"];
+    function DiagnosticsLayoutController($location, diagnosticsService) {
+        'ngInject';
+        this.tabs = diagnosticsService.getTabs();
+        this.goto = function (tab) {
+            $location.path(tab.path);
+        };
+    }
+    Diagnostics.DiagnosticsLayoutController = DiagnosticsLayoutController;
+})(Diagnostics || (Diagnostics = {}));
+var Diagnostics;
+(function (Diagnostics) {
+    DiagnosticsConfig.$inject = ["configManager"];
+    function DiagnosticsConfig(configManager) {
+        'ngInject';
+        configManager
+            .addRoute('/diagnostics/jfr', { templateUrl: 'plugins/diagnostics/html/jfr.html' })
+            .addRoute('/diagnostics/heap', { templateUrl: 'plugins/diagnostics/html/heap.html' })
+            .addRoute('/diagnostics/flags', { templateUrl: 'plugins/diagnostics/html/flags.html' });
+    }
+    Diagnostics.DiagnosticsConfig = DiagnosticsConfig;
+})(Diagnostics || (Diagnostics = {}));
+/// <reference path="../../jmx/ts/workspace.ts"/>
+/// <reference path="diagnostics.service.ts"/>
+var Diagnostics;
+(function (Diagnostics) {
+    DiagnosticsInit.$inject = ["$rootScope", "viewRegistry", "helpRegistry", "workspace", "diagnosticsService"];
+    function DiagnosticsInit($rootScope, viewRegistry, helpRegistry, workspace, diagnosticsService) {
+        'ngInject';
+        viewRegistry['diagnostics'] = 'plugins/diagnostics/html/layout.html';
+        helpRegistry.addUserDoc('diagnostics', 'plugins/diagnostics/doc/help.md');
+        var unsubscribe = $rootScope.$on('jmxTreeUpdated', function () {
+            unsubscribe();
+            var tabs = diagnosticsService.getTabs();
+            workspace.topLevelTabs.push({
+                id: "diagnostics",
+                content: "Diagnostics",
+                title: "JVM Diagnostics",
+                isValid: function () { return tabs.length > 0; },
+                href: function () { return tabs[0].path; },
+                isActive: function (workspace) { return workspace.isLinkActive("diagnostics"); }
+            });
+        });
+    }
+    Diagnostics.DiagnosticsInit = DiagnosticsInit;
+})(Diagnostics || (Diagnostics = {}));
+/// <reference path="diagnostics.config.ts"/>
+/// <reference path="diagnostics.init.ts"/>
+/// <reference path="diagnostics-layout.controller.ts"/>
+/// <reference path="diagnostics-jfr.controller.ts"/>
+/// <reference path="diagnostics-heap.controller.ts"/>
+/// <reference path="diagnostics-flags.controller.ts"/>
+/// <reference path="diagnostics.service.ts"/>
+var Diagnostics;
+(function (Diagnostics) {
+    var pluginName = 'hawtio-diagnostics';
+    Diagnostics.log = Logger.get(pluginName);
+    Diagnostics._module = angular
+        .module(pluginName, [])
+        .config(Diagnostics.DiagnosticsConfig)
+        .run(Diagnostics.DiagnosticsInit)
+        .controller("DiagnosticsLayoutController", Diagnostics.DiagnosticsLayoutController)
+        .controller("DiagnosticsJfrController", Diagnostics.DiagnosticsJfrController)
+        .controller("DiagnosticsHeapController", Diagnostics.DiagnosticsHeapController)
+        .controller("DiagnosticsFlagsController", Diagnostics.DiagnosticsFlagsController)
+        .service('diagnosticsService', Diagnostics.DiagnosticsService);
+    hawtioPluginLoader.addModule(pluginName);
+})(Diagnostics || (Diagnostics = {}));
+/// <reference path="jvmPlugin.ts"/>
+var JVM;
+(function (JVM) {
+    JVM._module.controller("JVM.DiscoveryController", ["$scope", "localStorage", "jolokia", function ($scope, localStorage, jolokia) {
+            $scope.discovering = true;
+            $scope.agents = undefined;
+            $scope.$watch('agents', function (newValue, oldValue) {
+                if (newValue !== oldValue) {
+                    $scope.selectedAgent = _.find($scope.agents, function (a) { return a['selected']; });
+                }
+            }, true);
+            $scope.closePopover = function ($event) {
+                $($event.currentTarget).parents('.popover').prev().popover('hide');
+            };
+            function getMoreJvmDetails(agents) {
+                for (var key in agents) {
+                    var agent = agents[key];
+                    if (agent.url && !agent.secured) {
+                        var dedicatedJolokia = JVM.createJolokia(agent.url, agent.username, agent.password);
+                        agent.startTime = dedicatedJolokia.getAttribute('java.lang:type=Runtime', 'StartTime');
+                        if (!$scope.hasName(agent)) {
+                            agent.command = dedicatedJolokia.getAttribute('java.lang:type=Runtime', 'SystemProperties', 'sun.java.command');
+                        }
+                    }
+                }
+            }
+            function doConnect(agent) {
+                if (!agent.url) {
+                    Core.notification('warning', 'No URL available to connect to agent');
+                    return;
+                }
+                var options = Core.createConnectOptions();
+                options.name = agent.agent_description || 'discover-' + agent.agent_id;
+                var urlObject = Core.parseUrl(agent.url);
+                angular.extend(options, urlObject);
+                options.userName = agent.username;
+                options.password = agent.password;
+                JVM.connectToServer(localStorage, options);
+            }
+            $scope.connectWithCredentials = function ($event, agent) {
+                $scope.closePopover($event);
+                doConnect(agent);
+            };
+            $scope.gotoServer = function ($event, agent) {
+                if (agent.secured) {
+                    $($event.currentTarget).popover('show');
+                }
+                else {
+                    doConnect(agent);
+                }
+            };
+            $scope.getElementId = function (agent) {
+                return agent.agent_id.dasherize().replace(/\./g, "-");
+            };
+            $scope.getLogo = function (agent) {
+                if (agent.server_product) {
+                    return JVM.logoRegistry[agent.server_product];
+                }
+                return JVM.logoRegistry['generic'];
+            };
+            $scope.filterMatches = function (agent) {
+                if (Core.isBlank($scope.filter)) {
+                    return true;
+                }
+                else {
+                    var needle = $scope.filter.toLowerCase();
+                    var haystack = angular.toJson(agent).toLowerCase();
+                    return haystack.indexOf(needle) !== 0;
+                }
+            };
+            $scope.getAgentIdClass = function (agent) {
+                if ($scope.hasName(agent)) {
+                    return "";
+                }
+                return "strong";
+            };
+            $scope.hasName = function (agent) {
+                return !!(agent.server_vendor && agent.server_product && agent.server_version);
+            };
+            $scope.render = function (response) {
+                $scope.discovering = false;
+                if (response) {
+                    var responseJson = angular.toJson(response, true);
+                    if ($scope.responseJson !== responseJson) {
+                        $scope.responseJson = responseJson;
+                        $scope.agents = response;
+                        getMoreJvmDetails($scope.agents);
+                    }
+                }
+                Core.$apply($scope);
+            };
+            $scope.fetch = function () {
+                $scope.discovering = true;
+                // use 10 sec timeout
+                jolokia.execute('jolokia:type=Discovery', 'lookupAgentsWithTimeout(int)', 10 * 1000, Core.onSuccess($scope.render));
+            };
+            $scope.fetch();
+        }]);
+})(JVM || (JVM = {}));
+/// <reference path="jvmPlugin.ts"/>
+var JVM;
+(function (JVM) {
+    JVM.HeaderController = JVM._module.controller("JVM.HeaderController", ["$scope", "ConnectOptions", function ($scope, ConnectOptions) {
+            if (ConnectOptions) {
+                $scope.containerName = ConnectOptions.name || "";
+                if (ConnectOptions.returnTo) {
+                    $scope.goBack = function () {
+                        window.location.href = ConnectOptions.returnTo;
+                    };
+                }
+            }
+        }]);
+})(JVM || (JVM = {}));
+/// <reference path="jvmPlugin.ts"/>
+var JVM;
+(function (JVM) {
+    JolokiaPreferences.$inject = ["$scope", "localStorage", "jolokiaParams", "$window"];
+    var SHOW_ALERT = 'showJolokiaPreferencesAlert';
+    function JolokiaPreferences($scope, localStorage, jolokiaParams, $window) {
+        'ngInject';
+        // Initialize tooltips
+        $('[data-toggle="tooltip"]').tooltip();
+        Core.initPreferenceScope($scope, localStorage, {
+            'updateRate': {
+                'value': 5000,
+                'post': function (newValue) {
+                    $scope.$emit('UpdateRate', newValue);
+                }
+            },
+            'maxDepth': {
+                'value': JVM.DEFAULT_MAX_DEPTH,
+                'converter': parseInt,
+                'formatter': parseInt,
+                'post': function (newValue) {
+                    jolokiaParams.maxDepth = newValue;
+                    localStorage['jolokiaParams'] = angular.toJson(jolokiaParams);
+                }
+            },
+            'maxCollectionSize': {
+                'value': JVM.DEFAULT_MAX_COLLECTION_SIZE,
+                'converter': parseInt,
+                'formatter': parseInt,
+                'post': function (newValue) {
+                    jolokiaParams.maxCollectionSize = newValue;
+                    localStorage['jolokiaParams'] = angular.toJson(jolokiaParams);
+                }
+            }
+        });
+        $scope.showAlert = !!$window.sessionStorage.getItem(SHOW_ALERT);
+        $window.sessionStorage.removeItem(SHOW_ALERT);
+        $scope.reboot = function () {
+            $window.sessionStorage.setItem(SHOW_ALERT, 'true');
+            $window.location.reload();
+        };
+    }
+    JVM.JolokiaPreferences = JolokiaPreferences;
+    JVM._module.controller("JVM.JolokiaPreferences", JolokiaPreferences);
+})(JVM || (JVM = {}));
+var JVM;
+(function (JVM) {
+    var JolokiaService = /** @class */ (function () {
+        JolokiaService.$inject = ["$q", "jolokia"];
+        function JolokiaService($q, jolokia) {
+            'ngInject';
+            this.$q = $q;
+            this.jolokia = jolokia;
+        }
+        JolokiaService.prototype.getAttribute = function (mbean, attribute) {
+            var _this = this;
+            return this.$q(function (resolve, reject) {
+                _this.jolokia.request({ type: 'read', mbean: mbean, attribute: attribute }, { success: function (response) { return resolve(response.value); } }, { error: function (response) {
+                        JVM.log.error("JolokiaService.getAttribute('" + mbean + "', '" + attribute + "') failed. Error: " + response.error);
+                        reject(response.error);
+                    }
+                });
+            });
+        };
+        return JolokiaService;
+    }());
+    JVM.JolokiaService = JolokiaService;
+    JVM._module.service("jolokiaService", JolokiaService);
+})(JVM || (JVM = {}));
+/// <reference path="jvmPlugin.ts"/>
+/**
+ * @module JVM
+ */
+var JVM;
+(function (JVM) {
+    JVM._module.controller("JVM.JVMsController", ["$scope", "$location", "localStorage", "workspace", "jolokia", "mbeanName", function ($scope, $location, localStorage, workspace, jolokia, mbeanName) {
+            JVM.configureScope($scope, $location, workspace);
+            $scope.data = [];
+            $scope.deploying = false;
+            $scope.status = '';
+            $scope.initDone = false;
+            $scope.filter = '';
+            var listRequest = {
+                type: 'exec', mbean: mbeanName,
+                operation: 'listLocalJVMs()',
+                arguments: []
+            };
+            $scope.filterMatches = function (jvm) {
+                if (Core.isBlank($scope.filter)) {
+                    return true;
+                }
+                else {
+                    return jvm.alias.toLowerCase().has($scope.filter.toLowerCase());
+                }
+            };
+            $scope.fetch = function () {
+                jolokia.request(listRequest, {
+                    success: render,
+                    error: function (response) {
+                        $scope.data = [];
+                        $scope.initDone = true;
+                        $scope.status = 'Could not discover local JVM processes: ' + response.error;
+                        Core.$apply($scope);
+                    }
+                });
+            };
+            $scope.stopAgent = function (pid) {
+                jolokia.request([{
+                        type: 'exec', mbean: mbeanName,
+                        operation: 'stopAgent(java.lang.String)',
+                        arguments: [pid]
+                    }, listRequest], Core.onSuccess(renderIfList));
+            };
+            $scope.startAgent = function (pid) {
+                jolokia.request([{
+                        type: 'exec', mbean: mbeanName,
+                        operation: 'startAgent(java.lang.String)',
+                        arguments: [pid]
+                    }, listRequest], Core.onSuccess(renderIfList));
+            };
+            $scope.connectTo = function (url, scheme, host, port, path) {
+                // we only need the port and path from the url, as we got the rest
+                var options = {};
+                options["scheme"] = scheme;
+                options["host"] = host;
+                options["port"] = port;
+                options["path"] = path;
+                // add empty username as we dont need login
+                options["userName"] = "";
+                options["password"] = "";
+                // connect to root by default as we do not want to show welcome page
+                options["view"] = "#/";
+                var con = Core.createConnectToServerOptions(options);
+                con.name = "local-" + port;
+                JVM.log.debug("Connecting to local JVM agent: " + url);
+                JVM.connectToServer(localStorage, con);
+                Core.$apply($scope);
+            };
+            /**
+             * Since the requests are bundled, check the operation in callback to decide on
+             * how to respond to success
+             */
+            function renderIfList(response) {
+                if (response.request.operation.indexOf("listLocalJVMs") > -1) {
+                    render(response);
+                }
+            }
+            function render(response) {
+                $scope.initDone = true;
+                $scope.data = response.value;
+                if ($scope.data.length === 0) {
+                    $scope.status = 'Could not discover local JVM processes';
+                }
+                Core.$apply($scope);
+            }
+            $scope.fetch();
+        }]);
+})(JVM || (JVM = {}));
+/// <reference path="./jvmPlugin.ts"/>
+var JVM;
+(function (JVM) {
+    JVM._module.controller("JVM.NavController", ["$scope", "$location", "workspace", function ($scope, $location, workspace) {
+            JVM.configureScope($scope, $location, workspace);
+            $scope.isLocalEnabled = JVM.hasLocalMBean(workspace);
+            $scope.isDiscoveryEnabled = JVM.hasDiscoveryMBean(workspace);
+        }]);
+})(JVM || (JVM = {}));
+/// <reference path="./jvmPlugin.ts"/>
+var JVM;
+(function (JVM) {
+    JVM._module.controller("JVM.ResetController", ["$scope", "localStorage", function ($scope, localStorage) {
+            $scope.showAlert = false;
+            $scope.doClearConnectSettings = function () {
+                delete localStorage[JVM.connectControllerKey];
+                delete localStorage[JVM.connectionSettingsKey];
+                $scope.showAlert = true;
+            };
+        }]);
+})(JVM || (JVM = {}));
 var Jmx;
 (function (Jmx) {
     function createDashboardLink(widgetType, widget) {
@@ -8074,1241 +8949,6 @@ var Jmx;
     }
     Jmx.enableTree = enableTree;
 })(Jmx || (Jmx = {}));
-var Diagnostics;
-(function (Diagnostics) {
-    DiagnosticsFlagsController.$inject = ["$scope", "jolokia"];
-    function DiagnosticsFlagsController($scope, jolokia) {
-        'ngInject';
-        var readRequest = {
-            type: 'read',
-            mbean: 'com.sun.management:type=HotSpotDiagnostic',
-            arguments: []
-        };
-        $scope.flags = [];
-        // $scope.tableDef = tableDef();
-        Core.register(jolokia, $scope, [readRequest], Core.onSuccess(render));
-        function render(response) {
-            //remove watches on previous content
-            for (var i = 0; i < $scope.flags.length; i++) {
-                $scope.flags[i].deregisterWatch();
-            }
-            $scope.flags = response.value.DiagnosticOptions;
-            for (var i = 0; i < $scope.flags.length; i++) {
-                var flag = $scope.flags[i];
-                flag.value = parseValue(flag.value); //convert to typed value
-                if (flag.writeable) {
-                    flag.dataType = typeof (flag.value);
-                }
-                else {
-                    flag.dataType = "readonly";
-                }
-                flag.deregisterWatch = $scope.$watch('flags[' + i + ']', function (newValue, oldValue) {
-                    if (newValue.value != oldValue.value) {
-                        jolokia.request([{
-                                type: 'exec',
-                                mbean: 'com.sun.management:type=HotSpotDiagnostic',
-                                operation: 'setVMOption(java.lang.String,java.lang.String)',
-                                arguments: [newValue.name, newValue.value]
-                            }, readRequest], Core.onSuccess(function (response) {
-                            if (response.request.type === "read") {
-                                render(response);
-                            }
-                            else {
-                                Diagnostics.log.info("Set VM option " + newValue.name + "=" + newValue.value);
-                            }
-                        }));
-                    }
-                }, true);
-            }
-            Core.$apply($scope);
-        }
-        function parseValue(value) {
-            if (typeof (value) === "string") {
-                if (value.match(/true/)) {
-                    return true;
-                }
-                else if (value.match(/false/)) {
-                    return false;
-                }
-                else if (value.match(/\d+/)) {
-                    return Number(value);
-                }
-            }
-            return value;
-        }
-        // function tableDef() {
-        //   return {
-        //     selectedItems: [],
-        //     data: 'flags',
-        //     showFilter: true,
-        //     filterOptions: {
-        //       filterText: ''
-        //     },
-        //     showSelectionCheckbox: false,
-        //     enableRowClickSelection: true,
-        //     multiSelect: false,
-        //     primaryKeyFn: function (entity, idx) {
-        //       return entity.name;
-        //     },
-        //     columnDefs: [
-        //       {
-        //         field: 'name',
-        //         displayName: 'VM Flag',
-        //         resizable: true
-        //       }, {
-        //         field: 'origin',
-        //         displayName: 'Origin',
-        //         resizable: true
-        //       }, {
-        //         field: 'value',
-        //         displayName: 'Value',
-        //         resizable: true,
-        //         cellTemplate: '<div ng-switch on="row.entity.dataType"><span ng-switch-when="readonly">{{row.entity.value}}</span><input ng-switch-when="boolean" type="checkbox" ng-model="row.entity.value"></input><input ng-switch-when="string" type="text" ng-model="row.entity.value"></input><input ng-switch-when="number" type="number" ng-model="row.entity.value"></input></div>'
-        //       }]
-        //   };
-        // }
-    }
-    Diagnostics.DiagnosticsFlagsController = DiagnosticsFlagsController;
-})(Diagnostics || (Diagnostics = {}));
-/// <reference path="../../jmx/ts/folder.ts"/>
-/// <reference path="../../jmx/ts/workspace.ts"/>
-var Diagnostics;
-(function (Diagnostics) {
-    var DiagnosticsService = /** @class */ (function () {
-        DiagnosticsService.$inject = ["workspace", "configManager"];
-        function DiagnosticsService(workspace, configManager) {
-            'ngInject';
-            this.workspace = workspace;
-            this.configManager = configManager;
-        }
-        DiagnosticsService.prototype.getTabs = function () {
-            var tabs = [];
-            if (this.hasDiagnosticFunction('jfrCheck') && this.configManager.isRouteEnabled('/diagnostics/jfr')) {
-                tabs.push(new Core.HawtioTab('Flight Recorder', '/diagnostics/jfr'));
-            }
-            if (this.hasDiagnosticFunction('gcClassHistogram') && this.configManager.isRouteEnabled('/diagnostics/heap')) {
-                tabs.push(new Core.HawtioTab('Class Histogram', '/diagnostics/heap'));
-            }
-            if (this.hasHotspotDiagnostic() && this.configManager.isRouteEnabled('/diagnostics/flags')) {
-                tabs.push(new Core.HawtioTab('Hotspot Diagnostic', '/diagnostics/flags'));
-            }
-            return tabs;
-        };
-        DiagnosticsService.prototype.hasHotspotDiagnostic = function () {
-            return this.workspace.treeContainsDomainAndProperties('com.sun.management', { type: 'HotSpotDiagnostic' });
-        };
-        DiagnosticsService.prototype.hasDiagnosticFunction = function (operation) {
-            var diagnostics = this.workspace.findMBeanWithProperties('com.sun.management', { type: 'DiagnosticCommand' });
-            return diagnostics && diagnostics.mbean && diagnostics.mbean.op && diagnostics.mbean.op[operation];
-        };
-        DiagnosticsService.prototype.findMyPid = function (title) {
-            //snatch PID from window title
-            var regex = /pid:(\d+)/g;
-            var pid = regex.exec(title);
-            if (pid && pid[1]) {
-                return pid[1];
-            }
-            else {
-                return null;
-            }
-        };
-        return DiagnosticsService;
-    }());
-    Diagnostics.DiagnosticsService = DiagnosticsService;
-})(Diagnostics || (Diagnostics = {}));
-/// <reference path="./diagnostics.service.ts"/>
-var Diagnostics;
-(function (Diagnostics) {
-    DiagnosticsHeapController.$inject = ["$scope", "jolokia", "diagnosticsService"];
-    function DiagnosticsHeapController($scope, jolokia, diagnosticsService) {
-        'ngInject';
-        var instanceCounts;
-        var byteCounts;
-        $scope.items = [];
-        $scope.loading = false;
-        $scope.lastLoaded = null;
-        $scope.toolbarConfig = {
-            actionsConfig: {
-                actionsInclude: true
-            },
-            isTableView: true
-        };
-        $scope.tableConfig = {
-            selectionMatchProp: 'name',
-            showCheckboxes: false
-        };
-        $scope.tableDtOptions = {
-            order: [[0, "asc"]]
-        };
-        $scope.pageConfig = {
-            pageSize: 20
-        };
-        $scope.tableColumns = [
-            {
-                header: '#',
-                itemField: 'num'
-            },
-            {
-                header: 'Instances',
-                itemField: 'count'
-            },
-            {
-                header: '<delta',
-                itemField: 'deltaCount'
-            },
-            {
-                header: 'Bytes',
-                itemField: 'bytes'
-            },
-            {
-                header: '<delta',
-                itemField: 'deltaBytes'
-            },
-            {
-                header: 'Class name',
-                itemField: 'name',
-                templateFn: function (value) { return "<span class=\"table-cell-truncated\" title=\"" + value + "\">" + value + "</span>"; }
-            }
-        ];
-        $scope.loadClassStats = function () {
-            $scope.loading = true;
-            Core.$apply($scope);
-            jolokia.request({
-                type: 'exec',
-                mbean: 'com.sun.management:type=DiagnosticCommand',
-                operation: 'gcClassHistogram([Ljava.lang.String;)',
-                arguments: ['']
-            }, {
-                success: render,
-                error: function (response) {
-                    Diagnostics.log.error('Failed to get class histogram: ' + response.error);
-                    $scope.loading = false;
-                    Core.$apply($scope);
-                }
-            });
-        };
-        function render(response) {
-            var classHistogram = response.value;
-            var lines = response.value.split('\n');
-            var parsed = [];
-            var classCounts = {};
-            var bytesCounts = {};
-            for (var i = 0; i < lines.length; i++) {
-                var values = lines[i].match(/\s*(\d+):\s*(\d+)\s*(\d+)\s*(\S+)\s*/);
-                if (values && values.length >= 5) {
-                    var className = translateJniName(values[4]);
-                    var count = values[2];
-                    var bytes = values[3];
-                    var entry = {
-                        num: values[1],
-                        count: count,
-                        bytes: bytes,
-                        name: className,
-                        deltaCount: findDelta(instanceCounts, className, count),
-                        deltaBytes: findDelta(byteCounts, className, bytes)
-                    };
-                    parsed.push(entry);
-                    classCounts[className] = count;
-                    bytesCounts[className] = bytes;
-                }
-            }
-            $scope.items = parsed;
-            $scope.lastLoaded = Date.now();
-            instanceCounts = classCounts;
-            byteCounts = bytesCounts;
-            Core.$apply($scope);
-            setTimeout(function () {
-                $scope.loading = false;
-                Core.$apply($scope);
-            });
-        }
-        function findDelta(oldCounts, className, newValue) {
-            if (!oldCounts) {
-                return '';
-            }
-            var oldValue = oldCounts[className];
-            if (oldValue) {
-                return oldValue - newValue;
-            }
-            else {
-                return newValue;
-            }
-        }
-        function translateJniName(name) {
-            if (name.length == 1) {
-                switch (name.charAt(0)) {
-                    case 'I':
-                        return 'int';
-                    case 'S':
-                        return 'short';
-                    case 'C':
-                        return 'char';
-                    case 'Z':
-                        return 'boolean';
-                    case 'D':
-                        return 'double';
-                    case 'F':
-                        return 'float';
-                    case 'J':
-                        return 'long';
-                    case 'B':
-                        return 'byte';
-                }
-            }
-            else {
-                switch (name.charAt(0)) {
-                    case '[':
-                        return translateJniName(name.substring(1)) + '[]';
-                    case 'L':
-                        if (name.endsWith(';')) {
-                            return translateJniName(name.substring(1, name.indexOf(';')));
-                        }
-                    default:
-                        return name;
-                }
-            }
-        }
-    }
-    Diagnostics.DiagnosticsHeapController = DiagnosticsHeapController;
-})(Diagnostics || (Diagnostics = {}));
-/// <reference path="diagnostics.service.ts"/>
-var Diagnostics;
-(function (Diagnostics) {
-    DiagnosticsJfrController.$inject = ["$scope", "$location", "workspace", "jolokia", "localStorage", "diagnosticsService"];
-    function splitResponse(response) {
-        return response.match(/Dumped recording "(.+)",(.+) written to:\r?\n\r?\n(.+)/);
-    }
-    function buildStartParams(jfrSettings) {
-        var params = [];
-        if (jfrSettings.name && jfrSettings.name.length > 0) {
-            params.push('name="' + jfrSettings.name + '"');
-        }
-        if (jfrSettings.filename && jfrSettings.filename.length > 0) {
-            params.push('filename="' + jfrSettings.filename + '"');
-        }
-        params.push('dumponexit=' + jfrSettings.dumpOnExit);
-        if (jfrSettings.limitType != 'unlimited') {
-            params.push(jfrSettings.limitType + '=' + jfrSettings.limitValue);
-        }
-        return params;
-    }
-    function buildDumpParams(jfrSettings) {
-        return [
-            'filename="' + jfrSettings.filename + '"',
-            'name="' + jfrSettings.name + '"'
-        ];
-    }
-    function DiagnosticsJfrController($scope, $location, workspace, jolokia, localStorage, diagnosticsService) {
-        'ngInject';
-        $scope.forms = {};
-        $scope.pid = diagnosticsService.findMyPid($scope.pageTitle);
-        $scope.recordings = [];
-        $scope.settingsVisible = false;
-        $scope.jfrSettings = {
-            limitType: 'unlimited',
-            limitValue: '',
-            name: '',
-            dumpOnExit: true,
-            recordingNumber: '',
-            filename: ''
-        };
-        $scope.formConfig = {
-            properties: {
-                name: {
-                    type: "java.lang.String",
-                    tooltip: "Name for this connection",
-                    "input-attributes": {
-                        "placeholder": "Recording name (optional)..."
-                    }
-                },
-                limitType: {
-                    type: "java.lang.String",
-                    tooltip: "Duration if any",
-                    enum: ['unlimited', 'duration', 'maxsize']
-                },
-                limitValue: {
-                    type: "java.lang.String",
-                    tooltip: "Limit value. duration: [val]s/m/h, maxsize: [val]kB/MB/GB",
-                    required: false,
-                    "input-attributes": {
-                        "ng-show": "jfrSettings.limitType != 'unlimited'"
-                    }
-                },
-                dumpOnExit: {
-                    type: "java.lang.Boolean",
-                    tooltip: "Automatically dump recording on VM exit"
-                },
-                filename: {
-                    type: "java.lang.String",
-                    tooltip: "Filename",
-                    "input-attributes": {
-                        "placeholder": "Specify file name *.jfr (optional)..."
-                    }
-                },
-            }
-        };
-        $scope.unlock = function () {
-            executeDiagnosticFunction('vmUnlockCommercialFeatures()', 'VM.unlock_commercial_features', [], null);
-        };
-        $scope.startRecording = function () {
-            if ($scope.isRecording) {
-                $scope.jfrSettings.name = null;
-                $scope.jfrSettings.filename = null;
-            }
-            executeDiagnosticFunction('jfrStart([Ljava.lang.String;)', 'JFR.start', [buildStartParams($scope.jfrSettings)], null);
-        };
-        $scope.dumpRecording = function () {
-            executeDiagnosticFunction('jfrDump([Ljava.lang.String;)', 'JFR.dump', [buildDumpParams($scope.jfrSettings)], function (response) {
-                var matches = splitResponse(response);
-                Diagnostics.log.debug("response: " + response
-                    + " split: " + matches + "split2: "
-                    + matches);
-                if (matches) {
-                    var recordingData = {
-                        number: matches[1],
-                        size: matches[2],
-                        file: matches[3],
-                        time: Date.now()
-                    };
-                    Diagnostics.log.debug("data: "
-                        + recordingData);
-                    addRecording(recordingData, $scope.recordings);
-                }
-            });
-        };
-        $scope.closeMessageForGood = function (key) {
-            localStorage[key] = "false";
-        };
-        $scope.isMessageVisible = function (key) {
-            return localStorage[key] !== "false";
-        };
-        $scope.stopRecording = function () {
-            var name = $scope.jfrSettings.name;
-            $scope.jfrSettings.filename = '';
-            $scope.jfrSettings.name = '';
-            executeDiagnosticFunction('jfrStop([Ljava.lang.String;)', 'JFR.stop', ['name="' + name + '"'], null);
-        };
-        $scope.toggleSettingsVisible = function () {
-            $scope.settingsVisible = !$scope.settingsVisible;
-            Core.$apply($scope);
-        };
-        Core.register(jolokia, $scope, [{
-                type: 'exec',
-                operation: 'jfrCheck([Ljava.lang.String;)',
-                mbean: 'com.sun.management:type=DiagnosticCommand',
-                arguments: ['']
-            }], Core.onSuccess(render));
-        function render(response) {
-            var statusString = response.value;
-            $scope.jfrEnabled = statusString.indexOf("not enabled") == -1;
-            $scope.isRunning = statusString.indexOf("(running)") > -1;
-            $scope.isRecording = $scope.isRunning || statusString.indexOf("(stopped)") > -1;
-            if ((statusString.indexOf("Use JFR.") > -1 || statusString
-                .indexOf("Use VM.") > -1)
-                && $scope.pid) {
-                statusString = statusString.replace("Use ", "Use command line: jcmd " + $scope.pid + " ");
-            }
-            $scope.jfrStatus = statusString;
-            if ($scope.isRecording) {
-                var regex = /recording=(\d+) name="(.+?)"/g;
-                if ($scope.isRunning) {
-                    regex = /recording=(\d+) name="(.+?)".+?\(running\)/g;
-                }
-                var parsed = regex.exec(statusString);
-                $scope.jfrSettings.recordingNumber = parsed[1];
-                $scope.jfrSettings.name = parsed[2];
-                var parsedFilename = statusString.match(/filename="(.+)"/);
-                if (parsedFilename && parsedFilename[1]) {
-                    $scope.jfrSettings.filename = parsedFilename[1];
-                }
-                else {
-                    $scope.jfrSettings.filename = 'recording' + parsed[1] + '.jfr';
-                }
-            }
-            Core.$apply($scope);
-        }
-        function addRecording(recording, recordings) {
-            for (var i = 0; i < recordings.length; i++) {
-                if (recordings[i].file === recording.file) {
-                    recordings[i] = recording;
-                    return;
-                }
-            }
-            recordings.push(recording);
-        }
-        function showArguments(arguments) {
-            var result = '';
-            var first = true;
-            for (var i = 0; i < arguments.length; i++) {
-                if (first) {
-                    first = false;
-                }
-                else {
-                    result += ',';
-                }
-                result += arguments[i];
-            }
-            return result;
-        }
-        function executeDiagnosticFunction(operation, jcmd, arguments, callback) {
-            Diagnostics.log.debug(Date.now() + " Invoking operation "
-                + operation + " with arguments" + arguments + " settings: " + JSON.stringify($scope.jfrSettings));
-            $scope.jcmd = 'jcmd ' + $scope.pid + ' ' + jcmd + ' ' + showArguments(arguments);
-            jolokia.request([{
-                    type: "exec",
-                    operation: operation,
-                    mbean: 'com.sun.management:type=DiagnosticCommand',
-                    arguments: arguments
-                }, {
-                    type: 'exec',
-                    operation: 'jfrCheck([Ljava.lang.String;)',
-                    mbean: 'com.sun.management:type=DiagnosticCommand',
-                    arguments: ['']
-                }], Core.onSuccess(function (response) {
-                Diagnostics.log.debug("Diagnostic Operation "
-                    + operation + " was successful" + response.value);
-                if (response.request.operation.indexOf("jfrCheck") > -1) {
-                    render(response);
-                }
-                else {
-                    if (callback) {
-                        callback(response.value);
-                    }
-                    Core.$apply($scope);
-                }
-            }, {
-                error: function (response) {
-                    Diagnostics.log.warn("Diagnostic Operation "
-                        + operation + " failed", response);
-                }
-            }));
-        }
-    }
-    Diagnostics.DiagnosticsJfrController = DiagnosticsJfrController;
-})(Diagnostics || (Diagnostics = {}));
-/// <reference path="diagnostics.service.ts"/>
-var Diagnostics;
-(function (Diagnostics) {
-    DiagnosticsLayoutController.$inject = ["$location", "diagnosticsService"];
-    function DiagnosticsLayoutController($location, diagnosticsService) {
-        'ngInject';
-        this.tabs = diagnosticsService.getTabs();
-        this.goto = function (tab) {
-            $location.path(tab.path);
-        };
-    }
-    Diagnostics.DiagnosticsLayoutController = DiagnosticsLayoutController;
-})(Diagnostics || (Diagnostics = {}));
-var Diagnostics;
-(function (Diagnostics) {
-    DiagnosticsConfig.$inject = ["configManager"];
-    function DiagnosticsConfig(configManager) {
-        'ngInject';
-        configManager
-            .addRoute('/diagnostics/jfr', { templateUrl: 'plugins/diagnostics/html/jfr.html' })
-            .addRoute('/diagnostics/heap', { templateUrl: 'plugins/diagnostics/html/heap.html' })
-            .addRoute('/diagnostics/flags', { templateUrl: 'plugins/diagnostics/html/flags.html' });
-    }
-    Diagnostics.DiagnosticsConfig = DiagnosticsConfig;
-})(Diagnostics || (Diagnostics = {}));
-/// <reference path="../../jmx/ts/workspace.ts"/>
-/// <reference path="diagnostics.service.ts"/>
-var Diagnostics;
-(function (Diagnostics) {
-    DiagnosticsInit.$inject = ["$rootScope", "viewRegistry", "helpRegistry", "workspace", "diagnosticsService"];
-    function DiagnosticsInit($rootScope, viewRegistry, helpRegistry, workspace, diagnosticsService) {
-        'ngInject';
-        viewRegistry['diagnostics'] = 'plugins/diagnostics/html/layout.html';
-        helpRegistry.addUserDoc('diagnostics', 'plugins/diagnostics/doc/help.md');
-        var unsubscribe = $rootScope.$on('jmxTreeUpdated', function () {
-            unsubscribe();
-            var tabs = diagnosticsService.getTabs();
-            workspace.topLevelTabs.push({
-                id: "diagnostics",
-                content: "Diagnostics",
-                title: "JVM Diagnostics",
-                isValid: function () { return tabs.length > 0; },
-                href: function () { return tabs[0].path; },
-                isActive: function (workspace) { return workspace.isLinkActive("diagnostics"); }
-            });
-        });
-    }
-    Diagnostics.DiagnosticsInit = DiagnosticsInit;
-})(Diagnostics || (Diagnostics = {}));
-/// <reference path="diagnostics.config.ts"/>
-/// <reference path="diagnostics.init.ts"/>
-/// <reference path="diagnostics-layout.controller.ts"/>
-/// <reference path="diagnostics-jfr.controller.ts"/>
-/// <reference path="diagnostics-heap.controller.ts"/>
-/// <reference path="diagnostics-flags.controller.ts"/>
-/// <reference path="diagnostics.service.ts"/>
-var Diagnostics;
-(function (Diagnostics) {
-    var pluginName = 'hawtio-diagnostics';
-    Diagnostics.log = Logger.get(pluginName);
-    Diagnostics._module = angular
-        .module(pluginName, [])
-        .config(Diagnostics.DiagnosticsConfig)
-        .run(Diagnostics.DiagnosticsInit)
-        .controller("DiagnosticsLayoutController", Diagnostics.DiagnosticsLayoutController)
-        .controller("DiagnosticsJfrController", Diagnostics.DiagnosticsJfrController)
-        .controller("DiagnosticsHeapController", Diagnostics.DiagnosticsHeapController)
-        .controller("DiagnosticsFlagsController", Diagnostics.DiagnosticsFlagsController)
-        .service('diagnosticsService', Diagnostics.DiagnosticsService);
-    hawtioPluginLoader.addModule(pluginName);
-})(Diagnostics || (Diagnostics = {}));
-/// <reference path="jvmPlugin.ts"/>
-var JVM;
-(function (JVM) {
-    JVM._module.controller("JVM.DiscoveryController", ["$scope", "localStorage", "jolokia", function ($scope, localStorage, jolokia) {
-            $scope.discovering = true;
-            $scope.agents = undefined;
-            $scope.$watch('agents', function (newValue, oldValue) {
-                if (newValue !== oldValue) {
-                    $scope.selectedAgent = _.find($scope.agents, function (a) { return a['selected']; });
-                }
-            }, true);
-            $scope.closePopover = function ($event) {
-                $($event.currentTarget).parents('.popover').prev().popover('hide');
-            };
-            function getMoreJvmDetails(agents) {
-                for (var key in agents) {
-                    var agent = agents[key];
-                    if (agent.url && !agent.secured) {
-                        var dedicatedJolokia = JVM.createJolokia(agent.url, agent.username, agent.password);
-                        agent.startTime = dedicatedJolokia.getAttribute('java.lang:type=Runtime', 'StartTime');
-                        if (!$scope.hasName(agent)) {
-                            agent.command = dedicatedJolokia.getAttribute('java.lang:type=Runtime', 'SystemProperties', 'sun.java.command');
-                        }
-                    }
-                }
-            }
-            function doConnect(agent) {
-                if (!agent.url) {
-                    Core.notification('warning', 'No URL available to connect to agent');
-                    return;
-                }
-                var options = Core.createConnectOptions();
-                options.name = agent.agent_description || 'discover-' + agent.agent_id;
-                var urlObject = Core.parseUrl(agent.url);
-                angular.extend(options, urlObject);
-                options.userName = agent.username;
-                options.password = agent.password;
-                JVM.connectToServer(localStorage, options);
-            }
-            $scope.connectWithCredentials = function ($event, agent) {
-                $scope.closePopover($event);
-                doConnect(agent);
-            };
-            $scope.gotoServer = function ($event, agent) {
-                if (agent.secured) {
-                    $($event.currentTarget).popover('show');
-                }
-                else {
-                    doConnect(agent);
-                }
-            };
-            $scope.getElementId = function (agent) {
-                return agent.agent_id.dasherize().replace(/\./g, "-");
-            };
-            $scope.getLogo = function (agent) {
-                if (agent.server_product) {
-                    return JVM.logoRegistry[agent.server_product];
-                }
-                return JVM.logoRegistry['generic'];
-            };
-            $scope.filterMatches = function (agent) {
-                if (Core.isBlank($scope.filter)) {
-                    return true;
-                }
-                else {
-                    var needle = $scope.filter.toLowerCase();
-                    var haystack = angular.toJson(agent).toLowerCase();
-                    return haystack.indexOf(needle) !== 0;
-                }
-            };
-            $scope.getAgentIdClass = function (agent) {
-                if ($scope.hasName(agent)) {
-                    return "";
-                }
-                return "strong";
-            };
-            $scope.hasName = function (agent) {
-                return !!(agent.server_vendor && agent.server_product && agent.server_version);
-            };
-            $scope.render = function (response) {
-                $scope.discovering = false;
-                if (response) {
-                    var responseJson = angular.toJson(response, true);
-                    if ($scope.responseJson !== responseJson) {
-                        $scope.responseJson = responseJson;
-                        $scope.agents = response;
-                        getMoreJvmDetails($scope.agents);
-                    }
-                }
-                Core.$apply($scope);
-            };
-            $scope.fetch = function () {
-                $scope.discovering = true;
-                // use 10 sec timeout
-                jolokia.execute('jolokia:type=Discovery', 'lookupAgentsWithTimeout(int)', 10 * 1000, Core.onSuccess($scope.render));
-            };
-            $scope.fetch();
-        }]);
-})(JVM || (JVM = {}));
-/// <reference path="jvmPlugin.ts"/>
-var JVM;
-(function (JVM) {
-    JVM.HeaderController = JVM._module.controller("JVM.HeaderController", ["$scope", "ConnectOptions", function ($scope, ConnectOptions) {
-            if (ConnectOptions) {
-                $scope.containerName = ConnectOptions.name || "";
-                if (ConnectOptions.returnTo) {
-                    $scope.goBack = function () {
-                        window.location.href = ConnectOptions.returnTo;
-                    };
-                }
-            }
-        }]);
-})(JVM || (JVM = {}));
-/// <reference path="jvmPlugin.ts"/>
-var JVM;
-(function (JVM) {
-    JolokiaPreferences.$inject = ["$scope", "localStorage", "jolokiaParams", "$window"];
-    var SHOW_ALERT = 'showJolokiaPreferencesAlert';
-    function JolokiaPreferences($scope, localStorage, jolokiaParams, $window) {
-        'ngInject';
-        // Initialize tooltips
-        $('[data-toggle="tooltip"]').tooltip();
-        Core.initPreferenceScope($scope, localStorage, {
-            'updateRate': {
-                'value': 5000,
-                'post': function (newValue) {
-                    $scope.$emit('UpdateRate', newValue);
-                }
-            },
-            'maxDepth': {
-                'value': JVM.DEFAULT_MAX_DEPTH,
-                'converter': parseInt,
-                'formatter': parseInt,
-                'post': function (newValue) {
-                    jolokiaParams.maxDepth = newValue;
-                    localStorage['jolokiaParams'] = angular.toJson(jolokiaParams);
-                }
-            },
-            'maxCollectionSize': {
-                'value': JVM.DEFAULT_MAX_COLLECTION_SIZE,
-                'converter': parseInt,
-                'formatter': parseInt,
-                'post': function (newValue) {
-                    jolokiaParams.maxCollectionSize = newValue;
-                    localStorage['jolokiaParams'] = angular.toJson(jolokiaParams);
-                }
-            }
-        });
-        $scope.showAlert = !!$window.sessionStorage.getItem(SHOW_ALERT);
-        $window.sessionStorage.removeItem(SHOW_ALERT);
-        $scope.reboot = function () {
-            $window.sessionStorage.setItem(SHOW_ALERT, 'true');
-            $window.location.reload();
-        };
-    }
-    JVM.JolokiaPreferences = JolokiaPreferences;
-    JVM._module.controller("JVM.JolokiaPreferences", JolokiaPreferences);
-})(JVM || (JVM = {}));
-var JVM;
-(function (JVM) {
-    var JolokiaService = /** @class */ (function () {
-        JolokiaService.$inject = ["$q", "jolokia"];
-        function JolokiaService($q, jolokia) {
-            'ngInject';
-            this.$q = $q;
-            this.jolokia = jolokia;
-        }
-        JolokiaService.prototype.getAttribute = function (mbean, attribute) {
-            var _this = this;
-            return this.$q(function (resolve, reject) {
-                _this.jolokia.request({ type: 'read', mbean: mbean, attribute: attribute }, { success: function (response) { return resolve(response.value); } }, { error: function (response) {
-                        JVM.log.error("JolokiaService.getAttribute('" + mbean + "', '" + attribute + "') failed. Error: " + response.error);
-                        reject(response.error);
-                    }
-                });
-            });
-        };
-        return JolokiaService;
-    }());
-    JVM.JolokiaService = JolokiaService;
-    JVM._module.service("jolokiaService", JolokiaService);
-})(JVM || (JVM = {}));
-/// <reference path="jvmPlugin.ts"/>
-/**
- * @module JVM
- */
-var JVM;
-(function (JVM) {
-    JVM._module.controller("JVM.JVMsController", ["$scope", "$location", "localStorage", "workspace", "jolokia", "mbeanName", function ($scope, $location, localStorage, workspace, jolokia, mbeanName) {
-            JVM.configureScope($scope, $location, workspace);
-            $scope.data = [];
-            $scope.deploying = false;
-            $scope.status = '';
-            $scope.initDone = false;
-            $scope.filter = '';
-            var listRequest = {
-                type: 'exec', mbean: mbeanName,
-                operation: 'listLocalJVMs()',
-                arguments: []
-            };
-            $scope.filterMatches = function (jvm) {
-                if (Core.isBlank($scope.filter)) {
-                    return true;
-                }
-                else {
-                    return jvm.alias.toLowerCase().has($scope.filter.toLowerCase());
-                }
-            };
-            $scope.fetch = function () {
-                jolokia.request(listRequest, {
-                    success: render,
-                    error: function (response) {
-                        $scope.data = [];
-                        $scope.initDone = true;
-                        $scope.status = 'Could not discover local JVM processes: ' + response.error;
-                        Core.$apply($scope);
-                    }
-                });
-            };
-            $scope.stopAgent = function (pid) {
-                jolokia.request([{
-                        type: 'exec', mbean: mbeanName,
-                        operation: 'stopAgent(java.lang.String)',
-                        arguments: [pid]
-                    }, listRequest], Core.onSuccess(renderIfList));
-            };
-            $scope.startAgent = function (pid) {
-                jolokia.request([{
-                        type: 'exec', mbean: mbeanName,
-                        operation: 'startAgent(java.lang.String)',
-                        arguments: [pid]
-                    }, listRequest], Core.onSuccess(renderIfList));
-            };
-            $scope.connectTo = function (url, scheme, host, port, path) {
-                // we only need the port and path from the url, as we got the rest
-                var options = {};
-                options["scheme"] = scheme;
-                options["host"] = host;
-                options["port"] = port;
-                options["path"] = path;
-                // add empty username as we dont need login
-                options["userName"] = "";
-                options["password"] = "";
-                // connect to root by default as we do not want to show welcome page
-                options["view"] = "#/";
-                var con = Core.createConnectToServerOptions(options);
-                con.name = "local-" + port;
-                JVM.log.debug("Connecting to local JVM agent: " + url);
-                JVM.connectToServer(localStorage, con);
-                Core.$apply($scope);
-            };
-            /**
-             * Since the requests are bundled, check the operation in callback to decide on
-             * how to respond to success
-             */
-            function renderIfList(response) {
-                if (response.request.operation.indexOf("listLocalJVMs") > -1) {
-                    render(response);
-                }
-            }
-            function render(response) {
-                $scope.initDone = true;
-                $scope.data = response.value;
-                if ($scope.data.length === 0) {
-                    $scope.status = 'Could not discover local JVM processes';
-                }
-                Core.$apply($scope);
-            }
-            $scope.fetch();
-        }]);
-})(JVM || (JVM = {}));
-/// <reference path="./jvmPlugin.ts"/>
-var JVM;
-(function (JVM) {
-    JVM._module.controller("JVM.NavController", ["$scope", "$location", "workspace", function ($scope, $location, workspace) {
-            JVM.configureScope($scope, $location, workspace);
-            $scope.isLocalEnabled = JVM.hasLocalMBean(workspace);
-            $scope.isDiscoveryEnabled = JVM.hasDiscoveryMBean(workspace);
-        }]);
-})(JVM || (JVM = {}));
-/// <reference path="./jvmPlugin.ts"/>
-var JVM;
-(function (JVM) {
-    JVM._module.controller("JVM.ResetController", ["$scope", "localStorage", function ($scope, localStorage) {
-            $scope.showAlert = false;
-            $scope.doClearConnectSettings = function () {
-                delete localStorage[JVM.connectControllerKey];
-                delete localStorage[JVM.connectionSettingsKey];
-                $scope.showAlert = true;
-            };
-        }]);
-})(JVM || (JVM = {}));
-var RBAC;
-(function (RBAC) {
-    var JmxTreeProcessor = /** @class */ (function () {
-        function JmxTreeProcessor(jolokia, jolokiaStatus, rbacTasks, workspace) {
-            this.jolokia = jolokia;
-            this.jolokiaStatus = jolokiaStatus;
-            this.rbacTasks = rbacTasks;
-            this.workspace = workspace;
-        }
-        JmxTreeProcessor.prototype.process = function (tree) {
-            var _this = this;
-            RBAC.log.debug("Processing tree", tree);
-            this.rbacTasks.getACLMBean().then(function (aclMBean) {
-                var mbeans = {};
-                _this.flattenMBeanTree(mbeans, tree);
-                var listMethod = _this.jolokiaStatus.listMethod;
-                switch (listMethod) {
-                    case JVM.JolokiaListMethod.LIST_WITH_RBAC:
-                        RBAC.log.debug("Process JMX tree: list with RBAC mode");
-                        _this.processWithRBAC(mbeans);
-                        RBAC.log.debug("Processed tree mbeans with RBAC", mbeans);
-                        break;
-                    case JVM.JolokiaListMethod.LIST_GENERAL:
-                    case JVM.JolokiaListMethod.LIST_CANT_DETERMINE:
-                    default:
-                        RBAC.log.debug("Process JMX tree: general mode");
-                        _this.processGeneral(aclMBean, mbeans);
-                        RBAC.log.debug("Processed tree mbeans", mbeans);
-                        break;
-                }
-                // publish 'jmxTreeUpdated' event to apply the tree changes
-                _this.workspace.jmxTreeUpdated();
-            });
-        };
-        JmxTreeProcessor.prototype.flattenMBeanTree = function (mbeans, tree) {
-            var _this = this;
-            if (!Core.isBlank(tree.objectName)) {
-                mbeans[tree.objectName] = tree;
-            }
-            if (tree.isFolder()) {
-                tree.children.forEach(function (child) { return _this.flattenMBeanTree(mbeans, child); });
-            }
-        };
-        JmxTreeProcessor.prototype.processWithRBAC = function (mbeans) {
-            var _this = this;
-            // we already have everything related to RBAC in place, except 'class' property
-            _.forEach(mbeans, function (node, mbeanName) {
-                var mbean = node.mbean;
-                var canInvoke = mbean && (_.isNil(mbean.canInvoke) || mbean.canInvoke);
-                _this.addCanInvokeToClass(node, canInvoke);
-            });
-        };
-        JmxTreeProcessor.prototype.processGeneral = function (aclMBean, mbeans) {
-            var _this = this;
-            var requests = [];
-            var bulkRequest = {};
-            _.forEach(mbeans, function (mbean, mbeanName) {
-                if (!('canInvoke' in mbean)) {
-                    requests.push({
-                        type: 'exec',
-                        mbean: aclMBean,
-                        operation: 'canInvoke(java.lang.String)',
-                        arguments: [mbeanName]
-                    });
-                    if (mbean.mbean && mbean.mbean.op) {
-                        var ops = mbean.mbean.op;
-                        mbean.mbean.opByString = {};
-                        var opList_1 = [];
-                        _.forEach(ops, function (op, opName) {
-                            if (_.isArray(op)) {
-                                _.forEach(op, function (op) { return _this.addOperation(mbean, opList_1, opName, op); });
-                            }
-                            else {
-                                _this.addOperation(mbean, opList_1, opName, op);
-                            }
-                        });
-                        bulkRequest[mbeanName] = opList_1;
-                    }
-                }
-            });
-            requests.push({
-                type: 'exec',
-                mbean: aclMBean,
-                operation: 'canInvoke(java.util.Map)',
-                arguments: [bulkRequest]
-            });
-            this.jolokia.request(requests, Core.onSuccess(function (response) {
-                var mbean = response.request.arguments[0];
-                if (mbean && _.isString(mbean)) {
-                    var canInvoke = response.value;
-                    mbeans[mbean]['canInvoke'] = response.value;
-                    _this.addCanInvokeToClass(mbeans[mbean], canInvoke);
-                }
-                else {
-                    var responseMap = response.value;
-                    _.forEach(responseMap, function (operations, mbeanName) {
-                        _.forEach(operations, function (data, operationName) {
-                            mbeans[mbeanName].mbean.opByString[operationName]['canInvoke'] = data['CanInvoke'];
-                        });
-                    });
-                }
-            }, { error: function (response) { } }));
-        };
-        JmxTreeProcessor.prototype.addOperation = function (mbean, opList, opName, op) {
-            var operationString = Core.operationToString(opName, op.args);
-            // enrich the mbean by indexing the full operation string so we can easily look it up later
-            mbean.mbean.opByString[operationString] = op;
-            opList.push(operationString);
-        };
-        JmxTreeProcessor.prototype.addCanInvokeToClass = function (mbean, canInvoke) {
-            var toAdd = canInvoke ? "can-invoke" : "cant-invoke";
-            mbean['class'] = this.stripClasses(mbean['class']);
-            mbean['class'] = this.addClass(mbean['class'], toAdd);
-            if (!canInvoke) {
-                // change the tree node icon to lock here
-                mbean.icon = 'fa fa-lock';
-            }
-        };
-        JmxTreeProcessor.prototype.stripClasses = function (css) {
-            if (Core.isBlank(css)) {
-                return css;
-            }
-            var parts = css.split(" ");
-            var answer = [];
-            parts.forEach(function (part) {
-                if (part !== "can-invoke" && part !== "cant-invoke") {
-                    answer.push(part);
-                }
-            });
-            return answer.join(" ").trim();
-        };
-        JmxTreeProcessor.prototype.addClass = function (css, _class) {
-            if (Core.isBlank(css)) {
-                return _class;
-            }
-            var parts = css.split(" ");
-            parts.push(_class);
-            return _.uniq(parts).join(" ").trim();
-        };
-        return JmxTreeProcessor;
-    }());
-    RBAC.JmxTreeProcessor = JmxTreeProcessor;
-})(RBAC || (RBAC = {}));
-/// <reference path="../../jmx/ts/workspace.ts"/>
-var RBAC;
-(function (RBAC) {
-    var MBEAN_ONLY = 'canInvoke(java.lang.String)';
-    var OVERLOADED_METHOD = 'canInvoke(java.lang.String,java.lang.String)';
-    var EXACT_METHOD = 'canInvoke(java.lang.String,java.lang.String,[Ljava.lang.String;)';
-    var HIDE = 'hide';
-    var REMOVE = 'remove';
-    var INVERSE = 'inverse';
-    /**
-     * Directive that sets an element's visibility to hidden if the user cannot invoke the supplied operation
-     */
-    var HawtioShow = /** @class */ (function () {
-        function HawtioShow(workspace) {
-            this.workspace = workspace;
-            this.restrict = 'A';
-        }
-        HawtioShow.factory = ["workspace", function (workspace) {
-            'ngInject';
-            return new HawtioShow(workspace);
-        }];
-        HawtioShow.prototype.link = function (scope, element, attr) {
-            var _this = this;
-            var objectName = attr['objectName'];
-            var objectNameModel = attr['objectNameModel'];
-            RBAC.log.debug("hawtio-show: object-name=", objectName, "object-name-model=", objectNameModel);
-            if (!objectName && !objectNameModel) {
-                return;
-            }
-            if (objectName) {
-                this.applyInvokeRights(element, objectName, attr);
-            }
-            else {
-                scope.$watch(objectNameModel, function (newValue, oldValue) {
-                    if (newValue && newValue !== oldValue) {
-                        _this.applyInvokeRights(element, newValue, attr);
-                    }
-                });
-            }
-        };
-        HawtioShow.prototype.applyInvokeRights = function (element, objectName, attr) {
-            var methodName = attr['methodName'];
-            var argumentTypes = attr['argumentTypes'];
-            var mode = attr['mode'] || HIDE;
-            var canInvokeOp = this.getCanInvokeOperation(methodName, argumentTypes);
-            var args = this.getArguments(canInvokeOp, objectName, methodName, argumentTypes);
-            var mbean = Core.parseMBean(objectName);
-            var folder = this.workspace.findMBeanWithProperties(mbean.domain, mbean.attributes);
-            if (!folder) {
-                return;
-            }
-            var invokeRights = methodName ?
-                this.workspace.hasInvokeRights(folder, methodName) :
-                this.workspace.hasInvokeRights(folder);
-            this.changeDisplay(element, invokeRights, mode);
-        };
-        HawtioShow.prototype.getCanInvokeOperation = function (methodName, argumentTypes) {
-            var answer = MBEAN_ONLY;
-            if (!Core.isBlank(methodName)) {
-                answer = OVERLOADED_METHOD;
-            }
-            if (!Core.isBlank(argumentTypes)) {
-                answer = EXACT_METHOD;
-            }
-            return answer;
-        };
-        HawtioShow.prototype.getArguments = function (canInvokeOp, objectName, methodName, argumentTypes) {
-            var args = [];
-            if (canInvokeOp === MBEAN_ONLY) {
-                args.push(objectName);
-            }
-            else if (canInvokeOp === OVERLOADED_METHOD) {
-                args.push(objectName);
-                args.push(methodName);
-            }
-            else if (canInvokeOp === EXACT_METHOD) {
-                args.push(objectName);
-                args.push(methodName);
-                args.push(argumentTypes.split(',').map(function (s) { return s.trim(); }));
-            }
-            return args;
-        };
-        HawtioShow.prototype.changeDisplay = function (element, invokeRights, mode) {
-            if (invokeRights) {
-                if (mode === INVERSE) {
-                    element.css({ display: 'none' });
-                }
-            }
-            else {
-                if (mode === REMOVE) {
-                    element.css({ display: 'none' });
-                }
-                else if (mode === HIDE) {
-                    element.css({ visibility: 'hidden' });
-                }
-            }
-        };
-        return HawtioShow;
-    }());
-    RBAC.HawtioShow = HawtioShow;
-})(RBAC || (RBAC = {}));
-/// <reference path="models.ts"/>
-var RBAC;
-(function (RBAC) {
-    var RBACTasksFactory = /** @class */ (function () {
-        function RBACTasksFactory() {
-        }
-        RBACTasksFactory.create = ["postLoginTasks", "jolokia", "$q", function (postLoginTasks, jolokia, $q) {
-            'ngInject';
-            var rbacTasks = new RBACTasksImpl($q.defer());
-            postLoginTasks.addTask("FetchJMXSecurityMBeans", function () { return rbacTasks.fetchJMXSecurityMBeans(jolokia); });
-            return rbacTasks;
-        }];
-        return RBACTasksFactory;
-    }());
-    RBAC.RBACTasksFactory = RBACTasksFactory;
-    var RBACACLMBeanFactory = /** @class */ (function () {
-        function RBACACLMBeanFactory() {
-        }
-        RBACACLMBeanFactory.create = ["rbacTasks", function (rbacTasks) {
-            'ngInject';
-            return rbacTasks.getACLMBean();
-        }];
-        return RBACACLMBeanFactory;
-    }());
-    RBAC.RBACACLMBeanFactory = RBACACLMBeanFactory;
-    var RBACTasksImpl = /** @class */ (function (_super) {
-        __extends(RBACTasksImpl, _super);
-        function RBACTasksImpl(deferred) {
-            var _this = _super.call(this) || this;
-            _this.deferred = deferred;
-            _this.ACLMBean = null;
-            return _this;
-        }
-        RBACTasksImpl.prototype.fetchJMXSecurityMBeans = function (jolokia) {
-            var _this = this;
-            jolokia.request({ type: 'search', mbean: '*:type=security,area=jmx,*' }, Core.onSuccess(function (response) {
-                RBAC.log.debug("Fetching JMXSecurity MBeans...", response);
-                var mbeans = response.value;
-                var chosen = "";
-                if (mbeans.length === 0) {
-                    RBAC.log.info("Didn't discover any JMXSecurity mbeans, client-side role based access control is disabled");
-                    return;
-                }
-                else if (mbeans.length === 1) {
-                    chosen = mbeans[0];
-                }
-                else if (mbeans.length > 1) {
-                    var picked_1 = false;
-                    mbeans.forEach(function (mbean) {
-                        if (picked_1) {
-                            return;
-                        }
-                        if (_.includes(mbean, "HawtioDummy")) {
-                            return;
-                        }
-                        if (!_.includes(mbean, "rank=")) {
-                            chosen = mbean;
-                            picked_1 = true;
-                        }
-                    });
-                }
-                if (chosen != null && chosen != "") {
-                    RBAC.log.info("Using mbean", chosen, "for client-side role based access control");
-                    _this.initialize(chosen);
-                }
-                else {
-                    RBAC.log.info("Didn't discover any effective JMXSecurity mbeans, client-side role based access control is disabled");
-                }
-            }));
-        };
-        RBACTasksImpl.prototype.initialize = function (mbean) {
-            this.ACLMBean = mbean;
-            this.deferred.resolve(this.ACLMBean);
-            _super.prototype.execute.call(this);
-        };
-        RBACTasksImpl.prototype.getACLMBean = function () {
-            return this.deferred.promise;
-        };
-        return RBACTasksImpl;
-    }(Core.TasksImpl));
-})(RBAC || (RBAC = {}));
-/**
- * @namespace RBAC
- * @main RBAC
- */
-/// <reference path="../../jmx/ts/workspace.ts"/>
-/// <reference path="../../jvm/ts/jolokiaService.ts"/>
-/// <reference path="models.ts"/>
-/// <reference path="rbac.directive.ts"/>
-/// <reference path="rbac.service.ts"/>
-/// <reference path="jmxTreeProcessor.ts"/>
-var RBAC;
-(function (RBAC) {
-    addTreePostProcessor.$inject = ["jolokia", "jolokiaStatus", "rbacTasks", "preLogoutTasks", "workspace"];
-    RBAC.pluginName = "hawtio-rbac";
-    RBAC.log = Logger.get(RBAC.pluginName);
-    RBAC._module = angular
-        .module(RBAC.pluginName, [])
-        .directive('hawtioShow', RBAC.HawtioShow.factory)
-        .service('rbacTasks', RBAC.RBACTasksFactory.create)
-        .service('rbacACLMBean', RBAC.RBACACLMBeanFactory.create);
-    var TREE_POSTPROCESSOR_NAME = "rbacTreePostprocessor";
-    RBAC._module.run(addTreePostProcessor);
-    function addTreePostProcessor(jolokia, jolokiaStatus, rbacTasks, preLogoutTasks, workspace) {
-        'ngInject';
-        preLogoutTasks.addTask("resetRBAC", function () {
-            RBAC.log.debug("Resetting RBAC tasks");
-            rbacTasks.reset();
-            workspace.removeNamedTreePostProcessor(TREE_POSTPROCESSOR_NAME);
-        });
-        // add info to the JMX tree if we have access to invoke on mbeans or not
-        var processor = new RBAC.JmxTreeProcessor(jolokia, jolokiaStatus, rbacTasks, workspace);
-        rbacTasks.addTask("JMXTreePostProcess", function () { return workspace.addNamedTreePostProcessor(TREE_POSTPROCESSOR_NAME, function (tree) { return processor.process(tree); }); });
-    }
-    hawtioPluginLoader.addModule(RBAC.pluginName);
-})(RBAC || (RBAC = {}));
 /// <reference path="../../jmx/ts/workspace.ts" />
 var Threads;
 (function (Threads) {
@@ -9770,6 +9410,366 @@ var Threads;
             initFunc();
         }]);
 })(Threads || (Threads = {}));
+var RBAC;
+(function (RBAC) {
+    var JmxTreeProcessor = /** @class */ (function () {
+        function JmxTreeProcessor(jolokia, jolokiaStatus, rbacTasks, workspace) {
+            this.jolokia = jolokia;
+            this.jolokiaStatus = jolokiaStatus;
+            this.rbacTasks = rbacTasks;
+            this.workspace = workspace;
+        }
+        JmxTreeProcessor.prototype.process = function (tree) {
+            var _this = this;
+            RBAC.log.debug("Processing tree", tree);
+            this.rbacTasks.getACLMBean().then(function (aclMBean) {
+                var mbeans = {};
+                _this.flattenMBeanTree(mbeans, tree);
+                var listMethod = _this.jolokiaStatus.listMethod;
+                switch (listMethod) {
+                    case JVM.JolokiaListMethod.LIST_WITH_RBAC:
+                        RBAC.log.debug("Process JMX tree: list with RBAC mode");
+                        _this.processWithRBAC(mbeans);
+                        RBAC.log.debug("Processed tree mbeans with RBAC", mbeans);
+                        break;
+                    case JVM.JolokiaListMethod.LIST_GENERAL:
+                    case JVM.JolokiaListMethod.LIST_CANT_DETERMINE:
+                    default:
+                        RBAC.log.debug("Process JMX tree: general mode");
+                        _this.processGeneral(aclMBean, mbeans);
+                        RBAC.log.debug("Processed tree mbeans", mbeans);
+                        break;
+                }
+                // publish 'jmxTreeUpdated' event to apply the tree changes
+                _this.workspace.jmxTreeUpdated();
+            });
+        };
+        JmxTreeProcessor.prototype.flattenMBeanTree = function (mbeans, tree) {
+            var _this = this;
+            if (!Core.isBlank(tree.objectName)) {
+                mbeans[tree.objectName] = tree;
+            }
+            if (tree.isFolder()) {
+                tree.children.forEach(function (child) { return _this.flattenMBeanTree(mbeans, child); });
+            }
+        };
+        JmxTreeProcessor.prototype.processWithRBAC = function (mbeans) {
+            var _this = this;
+            // we already have everything related to RBAC in place, except 'class' property
+            _.forEach(mbeans, function (node, mbeanName) {
+                var mbean = node.mbean;
+                var canInvoke = mbean && (_.isNil(mbean.canInvoke) || mbean.canInvoke);
+                _this.addCanInvokeToClass(node, canInvoke);
+            });
+        };
+        JmxTreeProcessor.prototype.processGeneral = function (aclMBean, mbeans) {
+            var _this = this;
+            var requests = [];
+            var bulkRequest = {};
+            _.forEach(mbeans, function (mbean, mbeanName) {
+                if (!('canInvoke' in mbean)) {
+                    requests.push({
+                        type: 'exec',
+                        mbean: aclMBean,
+                        operation: 'canInvoke(java.lang.String)',
+                        arguments: [mbeanName]
+                    });
+                    if (mbean.mbean && mbean.mbean.op) {
+                        var ops = mbean.mbean.op;
+                        mbean.mbean.opByString = {};
+                        var opList_1 = [];
+                        _.forEach(ops, function (op, opName) {
+                            if (_.isArray(op)) {
+                                _.forEach(op, function (op) { return _this.addOperation(mbean, opList_1, opName, op); });
+                            }
+                            else {
+                                _this.addOperation(mbean, opList_1, opName, op);
+                            }
+                        });
+                        bulkRequest[mbeanName] = opList_1;
+                    }
+                }
+            });
+            requests.push({
+                type: 'exec',
+                mbean: aclMBean,
+                operation: 'canInvoke(java.util.Map)',
+                arguments: [bulkRequest]
+            });
+            this.jolokia.request(requests, Core.onSuccess(function (response) {
+                var mbean = response.request.arguments[0];
+                if (mbean && _.isString(mbean)) {
+                    var canInvoke = response.value;
+                    mbeans[mbean]['canInvoke'] = response.value;
+                    _this.addCanInvokeToClass(mbeans[mbean], canInvoke);
+                }
+                else {
+                    var responseMap = response.value;
+                    _.forEach(responseMap, function (operations, mbeanName) {
+                        _.forEach(operations, function (data, operationName) {
+                            mbeans[mbeanName].mbean.opByString[operationName]['canInvoke'] = data['CanInvoke'];
+                        });
+                    });
+                }
+            }, { error: function (response) { } }));
+        };
+        JmxTreeProcessor.prototype.addOperation = function (mbean, opList, opName, op) {
+            var operationString = Core.operationToString(opName, op.args);
+            // enrich the mbean by indexing the full operation string so we can easily look it up later
+            mbean.mbean.opByString[operationString] = op;
+            opList.push(operationString);
+        };
+        JmxTreeProcessor.prototype.addCanInvokeToClass = function (mbean, canInvoke) {
+            var toAdd = canInvoke ? "can-invoke" : "cant-invoke";
+            mbean['class'] = this.stripClasses(mbean['class']);
+            mbean['class'] = this.addClass(mbean['class'], toAdd);
+            if (!canInvoke) {
+                // change the tree node icon to lock here
+                mbean.icon = 'fa fa-lock';
+            }
+        };
+        JmxTreeProcessor.prototype.stripClasses = function (css) {
+            if (Core.isBlank(css)) {
+                return css;
+            }
+            var parts = css.split(" ");
+            var answer = [];
+            parts.forEach(function (part) {
+                if (part !== "can-invoke" && part !== "cant-invoke") {
+                    answer.push(part);
+                }
+            });
+            return answer.join(" ").trim();
+        };
+        JmxTreeProcessor.prototype.addClass = function (css, _class) {
+            if (Core.isBlank(css)) {
+                return _class;
+            }
+            var parts = css.split(" ");
+            parts.push(_class);
+            return _.uniq(parts).join(" ").trim();
+        };
+        return JmxTreeProcessor;
+    }());
+    RBAC.JmxTreeProcessor = JmxTreeProcessor;
+})(RBAC || (RBAC = {}));
+/// <reference path="../../jmx/ts/workspace.ts"/>
+var RBAC;
+(function (RBAC) {
+    var MBEAN_ONLY = 'canInvoke(java.lang.String)';
+    var OVERLOADED_METHOD = 'canInvoke(java.lang.String,java.lang.String)';
+    var EXACT_METHOD = 'canInvoke(java.lang.String,java.lang.String,[Ljava.lang.String;)';
+    var HIDE = 'hide';
+    var REMOVE = 'remove';
+    var INVERSE = 'inverse';
+    /**
+     * Directive that sets an element's visibility to hidden if the user cannot invoke the supplied operation
+     */
+    var HawtioShow = /** @class */ (function () {
+        function HawtioShow(workspace) {
+            this.workspace = workspace;
+            this.restrict = 'A';
+        }
+        HawtioShow.factory = ["workspace", function (workspace) {
+            'ngInject';
+            return new HawtioShow(workspace);
+        }];
+        HawtioShow.prototype.link = function (scope, element, attr) {
+            var _this = this;
+            var objectName = attr['objectName'];
+            var objectNameModel = attr['objectNameModel'];
+            RBAC.log.debug("hawtio-show: object-name=", objectName, "object-name-model=", objectNameModel);
+            if (!objectName && !objectNameModel) {
+                return;
+            }
+            if (objectName) {
+                this.applyInvokeRights(element, objectName, attr);
+            }
+            else {
+                scope.$watch(objectNameModel, function (newValue, oldValue) {
+                    if (newValue && newValue !== oldValue) {
+                        _this.applyInvokeRights(element, newValue, attr);
+                    }
+                });
+            }
+        };
+        HawtioShow.prototype.applyInvokeRights = function (element, objectName, attr) {
+            var methodName = attr['methodName'];
+            var argumentTypes = attr['argumentTypes'];
+            var mode = attr['mode'] || HIDE;
+            var canInvokeOp = this.getCanInvokeOperation(methodName, argumentTypes);
+            var args = this.getArguments(canInvokeOp, objectName, methodName, argumentTypes);
+            var mbean = Core.parseMBean(objectName);
+            var folder = this.workspace.findMBeanWithProperties(mbean.domain, mbean.attributes);
+            if (!folder) {
+                return;
+            }
+            var invokeRights = methodName ?
+                this.workspace.hasInvokeRights(folder, methodName) :
+                this.workspace.hasInvokeRights(folder);
+            this.changeDisplay(element, invokeRights, mode);
+        };
+        HawtioShow.prototype.getCanInvokeOperation = function (methodName, argumentTypes) {
+            var answer = MBEAN_ONLY;
+            if (!Core.isBlank(methodName)) {
+                answer = OVERLOADED_METHOD;
+            }
+            if (!Core.isBlank(argumentTypes)) {
+                answer = EXACT_METHOD;
+            }
+            return answer;
+        };
+        HawtioShow.prototype.getArguments = function (canInvokeOp, objectName, methodName, argumentTypes) {
+            var args = [];
+            if (canInvokeOp === MBEAN_ONLY) {
+                args.push(objectName);
+            }
+            else if (canInvokeOp === OVERLOADED_METHOD) {
+                args.push(objectName);
+                args.push(methodName);
+            }
+            else if (canInvokeOp === EXACT_METHOD) {
+                args.push(objectName);
+                args.push(methodName);
+                args.push(argumentTypes.split(',').map(function (s) { return s.trim(); }));
+            }
+            return args;
+        };
+        HawtioShow.prototype.changeDisplay = function (element, invokeRights, mode) {
+            if (invokeRights) {
+                if (mode === INVERSE) {
+                    element.css({ display: 'none' });
+                }
+            }
+            else {
+                if (mode === REMOVE) {
+                    element.css({ display: 'none' });
+                }
+                else if (mode === HIDE) {
+                    element.css({ visibility: 'hidden' });
+                }
+            }
+        };
+        return HawtioShow;
+    }());
+    RBAC.HawtioShow = HawtioShow;
+})(RBAC || (RBAC = {}));
+/// <reference path="models.ts"/>
+var RBAC;
+(function (RBAC) {
+    var RBACTasksFactory = /** @class */ (function () {
+        function RBACTasksFactory() {
+        }
+        RBACTasksFactory.create = ["postLoginTasks", "jolokia", "$q", function (postLoginTasks, jolokia, $q) {
+            'ngInject';
+            var rbacTasks = new RBACTasksImpl($q.defer());
+            postLoginTasks.addTask("FetchJMXSecurityMBeans", function () { return rbacTasks.fetchJMXSecurityMBeans(jolokia); });
+            return rbacTasks;
+        }];
+        return RBACTasksFactory;
+    }());
+    RBAC.RBACTasksFactory = RBACTasksFactory;
+    var RBACACLMBeanFactory = /** @class */ (function () {
+        function RBACACLMBeanFactory() {
+        }
+        RBACACLMBeanFactory.create = ["rbacTasks", function (rbacTasks) {
+            'ngInject';
+            return rbacTasks.getACLMBean();
+        }];
+        return RBACACLMBeanFactory;
+    }());
+    RBAC.RBACACLMBeanFactory = RBACACLMBeanFactory;
+    var RBACTasksImpl = /** @class */ (function (_super) {
+        __extends(RBACTasksImpl, _super);
+        function RBACTasksImpl(deferred) {
+            var _this = _super.call(this) || this;
+            _this.deferred = deferred;
+            _this.ACLMBean = null;
+            return _this;
+        }
+        RBACTasksImpl.prototype.fetchJMXSecurityMBeans = function (jolokia) {
+            var _this = this;
+            jolokia.request({ type: 'search', mbean: '*:type=security,area=jmx,*' }, Core.onSuccess(function (response) {
+                RBAC.log.debug("Fetching JMXSecurity MBeans...", response);
+                var mbeans = response.value;
+                var chosen = "";
+                if (mbeans.length === 0) {
+                    RBAC.log.info("Didn't discover any JMXSecurity mbeans, client-side role based access control is disabled");
+                    return;
+                }
+                else if (mbeans.length === 1) {
+                    chosen = mbeans[0];
+                }
+                else if (mbeans.length > 1) {
+                    var picked_1 = false;
+                    mbeans.forEach(function (mbean) {
+                        if (picked_1) {
+                            return;
+                        }
+                        if (_.includes(mbean, "HawtioDummy")) {
+                            return;
+                        }
+                        if (!_.includes(mbean, "rank=")) {
+                            chosen = mbean;
+                            picked_1 = true;
+                        }
+                    });
+                }
+                if (chosen != null && chosen != "") {
+                    RBAC.log.info("Using mbean", chosen, "for client-side role based access control");
+                    _this.initialize(chosen);
+                }
+                else {
+                    RBAC.log.info("Didn't discover any effective JMXSecurity mbeans, client-side role based access control is disabled");
+                }
+            }));
+        };
+        RBACTasksImpl.prototype.initialize = function (mbean) {
+            this.ACLMBean = mbean;
+            this.deferred.resolve(this.ACLMBean);
+            _super.prototype.execute.call(this);
+        };
+        RBACTasksImpl.prototype.getACLMBean = function () {
+            return this.deferred.promise;
+        };
+        return RBACTasksImpl;
+    }(Core.TasksImpl));
+})(RBAC || (RBAC = {}));
+/**
+ * @namespace RBAC
+ * @main RBAC
+ */
+/// <reference path="../../jmx/ts/workspace.ts"/>
+/// <reference path="../../jvm/ts/jolokiaService.ts"/>
+/// <reference path="models.ts"/>
+/// <reference path="rbac.directive.ts"/>
+/// <reference path="rbac.service.ts"/>
+/// <reference path="jmxTreeProcessor.ts"/>
+var RBAC;
+(function (RBAC) {
+    addTreePostProcessor.$inject = ["jolokia", "jolokiaStatus", "rbacTasks", "preLogoutTasks", "workspace"];
+    RBAC.pluginName = "hawtio-rbac";
+    RBAC.log = Logger.get(RBAC.pluginName);
+    RBAC._module = angular
+        .module(RBAC.pluginName, [])
+        .directive('hawtioShow', RBAC.HawtioShow.factory)
+        .service('rbacTasks', RBAC.RBACTasksFactory.create)
+        .service('rbacACLMBean', RBAC.RBACACLMBeanFactory.create);
+    var TREE_POSTPROCESSOR_NAME = "rbacTreePostprocessor";
+    RBAC._module.run(addTreePostProcessor);
+    function addTreePostProcessor(jolokia, jolokiaStatus, rbacTasks, preLogoutTasks, workspace) {
+        'ngInject';
+        preLogoutTasks.addTask("resetRBAC", function () {
+            RBAC.log.debug("Resetting RBAC tasks");
+            rbacTasks.reset();
+            workspace.removeNamedTreePostProcessor(TREE_POSTPROCESSOR_NAME);
+        });
+        // add info to the JMX tree if we have access to invoke on mbeans or not
+        var processor = new RBAC.JmxTreeProcessor(jolokia, jolokiaStatus, rbacTasks, workspace);
+        rbacTasks.addTask("JMXTreePostProcess", function () { return workspace.addNamedTreePostProcessor(TREE_POSTPROCESSOR_NAME, function (tree) { return processor.process(tree); }); });
+    }
+    hawtioPluginLoader.addModule(RBAC.pluginName);
+})(RBAC || (RBAC = {}));
 
 angular.module('hawtio-jmx-templates', []).run(['$templateCache', function($templateCache) {$templateCache.put('plugins/diagnostics/html/flags.html','<div ng-controller="DiagnosticsFlagsController">\n  <h1>Hotspot Diagnostics</h1>\n  <table class="table table-striped table-bordered">\n    <thead>\n      <tr>\n        <th>VM Flag</th>\n        <th>Origin</th>\n        <th>Value</th>\n      </tr>\n    </thead>\n    <tbody>\n      <tr ng-repeat="flag in flags track by flag.name">\n        <td>{{flag.name}}</td>\n        <td>{{flag.origin}}</td>\n        <td>\n          <div ng-switch on="flag.dataType">\n            <span ng-switch-when="readonly">{{flag.value}}</span>\n            <input ng-switch-when="boolean" type="checkbox" ng-model="flag.value"></input>\n            <input ng-switch-when="string" type="text" ng-model="flag.value"></input>\n            <input ng-switch-when="number" type="number" ng-model="flag.value"></input>\n          </div>\n        </td>\n      </tr>\n    </tbody>\n  </table>  \n</div>');
 $templateCache.put('plugins/diagnostics/html/heap.html','<div ng-controller="DiagnosticsHeapController" class="table-view">\n  <h1>Class Histogram</h1>\n  <p>\n    <strong>Please note:</strong> Loading class histogram may be very expensive, depending on the size and\n    layout of the heap. Alternatively, use the <samp>jcmd</samp> utility:<br>\n    <samp>jcmd &lt;process id/main class&gt; GC.class_histogram<samp>\n  </p>\n  <p>\n    <button type="button" class="btn btn-primary" ng-click="loadClassStats()" ng-disabled="loading">\n      Load class histogram\n    </button>\n  </p>\n  <p ng-show="loading">\n    Loading...\n  </p>\n  <div ng-show="!loading && items.length > 0">\n    <pf-toolbar config="toolbarConfig">\n      <span ng-show="lastLoaded">\n        Last loaded: {{lastLoaded | date: \'yyyy-MM-dd hh:mm:ss\'}}\n      </span>\n    </pf-toolbar>\n    <pf-table-view class="diagnostics-class-histogram-table" config="tableConfig" dt-options="tableDtOptions"\n                   page-config="pageConfig" colummns="tableColumns" items="items"></pf-table-view>\n  </div>\n</div>\n');
