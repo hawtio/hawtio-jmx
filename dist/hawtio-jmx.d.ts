@@ -865,6 +865,8 @@ declare namespace Jmx {
         populateTree(): void;
         removeTree(): void;
     }
+}
+declare namespace Jmx {
     const treeComponent: angular.IComponentOptions;
 }
 declare namespace Jmx {

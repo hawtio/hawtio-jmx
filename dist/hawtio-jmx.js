@@ -7851,9 +7851,13 @@ var Jmx;
         return TreeController;
     }());
     Jmx.TreeController = TreeController;
+})(Jmx || (Jmx = {}));
+/// <reference path="tree.controller.ts"/>
+var Jmx;
+(function (Jmx) {
     Jmx.treeComponent = {
         templateUrl: 'plugins/jmx/html/tree/content.html',
-        controller: TreeController,
+        controller: Jmx.TreeController,
     };
 })(Jmx || (Jmx = {}));
 /// <reference path="tree-header.component.ts"/>
