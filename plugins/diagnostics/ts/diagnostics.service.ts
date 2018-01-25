@@ -1,4 +1,3 @@
-/// <reference path="../../jmx/ts/folder.ts"/>
 /// <reference path="../../jmx/ts/workspace.ts"/>
 
 namespace Diagnostics {

@@ -1,4 +1,4 @@
-/// <reference path="folder.ts"/>
+/// <reference path="tree/folder.ts"/>
 /// <reference path="workspace.ts"/>
 
 namespace Jmx {

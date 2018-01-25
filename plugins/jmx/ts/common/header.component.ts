@@ -1,5 +1,3 @@
-/// <reference path="../folder.ts"/>
-
 namespace Jmx {
 
   export class HeaderController {

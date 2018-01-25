@@ -3952,230 +3952,6 @@ var Diagnostics;
     }
     Diagnostics.DiagnosticsFlagsController = DiagnosticsFlagsController;
 })(Diagnostics || (Diagnostics = {}));
-var Jmx;
-(function (Jmx) {
-    /**
-     * @class Folder
-     * @uses NodeSelection
-     */
-    var Folder = /** @class */ (function () {
-        function Folder(text) {
-            this.text = text;
-            this.id = null;
-            this.typeName = null;
-            this.nodes = [];
-            this.folderNames = [];
-            this.domain = null;
-            this.objectName = null;
-            this.entries = {};
-            this.class = null;
-            this.parent = null;
-            this.isLazy = false;
-            this.icon = null;
-            this.image = null;
-            this.tooltip = null;
-            this.entity = null;
-            this.version = null;
-            this.mbean = null;
-            this.class = Core.escapeTreeCssStyles(text);
-        }
-        Object.defineProperty(Folder.prototype, "key", {
-            get: function () {
-                return this.id;
-            },
-            set: function (key) {
-                this.id = key;
-            },
-            enumerable: true,
-            configurable: true
-        });
-        Object.defineProperty(Folder.prototype, "title", {
-            get: function () {
-                return this.text;
-            },
-            set: function (title) {
-                this.text = title;
-            },
-            enumerable: true,
-            configurable: true
-        });
-        Object.defineProperty(Folder.prototype, "children", {
-            get: function () {
-                return this.nodes;
-            },
-            set: function (items) {
-                this.nodes = items;
-            },
-            enumerable: true,
-            configurable: true
-        });
-        Object.defineProperty(Folder.prototype, "lazyLoad", {
-            get: function () {
-                return this.isLazy;
-            },
-            set: function (isLazy) {
-                this.isLazy = isLazy;
-            },
-            enumerable: true,
-            configurable: true
-        });
-        Folder.prototype.get = function (key) {
-            return _.find(this.children, function (child) { return child.text === key; });
-        };
-        Folder.prototype.isFolder = function () {
-            return this.nodes && this.nodes.length > 0;
-        };
-        /**
-         * Navigates the given paths and returns the value there or null if no value could be found
-         * @method navigate
-         * @for Folder
-         * @param {Array} paths
-         * @return {NodeSelection}
-         */
-        Folder.prototype.navigate = function () {
-            var paths = [];
-            for (var _i = 0; _i < arguments.length; _i++) {
-                paths[_i] = arguments[_i];
-            }
-            return paths.reduce(function (node, path) { return node ? node.get(path) : null; }, this);
-        };
-        Folder.prototype.hasEntry = function (key, value) {
-            var entries = this.entries;
-            if (entries) {
-                var actual = entries[key];
-                return actual && value === actual;
-            }
-            return false;
-        };
-        Folder.prototype.parentHasEntry = function (key, value) {
-            if (this.parent) {
-                return this.parent.hasEntry(key, value);
-            }
-            return false;
-        };
-        Folder.prototype.ancestorHasEntry = function (key, value) {
-            var parent = this.parent;
-            while (parent) {
-                if (parent.hasEntry(key, value))
-                    return true;
-                parent = parent.parent;
-            }
-            return false;
-        };
-        Folder.prototype.ancestorHasType = function (typeName) {
-            var parent = this.parent;
-            while (parent) {
-                if (typeName === parent.typeName)
-                    return true;
-                parent = parent.parent;
-            }
-            return false;
-        };
-        Folder.prototype.getOrElse = function (key, defaultValue) {
-            if (defaultValue === void 0) { defaultValue = new Folder(key); }
-            var answer = this.get(key);
-            if (!answer) {
-                answer = defaultValue;
-                this.children.push(answer);
-                answer.parent = this;
-            }
-            return answer;
-        };
-        Folder.prototype.sortChildren = function (recursive) {
-            var children = this.children;
-            if (children) {
-                this.children = _.sortBy(children, 'text');
-                if (recursive) {
-                    angular.forEach(children, function (child) { return child.sortChildren(recursive); });
-                }
-            }
-        };
-        Folder.prototype.moveChild = function (child) {
-            if (child && child.parent !== this) {
-                child.detach();
-                child.parent = this;
-                this.children.push(child);
-            }
-        };
-        Folder.prototype.insertBefore = function (child, referenceFolder) {
-            child.detach();
-            child.parent = this;
-            var idx = _.indexOf(this.children, referenceFolder);
-            if (idx >= 0) {
-                this.children.splice(idx, 0, child);
-            }
-        };
-        Folder.prototype.insertAfter = function (child, referenceFolder) {
-            child.detach();
-            child.parent = this;
-            var idx = _.indexOf(this.children, referenceFolder);
-            if (idx >= 0) {
-                this.children.splice(idx + 1, 0, child);
-            }
-        };
-        /**
-         * Removes this node from my parent if I have one
-         * @method detach
-         * @for Folder
-         */
-        Folder.prototype.detach = function () {
-            var _this = this;
-            var oldParent = this.parent;
-            if (oldParent) {
-                var oldParentChildren = oldParent.children;
-                if (oldParentChildren) {
-                    var idx = oldParentChildren.indexOf(this);
-                    if (idx < 0) {
-                        _.remove(oldParent.children, function (child) { return child.key === _this.key; });
-                    }
-                    else {
-                        oldParentChildren.splice(idx, 1);
-                    }
-                }
-                this.parent = null;
-            }
-        };
-        /**
-         * Searches this folder and all its descendants for the first folder to match the filter
-         * @method findDescendant
-         * @for Folder
-         * @param {Function} filter
-         * @return {Folder}
-         */
-        Folder.prototype.findDescendant = function (filter) {
-            if (filter(this)) {
-                return this;
-            }
-            var answer = null;
-            angular.forEach(this.children, function (child) {
-                if (!answer) {
-                    answer = child.findDescendant(filter);
-                }
-            });
-            return answer;
-        };
-        /**
-         * Searches this folder and all its ancestors for the first folder to match the filter
-         * @method findDescendant
-         * @for Folder
-         * @param {Function} filter
-         * @return {Folder}
-         */
-        Folder.prototype.findAncestor = function (filter) {
-            if (filter(this)) {
-                return this;
-            }
-            if (this.parent != null) {
-                return this.parent.findAncestor(filter);
-            }
-            else {
-                return null;
-            }
-        };
-        return Folder;
-    }());
-    Jmx.Folder = Folder;
-})(Jmx || (Jmx = {}));
 /// <reference path="../../../jmx/ts/workspace.ts"/>
 var JVM;
 (function (JVM) {
@@ -5020,7 +4796,231 @@ var JVM;
         JVM.log.debug("Jolokia list method:", jolokiaStatus.listMethod);
     }
 })(JVM || (JVM = {}));
-/// <reference path="folder.ts"/>
+var Jmx;
+(function (Jmx) {
+    /**
+     * @class Folder
+     * @uses NodeSelection
+     */
+    var Folder = /** @class */ (function () {
+        function Folder(text) {
+            this.text = text;
+            this.id = null;
+            this.typeName = null;
+            this.nodes = [];
+            this.folderNames = [];
+            this.domain = null;
+            this.objectName = null;
+            this.entries = {};
+            this.class = null;
+            this.parent = null;
+            this.isLazy = false;
+            this.icon = null;
+            this.image = null;
+            this.tooltip = null;
+            this.entity = null;
+            this.version = null;
+            this.mbean = null;
+            this.class = Core.escapeTreeCssStyles(text);
+        }
+        Object.defineProperty(Folder.prototype, "key", {
+            get: function () {
+                return this.id;
+            },
+            set: function (key) {
+                this.id = key;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(Folder.prototype, "title", {
+            get: function () {
+                return this.text;
+            },
+            set: function (title) {
+                this.text = title;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(Folder.prototype, "children", {
+            get: function () {
+                return this.nodes;
+            },
+            set: function (items) {
+                this.nodes = items;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(Folder.prototype, "lazyLoad", {
+            get: function () {
+                return this.isLazy;
+            },
+            set: function (isLazy) {
+                this.isLazy = isLazy;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Folder.prototype.get = function (key) {
+            return _.find(this.children, function (child) { return child.text === key; });
+        };
+        Folder.prototype.isFolder = function () {
+            return this.nodes && this.nodes.length > 0;
+        };
+        /**
+         * Navigates the given paths and returns the value there or null if no value could be found
+         * @method navigate
+         * @for Folder
+         * @param {Array} paths
+         * @return {NodeSelection}
+         */
+        Folder.prototype.navigate = function () {
+            var paths = [];
+            for (var _i = 0; _i < arguments.length; _i++) {
+                paths[_i] = arguments[_i];
+            }
+            return paths.reduce(function (node, path) { return node ? node.get(path) : null; }, this);
+        };
+        Folder.prototype.hasEntry = function (key, value) {
+            var entries = this.entries;
+            if (entries) {
+                var actual = entries[key];
+                return actual && value === actual;
+            }
+            return false;
+        };
+        Folder.prototype.parentHasEntry = function (key, value) {
+            if (this.parent) {
+                return this.parent.hasEntry(key, value);
+            }
+            return false;
+        };
+        Folder.prototype.ancestorHasEntry = function (key, value) {
+            var parent = this.parent;
+            while (parent) {
+                if (parent.hasEntry(key, value))
+                    return true;
+                parent = parent.parent;
+            }
+            return false;
+        };
+        Folder.prototype.ancestorHasType = function (typeName) {
+            var parent = this.parent;
+            while (parent) {
+                if (typeName === parent.typeName)
+                    return true;
+                parent = parent.parent;
+            }
+            return false;
+        };
+        Folder.prototype.getOrElse = function (key, defaultValue) {
+            if (defaultValue === void 0) { defaultValue = new Folder(key); }
+            var answer = this.get(key);
+            if (!answer) {
+                answer = defaultValue;
+                this.children.push(answer);
+                answer.parent = this;
+            }
+            return answer;
+        };
+        Folder.prototype.sortChildren = function (recursive) {
+            var children = this.children;
+            if (children) {
+                this.children = _.sortBy(children, 'text');
+                if (recursive) {
+                    angular.forEach(children, function (child) { return child.sortChildren(recursive); });
+                }
+            }
+        };
+        Folder.prototype.moveChild = function (child) {
+            if (child && child.parent !== this) {
+                child.detach();
+                child.parent = this;
+                this.children.push(child);
+            }
+        };
+        Folder.prototype.insertBefore = function (child, referenceFolder) {
+            child.detach();
+            child.parent = this;
+            var idx = _.indexOf(this.children, referenceFolder);
+            if (idx >= 0) {
+                this.children.splice(idx, 0, child);
+            }
+        };
+        Folder.prototype.insertAfter = function (child, referenceFolder) {
+            child.detach();
+            child.parent = this;
+            var idx = _.indexOf(this.children, referenceFolder);
+            if (idx >= 0) {
+                this.children.splice(idx + 1, 0, child);
+            }
+        };
+        /**
+         * Removes this node from my parent if I have one
+         * @method detach
+         * @for Folder
+         */
+        Folder.prototype.detach = function () {
+            var _this = this;
+            var oldParent = this.parent;
+            if (oldParent) {
+                var oldParentChildren = oldParent.children;
+                if (oldParentChildren) {
+                    var idx = oldParentChildren.indexOf(this);
+                    if (idx < 0) {
+                        _.remove(oldParent.children, function (child) { return child.key === _this.key; });
+                    }
+                    else {
+                        oldParentChildren.splice(idx, 1);
+                    }
+                }
+                this.parent = null;
+            }
+        };
+        /**
+         * Searches this folder and all its descendants for the first folder to match the filter
+         * @method findDescendant
+         * @for Folder
+         * @param {Function} filter
+         * @return {Folder}
+         */
+        Folder.prototype.findDescendant = function (filter) {
+            if (filter(this)) {
+                return this;
+            }
+            var answer = null;
+            angular.forEach(this.children, function (child) {
+                if (!answer) {
+                    answer = child.findDescendant(filter);
+                }
+            });
+            return answer;
+        };
+        /**
+         * Searches this folder and all its ancestors for the first folder to match the filter
+         * @method findDescendant
+         * @for Folder
+         * @param {Function} filter
+         * @return {Folder}
+         */
+        Folder.prototype.findAncestor = function (filter) {
+            if (filter(this)) {
+                return this;
+            }
+            if (this.parent != null) {
+                return this.parent.findAncestor(filter);
+            }
+            else {
+                return null;
+            }
+        };
+        return Folder;
+    }());
+    Jmx.Folder = Folder;
+})(Jmx || (Jmx = {}));
+/// <reference path="tree/folder.ts"/>
 /// <reference path="workspace.ts"/>
 var Jmx;
 (function (Jmx) {
@@ -6072,7 +6072,6 @@ var Jmx;
     }());
     Jmx.Workspace = Workspace;
 })(Jmx || (Jmx = {}));
-/// <reference path="../../jmx/ts/folder.ts"/>
 /// <reference path="../../jmx/ts/workspace.ts"/>
 var Diagnostics;
 (function (Diagnostics) {
@@ -6667,7 +6666,6 @@ var Jmx;
         }
     ];
 })(Jmx || (Jmx = {}));
-/// <reference path="../folder.ts"/>
 var Jmx;
 (function (Jmx) {
     var HeaderController = /** @class */ (function () {
@@ -8522,143 +8520,6 @@ var Jmx;
             Core.register(jolokia, $scope, $scope.reqs, Core.onSuccess($scope.render));
         }]);
 })(Jmx || (Jmx = {}));
-/// <reference path="folder.ts"/>
-/// <reference path="workspace.ts"/>
-var Jmx;
-(function (Jmx) {
-    function findLazyLoadingFunction(workspace, folder) {
-        var factories = workspace.jmxTreeLazyLoadRegistry[folder.domain];
-        var lazyFunction = null;
-        if (factories && factories.length) {
-            angular.forEach(factories, function (customLoader) {
-                if (!lazyFunction) {
-                    lazyFunction = customLoader(folder);
-                }
-            });
-        }
-        return lazyFunction;
-    }
-    Jmx.findLazyLoadingFunction = findLazyLoadingFunction;
-    function registerLazyLoadHandler(domain, lazyLoaderFactory) {
-        var array = Core.lazyLoaders[domain];
-        if (!array) {
-            array = [];
-            Core.lazyLoaders[domain] = array;
-        }
-        array.push(lazyLoaderFactory);
-    }
-    Jmx.registerLazyLoadHandler = registerLazyLoadHandler;
-    function unregisterLazyLoadHandler(domain, lazyLoaderFactory) {
-        if (Core.lazyLoaders) {
-            var array = Core.lazyLoaders[domain];
-            if (array) {
-                array.remove(lazyLoaderFactory);
-            }
-        }
-    }
-    Jmx.unregisterLazyLoadHandler = unregisterLazyLoadHandler;
-    function updateTreeSelectionFromURL($location, treeElement, activateIfNoneSelected) {
-        if (activateIfNoneSelected === void 0) { activateIfNoneSelected = false; }
-        updateTreeSelectionFromURLAndAutoSelect($location, treeElement, null, activateIfNoneSelected);
-    }
-    Jmx.updateTreeSelectionFromURL = updateTreeSelectionFromURL;
-    function updateTreeSelectionFromURLAndAutoSelect($location, treeElement, autoSelect, activateIfNoneSelected) {
-        if (activateIfNoneSelected === void 0) { activateIfNoneSelected = false; }
-        var tree = treeElement.treeview(true);
-        var node;
-        // If there is a node id then select that one
-        var key = $location.search()['nid'];
-        if (key) {
-            node = _.find(tree.getNodes(), { id: key });
-        }
-        // Else optionally select the first node if there is no selection
-        if (!node && activateIfNoneSelected && tree.getSelected().length === 0) {
-            var children = tree.getNodes();
-            if (children.length > 0) {
-                node = children[0];
-                // invoke any auto select function, and use its result as new first, if any returned
-                if (autoSelect) {
-                    var result = autoSelect(node);
-                    if (result) {
-                        node = result;
-                    }
-                }
-            }
-        }
-        // Finally update the tree with the result node
-        if (node) {
-            tree.revealNode(node, { silent: true });
-            tree.selectNode(node, { silent: false });
-            tree.expandNode(node, { levels: 1, silent: true });
-        }
-        // Word-around to avoid collapsed parent node on re-parenting
-        tree.getExpanded().forEach(function (node) { return tree.revealNode(node, { silent: true }); });
-    }
-    Jmx.updateTreeSelectionFromURLAndAutoSelect = updateTreeSelectionFromURLAndAutoSelect;
-    function getUniqueTypeNames(children) {
-        var typeNameMap = {};
-        angular.forEach(children, function (mbean) {
-            var typeName = mbean.typeName;
-            if (typeName) {
-                typeNameMap[typeName] = mbean;
-            }
-        });
-        // only query if all the typenames are the same
-        return Object.keys(typeNameMap);
-    }
-    Jmx.getUniqueTypeNames = getUniqueTypeNames;
-    function enableTree($scope, $location, workspace, treeElement, children) {
-        treeElement.treeview({
-            lazyLoad: function (node, addNodes) {
-                var plugin = Jmx.findLazyLoadingFunction(workspace, node);
-                if (plugin) {
-                    Jmx.log.debug('Lazy loading folder', node.text);
-                    plugin(workspace, node, function (children) { return addNodes(children); });
-                }
-                // It seems to be required, as the lazyLoad property deletion done
-                // by the treeview component does not seem to work
-                node.lazyLoad = false;
-            },
-            onNodeSelected: function (event, node) {
-                // We need to clear any selected node state that may leave outside
-                // this tree element sub-graph so that the current selection is
-                // correctly taken into account when leaving for a wider tree graph,
-                // like when leaving the ActiveMQ or Camel trees to go to the JMX tree.
-                var clearSelection = function (n) {
-                    if (n.state && n.id !== node.id) {
-                        n.state.selected = false;
-                    }
-                    if (n.children) {
-                        n.children.forEach(clearSelection);
-                    }
-                };
-                clearSelection(workspace.tree);
-                // Expand one level down
-                // Lazy loaded node are automatically expanded once the children get added
-                if (!node.lazyLoad) {
-                    treeElement.treeview('expandNode', [node, { levels: 1, silent: true }]);
-                }
-                // Update the workspace state
-                // The treeview component clones the node passed with the event
-                // so let's lookup the original one
-                var selection = treeElement.treeview('getSelected')[0];
-                workspace.updateSelectionNode(selection);
-                Core.$apply($scope);
-            },
-            levels: 1,
-            data: children,
-            collapseIcon: 'fa fa-angle-down',
-            expandIcon: 'fa fa-angle-right',
-            nodeIcon: 'pficon pficon-folder-close',
-            showImage: true,
-            highlightSearchResults: true,
-            searchResultColor: '#b58100',
-            searchResultBackColor: '#fbeabc',
-            preventUnselect: true
-        });
-    }
-    Jmx.enableTree = enableTree;
-})(Jmx || (Jmx = {}));
 /// <reference path="jvmPlugin.ts"/>
 var JVM;
 (function (JVM) {
@@ -9772,6 +9633,143 @@ var Threads;
             initFunc();
         }]);
 })(Threads || (Threads = {}));
+/// <reference path="folder.ts"/>
+/// <reference path="../workspace.ts"/>
+var Jmx;
+(function (Jmx) {
+    function findLazyLoadingFunction(workspace, folder) {
+        var factories = workspace.jmxTreeLazyLoadRegistry[folder.domain];
+        var lazyFunction = null;
+        if (factories && factories.length) {
+            angular.forEach(factories, function (customLoader) {
+                if (!lazyFunction) {
+                    lazyFunction = customLoader(folder);
+                }
+            });
+        }
+        return lazyFunction;
+    }
+    Jmx.findLazyLoadingFunction = findLazyLoadingFunction;
+    function registerLazyLoadHandler(domain, lazyLoaderFactory) {
+        var array = Core.lazyLoaders[domain];
+        if (!array) {
+            array = [];
+            Core.lazyLoaders[domain] = array;
+        }
+        array.push(lazyLoaderFactory);
+    }
+    Jmx.registerLazyLoadHandler = registerLazyLoadHandler;
+    function unregisterLazyLoadHandler(domain, lazyLoaderFactory) {
+        if (Core.lazyLoaders) {
+            var array = Core.lazyLoaders[domain];
+            if (array) {
+                array.remove(lazyLoaderFactory);
+            }
+        }
+    }
+    Jmx.unregisterLazyLoadHandler = unregisterLazyLoadHandler;
+    function updateTreeSelectionFromURL($location, treeElement, activateIfNoneSelected) {
+        if (activateIfNoneSelected === void 0) { activateIfNoneSelected = false; }
+        updateTreeSelectionFromURLAndAutoSelect($location, treeElement, null, activateIfNoneSelected);
+    }
+    Jmx.updateTreeSelectionFromURL = updateTreeSelectionFromURL;
+    function updateTreeSelectionFromURLAndAutoSelect($location, treeElement, autoSelect, activateIfNoneSelected) {
+        if (activateIfNoneSelected === void 0) { activateIfNoneSelected = false; }
+        var tree = treeElement.treeview(true);
+        var node;
+        // If there is a node id then select that one
+        var key = $location.search()['nid'];
+        if (key) {
+            node = _.find(tree.getNodes(), { id: key });
+        }
+        // Else optionally select the first node if there is no selection
+        if (!node && activateIfNoneSelected && tree.getSelected().length === 0) {
+            var children = tree.getNodes();
+            if (children.length > 0) {
+                node = children[0];
+                // invoke any auto select function, and use its result as new first, if any returned
+                if (autoSelect) {
+                    var result = autoSelect(node);
+                    if (result) {
+                        node = result;
+                    }
+                }
+            }
+        }
+        // Finally update the tree with the result node
+        if (node) {
+            tree.revealNode(node, { silent: true });
+            tree.selectNode(node, { silent: false });
+            tree.expandNode(node, { levels: 1, silent: true });
+        }
+        // Word-around to avoid collapsed parent node on re-parenting
+        tree.getExpanded().forEach(function (node) { return tree.revealNode(node, { silent: true }); });
+    }
+    Jmx.updateTreeSelectionFromURLAndAutoSelect = updateTreeSelectionFromURLAndAutoSelect;
+    function getUniqueTypeNames(children) {
+        var typeNameMap = {};
+        angular.forEach(children, function (mbean) {
+            var typeName = mbean.typeName;
+            if (typeName) {
+                typeNameMap[typeName] = mbean;
+            }
+        });
+        // only query if all the typenames are the same
+        return Object.keys(typeNameMap);
+    }
+    Jmx.getUniqueTypeNames = getUniqueTypeNames;
+    function enableTree($scope, $location, workspace, treeElement, children) {
+        treeElement.treeview({
+            lazyLoad: function (node, addNodes) {
+                var plugin = Jmx.findLazyLoadingFunction(workspace, node);
+                if (plugin) {
+                    Jmx.log.debug('Lazy loading folder', node.text);
+                    plugin(workspace, node, function (children) { return addNodes(children); });
+                }
+                // It seems to be required, as the lazyLoad property deletion done
+                // by the treeview component does not seem to work
+                node.lazyLoad = false;
+            },
+            onNodeSelected: function (event, node) {
+                // We need to clear any selected node state that may leave outside
+                // this tree element sub-graph so that the current selection is
+                // correctly taken into account when leaving for a wider tree graph,
+                // like when leaving the ActiveMQ or Camel trees to go to the JMX tree.
+                var clearSelection = function (n) {
+                    if (n.state && n.id !== node.id) {
+                        n.state.selected = false;
+                    }
+                    if (n.children) {
+                        n.children.forEach(clearSelection);
+                    }
+                };
+                clearSelection(workspace.tree);
+                // Expand one level down
+                // Lazy loaded node are automatically expanded once the children get added
+                if (!node.lazyLoad) {
+                    treeElement.treeview('expandNode', [node, { levels: 1, silent: true }]);
+                }
+                // Update the workspace state
+                // The treeview component clones the node passed with the event
+                // so let's lookup the original one
+                var selection = treeElement.treeview('getSelected')[0];
+                workspace.updateSelectionNode(selection);
+                Core.$apply($scope);
+            },
+            levels: 1,
+            data: children,
+            collapseIcon: 'fa fa-angle-down',
+            expandIcon: 'fa fa-angle-right',
+            nodeIcon: 'pficon pficon-folder-close',
+            showImage: true,
+            highlightSearchResults: true,
+            searchResultColor: '#b58100',
+            searchResultBackColor: '#fbeabc',
+            preventUnselect: true
+        });
+    }
+    Jmx.enableTree = enableTree;
+})(Jmx || (Jmx = {}));
 
 angular.module('hawtio-jmx-templates', []).run(['$templateCache', function($templateCache) {$templateCache.put('plugins/diagnostics/html/flags.html','<div ng-controller="DiagnosticsFlagsController">\n  <h1>Hotspot Diagnostics</h1>\n  <table class="table table-striped table-bordered">\n    <thead>\n      <tr>\n        <th>VM Flag</th>\n        <th>Origin</th>\n        <th>Value</th>\n      </tr>\n    </thead>\n    <tbody>\n      <tr ng-repeat="flag in flags track by flag.name">\n        <td>{{flag.name}}</td>\n        <td>{{flag.origin}}</td>\n        <td>\n          <div ng-switch on="flag.dataType">\n            <span ng-switch-when="readonly">{{flag.value}}</span>\n            <input ng-switch-when="boolean" type="checkbox" ng-model="flag.value"></input>\n            <input ng-switch-when="string" type="text" ng-model="flag.value"></input>\n            <input ng-switch-when="number" type="number" ng-model="flag.value"></input>\n          </div>\n        </td>\n      </tr>\n    </tbody>\n  </table>  \n</div>');
 $templateCache.put('plugins/diagnostics/html/heap.html','<div ng-controller="DiagnosticsHeapController" class="table-view">\n  <h1>Class Histogram</h1>\n  <p>\n    <strong>Please note:</strong> Loading class histogram may be very expensive, depending on the size and\n    layout of the heap. Alternatively, use the <samp>jcmd</samp> utility:<br>\n    <samp>jcmd &lt;process id/main class&gt; GC.class_histogram<samp>\n  </p>\n  <p>\n    <button type="button" class="btn btn-primary" ng-click="loadClassStats()" ng-disabled="loading">\n      Load class histogram\n    </button>\n  </p>\n  <p ng-show="loading">\n    Loading...\n  </p>\n  <div ng-show="!loading && items.length > 0">\n    <pf-toolbar config="toolbarConfig">\n      <span ng-show="lastLoaded">\n        Last loaded: {{lastLoaded | date: \'yyyy-MM-dd hh:mm:ss\'}}\n      </span>\n    </pf-toolbar>\n    <pf-table-view class="diagnostics-class-histogram-table" config="tableConfig" dt-options="tableDtOptions"\n                   page-config="pageConfig" colummns="tableColumns" items="items"></pf-table-view>\n  </div>\n</div>\n');
@@ -9795,10 +9793,10 @@ $templateCache.put('plugins/jvm/html/navbarHeaderExtension.html','<style>\n  .na
 $templateCache.put('plugins/jvm/html/reset.html','<div ng-controller="JVM.ResetController">\n  <div class="alert alert-success jvm-reset-connections-alert" ng-if="showAlert">\n    <span class="pficon pficon-ok"></span>\n    Connections cleared successfully!\n  </div>\n  <h3>Clear saved connections</h3>\n  <p>\n    Clear all saved connection settings stored in your browser\'s local storage.\n  </p>\n  <p>\n    <button class="btn btn-danger" ng-click="doClearConnectSettings()">Clear saved connections</button>\n  </p>\n</div>');
 $templateCache.put('plugins/threads/html/threads.html','<div id="threads-page" class="table-view" ng-controller="ThreadsController">\n\n  <h1>Threads</h1>\n\n  <pf-toolbar config="toolbarConfig"></pf-toolbar>\n\n  <pf-table-view class="threads-table" config="tableConfig" dt-options="tableDtOptions"\n    colummns="tableColumns" items="filteredThreads" action-buttons="tableActionButtons">\n  </pf-table-view>\n\n  <script type="text/ng-template" id="threadModalContent.html">\n    <div class="modal-header">\n      <button type="button" class="close" aria-label="Close" ng-click="$close()">\n        <span class="pficon pficon-close" aria-hidden="true"></span>\n      </button>\n      <h4 class="modal-title">Thread</h4>\n    </div>\n    <div class="modal-body">\n      <div class="row">\n        <div class="col-md-12">\n          <dl class="dl-horizontal">\n            <dt>ID</dt>\n            <dd>{{thread.threadId}}</dd>\n            <dt>Name</dt>\n            <dd>{{thread.threadName}}</dd>\n            <dt>Waited Count</dt>\n            <dd>{{thread.waitedCount}}</dd>\n            <dt>Waited Time</dt>\n            <dd>{{thread.waitedTime}} ms</dd>\n            <dt>Blocked Count</dt>\n            <dd>{{thread.blockedCount}}</dd>\n            <dt>Blocked Time</dt>\n            <dd>{{thread.blockedTime}} ms</dd>\n            <div ng-show="thread.lockInfo != null">\n              <dt>Lock Name</dt>\n              <dd>{{thread.lockName}}</dd>\n              <dt>Lock Class Name</dt>\n              <dd>{{thread.lockInfo.className}}</dd>\n              <dt>Lock Identity Hash Code</dt>\n              <dd>{{thread.lockInfo.identityHashCode}}</dd>\n            </div>\n            <div ng-show="thread.lockOwnerId > 0">\n              <dt>Waiting for lock owned by</dt>\n              <dd><a href="" ng-click="selectThreadById(thread.lockOwnerId)">{{thread.lockOwnerId}} - {{thread.lockOwnerName}}</a></dd>\n            </div>\n            <div ng-show="thread.lockedSynchronizers.length > 0">\n              <dt>Locked Synchronizers</dt>\n              <dd>\n                <ol class="list-unstyled">\n                  <li ng-repeat="synchronizer in thread.lockedSynchronizers">\n                    <span title="Class Name">{{synchronizer.className}}</span> -\n                    <span title="Identity Hash Code">{{synchronizer.identityHashCode}}</span>\n                  </li>\n                </ol>\n              </dd>\n            </div>\n          </dl>\n        </div>\n      </div>\n      <div class="row" ng-show="thread.lockedMonitors.length > 0">\n        <div class="col-md-12">\n          <dl>\n            <dt>Locked Monitors</dt>\n            <dd>\n              <ol class="zebra-list">\n                <li ng-repeat="monitor in thread.lockedMonitors">\n                  Frame: <strong>{{monitor.lockedStackDepth}}</strong>\n                  <span class="green">{{monitor.lockedStackFrame.className}}</span>\n                  <span class="bold">.</span>\n                  <span class="blue bold">{{monitor.lockedStackFrame.methodName}}</span>\n                  &nbsp;({{monitor.lockedStackFrame.fileName}}<span ng-show="frame.lineNumber > 0">:{{monitor.lockedStackFrame.lineNumber}}</span>)\n                  <span class="orange" ng-show="monitor.lockedStackFrame.nativeMethod">(Native)</span>\n                </li>\n              </ol>\n            </dd>\n          </dl>\n        </div>\n      </div>\n      <div class="row">\n        <div class="col-md-12">\n          <dl>\n            <dt>Stack Trace</dt>\n            <dd>\n              <ol class="zebra-list">\n                <li ng-repeat="frame in thread.stackTrace">\n                  <span class="green">{{frame.className}}</span>\n                  <span class="bold">.</span>\n                  <span class="blue bold">{{frame.methodName}}</span>\n                  &nbsp;({{frame.fileName}}<span ng-show="frame.lineNumber > 0">:{{frame.lineNumber}}</span>)\n                  <span class="orange" ng-show="frame.nativeMethod">(Native)</span>\n                </li>\n              </ol>\n            </dd>\n          </dl>            \n        </div>\n      </div>\n    </div>\n  </script>\n\n</div>\n');
 $templateCache.put('plugins/jmx/html/attributes/attributes.html','<script type="text/ng-template" id="gridTemplate">\n  <table class="table table-striped table-bordered table-hover jmx-attributes-table"\n    ng-class="{\'ht-table-extra-columns\': hasExtraColumns}"\n    hawtio-simple-table="gridOptions">\n  </table>\n</script>\n\n<div class="table-view" ng-controller="Jmx.AttributesController">\n\n  <h2>Attributes</h2>\n  \n  <div ng-if="gridData.length > 0">\n    <div compile="attributes"></div>\n  </div>\n\n  <!-- modal dialog to show/edit the attribute -->\n  <div hawtio-confirm-dialog="showAttributeDialog" ok-button-text="Update"\n       show-ok-button="{{entity.rw ? \'true\' : \'false\'}}" on-ok="onUpdateAttribute()" on-cancel="onCancelAttribute()"\n       cancel-button-text="Close" title="Attribute: {{entity.key}}" optional-size="lg">\n    <div class="dialog-body">\n      <!-- have a form for view and another for edit -->\n      <div simple-form ng-hide="!entity.rw" name="attributeEditor" mode="edit" entity=\'entity\' data=\'attributeSchemaEdit\'></div>\n      <div simple-form ng-hide="entity.rw" name="attributeViewer" mode="view" entity=\'entity\' data=\'attributeSchemaView\'></div>\n    </div>\n  </div>\n\n</div>\n');
-$templateCache.put('plugins/jmx/html/operations/operation-form.html','<p ng-hide="$ctrl.operation.args.length">\n  This JMX operation requires no arguments. Click the \'Execute\' button to invoke the operation.\n</p>\n<p ng-show="$ctrl.operation.args.length">\n  This JMX operation requires some parameters. Fill in the fields below and click the \'Execute\' button\n  to invoke the operation.\n</p>\n\n<form class="form-horizontal" ng-submit="$ctrl.execute()">\n  <div class="form-group" ng-repeat="formField in $ctrl.formFields">\n    <label class="col-sm-2 control-label" for="{{formField.label}}">{{formField.label}}</label>\n    <div class="col-sm-10">\n      <input type="{{formField.type}}" id="{{formField.label}}" ng-class="{\'form-control\': formField.type !== \'checkbox\'}"\n        ng-model="formField.value" ng-disabled="!$ctrl.operation.canInvoke">\n      <span class="help-block">{{formField.helpText}}</span>\n    </div>\n  </div>\n  <div class="form-group">\n    <div ng-class="{\'col-sm-offset-2 col-sm-10\': $ctrl.operation.args.length, \'col-sm-12\': !$ctrl.operation.args.length}">\n      <button type="submit" class="btn btn-primary" ng-disabled="!$ctrl.operation.canInvoke || $ctrl.isExecuting">Execute</button>\n    </div>\n  </div>\n</form>\n\n<form ng-show="$ctrl.operationResult">\n  <div class="form-group">\n    <label>Result</label>\n    <div class="hawtio-clipboard-container">\n      <button hawtio-clipboard="#operation-result" class="btn btn-default btn-lg">\n        <i class="fa fa-clipboard" aria-hidden="true"></i>\n      </button>\n      <pre ng-class="{\'jmx-operation-error\': $ctrl.operationFailed}">{{$ctrl.operationResult}}</pre>\n    </div>\n    <textarea id="operation-result" class="hawtio-clipboard-hidden-target">{{$ctrl.operationResult}}</textarea>\n  </div>\n</form>\n');
-$templateCache.put('plugins/jmx/html/operations/operations.html','<h2>Operations</h2>\n<p ng-if="$ctrl.operations.length === 0">\n  This MBean has no JMX operations.\n</p>\n<div ng-if="$ctrl.operations.length > 0">\n  <p>\n    This MBean supports the following JMX operations. Expand an item in the list to invoke that operation.\n  </p>\n  <pf-list-view class="jmx-operations-list-view" items="$ctrl.operations" config="$ctrl.config"\n    menu-actions="$ctrl.menuActions">\n    <div class="list-view-pf-stacked">\n      <div class="list-group-item-heading">\n        <span class="pficon pficon-locked" ng-if="!item.canInvoke"></span>\n        {{item.readableName}}\n      </div>\n      <div class="list-group-item-text">\n        {{item.description}}\n      </div>\n    </div>\n    <list-expanded-content>\n      <operation-form operation="$parent.item"></operation-form>\n    </list-expanded-content>\n  </pf-list-view>\n</div>\n');
 $templateCache.put('plugins/jmx/html/common/header.html','<div class="jmx-header">\n  <h1>\n    {{$ctrl.title}}\n    <small class="text-muted">{{$ctrl.objectName}}</small>\n  </h1>\n</div>\n');
 $templateCache.put('plugins/jmx/html/common/tab.html','<ul class="nav nav-tabs">\n  <li ng-class="{active: $ctrl.isTabActive(\'/jmx/attributes\')}">\n    <a href="#" ng-click="$ctrl.goto(\'/jmx/attributes\')">Attributes</a>\n  </li>\n  <li ng-class="{active: $ctrl.isTabActive(\'/jmx/operations\')}">\n    <a href="#" ng-click="$ctrl.goto(\'/jmx/operations\')">Operations</a>\n  </li>\n  <li ng-class="{active: $ctrl.isTabActive(\'/jmx/charts\') || $ctrl.isTabActive(\'/jmx/chartEdit\')}">\n    <a href="#" ng-click="$ctrl.goto(\'/jmx/charts\')">Chart</a>\n  </li>\n</ul>\n');
+$templateCache.put('plugins/jmx/html/operations/operation-form.html','<p ng-hide="$ctrl.operation.args.length">\n  This JMX operation requires no arguments. Click the \'Execute\' button to invoke the operation.\n</p>\n<p ng-show="$ctrl.operation.args.length">\n  This JMX operation requires some parameters. Fill in the fields below and click the \'Execute\' button\n  to invoke the operation.\n</p>\n\n<form class="form-horizontal" ng-submit="$ctrl.execute()">\n  <div class="form-group" ng-repeat="formField in $ctrl.formFields">\n    <label class="col-sm-2 control-label" for="{{formField.label}}">{{formField.label}}</label>\n    <div class="col-sm-10">\n      <input type="{{formField.type}}" id="{{formField.label}}" ng-class="{\'form-control\': formField.type !== \'checkbox\'}"\n        ng-model="formField.value" ng-disabled="!$ctrl.operation.canInvoke">\n      <span class="help-block">{{formField.helpText}}</span>\n    </div>\n  </div>\n  <div class="form-group">\n    <div ng-class="{\'col-sm-offset-2 col-sm-10\': $ctrl.operation.args.length, \'col-sm-12\': !$ctrl.operation.args.length}">\n      <button type="submit" class="btn btn-primary" ng-disabled="!$ctrl.operation.canInvoke || $ctrl.isExecuting">Execute</button>\n    </div>\n  </div>\n</form>\n\n<form ng-show="$ctrl.operationResult">\n  <div class="form-group">\n    <label>Result</label>\n    <div class="hawtio-clipboard-container">\n      <button hawtio-clipboard="#operation-result" class="btn btn-default btn-lg">\n        <i class="fa fa-clipboard" aria-hidden="true"></i>\n      </button>\n      <pre ng-class="{\'jmx-operation-error\': $ctrl.operationFailed}">{{$ctrl.operationResult}}</pre>\n    </div>\n    <textarea id="operation-result" class="hawtio-clipboard-hidden-target">{{$ctrl.operationResult}}</textarea>\n  </div>\n</form>\n');
+$templateCache.put('plugins/jmx/html/operations/operations.html','<h2>Operations</h2>\n<p ng-if="$ctrl.operations.length === 0">\n  This MBean has no JMX operations.\n</p>\n<div ng-if="$ctrl.operations.length > 0">\n  <p>\n    This MBean supports the following JMX operations. Expand an item in the list to invoke that operation.\n  </p>\n  <pf-list-view class="jmx-operations-list-view" items="$ctrl.operations" config="$ctrl.config"\n    menu-actions="$ctrl.menuActions">\n    <div class="list-view-pf-stacked">\n      <div class="list-group-item-heading">\n        <span class="pficon pficon-locked" ng-if="!item.canInvoke"></span>\n        {{item.readableName}}\n      </div>\n      <div class="list-group-item-text">\n        {{item.description}}\n      </div>\n    </div>\n    <list-expanded-content>\n      <operation-form operation="$parent.item"></operation-form>\n    </list-expanded-content>\n  </pf-list-view>\n</div>\n');
 $templateCache.put('plugins/jmx/html/tree/content.html','<div class="tree-nav-sidebar-content">\n  <div class="spinner spinner-lg" ng-hide="$ctrl.treeFetched()"></div>\n  <div id="jmxtree" class="treeview-pf-hover treeview-pf-select"></div>\n</div>\n');
 $templateCache.put('plugins/jmx/html/tree/header.html','<div class="tree-nav-sidebar-header">\n  <form role="form" class="search-pf has-button">\n    <div class="form-group has-clear">\n      <div class="search-pf-input-group">\n        <label for="input-search" class="sr-only">Search Tree:</label>\n        <input id="input-search" type="search" class="form-control" placeholder="Search tree:"\n          ng-model="$ctrl.filter">\n        <button type="button" class="clear" aria-hidden="true"\n          ng-hide="$ctrl.filter.length === 0"\n          ng-click="$ctrl.filter = \'\'">\n          <span class="pficon pficon-close"></span>\n        </button>\n      </div>\n    </div>\n    <div class="form-group tree-nav-buttons">\n      <span class="badge" ng-class="{positive: $ctrl.result.length > 0}"\n        ng-show="$ctrl.filter.length > 0">\n        {{$ctrl.result.length}}\n      </span>\n      <i class="fa fa-plus-square-o" title="Expand All" ng-click="$ctrl.expandAll()"></i>\n      <i class="fa fa-minus-square-o" title="Collapse All" ng-click="$ctrl.contractAll()"></i>\n    </div>\n  </form>\n</div>\n');
 $templateCache.put('plugins/diagnostics/doc/help.md','## Diagnostics\n\nThe Diagnostics plugin provides diagnostic information about the JVM via the JVM DiagnosticCommand and HotspotDiangostic interfaces. The functionality is similar to the Diagnostic Commands view in Java Mission Control (jmc) or the command line tool jcmd. The plugin will provide corresponding jcmd commands in some scenarios.\n\n### Flight recorder\n\nThe Java Flight Recorder can be used to record diagnostics from a running Java process.  \n\n#### Unlock\n\nCommercial features must be enabled in order to use the flight recorder. The padlock will be locked and no operations are available if commercial options are not enabled. Click the padlock to unlock and enable flight recordings. Note: Running commercial options on a production system requires a valid license.\n\n#### Start\n\nStarts a recording. \n\n#### Dump\n\nDumps the contents of the current recording to disk. The file path will be listed in a table below.\n\n#### Stop\n\nStops the current recording.\n\n#### Settings\n\nHide/show the options pane.\n\n### Class Histogram\n\nClass histogram retrieves the number of instances of loaded classes and the amount of bytes they take up. \nIf the operation is repeated it will also show the difference since last run.\n\n### JVM flags\n\nThis table shows the JVM diagnostic flag settings. Your are also able to modify the settings in a running JVM.\n');

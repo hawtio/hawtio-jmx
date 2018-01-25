@@ -1,5 +1,5 @@
-/// <reference types="utilities" />
 /// <reference types="angular" />
+/// <reference types="utilities" />
 /// <reference types="jquery" />
 /// <reference types="core" />
 /// <reference types="forms" />
@@ -18,6 +18,115 @@ declare namespace Diagnostics {
         tableDef: any;
     }
     function DiagnosticsFlagsController($scope: JvmFlagsScope, jolokia: Jolokia.IJolokia): void;
+}
+declare namespace JVM {
+    function ConnectController($scope: any, $location: ng.ILocationService, localStorage: Storage, workspace: Jmx.Workspace, $uibModal: any, connectService: ConnectService): void;
+}
+declare namespace JVM {
+    const rootPath = "plugins/jvm";
+    const templatePath: string;
+    const pluginName = "hawtio-jvm";
+    const log: Logging.Logger;
+    const connectControllerKey = "jvmConnectSettings";
+    const connectionSettingsKey: string;
+    const logoPath = "img/icons/jvm/";
+    const logoRegistry: {
+        'jetty': string;
+        'tomcat': string;
+        'generic': string;
+    };
+}
+declare namespace JVM {
+    /**
+     * Adds common properties and functions to the scope
+     * @method configureScope
+     * @for Jvm
+     * @param {*} $scope
+     * @param {ng.ILocationService} $location
+     * @param {Core.Workspace} workspace
+     */
+    function configureScope($scope: any, $location: any, workspace: any): void;
+    function hasLocalMBean(workspace: any): any;
+    function hasDiscoveryMBean(workspace: any): any;
+    /**
+     * Creates a jolokia object for connecting to the container with the given remote jolokia URL,
+     * username and password
+     * @method createJolokia
+     * @for Core
+     * @static
+     * @param {String} url
+     * @param {String} username
+     * @param {String} password
+     * @return {Object}
+     */
+    function createJolokia(url: string, username: string, password: string): Jolokia.IJolokia;
+    function getRecentConnections(localStorage: any): any;
+    function addRecentConnection(localStorage: any, name: any): void;
+    function removeRecentConnection(localStorage: any, name: any): void;
+    function clearConnections(): void;
+    function isRemoteConnection(): boolean;
+    function connectToServer(localStorage: any, options: Core.ConnectToServerOptions): void;
+    function saveConnection(options: Core.ConnectOptions): void;
+    /**
+     * Loads all of the available connections from local storage
+     * @returns {Core.ConnectionMap}
+     */
+    function loadConnections(): Core.ConnectOptions[];
+    /**
+     * Saves the connection map to local storage
+     * @param connections array of all connections to be stored
+     */
+    function saveConnections(connections: Core.ConnectOptions[]): void;
+    function getConnectionNameParameter(): any;
+    /**
+     * Returns the connection options for the given connection name from localStorage
+     */
+    function getConnectOptions(name: string, localStorage?: WindowLocalStorage): Core.ConnectOptions;
+    /**
+     * Creates the Jolokia URL string for the given connection options
+     */
+    function createServerConnectionUrl(options: Core.ConnectOptions): string;
+}
+declare namespace JVM {
+    class ConnectService {
+        private $q;
+        private $window;
+        constructor($q: ng.IQService, $window: ng.IWindowService);
+        testConnection(connection: Core.ConnectOptions): ng.IPromise<string>;
+        connect(connection: Core.ConnectToServerOptions): void;
+    }
+}
+declare namespace JVM {
+    function ConnectionUrlFilter(): (connection: Core.ConnectOptions) => string;
+}
+declare namespace JVM {
+    const ConnectModule: string;
+}
+declare namespace JVM {
+    var windowJolokia: Jolokia.IJolokia;
+    var _module: angular.IModule;
+}
+declare namespace JVM {
+    enum JolokiaListMethod {
+        LIST_GENERAL = "list",
+        LIST_WITH_RBAC = "list_rbac",
+        LIST_CANT_DETERMINE = "cant_determine",
+    }
+    const DEFAULT_MAX_DEPTH = 7;
+    const DEFAULT_MAX_COLLECTION_SIZE = 50000;
+    let ConnectionName: string;
+    function getConnectionName(reset?: boolean): string;
+    function getConnectionOptions(): Core.ConnectOptions;
+    function getJolokiaUrl(): string | boolean;
+    interface JolokiaStatus {
+        xhr: JQueryXHR;
+        listMethod: JolokiaListMethod;
+        listMBean: string;
+    }
+    interface DummyJolokia extends Jolokia.IJolokia {
+        isDummy: boolean;
+        running: boolean;
+    }
 }
 declare namespace Jmx {
     /**
@@ -215,115 +324,6 @@ declare namespace Jmx {
          * @return {Folder}
          */
         findAncestor(filter: (node: NodeSelection) => boolean): NodeSelection | null;
-    }
-}
-declare namespace JVM {
-    function ConnectController($scope: any, $location: ng.ILocationService, localStorage: Storage, workspace: Jmx.Workspace, $uibModal: any, connectService: ConnectService): void;
-}
-declare namespace JVM {
-    const rootPath = "plugins/jvm";
-    const templatePath: string;
-    const pluginName = "hawtio-jvm";
-    const log: Logging.Logger;
-    const connectControllerKey = "jvmConnectSettings";
-    const connectionSettingsKey: string;
-    const logoPath = "img/icons/jvm/";
-    const logoRegistry: {
-        'jetty': string;
-        'tomcat': string;
-        'generic': string;
-    };
-}
-declare namespace JVM {
-    /**
-     * Adds common properties and functions to the scope
-     * @method configureScope
-     * @for Jvm
-     * @param {*} $scope
-     * @param {ng.ILocationService} $location
-     * @param {Core.Workspace} workspace
-     */
-    function configureScope($scope: any, $location: any, workspace: any): void;
-    function hasLocalMBean(workspace: any): any;
-    function hasDiscoveryMBean(workspace: any): any;
-    /**
-     * Creates a jolokia object for connecting to the container with the given remote jolokia URL,
-     * username and password
-     * @method createJolokia
-     * @for Core
-     * @static
-     * @param {String} url
-     * @param {String} username
-     * @param {String} password
-     * @return {Object}
-     */
-    function createJolokia(url: string, username: string, password: string): Jolokia.IJolokia;
-    function getRecentConnections(localStorage: any): any;
-    function addRecentConnection(localStorage: any, name: any): void;
-    function removeRecentConnection(localStorage: any, name: any): void;
-    function clearConnections(): void;
-    function isRemoteConnection(): boolean;
-    function connectToServer(localStorage: any, options: Core.ConnectToServerOptions): void;
-    function saveConnection(options: Core.ConnectOptions): void;
-    /**
-     * Loads all of the available connections from local storage
-     * @returns {Core.ConnectionMap}
-     */
-    function loadConnections(): Core.ConnectOptions[];
-    /**
-     * Saves the connection map to local storage
-     * @param connections array of all connections to be stored
-     */
-    function saveConnections(connections: Core.ConnectOptions[]): void;
-    function getConnectionNameParameter(): any;
-    /**
-     * Returns the connection options for the given connection name from localStorage
-     */
-    function getConnectOptions(name: string, localStorage?: WindowLocalStorage): Core.ConnectOptions;
-    /**
-     * Creates the Jolokia URL string for the given connection options
-     */
-    function createServerConnectionUrl(options: Core.ConnectOptions): string;
-}
-declare namespace JVM {
-    class ConnectService {
-        private $q;
-        private $window;
-        constructor($q: ng.IQService, $window: ng.IWindowService);
-        testConnection(connection: Core.ConnectOptions): ng.IPromise<string>;
-        connect(connection: Core.ConnectToServerOptions): void;
-    }
-}
-declare namespace JVM {
-    function ConnectionUrlFilter(): (connection: Core.ConnectOptions) => string;
-}
-declare namespace JVM {
-    const ConnectModule: string;
-}
-declare namespace JVM {
-    var windowJolokia: Jolokia.IJolokia;
-    var _module: angular.IModule;
-}
-declare namespace JVM {
-    enum JolokiaListMethod {
-        LIST_GENERAL = "list",
-        LIST_WITH_RBAC = "list_rbac",
-        LIST_CANT_DETERMINE = "cant_determine",
-    }
-    const DEFAULT_MAX_DEPTH = 7;
-    const DEFAULT_MAX_COLLECTION_SIZE = 50000;
-    let ConnectionName: string;
-    function getConnectionName(reset?: boolean): string;
-    function getConnectionOptions(): Core.ConnectOptions;
-    function getJolokiaUrl(): string | boolean;
-    interface JolokiaStatus {
-        xhr: JQueryXHR;
-        listMethod: JolokiaListMethod;
-        listMBean: string;
-    }
-    interface DummyJolokia extends Jolokia.IJolokia {
-        isDummy: boolean;
-        running: boolean;
     }
 }
 declare namespace Jmx {
@@ -887,15 +887,6 @@ declare namespace Jmx {
 declare namespace Jmx {
     var DonutChartController: angular.IModule;
 }
-declare namespace Jmx {
-    function findLazyLoadingFunction(workspace: Workspace, folder: any): (workspace: Workspace, folder: Folder, onComplete: (children: NodeSelection[]) => void) => void;
-    function registerLazyLoadHandler(domain: string, lazyLoaderFactory: (folder: Folder) => any): void;
-    function unregisterLazyLoadHandler(domain: string, lazyLoaderFactory: (folder: Folder) => any): void;
-    function updateTreeSelectionFromURL($location: any, treeElement: any, activateIfNoneSelected?: boolean): void;
-    function updateTreeSelectionFromURLAndAutoSelect($location: any, treeElement: any, autoSelect: (Folder) => NodeSelection, activateIfNoneSelected?: boolean): void;
-    function getUniqueTypeNames(children: NodeSelection[]): string[];
-    function enableTree($scope: any, $location: ng.ILocationService, workspace: Workspace, treeElement: any, children: Array<NodeSelection>): void;
-}
 declare namespace JVM {
 }
 declare namespace JVM {
@@ -995,4 +986,13 @@ declare namespace Threads {
  * @module Threads
  */
 declare namespace Threads {
+}
+declare namespace Jmx {
+    function findLazyLoadingFunction(workspace: Workspace, folder: any): (workspace: Workspace, folder: Folder, onComplete: (children: NodeSelection[]) => void) => void;
+    function registerLazyLoadHandler(domain: string, lazyLoaderFactory: (folder: Folder) => any): void;
+    function unregisterLazyLoadHandler(domain: string, lazyLoaderFactory: (folder: Folder) => any): void;
+    function updateTreeSelectionFromURL($location: any, treeElement: any, activateIfNoneSelected?: boolean): void;
+    function updateTreeSelectionFromURLAndAutoSelect($location: any, treeElement: any, autoSelect: (Folder) => NodeSelection, activateIfNoneSelected?: boolean): void;
+    function getUniqueTypeNames(children: NodeSelection[]): string[];
+    function enableTree($scope: any, $location: ng.ILocationService, workspace: Workspace, treeElement: any, children: Array<NodeSelection>): void;
 }

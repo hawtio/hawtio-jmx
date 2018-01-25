@@ -1,5 +1,5 @@
 /// <reference path="folder.ts"/>
-/// <reference path="workspace.ts"/>
+/// <reference path="../workspace.ts"/>
 
 namespace Jmx {
 
