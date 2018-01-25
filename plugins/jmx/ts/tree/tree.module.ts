@@ -9,4 +9,5 @@ namespace Jmx {
     .component('tree', treeComponent)
     .name;
 
+    export const treeElementId = '#jmxtree';
 }

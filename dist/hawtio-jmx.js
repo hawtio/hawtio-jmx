@@ -6559,298 +6559,6 @@ var Diagnostics;
         .service('diagnosticsService', Diagnostics.DiagnosticsService);
     hawtioPluginLoader.addModule(pluginName);
 })(Diagnostics || (Diagnostics = {}));
-/// <reference path="jvmPlugin.ts"/>
-var JVM;
-(function (JVM) {
-    JVM._module.controller("JVM.DiscoveryController", ["$scope", "localStorage", "jolokia", function ($scope, localStorage, jolokia) {
-            $scope.discovering = true;
-            $scope.agents = undefined;
-            $scope.$watch('agents', function (newValue, oldValue) {
-                if (newValue !== oldValue) {
-                    $scope.selectedAgent = _.find($scope.agents, function (a) { return a['selected']; });
-                }
-            }, true);
-            $scope.closePopover = function ($event) {
-                $($event.currentTarget).parents('.popover').prev().popover('hide');
-            };
-            function getMoreJvmDetails(agents) {
-                for (var key in agents) {
-                    var agent = agents[key];
-                    if (agent.url && !agent.secured) {
-                        var dedicatedJolokia = JVM.createJolokia(agent.url, agent.username, agent.password);
-                        agent.startTime = dedicatedJolokia.getAttribute('java.lang:type=Runtime', 'StartTime');
-                        if (!$scope.hasName(agent)) {
-                            agent.command = dedicatedJolokia.getAttribute('java.lang:type=Runtime', 'SystemProperties', 'sun.java.command');
-                        }
-                    }
-                }
-            }
-            function doConnect(agent) {
-                if (!agent.url) {
-                    Core.notification('warning', 'No URL available to connect to agent');
-                    return;
-                }
-                var options = Core.createConnectOptions();
-                options.name = agent.agent_description || 'discover-' + agent.agent_id;
-                var urlObject = Core.parseUrl(agent.url);
-                angular.extend(options, urlObject);
-                options.userName = agent.username;
-                options.password = agent.password;
-                JVM.connectToServer(localStorage, options);
-            }
-            $scope.connectWithCredentials = function ($event, agent) {
-                $scope.closePopover($event);
-                doConnect(agent);
-            };
-            $scope.gotoServer = function ($event, agent) {
-                if (agent.secured) {
-                    $($event.currentTarget).popover('show');
-                }
-                else {
-                    doConnect(agent);
-                }
-            };
-            $scope.getElementId = function (agent) {
-                return agent.agent_id.dasherize().replace(/\./g, "-");
-            };
-            $scope.getLogo = function (agent) {
-                if (agent.server_product) {
-                    return JVM.logoRegistry[agent.server_product];
-                }
-                return JVM.logoRegistry['generic'];
-            };
-            $scope.filterMatches = function (agent) {
-                if (Core.isBlank($scope.filter)) {
-                    return true;
-                }
-                else {
-                    var needle = $scope.filter.toLowerCase();
-                    var haystack = angular.toJson(agent).toLowerCase();
-                    return haystack.indexOf(needle) !== 0;
-                }
-            };
-            $scope.getAgentIdClass = function (agent) {
-                if ($scope.hasName(agent)) {
-                    return "";
-                }
-                return "strong";
-            };
-            $scope.hasName = function (agent) {
-                return !!(agent.server_vendor && agent.server_product && agent.server_version);
-            };
-            $scope.render = function (response) {
-                $scope.discovering = false;
-                if (response) {
-                    var responseJson = angular.toJson(response, true);
-                    if ($scope.responseJson !== responseJson) {
-                        $scope.responseJson = responseJson;
-                        $scope.agents = response;
-                        getMoreJvmDetails($scope.agents);
-                    }
-                }
-                Core.$apply($scope);
-            };
-            $scope.fetch = function () {
-                $scope.discovering = true;
-                // use 10 sec timeout
-                jolokia.execute('jolokia:type=Discovery', 'lookupAgentsWithTimeout(int)', 10 * 1000, Core.onSuccess($scope.render));
-            };
-            $scope.fetch();
-        }]);
-})(JVM || (JVM = {}));
-/// <reference path="jvmPlugin.ts"/>
-var JVM;
-(function (JVM) {
-    JVM.HeaderController = JVM._module.controller("JVM.HeaderController", ["$scope", "ConnectOptions", function ($scope, ConnectOptions) {
-            if (ConnectOptions) {
-                $scope.containerName = ConnectOptions.name || "";
-                if (ConnectOptions.returnTo) {
-                    $scope.goBack = function () {
-                        window.location.href = ConnectOptions.returnTo;
-                    };
-                }
-            }
-        }]);
-})(JVM || (JVM = {}));
-/// <reference path="jvmPlugin.ts"/>
-var JVM;
-(function (JVM) {
-    JolokiaPreferences.$inject = ["$scope", "localStorage", "jolokiaParams", "$window"];
-    var SHOW_ALERT = 'showJolokiaPreferencesAlert';
-    function JolokiaPreferences($scope, localStorage, jolokiaParams, $window) {
-        'ngInject';
-        // Initialize tooltips
-        $('[data-toggle="tooltip"]').tooltip();
-        Core.initPreferenceScope($scope, localStorage, {
-            'updateRate': {
-                'value': 5000,
-                'post': function (newValue) {
-                    $scope.$emit('UpdateRate', newValue);
-                }
-            },
-            'maxDepth': {
-                'value': JVM.DEFAULT_MAX_DEPTH,
-                'converter': parseInt,
-                'formatter': parseInt,
-                'post': function (newValue) {
-                    jolokiaParams.maxDepth = newValue;
-                    localStorage['jolokiaParams'] = angular.toJson(jolokiaParams);
-                }
-            },
-            'maxCollectionSize': {
-                'value': JVM.DEFAULT_MAX_COLLECTION_SIZE,
-                'converter': parseInt,
-                'formatter': parseInt,
-                'post': function (newValue) {
-                    jolokiaParams.maxCollectionSize = newValue;
-                    localStorage['jolokiaParams'] = angular.toJson(jolokiaParams);
-                }
-            }
-        });
-        $scope.showAlert = !!$window.sessionStorage.getItem(SHOW_ALERT);
-        $window.sessionStorage.removeItem(SHOW_ALERT);
-        $scope.reboot = function () {
-            $window.sessionStorage.setItem(SHOW_ALERT, 'true');
-            $window.location.reload();
-        };
-    }
-    JVM.JolokiaPreferences = JolokiaPreferences;
-    JVM._module.controller("JVM.JolokiaPreferences", JolokiaPreferences);
-})(JVM || (JVM = {}));
-var JVM;
-(function (JVM) {
-    var JolokiaService = /** @class */ (function () {
-        JolokiaService.$inject = ["$q", "jolokia"];
-        function JolokiaService($q, jolokia) {
-            'ngInject';
-            this.$q = $q;
-            this.jolokia = jolokia;
-        }
-        JolokiaService.prototype.getAttribute = function (mbean, attribute) {
-            var _this = this;
-            return this.$q(function (resolve, reject) {
-                _this.jolokia.request({ type: 'read', mbean: mbean, attribute: attribute }, { success: function (response) { return resolve(response.value); } }, { error: function (response) {
-                        JVM.log.error("JolokiaService.getAttribute('" + mbean + "', '" + attribute + "') failed. Error: " + response.error);
-                        reject(response.error);
-                    }
-                });
-            });
-        };
-        return JolokiaService;
-    }());
-    JVM.JolokiaService = JolokiaService;
-    JVM._module.service("jolokiaService", JolokiaService);
-})(JVM || (JVM = {}));
-/// <reference path="jvmPlugin.ts"/>
-/**
- * @module JVM
- */
-var JVM;
-(function (JVM) {
-    JVM._module.controller("JVM.JVMsController", ["$scope", "$location", "localStorage", "workspace", "jolokia", "mbeanName", function ($scope, $location, localStorage, workspace, jolokia, mbeanName) {
-            JVM.configureScope($scope, $location, workspace);
-            $scope.data = [];
-            $scope.deploying = false;
-            $scope.status = '';
-            $scope.initDone = false;
-            $scope.filter = '';
-            var listRequest = {
-                type: 'exec', mbean: mbeanName,
-                operation: 'listLocalJVMs()',
-                arguments: []
-            };
-            $scope.filterMatches = function (jvm) {
-                if (Core.isBlank($scope.filter)) {
-                    return true;
-                }
-                else {
-                    return jvm.alias.toLowerCase().has($scope.filter.toLowerCase());
-                }
-            };
-            $scope.fetch = function () {
-                jolokia.request(listRequest, {
-                    success: render,
-                    error: function (response) {
-                        $scope.data = [];
-                        $scope.initDone = true;
-                        $scope.status = 'Could not discover local JVM processes: ' + response.error;
-                        Core.$apply($scope);
-                    }
-                });
-            };
-            $scope.stopAgent = function (pid) {
-                jolokia.request([{
-                        type: 'exec', mbean: mbeanName,
-                        operation: 'stopAgent(java.lang.String)',
-                        arguments: [pid]
-                    }, listRequest], Core.onSuccess(renderIfList));
-            };
-            $scope.startAgent = function (pid) {
-                jolokia.request([{
-                        type: 'exec', mbean: mbeanName,
-                        operation: 'startAgent(java.lang.String)',
-                        arguments: [pid]
-                    }, listRequest], Core.onSuccess(renderIfList));
-            };
-            $scope.connectTo = function (url, scheme, host, port, path) {
-                // we only need the port and path from the url, as we got the rest
-                var options = {};
-                options["scheme"] = scheme;
-                options["host"] = host;
-                options["port"] = port;
-                options["path"] = path;
-                // add empty username as we dont need login
-                options["userName"] = "";
-                options["password"] = "";
-                // connect to root by default as we do not want to show welcome page
-                options["view"] = "#/";
-                var con = Core.createConnectToServerOptions(options);
-                con.name = "local-" + port;
-                JVM.log.debug("Connecting to local JVM agent: " + url);
-                JVM.connectToServer(localStorage, con);
-                Core.$apply($scope);
-            };
-            /**
-             * Since the requests are bundled, check the operation in callback to decide on
-             * how to respond to success
-             */
-            function renderIfList(response) {
-                if (response.request.operation.indexOf("listLocalJVMs") > -1) {
-                    render(response);
-                }
-            }
-            function render(response) {
-                $scope.initDone = true;
-                $scope.data = response.value;
-                if ($scope.data.length === 0) {
-                    $scope.status = 'Could not discover local JVM processes';
-                }
-                Core.$apply($scope);
-            }
-            $scope.fetch();
-        }]);
-})(JVM || (JVM = {}));
-/// <reference path="./jvmPlugin.ts"/>
-var JVM;
-(function (JVM) {
-    JVM._module.controller("JVM.NavController", ["$scope", "$location", "workspace", function ($scope, $location, workspace) {
-            JVM.configureScope($scope, $location, workspace);
-            $scope.isLocalEnabled = JVM.hasLocalMBean(workspace);
-            $scope.isDiscoveryEnabled = JVM.hasDiscoveryMBean(workspace);
-        }]);
-})(JVM || (JVM = {}));
-/// <reference path="./jvmPlugin.ts"/>
-var JVM;
-(function (JVM) {
-    JVM._module.controller("JVM.ResetController", ["$scope", "localStorage", function ($scope, localStorage) {
-            $scope.showAlert = false;
-            $scope.doClearConnectSettings = function () {
-                delete localStorage[JVM.connectControllerKey];
-                delete localStorage[JVM.connectionSettingsKey];
-                $scope.showAlert = true;
-            };
-        }]);
-})(JVM || (JVM = {}));
 var Jmx;
 (function (Jmx) {
     function createDashboardLink(widgetType, widget) {
@@ -8031,6 +7739,7 @@ var Jmx;
         .service('operationsService', Jmx.OperationsService)
         .name;
 })(Jmx || (Jmx = {}));
+/// <reference path="tree.module.ts"/>
 var Jmx;
 (function (Jmx) {
     var TreeHeaderController = /** @class */ (function () {
@@ -8068,7 +7777,7 @@ var Jmx;
             _.debounce(doSearch, 300, { leading: false, trailing: true })(filter);
         };
         TreeHeaderController.prototype.tree = function () {
-            return $('#jmxtree').treeview(true);
+            return $(Jmx.treeElementId).treeview(true);
         };
         TreeHeaderController.prototype.expandAll = function () {
             return this.tree().expandAll({ silent: true });
@@ -8088,6 +7797,7 @@ var Jmx;
         controller: Jmx.TreeHeaderController
     };
 })(Jmx || (Jmx = {}));
+/// <reference path="tree.module.ts"/>
 var Jmx;
 (function (Jmx) {
     var TreeController = /** @class */ (function () {
@@ -8114,20 +7824,20 @@ var Jmx;
             return this.workspace.treeFetched;
         };
         TreeController.prototype.updateSelectionFromURL = function () {
-            Jmx.updateTreeSelectionFromURL(this.$location, $('#jmxtree'));
+            Jmx.updateTreeSelectionFromURL(this.$location, $(Jmx.treeElementId));
         };
         TreeController.prototype.populateTree = function () {
             var _this = this;
             Jmx.log.debug('TreeController: populateTree');
             this.removeTree();
-            Jmx.enableTree(this.$scope, this.$location, this.workspace, $('#jmxtree'), this.workspace.tree.children);
+            Jmx.enableTree(this.$scope, this.$location, this.workspace, $(Jmx.treeElementId), this.workspace.tree.children);
             this.$timeout(function () {
                 _this.updateSelectionFromURL();
                 _this.workspace.broadcastSelectionNode();
             });
         };
         TreeController.prototype.removeTree = function () {
-            var tree = $('#jmxtree').treeview(true);
+            var tree = $(Jmx.treeElementId).treeview(true);
             // There is no exposed API to check whether the tree has already been initialized,
             // so let's just check if the methods are presents
             if (tree.clearSearch) {
@@ -8165,6 +7875,7 @@ var Jmx;
         .component('treeHeader', Jmx.treeHeaderComponent)
         .component('tree', Jmx.treeComponent)
         .name;
+    Jmx.treeElementId = '#jmxtree';
 })(Jmx || (Jmx = {}));
 /// <reference path="../../jvm/ts/jvmHelpers.ts"/>
 /// <reference path="jmxHelpers.ts"/>
@@ -8949,6 +8660,658 @@ var Jmx;
     }
     Jmx.enableTree = enableTree;
 })(Jmx || (Jmx = {}));
+/// <reference path="jvmPlugin.ts"/>
+var JVM;
+(function (JVM) {
+    JVM._module.controller("JVM.DiscoveryController", ["$scope", "localStorage", "jolokia", function ($scope, localStorage, jolokia) {
+            $scope.discovering = true;
+            $scope.agents = undefined;
+            $scope.$watch('agents', function (newValue, oldValue) {
+                if (newValue !== oldValue) {
+                    $scope.selectedAgent = _.find($scope.agents, function (a) { return a['selected']; });
+                }
+            }, true);
+            $scope.closePopover = function ($event) {
+                $($event.currentTarget).parents('.popover').prev().popover('hide');
+            };
+            function getMoreJvmDetails(agents) {
+                for (var key in agents) {
+                    var agent = agents[key];
+                    if (agent.url && !agent.secured) {
+                        var dedicatedJolokia = JVM.createJolokia(agent.url, agent.username, agent.password);
+                        agent.startTime = dedicatedJolokia.getAttribute('java.lang:type=Runtime', 'StartTime');
+                        if (!$scope.hasName(agent)) {
+                            agent.command = dedicatedJolokia.getAttribute('java.lang:type=Runtime', 'SystemProperties', 'sun.java.command');
+                        }
+                    }
+                }
+            }
+            function doConnect(agent) {
+                if (!agent.url) {
+                    Core.notification('warning', 'No URL available to connect to agent');
+                    return;
+                }
+                var options = Core.createConnectOptions();
+                options.name = agent.agent_description || 'discover-' + agent.agent_id;
+                var urlObject = Core.parseUrl(agent.url);
+                angular.extend(options, urlObject);
+                options.userName = agent.username;
+                options.password = agent.password;
+                JVM.connectToServer(localStorage, options);
+            }
+            $scope.connectWithCredentials = function ($event, agent) {
+                $scope.closePopover($event);
+                doConnect(agent);
+            };
+            $scope.gotoServer = function ($event, agent) {
+                if (agent.secured) {
+                    $($event.currentTarget).popover('show');
+                }
+                else {
+                    doConnect(agent);
+                }
+            };
+            $scope.getElementId = function (agent) {
+                return agent.agent_id.dasherize().replace(/\./g, "-");
+            };
+            $scope.getLogo = function (agent) {
+                if (agent.server_product) {
+                    return JVM.logoRegistry[agent.server_product];
+                }
+                return JVM.logoRegistry['generic'];
+            };
+            $scope.filterMatches = function (agent) {
+                if (Core.isBlank($scope.filter)) {
+                    return true;
+                }
+                else {
+                    var needle = $scope.filter.toLowerCase();
+                    var haystack = angular.toJson(agent).toLowerCase();
+                    return haystack.indexOf(needle) !== 0;
+                }
+            };
+            $scope.getAgentIdClass = function (agent) {
+                if ($scope.hasName(agent)) {
+                    return "";
+                }
+                return "strong";
+            };
+            $scope.hasName = function (agent) {
+                return !!(agent.server_vendor && agent.server_product && agent.server_version);
+            };
+            $scope.render = function (response) {
+                $scope.discovering = false;
+                if (response) {
+                    var responseJson = angular.toJson(response, true);
+                    if ($scope.responseJson !== responseJson) {
+                        $scope.responseJson = responseJson;
+                        $scope.agents = response;
+                        getMoreJvmDetails($scope.agents);
+                    }
+                }
+                Core.$apply($scope);
+            };
+            $scope.fetch = function () {
+                $scope.discovering = true;
+                // use 10 sec timeout
+                jolokia.execute('jolokia:type=Discovery', 'lookupAgentsWithTimeout(int)', 10 * 1000, Core.onSuccess($scope.render));
+            };
+            $scope.fetch();
+        }]);
+})(JVM || (JVM = {}));
+/// <reference path="jvmPlugin.ts"/>
+var JVM;
+(function (JVM) {
+    JVM.HeaderController = JVM._module.controller("JVM.HeaderController", ["$scope", "ConnectOptions", function ($scope, ConnectOptions) {
+            if (ConnectOptions) {
+                $scope.containerName = ConnectOptions.name || "";
+                if (ConnectOptions.returnTo) {
+                    $scope.goBack = function () {
+                        window.location.href = ConnectOptions.returnTo;
+                    };
+                }
+            }
+        }]);
+})(JVM || (JVM = {}));
+/// <reference path="jvmPlugin.ts"/>
+var JVM;
+(function (JVM) {
+    JolokiaPreferences.$inject = ["$scope", "localStorage", "jolokiaParams", "$window"];
+    var SHOW_ALERT = 'showJolokiaPreferencesAlert';
+    function JolokiaPreferences($scope, localStorage, jolokiaParams, $window) {
+        'ngInject';
+        // Initialize tooltips
+        $('[data-toggle="tooltip"]').tooltip();
+        Core.initPreferenceScope($scope, localStorage, {
+            'updateRate': {
+                'value': 5000,
+                'post': function (newValue) {
+                    $scope.$emit('UpdateRate', newValue);
+                }
+            },
+            'maxDepth': {
+                'value': JVM.DEFAULT_MAX_DEPTH,
+                'converter': parseInt,
+                'formatter': parseInt,
+                'post': function (newValue) {
+                    jolokiaParams.maxDepth = newValue;
+                    localStorage['jolokiaParams'] = angular.toJson(jolokiaParams);
+                }
+            },
+            'maxCollectionSize': {
+                'value': JVM.DEFAULT_MAX_COLLECTION_SIZE,
+                'converter': parseInt,
+                'formatter': parseInt,
+                'post': function (newValue) {
+                    jolokiaParams.maxCollectionSize = newValue;
+                    localStorage['jolokiaParams'] = angular.toJson(jolokiaParams);
+                }
+            }
+        });
+        $scope.showAlert = !!$window.sessionStorage.getItem(SHOW_ALERT);
+        $window.sessionStorage.removeItem(SHOW_ALERT);
+        $scope.reboot = function () {
+            $window.sessionStorage.setItem(SHOW_ALERT, 'true');
+            $window.location.reload();
+        };
+    }
+    JVM.JolokiaPreferences = JolokiaPreferences;
+    JVM._module.controller("JVM.JolokiaPreferences", JolokiaPreferences);
+})(JVM || (JVM = {}));
+var JVM;
+(function (JVM) {
+    var JolokiaService = /** @class */ (function () {
+        JolokiaService.$inject = ["$q", "jolokia"];
+        function JolokiaService($q, jolokia) {
+            'ngInject';
+            this.$q = $q;
+            this.jolokia = jolokia;
+        }
+        JolokiaService.prototype.getAttribute = function (mbean, attribute) {
+            var _this = this;
+            return this.$q(function (resolve, reject) {
+                _this.jolokia.request({ type: 'read', mbean: mbean, attribute: attribute }, { success: function (response) { return resolve(response.value); } }, { error: function (response) {
+                        JVM.log.error("JolokiaService.getAttribute('" + mbean + "', '" + attribute + "') failed. Error: " + response.error);
+                        reject(response.error);
+                    }
+                });
+            });
+        };
+        return JolokiaService;
+    }());
+    JVM.JolokiaService = JolokiaService;
+    JVM._module.service("jolokiaService", JolokiaService);
+})(JVM || (JVM = {}));
+/// <reference path="jvmPlugin.ts"/>
+/**
+ * @module JVM
+ */
+var JVM;
+(function (JVM) {
+    JVM._module.controller("JVM.JVMsController", ["$scope", "$location", "localStorage", "workspace", "jolokia", "mbeanName", function ($scope, $location, localStorage, workspace, jolokia, mbeanName) {
+            JVM.configureScope($scope, $location, workspace);
+            $scope.data = [];
+            $scope.deploying = false;
+            $scope.status = '';
+            $scope.initDone = false;
+            $scope.filter = '';
+            var listRequest = {
+                type: 'exec', mbean: mbeanName,
+                operation: 'listLocalJVMs()',
+                arguments: []
+            };
+            $scope.filterMatches = function (jvm) {
+                if (Core.isBlank($scope.filter)) {
+                    return true;
+                }
+                else {
+                    return jvm.alias.toLowerCase().has($scope.filter.toLowerCase());
+                }
+            };
+            $scope.fetch = function () {
+                jolokia.request(listRequest, {
+                    success: render,
+                    error: function (response) {
+                        $scope.data = [];
+                        $scope.initDone = true;
+                        $scope.status = 'Could not discover local JVM processes: ' + response.error;
+                        Core.$apply($scope);
+                    }
+                });
+            };
+            $scope.stopAgent = function (pid) {
+                jolokia.request([{
+                        type: 'exec', mbean: mbeanName,
+                        operation: 'stopAgent(java.lang.String)',
+                        arguments: [pid]
+                    }, listRequest], Core.onSuccess(renderIfList));
+            };
+            $scope.startAgent = function (pid) {
+                jolokia.request([{
+                        type: 'exec', mbean: mbeanName,
+                        operation: 'startAgent(java.lang.String)',
+                        arguments: [pid]
+                    }, listRequest], Core.onSuccess(renderIfList));
+            };
+            $scope.connectTo = function (url, scheme, host, port, path) {
+                // we only need the port and path from the url, as we got the rest
+                var options = {};
+                options["scheme"] = scheme;
+                options["host"] = host;
+                options["port"] = port;
+                options["path"] = path;
+                // add empty username as we dont need login
+                options["userName"] = "";
+                options["password"] = "";
+                // connect to root by default as we do not want to show welcome page
+                options["view"] = "#/";
+                var con = Core.createConnectToServerOptions(options);
+                con.name = "local-" + port;
+                JVM.log.debug("Connecting to local JVM agent: " + url);
+                JVM.connectToServer(localStorage, con);
+                Core.$apply($scope);
+            };
+            /**
+             * Since the requests are bundled, check the operation in callback to decide on
+             * how to respond to success
+             */
+            function renderIfList(response) {
+                if (response.request.operation.indexOf("listLocalJVMs") > -1) {
+                    render(response);
+                }
+            }
+            function render(response) {
+                $scope.initDone = true;
+                $scope.data = response.value;
+                if ($scope.data.length === 0) {
+                    $scope.status = 'Could not discover local JVM processes';
+                }
+                Core.$apply($scope);
+            }
+            $scope.fetch();
+        }]);
+})(JVM || (JVM = {}));
+/// <reference path="./jvmPlugin.ts"/>
+var JVM;
+(function (JVM) {
+    JVM._module.controller("JVM.NavController", ["$scope", "$location", "workspace", function ($scope, $location, workspace) {
+            JVM.configureScope($scope, $location, workspace);
+            $scope.isLocalEnabled = JVM.hasLocalMBean(workspace);
+            $scope.isDiscoveryEnabled = JVM.hasDiscoveryMBean(workspace);
+        }]);
+})(JVM || (JVM = {}));
+/// <reference path="./jvmPlugin.ts"/>
+var JVM;
+(function (JVM) {
+    JVM._module.controller("JVM.ResetController", ["$scope", "localStorage", function ($scope, localStorage) {
+            $scope.showAlert = false;
+            $scope.doClearConnectSettings = function () {
+                delete localStorage[JVM.connectControllerKey];
+                delete localStorage[JVM.connectionSettingsKey];
+                $scope.showAlert = true;
+            };
+        }]);
+})(JVM || (JVM = {}));
+var RBAC;
+(function (RBAC) {
+    var JmxTreeProcessor = /** @class */ (function () {
+        function JmxTreeProcessor(jolokia, jolokiaStatus, rbacTasks, workspace) {
+            this.jolokia = jolokia;
+            this.jolokiaStatus = jolokiaStatus;
+            this.rbacTasks = rbacTasks;
+            this.workspace = workspace;
+        }
+        JmxTreeProcessor.prototype.process = function (tree) {
+            var _this = this;
+            RBAC.log.debug("Processing tree", tree);
+            this.rbacTasks.getACLMBean().then(function (aclMBean) {
+                var mbeans = {};
+                _this.flattenMBeanTree(mbeans, tree);
+                var listMethod = _this.jolokiaStatus.listMethod;
+                switch (listMethod) {
+                    case JVM.JolokiaListMethod.LIST_WITH_RBAC:
+                        RBAC.log.debug("Process JMX tree: list with RBAC mode");
+                        _this.processWithRBAC(mbeans);
+                        RBAC.log.debug("Processed tree mbeans with RBAC", mbeans);
+                        break;
+                    case JVM.JolokiaListMethod.LIST_GENERAL:
+                    case JVM.JolokiaListMethod.LIST_CANT_DETERMINE:
+                    default:
+                        RBAC.log.debug("Process JMX tree: general mode");
+                        _this.processGeneral(aclMBean, mbeans);
+                        RBAC.log.debug("Processed tree mbeans", mbeans);
+                        break;
+                }
+                // publish 'jmxTreeUpdated' event to apply the tree changes
+                _this.workspace.jmxTreeUpdated();
+            });
+        };
+        JmxTreeProcessor.prototype.flattenMBeanTree = function (mbeans, tree) {
+            var _this = this;
+            if (!Core.isBlank(tree.objectName)) {
+                mbeans[tree.objectName] = tree;
+            }
+            if (tree.isFolder()) {
+                tree.children.forEach(function (child) { return _this.flattenMBeanTree(mbeans, child); });
+            }
+        };
+        JmxTreeProcessor.prototype.processWithRBAC = function (mbeans) {
+            var _this = this;
+            // we already have everything related to RBAC in place, except 'class' property
+            _.forEach(mbeans, function (node, mbeanName) {
+                var mbean = node.mbean;
+                var canInvoke = mbean && (_.isNil(mbean.canInvoke) || mbean.canInvoke);
+                _this.addCanInvokeToClass(node, canInvoke);
+            });
+        };
+        JmxTreeProcessor.prototype.processGeneral = function (aclMBean, mbeans) {
+            var _this = this;
+            var requests = [];
+            var bulkRequest = {};
+            _.forEach(mbeans, function (mbean, mbeanName) {
+                if (!('canInvoke' in mbean)) {
+                    requests.push({
+                        type: 'exec',
+                        mbean: aclMBean,
+                        operation: 'canInvoke(java.lang.String)',
+                        arguments: [mbeanName]
+                    });
+                    if (mbean.mbean && mbean.mbean.op) {
+                        var ops = mbean.mbean.op;
+                        mbean.mbean.opByString = {};
+                        var opList_1 = [];
+                        _.forEach(ops, function (op, opName) {
+                            if (_.isArray(op)) {
+                                _.forEach(op, function (op) { return _this.addOperation(mbean, opList_1, opName, op); });
+                            }
+                            else {
+                                _this.addOperation(mbean, opList_1, opName, op);
+                            }
+                        });
+                        bulkRequest[mbeanName] = opList_1;
+                    }
+                }
+            });
+            requests.push({
+                type: 'exec',
+                mbean: aclMBean,
+                operation: 'canInvoke(java.util.Map)',
+                arguments: [bulkRequest]
+            });
+            this.jolokia.request(requests, Core.onSuccess(function (response) {
+                var mbean = response.request.arguments[0];
+                if (mbean && _.isString(mbean)) {
+                    var canInvoke = response.value;
+                    mbeans[mbean]['canInvoke'] = response.value;
+                    _this.addCanInvokeToClass(mbeans[mbean], canInvoke);
+                }
+                else {
+                    var responseMap = response.value;
+                    _.forEach(responseMap, function (operations, mbeanName) {
+                        _.forEach(operations, function (data, operationName) {
+                            mbeans[mbeanName].mbean.opByString[operationName]['canInvoke'] = data['CanInvoke'];
+                        });
+                    });
+                }
+            }, { error: function (response) { } }));
+        };
+        JmxTreeProcessor.prototype.addOperation = function (mbean, opList, opName, op) {
+            var operationString = Core.operationToString(opName, op.args);
+            // enrich the mbean by indexing the full operation string so we can easily look it up later
+            mbean.mbean.opByString[operationString] = op;
+            opList.push(operationString);
+        };
+        JmxTreeProcessor.prototype.addCanInvokeToClass = function (mbean, canInvoke) {
+            var toAdd = canInvoke ? "can-invoke" : "cant-invoke";
+            mbean['class'] = this.stripClasses(mbean['class']);
+            mbean['class'] = this.addClass(mbean['class'], toAdd);
+            if (!canInvoke) {
+                // change the tree node icon to lock here
+                mbean.icon = 'fa fa-lock';
+            }
+        };
+        JmxTreeProcessor.prototype.stripClasses = function (css) {
+            if (Core.isBlank(css)) {
+                return css;
+            }
+            var parts = css.split(" ");
+            var answer = [];
+            parts.forEach(function (part) {
+                if (part !== "can-invoke" && part !== "cant-invoke") {
+                    answer.push(part);
+                }
+            });
+            return answer.join(" ").trim();
+        };
+        JmxTreeProcessor.prototype.addClass = function (css, _class) {
+            if (Core.isBlank(css)) {
+                return _class;
+            }
+            var parts = css.split(" ");
+            parts.push(_class);
+            return _.uniq(parts).join(" ").trim();
+        };
+        return JmxTreeProcessor;
+    }());
+    RBAC.JmxTreeProcessor = JmxTreeProcessor;
+})(RBAC || (RBAC = {}));
+/// <reference path="../../jmx/ts/workspace.ts"/>
+var RBAC;
+(function (RBAC) {
+    var MBEAN_ONLY = 'canInvoke(java.lang.String)';
+    var OVERLOADED_METHOD = 'canInvoke(java.lang.String,java.lang.String)';
+    var EXACT_METHOD = 'canInvoke(java.lang.String,java.lang.String,[Ljava.lang.String;)';
+    var HIDE = 'hide';
+    var REMOVE = 'remove';
+    var INVERSE = 'inverse';
+    /**
+     * Directive that sets an element's visibility to hidden if the user cannot invoke the supplied operation
+     */
+    var HawtioShow = /** @class */ (function () {
+        function HawtioShow(workspace) {
+            this.workspace = workspace;
+            this.restrict = 'A';
+        }
+        HawtioShow.factory = ["workspace", function (workspace) {
+            'ngInject';
+            return new HawtioShow(workspace);
+        }];
+        HawtioShow.prototype.link = function (scope, element, attr) {
+            var _this = this;
+            var objectName = attr['objectName'];
+            var objectNameModel = attr['objectNameModel'];
+            RBAC.log.debug("hawtio-show: object-name=", objectName, "object-name-model=", objectNameModel);
+            if (!objectName && !objectNameModel) {
+                return;
+            }
+            if (objectName) {
+                this.applyInvokeRights(element, objectName, attr);
+            }
+            else {
+                scope.$watch(objectNameModel, function (newValue, oldValue) {
+                    if (newValue && newValue !== oldValue) {
+                        _this.applyInvokeRights(element, newValue, attr);
+                    }
+                });
+            }
+        };
+        HawtioShow.prototype.applyInvokeRights = function (element, objectName, attr) {
+            var methodName = attr['methodName'];
+            var argumentTypes = attr['argumentTypes'];
+            var mode = attr['mode'] || HIDE;
+            var canInvokeOp = this.getCanInvokeOperation(methodName, argumentTypes);
+            var args = this.getArguments(canInvokeOp, objectName, methodName, argumentTypes);
+            var mbean = Core.parseMBean(objectName);
+            var folder = this.workspace.findMBeanWithProperties(mbean.domain, mbean.attributes);
+            if (!folder) {
+                return;
+            }
+            var invokeRights = methodName ?
+                this.workspace.hasInvokeRights(folder, methodName) :
+                this.workspace.hasInvokeRights(folder);
+            this.changeDisplay(element, invokeRights, mode);
+        };
+        HawtioShow.prototype.getCanInvokeOperation = function (methodName, argumentTypes) {
+            var answer = MBEAN_ONLY;
+            if (!Core.isBlank(methodName)) {
+                answer = OVERLOADED_METHOD;
+            }
+            if (!Core.isBlank(argumentTypes)) {
+                answer = EXACT_METHOD;
+            }
+            return answer;
+        };
+        HawtioShow.prototype.getArguments = function (canInvokeOp, objectName, methodName, argumentTypes) {
+            var args = [];
+            if (canInvokeOp === MBEAN_ONLY) {
+                args.push(objectName);
+            }
+            else if (canInvokeOp === OVERLOADED_METHOD) {
+                args.push(objectName);
+                args.push(methodName);
+            }
+            else if (canInvokeOp === EXACT_METHOD) {
+                args.push(objectName);
+                args.push(methodName);
+                args.push(argumentTypes.split(',').map(function (s) { return s.trim(); }));
+            }
+            return args;
+        };
+        HawtioShow.prototype.changeDisplay = function (element, invokeRights, mode) {
+            if (invokeRights) {
+                if (mode === INVERSE) {
+                    element.css({ display: 'none' });
+                }
+            }
+            else {
+                if (mode === REMOVE) {
+                    element.css({ display: 'none' });
+                }
+                else if (mode === HIDE) {
+                    element.css({ visibility: 'hidden' });
+                }
+            }
+        };
+        return HawtioShow;
+    }());
+    RBAC.HawtioShow = HawtioShow;
+})(RBAC || (RBAC = {}));
+/// <reference path="models.ts"/>
+var RBAC;
+(function (RBAC) {
+    var RBACTasksFactory = /** @class */ (function () {
+        function RBACTasksFactory() {
+        }
+        RBACTasksFactory.create = ["postLoginTasks", "jolokia", "$q", function (postLoginTasks, jolokia, $q) {
+            'ngInject';
+            var rbacTasks = new RBACTasksImpl($q.defer());
+            postLoginTasks.addTask("FetchJMXSecurityMBeans", function () { return rbacTasks.fetchJMXSecurityMBeans(jolokia); });
+            return rbacTasks;
+        }];
+        return RBACTasksFactory;
+    }());
+    RBAC.RBACTasksFactory = RBACTasksFactory;
+    var RBACACLMBeanFactory = /** @class */ (function () {
+        function RBACACLMBeanFactory() {
+        }
+        RBACACLMBeanFactory.create = ["rbacTasks", function (rbacTasks) {
+            'ngInject';
+            return rbacTasks.getACLMBean();
+        }];
+        return RBACACLMBeanFactory;
+    }());
+    RBAC.RBACACLMBeanFactory = RBACACLMBeanFactory;
+    var RBACTasksImpl = /** @class */ (function (_super) {
+        __extends(RBACTasksImpl, _super);
+        function RBACTasksImpl(deferred) {
+            var _this = _super.call(this) || this;
+            _this.deferred = deferred;
+            _this.ACLMBean = null;
+            return _this;
+        }
+        RBACTasksImpl.prototype.fetchJMXSecurityMBeans = function (jolokia) {
+            var _this = this;
+            jolokia.request({ type: 'search', mbean: '*:type=security,area=jmx,*' }, Core.onSuccess(function (response) {
+                RBAC.log.debug("Fetching JMXSecurity MBeans...", response);
+                var mbeans = response.value;
+                var chosen = "";
+                if (mbeans.length === 0) {
+                    RBAC.log.info("Didn't discover any JMXSecurity mbeans, client-side role based access control is disabled");
+                    return;
+                }
+                else if (mbeans.length === 1) {
+                    chosen = mbeans[0];
+                }
+                else if (mbeans.length > 1) {
+                    var picked_1 = false;
+                    mbeans.forEach(function (mbean) {
+                        if (picked_1) {
+                            return;
+                        }
+                        if (_.includes(mbean, "HawtioDummy")) {
+                            return;
+                        }
+                        if (!_.includes(mbean, "rank=")) {
+                            chosen = mbean;
+                            picked_1 = true;
+                        }
+                    });
+                }
+                if (chosen != null && chosen != "") {
+                    RBAC.log.info("Using mbean", chosen, "for client-side role based access control");
+                    _this.initialize(chosen);
+                }
+                else {
+                    RBAC.log.info("Didn't discover any effective JMXSecurity mbeans, client-side role based access control is disabled");
+                }
+            }));
+        };
+        RBACTasksImpl.prototype.initialize = function (mbean) {
+            this.ACLMBean = mbean;
+            this.deferred.resolve(this.ACLMBean);
+            _super.prototype.execute.call(this);
+        };
+        RBACTasksImpl.prototype.getACLMBean = function () {
+            return this.deferred.promise;
+        };
+        return RBACTasksImpl;
+    }(Core.TasksImpl));
+})(RBAC || (RBAC = {}));
+/**
+ * @namespace RBAC
+ * @main RBAC
+ */
+/// <reference path="../../jmx/ts/workspace.ts"/>
+/// <reference path="../../jvm/ts/jolokiaService.ts"/>
+/// <reference path="models.ts"/>
+/// <reference path="rbac.directive.ts"/>
+/// <reference path="rbac.service.ts"/>
+/// <reference path="jmxTreeProcessor.ts"/>
+var RBAC;
+(function (RBAC) {
+    addTreePostProcessor.$inject = ["jolokia", "jolokiaStatus", "rbacTasks", "preLogoutTasks", "workspace"];
+    RBAC.pluginName = "hawtio-rbac";
+    RBAC.log = Logger.get(RBAC.pluginName);
+    RBAC._module = angular
+        .module(RBAC.pluginName, [])
+        .directive('hawtioShow', RBAC.HawtioShow.factory)
+        .service('rbacTasks', RBAC.RBACTasksFactory.create)
+        .service('rbacACLMBean', RBAC.RBACACLMBeanFactory.create);
+    var TREE_POSTPROCESSOR_NAME = "rbacTreePostprocessor";
+    RBAC._module.run(addTreePostProcessor);
+    function addTreePostProcessor(jolokia, jolokiaStatus, rbacTasks, preLogoutTasks, workspace) {
+        'ngInject';
+        preLogoutTasks.addTask("resetRBAC", function () {
+            RBAC.log.debug("Resetting RBAC tasks");
+            rbacTasks.reset();
+            workspace.removeNamedTreePostProcessor(TREE_POSTPROCESSOR_NAME);
+        });
+        // add info to the JMX tree if we have access to invoke on mbeans or not
+        var processor = new RBAC.JmxTreeProcessor(jolokia, jolokiaStatus, rbacTasks, workspace);
+        rbacTasks.addTask("JMXTreePostProcess", function () { return workspace.addNamedTreePostProcessor(TREE_POSTPROCESSOR_NAME, function (tree) { return processor.process(tree); }); });
+    }
+    hawtioPluginLoader.addModule(RBAC.pluginName);
+})(RBAC || (RBAC = {}));
 /// <reference path="../../jmx/ts/workspace.ts" />
 var Threads;
 (function (Threads) {
@@ -9410,366 +9773,6 @@ var Threads;
             initFunc();
         }]);
 })(Threads || (Threads = {}));
-var RBAC;
-(function (RBAC) {
-    var JmxTreeProcessor = /** @class */ (function () {
-        function JmxTreeProcessor(jolokia, jolokiaStatus, rbacTasks, workspace) {
-            this.jolokia = jolokia;
-            this.jolokiaStatus = jolokiaStatus;
-            this.rbacTasks = rbacTasks;
-            this.workspace = workspace;
-        }
-        JmxTreeProcessor.prototype.process = function (tree) {
-            var _this = this;
-            RBAC.log.debug("Processing tree", tree);
-            this.rbacTasks.getACLMBean().then(function (aclMBean) {
-                var mbeans = {};
-                _this.flattenMBeanTree(mbeans, tree);
-                var listMethod = _this.jolokiaStatus.listMethod;
-                switch (listMethod) {
-                    case JVM.JolokiaListMethod.LIST_WITH_RBAC:
-                        RBAC.log.debug("Process JMX tree: list with RBAC mode");
-                        _this.processWithRBAC(mbeans);
-                        RBAC.log.debug("Processed tree mbeans with RBAC", mbeans);
-                        break;
-                    case JVM.JolokiaListMethod.LIST_GENERAL:
-                    case JVM.JolokiaListMethod.LIST_CANT_DETERMINE:
-                    default:
-                        RBAC.log.debug("Process JMX tree: general mode");
-                        _this.processGeneral(aclMBean, mbeans);
-                        RBAC.log.debug("Processed tree mbeans", mbeans);
-                        break;
-                }
-                // publish 'jmxTreeUpdated' event to apply the tree changes
-                _this.workspace.jmxTreeUpdated();
-            });
-        };
-        JmxTreeProcessor.prototype.flattenMBeanTree = function (mbeans, tree) {
-            var _this = this;
-            if (!Core.isBlank(tree.objectName)) {
-                mbeans[tree.objectName] = tree;
-            }
-            if (tree.isFolder()) {
-                tree.children.forEach(function (child) { return _this.flattenMBeanTree(mbeans, child); });
-            }
-        };
-        JmxTreeProcessor.prototype.processWithRBAC = function (mbeans) {
-            var _this = this;
-            // we already have everything related to RBAC in place, except 'class' property
-            _.forEach(mbeans, function (node, mbeanName) {
-                var mbean = node.mbean;
-                var canInvoke = mbean && (_.isNil(mbean.canInvoke) || mbean.canInvoke);
-                _this.addCanInvokeToClass(node, canInvoke);
-            });
-        };
-        JmxTreeProcessor.prototype.processGeneral = function (aclMBean, mbeans) {
-            var _this = this;
-            var requests = [];
-            var bulkRequest = {};
-            _.forEach(mbeans, function (mbean, mbeanName) {
-                if (!('canInvoke' in mbean)) {
-                    requests.push({
-                        type: 'exec',
-                        mbean: aclMBean,
-                        operation: 'canInvoke(java.lang.String)',
-                        arguments: [mbeanName]
-                    });
-                    if (mbean.mbean && mbean.mbean.op) {
-                        var ops = mbean.mbean.op;
-                        mbean.mbean.opByString = {};
-                        var opList_1 = [];
-                        _.forEach(ops, function (op, opName) {
-                            if (_.isArray(op)) {
-                                _.forEach(op, function (op) { return _this.addOperation(mbean, opList_1, opName, op); });
-                            }
-                            else {
-                                _this.addOperation(mbean, opList_1, opName, op);
-                            }
-                        });
-                        bulkRequest[mbeanName] = opList_1;
-                    }
-                }
-            });
-            requests.push({
-                type: 'exec',
-                mbean: aclMBean,
-                operation: 'canInvoke(java.util.Map)',
-                arguments: [bulkRequest]
-            });
-            this.jolokia.request(requests, Core.onSuccess(function (response) {
-                var mbean = response.request.arguments[0];
-                if (mbean && _.isString(mbean)) {
-                    var canInvoke = response.value;
-                    mbeans[mbean]['canInvoke'] = response.value;
-                    _this.addCanInvokeToClass(mbeans[mbean], canInvoke);
-                }
-                else {
-                    var responseMap = response.value;
-                    _.forEach(responseMap, function (operations, mbeanName) {
-                        _.forEach(operations, function (data, operationName) {
-                            mbeans[mbeanName].mbean.opByString[operationName]['canInvoke'] = data['CanInvoke'];
-                        });
-                    });
-                }
-            }, { error: function (response) { } }));
-        };
-        JmxTreeProcessor.prototype.addOperation = function (mbean, opList, opName, op) {
-            var operationString = Core.operationToString(opName, op.args);
-            // enrich the mbean by indexing the full operation string so we can easily look it up later
-            mbean.mbean.opByString[operationString] = op;
-            opList.push(operationString);
-        };
-        JmxTreeProcessor.prototype.addCanInvokeToClass = function (mbean, canInvoke) {
-            var toAdd = canInvoke ? "can-invoke" : "cant-invoke";
-            mbean['class'] = this.stripClasses(mbean['class']);
-            mbean['class'] = this.addClass(mbean['class'], toAdd);
-            if (!canInvoke) {
-                // change the tree node icon to lock here
-                mbean.icon = 'fa fa-lock';
-            }
-        };
-        JmxTreeProcessor.prototype.stripClasses = function (css) {
-            if (Core.isBlank(css)) {
-                return css;
-            }
-            var parts = css.split(" ");
-            var answer = [];
-            parts.forEach(function (part) {
-                if (part !== "can-invoke" && part !== "cant-invoke") {
-                    answer.push(part);
-                }
-            });
-            return answer.join(" ").trim();
-        };
-        JmxTreeProcessor.prototype.addClass = function (css, _class) {
-            if (Core.isBlank(css)) {
-                return _class;
-            }
-            var parts = css.split(" ");
-            parts.push(_class);
-            return _.uniq(parts).join(" ").trim();
-        };
-        return JmxTreeProcessor;
-    }());
-    RBAC.JmxTreeProcessor = JmxTreeProcessor;
-})(RBAC || (RBAC = {}));
-/// <reference path="../../jmx/ts/workspace.ts"/>
-var RBAC;
-(function (RBAC) {
-    var MBEAN_ONLY = 'canInvoke(java.lang.String)';
-    var OVERLOADED_METHOD = 'canInvoke(java.lang.String,java.lang.String)';
-    var EXACT_METHOD = 'canInvoke(java.lang.String,java.lang.String,[Ljava.lang.String;)';
-    var HIDE = 'hide';
-    var REMOVE = 'remove';
-    var INVERSE = 'inverse';
-    /**
-     * Directive that sets an element's visibility to hidden if the user cannot invoke the supplied operation
-     */
-    var HawtioShow = /** @class */ (function () {
-        function HawtioShow(workspace) {
-            this.workspace = workspace;
-            this.restrict = 'A';
-        }
-        HawtioShow.factory = ["workspace", function (workspace) {
-            'ngInject';
-            return new HawtioShow(workspace);
-        }];
-        HawtioShow.prototype.link = function (scope, element, attr) {
-            var _this = this;
-            var objectName = attr['objectName'];
-            var objectNameModel = attr['objectNameModel'];
-            RBAC.log.debug("hawtio-show: object-name=", objectName, "object-name-model=", objectNameModel);
-            if (!objectName && !objectNameModel) {
-                return;
-            }
-            if (objectName) {
-                this.applyInvokeRights(element, objectName, attr);
-            }
-            else {
-                scope.$watch(objectNameModel, function (newValue, oldValue) {
-                    if (newValue && newValue !== oldValue) {
-                        _this.applyInvokeRights(element, newValue, attr);
-                    }
-                });
-            }
-        };
-        HawtioShow.prototype.applyInvokeRights = function (element, objectName, attr) {
-            var methodName = attr['methodName'];
-            var argumentTypes = attr['argumentTypes'];
-            var mode = attr['mode'] || HIDE;
-            var canInvokeOp = this.getCanInvokeOperation(methodName, argumentTypes);
-            var args = this.getArguments(canInvokeOp, objectName, methodName, argumentTypes);
-            var mbean = Core.parseMBean(objectName);
-            var folder = this.workspace.findMBeanWithProperties(mbean.domain, mbean.attributes);
-            if (!folder) {
-                return;
-            }
-            var invokeRights = methodName ?
-                this.workspace.hasInvokeRights(folder, methodName) :
-                this.workspace.hasInvokeRights(folder);
-            this.changeDisplay(element, invokeRights, mode);
-        };
-        HawtioShow.prototype.getCanInvokeOperation = function (methodName, argumentTypes) {
-            var answer = MBEAN_ONLY;
-            if (!Core.isBlank(methodName)) {
-                answer = OVERLOADED_METHOD;
-            }
-            if (!Core.isBlank(argumentTypes)) {
-                answer = EXACT_METHOD;
-            }
-            return answer;
-        };
-        HawtioShow.prototype.getArguments = function (canInvokeOp, objectName, methodName, argumentTypes) {
-            var args = [];
-            if (canInvokeOp === MBEAN_ONLY) {
-                args.push(objectName);
-            }
-            else if (canInvokeOp === OVERLOADED_METHOD) {
-                args.push(objectName);
-                args.push(methodName);
-            }
-            else if (canInvokeOp === EXACT_METHOD) {
-                args.push(objectName);
-                args.push(methodName);
-                args.push(argumentTypes.split(',').map(function (s) { return s.trim(); }));
-            }
-            return args;
-        };
-        HawtioShow.prototype.changeDisplay = function (element, invokeRights, mode) {
-            if (invokeRights) {
-                if (mode === INVERSE) {
-                    element.css({ display: 'none' });
-                }
-            }
-            else {
-                if (mode === REMOVE) {
-                    element.css({ display: 'none' });
-                }
-                else if (mode === HIDE) {
-                    element.css({ visibility: 'hidden' });
-                }
-            }
-        };
-        return HawtioShow;
-    }());
-    RBAC.HawtioShow = HawtioShow;
-})(RBAC || (RBAC = {}));
-/// <reference path="models.ts"/>
-var RBAC;
-(function (RBAC) {
-    var RBACTasksFactory = /** @class */ (function () {
-        function RBACTasksFactory() {
-        }
-        RBACTasksFactory.create = ["postLoginTasks", "jolokia", "$q", function (postLoginTasks, jolokia, $q) {
-            'ngInject';
-            var rbacTasks = new RBACTasksImpl($q.defer());
-            postLoginTasks.addTask("FetchJMXSecurityMBeans", function () { return rbacTasks.fetchJMXSecurityMBeans(jolokia); });
-            return rbacTasks;
-        }];
-        return RBACTasksFactory;
-    }());
-    RBAC.RBACTasksFactory = RBACTasksFactory;
-    var RBACACLMBeanFactory = /** @class */ (function () {
-        function RBACACLMBeanFactory() {
-        }
-        RBACACLMBeanFactory.create = ["rbacTasks", function (rbacTasks) {
-            'ngInject';
-            return rbacTasks.getACLMBean();
-        }];
-        return RBACACLMBeanFactory;
-    }());
-    RBAC.RBACACLMBeanFactory = RBACACLMBeanFactory;
-    var RBACTasksImpl = /** @class */ (function (_super) {
-        __extends(RBACTasksImpl, _super);
-        function RBACTasksImpl(deferred) {
-            var _this = _super.call(this) || this;
-            _this.deferred = deferred;
-            _this.ACLMBean = null;
-            return _this;
-        }
-        RBACTasksImpl.prototype.fetchJMXSecurityMBeans = function (jolokia) {
-            var _this = this;
-            jolokia.request({ type: 'search', mbean: '*:type=security,area=jmx,*' }, Core.onSuccess(function (response) {
-                RBAC.log.debug("Fetching JMXSecurity MBeans...", response);
-                var mbeans = response.value;
-                var chosen = "";
-                if (mbeans.length === 0) {
-                    RBAC.log.info("Didn't discover any JMXSecurity mbeans, client-side role based access control is disabled");
-                    return;
-                }
-                else if (mbeans.length === 1) {
-                    chosen = mbeans[0];
-                }
-                else if (mbeans.length > 1) {
-                    var picked_1 = false;
-                    mbeans.forEach(function (mbean) {
-                        if (picked_1) {
-                            return;
-                        }
-                        if (_.includes(mbean, "HawtioDummy")) {
-                            return;
-                        }
-                        if (!_.includes(mbean, "rank=")) {
-                            chosen = mbean;
-                            picked_1 = true;
-                        }
-                    });
-                }
-                if (chosen != null && chosen != "") {
-                    RBAC.log.info("Using mbean", chosen, "for client-side role based access control");
-                    _this.initialize(chosen);
-                }
-                else {
-                    RBAC.log.info("Didn't discover any effective JMXSecurity mbeans, client-side role based access control is disabled");
-                }
-            }));
-        };
-        RBACTasksImpl.prototype.initialize = function (mbean) {
-            this.ACLMBean = mbean;
-            this.deferred.resolve(this.ACLMBean);
-            _super.prototype.execute.call(this);
-        };
-        RBACTasksImpl.prototype.getACLMBean = function () {
-            return this.deferred.promise;
-        };
-        return RBACTasksImpl;
-    }(Core.TasksImpl));
-})(RBAC || (RBAC = {}));
-/**
- * @namespace RBAC
- * @main RBAC
- */
-/// <reference path="../../jmx/ts/workspace.ts"/>
-/// <reference path="../../jvm/ts/jolokiaService.ts"/>
-/// <reference path="models.ts"/>
-/// <reference path="rbac.directive.ts"/>
-/// <reference path="rbac.service.ts"/>
-/// <reference path="jmxTreeProcessor.ts"/>
-var RBAC;
-(function (RBAC) {
-    addTreePostProcessor.$inject = ["jolokia", "jolokiaStatus", "rbacTasks", "preLogoutTasks", "workspace"];
-    RBAC.pluginName = "hawtio-rbac";
-    RBAC.log = Logger.get(RBAC.pluginName);
-    RBAC._module = angular
-        .module(RBAC.pluginName, [])
-        .directive('hawtioShow', RBAC.HawtioShow.factory)
-        .service('rbacTasks', RBAC.RBACTasksFactory.create)
-        .service('rbacACLMBean', RBAC.RBACACLMBeanFactory.create);
-    var TREE_POSTPROCESSOR_NAME = "rbacTreePostprocessor";
-    RBAC._module.run(addTreePostProcessor);
-    function addTreePostProcessor(jolokia, jolokiaStatus, rbacTasks, preLogoutTasks, workspace) {
-        'ngInject';
-        preLogoutTasks.addTask("resetRBAC", function () {
-            RBAC.log.debug("Resetting RBAC tasks");
-            rbacTasks.reset();
-            workspace.removeNamedTreePostProcessor(TREE_POSTPROCESSOR_NAME);
-        });
-        // add info to the JMX tree if we have access to invoke on mbeans or not
-        var processor = new RBAC.JmxTreeProcessor(jolokia, jolokiaStatus, rbacTasks, workspace);
-        rbacTasks.addTask("JMXTreePostProcess", function () { return workspace.addNamedTreePostProcessor(TREE_POSTPROCESSOR_NAME, function (tree) { return processor.process(tree); }); });
-    }
-    hawtioPluginLoader.addModule(RBAC.pluginName);
-})(RBAC || (RBAC = {}));
 
 angular.module('hawtio-jmx-templates', []).run(['$templateCache', function($templateCache) {$templateCache.put('plugins/diagnostics/html/flags.html','<div ng-controller="DiagnosticsFlagsController">\n  <h1>Hotspot Diagnostics</h1>\n  <table class="table table-striped table-bordered">\n    <thead>\n      <tr>\n        <th>VM Flag</th>\n        <th>Origin</th>\n        <th>Value</th>\n      </tr>\n    </thead>\n    <tbody>\n      <tr ng-repeat="flag in flags track by flag.name">\n        <td>{{flag.name}}</td>\n        <td>{{flag.origin}}</td>\n        <td>\n          <div ng-switch on="flag.dataType">\n            <span ng-switch-when="readonly">{{flag.value}}</span>\n            <input ng-switch-when="boolean" type="checkbox" ng-model="flag.value"></input>\n            <input ng-switch-when="string" type="text" ng-model="flag.value"></input>\n            <input ng-switch-when="number" type="number" ng-model="flag.value"></input>\n          </div>\n        </td>\n      </tr>\n    </tbody>\n  </table>  \n</div>');
 $templateCache.put('plugins/diagnostics/html/heap.html','<div ng-controller="DiagnosticsHeapController" class="table-view">\n  <h1>Class Histogram</h1>\n  <p>\n    <strong>Please note:</strong> Loading class histogram may be very expensive, depending on the size and\n    layout of the heap. Alternatively, use the <samp>jcmd</samp> utility:<br>\n    <samp>jcmd &lt;process id/main class&gt; GC.class_histogram<samp>\n  </p>\n  <p>\n    <button type="button" class="btn btn-primary" ng-click="loadClassStats()" ng-disabled="loading">\n      Load class histogram\n    </button>\n  </p>\n  <p ng-show="loading">\n    Loading...\n  </p>\n  <div ng-show="!loading && items.length > 0">\n    <pf-toolbar config="toolbarConfig">\n      <span ng-show="lastLoaded">\n        Last loaded: {{lastLoaded | date: \'yyyy-MM-dd hh:mm:ss\'}}\n      </span>\n    </pf-toolbar>\n    <pf-table-view class="diagnostics-class-histogram-table" config="tableConfig" dt-options="tableDtOptions"\n                   page-config="pageConfig" colummns="tableColumns" items="items"></pf-table-view>\n  </div>\n</div>\n');

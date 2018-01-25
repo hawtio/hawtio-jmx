@@ -1,3 +1,5 @@
+/// <reference path="tree.module.ts"/>
+
 namespace Jmx {
 
   export class TreeController {
@@ -27,13 +29,13 @@ namespace Jmx {
     }
 
     updateSelectionFromURL(): void {
-      updateTreeSelectionFromURL(this.$location, $('#jmxtree'));
+      updateTreeSelectionFromURL(this.$location, $(treeElementId));
     }
 
     private populateTree(): void {
       log.debug('TreeController: populateTree');
       this.removeTree();
-      enableTree(this.$scope, this.$location, this.workspace, $('#jmxtree'), this.workspace.tree.children);
+      enableTree(this.$scope, this.$location, this.workspace, $(treeElementId), this.workspace.tree.children);
       this.$timeout(() => {
         this.updateSelectionFromURL();
         this.workspace.broadcastSelectionNode();
@@ -41,7 +43,7 @@ namespace Jmx {
     }
 
     private removeTree(): void {
-      const tree = ($('#jmxtree') as any).treeview(true);
+      const tree = ($(treeElementId) as any).treeview(true);
       // There is no exposed API to check whether the tree has already been initialized,
       // so let's just check if the methods are presents
       if (tree.clearSearch) {

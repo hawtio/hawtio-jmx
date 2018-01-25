@@ -650,31 +650,6 @@ declare namespace Diagnostics {
     const log: Logging.Logger;
     const _module: angular.IModule;
 }
-declare namespace JVM {
-}
-declare namespace JVM {
-    var HeaderController: angular.IModule;
-}
-declare namespace JVM {
-    function JolokiaPreferences($scope: any, localStorage: any, jolokiaParams: any, $window: any): void;
-}
-declare namespace JVM {
-    class JolokiaService {
-        private $q;
-        private jolokia;
-        constructor($q: ng.IQService, jolokia: Jolokia.IJolokia);
-        getAttribute(mbean: string, attribute: string): ng.IPromise<any>;
-    }
-}
-/**
- * @module JVM
- */
-declare namespace JVM {
-}
-declare namespace JVM {
-}
-declare namespace JVM {
-}
 declare namespace Jmx {
     function createDashboardLink(widgetType: any, widget: any): string;
     function getWidgetType(widget: any): {
@@ -898,6 +873,7 @@ declare namespace Jmx {
 }
 declare namespace Jmx {
     const treeModule: string;
+    const treeElementId = "#jmxtree";
 }
 declare namespace Jmx {
     var _module: angular.IModule;
@@ -921,30 +897,30 @@ declare namespace Jmx {
     function getUniqueTypeNames(children: NodeSelection[]): string[];
     function enableTree($scope: any, $location: ng.ILocationService, workspace: Workspace, treeElement: any, children: Array<NodeSelection>): void;
 }
-declare namespace Threads {
-    var pluginName: string;
-    var templatePath: string;
-    var log: Logging.Logger;
-    var jmxDomain: string;
-    var mbeanType: string;
-    var mbean: string;
-    var _module: angular.IModule;
+declare namespace JVM {
 }
-declare namespace Threads {
-    class ThreadsService {
+declare namespace JVM {
+    var HeaderController: angular.IModule;
+}
+declare namespace JVM {
+    function JolokiaPreferences($scope: any, localStorage: any, jolokiaParams: any, $window: any): void;
+}
+declare namespace JVM {
+    class JolokiaService {
         private $q;
         private jolokia;
-        private static STATE_LABELS;
-        constructor($q: angular.IQService, jolokia: Jolokia.IJolokia);
-        getThreads(): angular.IPromise<any[]>;
+        constructor($q: ng.IQService, jolokia: Jolokia.IJolokia);
+        getAttribute(mbean: string, attribute: string): ng.IPromise<any>;
     }
 }
-declare namespace Threads {
-}
 /**
- * @module Threads
+ * @module JVM
  */
-declare namespace Threads {
+declare namespace JVM {
+}
+declare namespace JVM {
+}
+declare namespace JVM {
 }
 declare namespace RBAC {
     class JmxTreeProcessor {
@@ -995,4 +971,29 @@ declare namespace RBAC {
     const pluginName: string;
     const log: Logging.Logger;
     const _module: angular.IModule;
+}
+declare namespace Threads {
+    var pluginName: string;
+    var templatePath: string;
+    var log: Logging.Logger;
+    var jmxDomain: string;
+    var mbeanType: string;
+    var mbean: string;
+    var _module: angular.IModule;
+}
+declare namespace Threads {
+    class ThreadsService {
+        private $q;
+        private jolokia;
+        private static STATE_LABELS;
+        constructor($q: angular.IQService, jolokia: Jolokia.IJolokia);
+        getThreads(): angular.IPromise<any[]>;
+    }
+}
+declare namespace Threads {
+}
+/**
+ * @module Threads
+ */
+declare namespace Threads {
 }

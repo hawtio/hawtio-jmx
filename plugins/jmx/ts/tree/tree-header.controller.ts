@@ -1,3 +1,5 @@
+/// <reference path="tree.module.ts"/>
+
 namespace Jmx {
 
   export class TreeHeaderController {
@@ -38,7 +40,7 @@ namespace Jmx {
     }
 
     private tree(): any {
-      return ($('#jmxtree') as any).treeview(true);
+      return ($(treeElementId) as any).treeview(true);
     }
 
     expandAll(): any {
