@@ -863,6 +863,7 @@ declare namespace Jmx {
         treeFetched(): boolean;
         updateSelectionFromURL(): void;
         populateTree(): void;
+        removeTree(): void;
     }
     const treeComponent: angular.IComponentOptions;
 }

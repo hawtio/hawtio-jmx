@@ -7809,20 +7809,7 @@ var Jmx;
         }
         TreeController.prototype.$onInit = function () {
             var _this = this;
-            this.$scope.$on('$destroy', function () {
-                var tree = $('#jmxtree').treeview(true);
-                tree.clearSearch();
-                // Bootstrap tree view leaks the node elements into the data structure
-                // so let's clean this up when the user leaves the view
-                var cleanTreeFolder = function (node) {
-                    delete node['$el'];
-                    if (node.nodes)
-                        node.nodes.forEach(cleanTreeFolder);
-                };
-                cleanTreeFolder(_this.workspace.tree);
-                // Then call the tree clean-up method
-                tree.remove();
-            });
+            this.$scope.$on('$destroy', function () { return _this.removeTree(); });
             this.$scope.$on('jmxTreeUpdated', function () { return _this.populateTree(); });
             this.$scope.$on('$routeChangeStart', function () { return _this.updateSelectionFromURL(); });
             this.populateTree();
@@ -7835,19 +7822,38 @@ var Jmx;
         };
         TreeController.prototype.populateTree = function () {
             var _this = this;
-            Jmx.log.debug("TreeController: populateTree");
+            Jmx.log.debug('TreeController: populateTree');
+            this.removeTree();
             Jmx.enableTree(this.$scope, this.$location, this.workspace, $('#jmxtree'), this.workspace.tree.children);
             this.$timeout(function () {
                 _this.updateSelectionFromURL();
                 _this.workspace.broadcastSelectionNode();
             });
         };
+        TreeController.prototype.removeTree = function () {
+            var tree = $('#jmxtree').treeview(true);
+            // There is no exposed API to check whether the tree has already been initialized,
+            // so let's just check if the methods are presents
+            if (tree.clearSearch) {
+                tree.clearSearch();
+                // Bootstrap tree view leaks the node elements into the data structure
+                // so let's clean this up when the user leaves the view
+                var cleanTreeFolder_1 = function (node) {
+                    delete node['$el'];
+                    if (node.nodes)
+                        node.nodes.forEach(cleanTreeFolder_1);
+                };
+                cleanTreeFolder_1(this.workspace.tree);
+                // Then call the tree clean-up method
+                tree.remove();
+            }
+        };
         return TreeController;
     }());
     Jmx.TreeController = TreeController;
     Jmx.treeComponent = {
         templateUrl: 'plugins/jmx/html/tree/content.html',
-        controller: TreeController
+        controller: TreeController,
     };
 })(Jmx || (Jmx = {}));
 /// <reference path="tree-header.component.ts"/>
