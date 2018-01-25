@@ -3856,102 +3856,218 @@ var __extends = (this && this.__extends) || (function () {
         d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
     };
 })();
-var Diagnostics;
-(function (Diagnostics) {
-    DiagnosticsFlagsController.$inject = ["$scope", "jolokia"];
-    function DiagnosticsFlagsController($scope, jolokia) {
-        'ngInject';
-        var readRequest = {
-            type: 'read',
-            mbean: 'com.sun.management:type=HotSpotDiagnostic',
-            arguments: []
+var JVM;
+(function (JVM) {
+    JVM.rootPath = 'plugins/jvm';
+    JVM.templatePath = UrlHelpers.join(JVM.rootPath, '/html');
+    JVM.pluginName = 'hawtio-jvm';
+    JVM.log = Logger.get(JVM.pluginName);
+    JVM.connectControllerKey = "jvmConnectSettings";
+    JVM.connectionSettingsKey = Core.connectionSettingsKey;
+    JVM.logoPath = 'img/icons/jvm/';
+    JVM.logoRegistry = {
+        'jetty': JVM.logoPath + 'jetty-logo-80x22.png',
+        'tomcat': JVM.logoPath + 'tomcat-logo.gif',
+        'generic': JVM.logoPath + 'java-logo.svg'
+    };
+})(JVM || (JVM = {}));
+/// <reference path="jvmGlobals.ts"/>
+var JVM;
+(function (JVM) {
+    /**
+     * Adds common properties and functions to the scope
+     * @method configureScope
+     * @for Jvm
+     * @param {*} $scope
+     * @param {ng.ILocationService} $location
+     * @param {Core.Workspace} workspace
+     */
+    function configureScope($scope, $location, workspace) {
+        $scope.isActive = function (href) {
+            var tidy = Core.trimLeading(href, "#");
+            var loc = $location.path();
+            return loc === tidy;
         };
-        $scope.flags = [];
-        // $scope.tableDef = tableDef();
-        Core.register(jolokia, $scope, [readRequest], Core.onSuccess(render));
-        function render(response) {
-            //remove watches on previous content
-            for (var i = 0; i < $scope.flags.length; i++) {
-                $scope.flags[i].deregisterWatch();
-            }
-            $scope.flags = response.value.DiagnosticOptions;
-            for (var i = 0; i < $scope.flags.length; i++) {
-                var flag = $scope.flags[i];
-                flag.value = parseValue(flag.value); //convert to typed value
-                if (flag.writeable) {
-                    flag.dataType = typeof (flag.value);
-                }
-                else {
-                    flag.dataType = "readonly";
-                }
-                flag.deregisterWatch = $scope.$watch('flags[' + i + ']', function (newValue, oldValue) {
-                    if (newValue.value != oldValue.value) {
-                        jolokia.request([{
-                                type: 'exec',
-                                mbean: 'com.sun.management:type=HotSpotDiagnostic',
-                                operation: 'setVMOption(java.lang.String,java.lang.String)',
-                                arguments: [newValue.name, newValue.value]
-                            }, readRequest], Core.onSuccess(function (response) {
-                            if (response.request.type === "read") {
-                                render(response);
-                            }
-                            else {
-                                Diagnostics.log.info("Set VM option " + newValue.name + "=" + newValue.value);
-                            }
-                        }));
-                    }
-                }, true);
-            }
-            Core.$apply($scope);
-        }
-        function parseValue(value) {
-            if (typeof (value) === "string") {
-                if (value.match(/true/)) {
-                    return true;
-                }
-                else if (value.match(/false/)) {
-                    return false;
-                }
-                else if (value.match(/\d+/)) {
-                    return Number(value);
-                }
-            }
-            return value;
-        }
-        // function tableDef() {
-        //   return {
-        //     selectedItems: [],
-        //     data: 'flags',
-        //     showFilter: true,
-        //     filterOptions: {
-        //       filterText: ''
-        //     },
-        //     showSelectionCheckbox: false,
-        //     enableRowClickSelection: true,
-        //     multiSelect: false,
-        //     primaryKeyFn: function (entity, idx) {
-        //       return entity.name;
-        //     },
-        //     columnDefs: [
-        //       {
-        //         field: 'name',
-        //         displayName: 'VM Flag',
-        //         resizable: true
-        //       }, {
-        //         field: 'origin',
-        //         displayName: 'Origin',
-        //         resizable: true
-        //       }, {
-        //         field: 'value',
-        //         displayName: 'Value',
-        //         resizable: true,
-        //         cellTemplate: '<div ng-switch on="row.entity.dataType"><span ng-switch-when="readonly">{{row.entity.value}}</span><input ng-switch-when="boolean" type="checkbox" ng-model="row.entity.value"></input><input ng-switch-when="string" type="text" ng-model="row.entity.value"></input><input ng-switch-when="number" type="number" ng-model="row.entity.value"></input></div>'
-        //       }]
-        //   };
-        // }
+        $scope.isValid = function (link) {
+            return link && link.isValid(workspace);
+        };
+        $scope.hasLocalMBean = function () {
+            return JVM.hasLocalMBean(workspace);
+        };
+        $scope.goto = function (path) {
+            $location.path(path);
+        };
     }
-    Diagnostics.DiagnosticsFlagsController = DiagnosticsFlagsController;
-})(Diagnostics || (Diagnostics = {}));
+    JVM.configureScope = configureScope;
+    function hasLocalMBean(workspace) {
+        return workspace.treeContainsDomainAndProperties('hawtio', { type: 'JVMList' });
+    }
+    JVM.hasLocalMBean = hasLocalMBean;
+    function hasDiscoveryMBean(workspace) {
+        return workspace.treeContainsDomainAndProperties('jolokia', { type: 'Discovery' });
+    }
+    JVM.hasDiscoveryMBean = hasDiscoveryMBean;
+    /**
+     * Creates a jolokia object for connecting to the container with the given remote jolokia URL,
+     * username and password
+     * @method createJolokia
+     * @for Core
+     * @static
+     * @param {String} url
+     * @param {String} username
+     * @param {String} password
+     * @return {Object}
+     */
+    function createJolokia(url, username, password) {
+        var jolokiaParams = {
+            url: url,
+            username: username,
+            password: password,
+            canonicalNaming: false, ignoreErrors: true, mimeType: 'application/json'
+        };
+        return new Jolokia(jolokiaParams);
+    }
+    JVM.createJolokia = createJolokia;
+    function getRecentConnections(localStorage) {
+        if (Core.isBlank(localStorage['recentConnections'])) {
+            clearConnections();
+        }
+        return angular.fromJson(localStorage['recentConnections']);
+    }
+    JVM.getRecentConnections = getRecentConnections;
+    function addRecentConnection(localStorage, name) {
+        var recent = getRecentConnections(localStorage);
+        recent.push(name);
+        recent = _.take(_.uniq(recent), 5);
+        localStorage['recentConnections'] = angular.toJson(recent);
+    }
+    JVM.addRecentConnection = addRecentConnection;
+    function removeRecentConnection(localStorage, name) {
+        var recent = getRecentConnections(localStorage);
+        recent = _.without(recent, name);
+        localStorage['recentConnections'] = angular.toJson(recent);
+    }
+    JVM.removeRecentConnection = removeRecentConnection;
+    function clearConnections() {
+        localStorage['recentConnections'] = '[]';
+    }
+    JVM.clearConnections = clearConnections;
+    function isRemoteConnection() {
+        return ('con' in new URI().query(true));
+    }
+    JVM.isRemoteConnection = isRemoteConnection;
+    function connectToServer(localStorage, options) {
+        JVM.log.debug("Connecting with options: ", StringHelpers.toString(options));
+        var clone = angular.extend({}, options);
+        addRecentConnection(localStorage, clone.name);
+        if (!('userName' in clone)) {
+            var userDetails = HawtioCore.injector.get('userDetails');
+            clone.userName = userDetails.username;
+            clone.password = userDetails.password;
+        }
+        //must save to local storage, to be picked up by new tab
+        saveConnection(clone);
+        var $window = HawtioCore.injector.get('$window');
+        var url = (clone.view || '/') + '?con=' + clone.name;
+        url = url.replace(/\?/g, "&");
+        url = url.replace(/&/, "?");
+        var newWindow = $window.open(url, clone.name);
+        newWindow['con'] = clone.name;
+        newWindow['userDetails'] = {
+            username: clone.userName,
+            password: clone.password,
+            loginDetails: {}
+        };
+    }
+    JVM.connectToServer = connectToServer;
+    function saveConnection(options) {
+        var connections = loadConnections();
+        var existingIndex = _.findIndex(connections, function (element) { return element.name === options.name; });
+        if (existingIndex != -1) {
+            connections[existingIndex] = options;
+        }
+        else {
+            connections.unshift(options);
+        }
+        saveConnections(connections);
+    }
+    JVM.saveConnection = saveConnection;
+    /**
+     * Loads all of the available connections from local storage
+     * @returns {Core.ConnectionMap}
+     */
+    function loadConnections() {
+        var localStorage = Core.getLocalStorage();
+        try {
+            var connections = angular.fromJson(localStorage[Core.connectionSettingsKey]);
+            if (!connections) {
+                // nothing found on local storage
+                return [];
+            }
+            else if (!_.isArray(connections)) {
+                // found the legacy connections map
+                delete localStorage[Core.connectionSettingsKey];
+                return [];
+            }
+            else {
+                // found a valid connections array
+                return connections;
+            }
+        }
+        catch (e) {
+            // corrupt config
+            delete localStorage[Core.connectionSettingsKey];
+            return [];
+        }
+    }
+    JVM.loadConnections = loadConnections;
+    /**
+     * Saves the connection map to local storage
+     * @param connections array of all connections to be stored
+     */
+    function saveConnections(connections) {
+        Logger.get("Core").debug("Saving connection array: ", StringHelpers.toString(connections));
+        localStorage[Core.connectionSettingsKey] = angular.toJson(connections);
+    }
+    JVM.saveConnections = saveConnections;
+    function getConnectionNameParameter() {
+        return new URI().search(true)['con'];
+    }
+    JVM.getConnectionNameParameter = getConnectionNameParameter;
+    /**
+     * Returns the connection options for the given connection name from localStorage
+     */
+    function getConnectOptions(name, localStorage) {
+        if (localStorage === void 0) { localStorage = Core.getLocalStorage(); }
+        if (!name) {
+            return null;
+        }
+        var connections = loadConnections();
+        return _.find(connections, function (connection) { return connection.name === name; });
+    }
+    JVM.getConnectOptions = getConnectOptions;
+    /**
+     * Creates the Jolokia URL string for the given connection options
+     */
+    function createServerConnectionUrl(options) {
+        Logger.get("Core").debug("Connect to server, options: ", StringHelpers.toString(options));
+        var answer = null;
+        if (options.jolokiaUrl) {
+            answer = options.jolokiaUrl;
+        }
+        if (answer === null) {
+            var uri = new URI();
+            uri.protocol(options.scheme || 'http')
+                .host(options.host || 'localhost')
+                .port((options.port || '80'))
+                .path(options.path);
+            answer = UrlHelpers.join('proxy', uri.protocol(), uri.hostname(), uri.port(), uri.path());
+        }
+        Logger.get(JVM.pluginName).debug("Using URL: ", answer);
+        return answer;
+    }
+    JVM.createServerConnectionUrl = createServerConnectionUrl;
+})(JVM || (JVM = {}));
 var Jmx;
 (function (Jmx) {
     /**
@@ -4339,218 +4455,6 @@ var JVM;
         $scope.connections = JVM.loadConnections();
     }
     JVM.ConnectController = ConnectController;
-})(JVM || (JVM = {}));
-var JVM;
-(function (JVM) {
-    JVM.rootPath = 'plugins/jvm';
-    JVM.templatePath = UrlHelpers.join(JVM.rootPath, '/html');
-    JVM.pluginName = 'hawtio-jvm';
-    JVM.log = Logger.get(JVM.pluginName);
-    JVM.connectControllerKey = "jvmConnectSettings";
-    JVM.connectionSettingsKey = Core.connectionSettingsKey;
-    JVM.logoPath = 'img/icons/jvm/';
-    JVM.logoRegistry = {
-        'jetty': JVM.logoPath + 'jetty-logo-80x22.png',
-        'tomcat': JVM.logoPath + 'tomcat-logo.gif',
-        'generic': JVM.logoPath + 'java-logo.svg'
-    };
-})(JVM || (JVM = {}));
-/// <reference path="jvmGlobals.ts"/>
-var JVM;
-(function (JVM) {
-    /**
-     * Adds common properties and functions to the scope
-     * @method configureScope
-     * @for Jvm
-     * @param {*} $scope
-     * @param {ng.ILocationService} $location
-     * @param {Core.Workspace} workspace
-     */
-    function configureScope($scope, $location, workspace) {
-        $scope.isActive = function (href) {
-            var tidy = Core.trimLeading(href, "#");
-            var loc = $location.path();
-            return loc === tidy;
-        };
-        $scope.isValid = function (link) {
-            return link && link.isValid(workspace);
-        };
-        $scope.hasLocalMBean = function () {
-            return JVM.hasLocalMBean(workspace);
-        };
-        $scope.goto = function (path) {
-            $location.path(path);
-        };
-    }
-    JVM.configureScope = configureScope;
-    function hasLocalMBean(workspace) {
-        return workspace.treeContainsDomainAndProperties('hawtio', { type: 'JVMList' });
-    }
-    JVM.hasLocalMBean = hasLocalMBean;
-    function hasDiscoveryMBean(workspace) {
-        return workspace.treeContainsDomainAndProperties('jolokia', { type: 'Discovery' });
-    }
-    JVM.hasDiscoveryMBean = hasDiscoveryMBean;
-    /**
-     * Creates a jolokia object for connecting to the container with the given remote jolokia URL,
-     * username and password
-     * @method createJolokia
-     * @for Core
-     * @static
-     * @param {String} url
-     * @param {String} username
-     * @param {String} password
-     * @return {Object}
-     */
-    function createJolokia(url, username, password) {
-        var jolokiaParams = {
-            url: url,
-            username: username,
-            password: password,
-            canonicalNaming: false, ignoreErrors: true, mimeType: 'application/json'
-        };
-        return new Jolokia(jolokiaParams);
-    }
-    JVM.createJolokia = createJolokia;
-    function getRecentConnections(localStorage) {
-        if (Core.isBlank(localStorage['recentConnections'])) {
-            clearConnections();
-        }
-        return angular.fromJson(localStorage['recentConnections']);
-    }
-    JVM.getRecentConnections = getRecentConnections;
-    function addRecentConnection(localStorage, name) {
-        var recent = getRecentConnections(localStorage);
-        recent.push(name);
-        recent = _.take(_.uniq(recent), 5);
-        localStorage['recentConnections'] = angular.toJson(recent);
-    }
-    JVM.addRecentConnection = addRecentConnection;
-    function removeRecentConnection(localStorage, name) {
-        var recent = getRecentConnections(localStorage);
-        recent = _.without(recent, name);
-        localStorage['recentConnections'] = angular.toJson(recent);
-    }
-    JVM.removeRecentConnection = removeRecentConnection;
-    function clearConnections() {
-        localStorage['recentConnections'] = '[]';
-    }
-    JVM.clearConnections = clearConnections;
-    function isRemoteConnection() {
-        return ('con' in new URI().query(true));
-    }
-    JVM.isRemoteConnection = isRemoteConnection;
-    function connectToServer(localStorage, options) {
-        JVM.log.debug("Connecting with options: ", StringHelpers.toString(options));
-        var clone = angular.extend({}, options);
-        addRecentConnection(localStorage, clone.name);
-        if (!('userName' in clone)) {
-            var userDetails = HawtioCore.injector.get('userDetails');
-            clone.userName = userDetails.username;
-            clone.password = userDetails.password;
-        }
-        //must save to local storage, to be picked up by new tab
-        saveConnection(clone);
-        var $window = HawtioCore.injector.get('$window');
-        var url = (clone.view || '/') + '?con=' + clone.name;
-        url = url.replace(/\?/g, "&");
-        url = url.replace(/&/, "?");
-        var newWindow = $window.open(url, clone.name);
-        newWindow['con'] = clone.name;
-        newWindow['userDetails'] = {
-            username: clone.userName,
-            password: clone.password,
-            loginDetails: {}
-        };
-    }
-    JVM.connectToServer = connectToServer;
-    function saveConnection(options) {
-        var connections = loadConnections();
-        var existingIndex = _.findIndex(connections, function (element) { return element.name === options.name; });
-        if (existingIndex != -1) {
-            connections[existingIndex] = options;
-        }
-        else {
-            connections.unshift(options);
-        }
-        saveConnections(connections);
-    }
-    JVM.saveConnection = saveConnection;
-    /**
-     * Loads all of the available connections from local storage
-     * @returns {Core.ConnectionMap}
-     */
-    function loadConnections() {
-        var localStorage = Core.getLocalStorage();
-        try {
-            var connections = angular.fromJson(localStorage[Core.connectionSettingsKey]);
-            if (!connections) {
-                // nothing found on local storage
-                return [];
-            }
-            else if (!_.isArray(connections)) {
-                // found the legacy connections map
-                delete localStorage[Core.connectionSettingsKey];
-                return [];
-            }
-            else {
-                // found a valid connections array
-                return connections;
-            }
-        }
-        catch (e) {
-            // corrupt config
-            delete localStorage[Core.connectionSettingsKey];
-            return [];
-        }
-    }
-    JVM.loadConnections = loadConnections;
-    /**
-     * Saves the connection map to local storage
-     * @param connections array of all connections to be stored
-     */
-    function saveConnections(connections) {
-        Logger.get("Core").debug("Saving connection array: ", StringHelpers.toString(connections));
-        localStorage[Core.connectionSettingsKey] = angular.toJson(connections);
-    }
-    JVM.saveConnections = saveConnections;
-    function getConnectionNameParameter() {
-        return new URI().search(true)['con'];
-    }
-    JVM.getConnectionNameParameter = getConnectionNameParameter;
-    /**
-     * Returns the connection options for the given connection name from localStorage
-     */
-    function getConnectOptions(name, localStorage) {
-        if (localStorage === void 0) { localStorage = Core.getLocalStorage(); }
-        if (!name) {
-            return null;
-        }
-        var connections = loadConnections();
-        return _.find(connections, function (connection) { return connection.name === name; });
-    }
-    JVM.getConnectOptions = getConnectOptions;
-    /**
-     * Creates the Jolokia URL string for the given connection options
-     */
-    function createServerConnectionUrl(options) {
-        Logger.get("Core").debug("Connect to server, options: ", StringHelpers.toString(options));
-        var answer = null;
-        if (options.jolokiaUrl) {
-            answer = options.jolokiaUrl;
-        }
-        if (answer === null) {
-            var uri = new URI();
-            uri.protocol(options.scheme || 'http')
-                .host(options.host || 'localhost')
-                .port((options.port || '80'))
-                .path(options.path);
-            answer = UrlHelpers.join('proxy', uri.protocol(), uri.hostname(), uri.port(), uri.path());
-        }
-        Logger.get(JVM.pluginName).debug("Using URL: ", answer);
-        return answer;
-    }
-    JVM.createServerConnectionUrl = createServerConnectionUrl;
 })(JVM || (JVM = {}));
 /// <reference path="../jvmHelpers.ts"/>
 var JVM;
@@ -5020,81 +4924,6 @@ var JVM;
         JVM.log.debug("Jolokia list method:", jolokiaStatus.listMethod);
     }
 })(JVM || (JVM = {}));
-/// <reference path="folder.ts"/>
-/// <reference path="workspace.ts"/>
-var Jmx;
-(function (Jmx) {
-    Jmx.pluginName = 'hawtio-jmx';
-    Jmx.log = Logger.get(Jmx.pluginName);
-    Jmx.currentProcessId = '';
-    Jmx.templatePath = 'plugins/jmx/html';
-    // Add a few functions to the Core namespace
-    /**
-     * Returns the Folder object for the given domain name and type name or null if it can not be found
-     * @method getMBeanTypeFolder
-     * @for Core
-     * @static
-     * @param {Workspace} workspace
-     * @param {String} domain
-     * @param {String} typeName}
-     * @return {Folder}
-     */
-    function getMBeanTypeFolder(workspace, domain, typeName) {
-        if (workspace) {
-            var mbeanTypesToDomain = workspace.mbeanTypesToDomain || {};
-            var types = mbeanTypesToDomain[typeName] || {};
-            var answer = types[domain];
-            if (angular.isArray(answer) && answer.length) {
-                return answer[0];
-            }
-            return answer;
-        }
-        return null;
-    }
-    Jmx.getMBeanTypeFolder = getMBeanTypeFolder;
-    /**
-     * Returns the JMX objectName for the given jmx domain and type name
-     * @method getMBeanTypeObjectName
-     * @for Core
-     * @static
-     * @param {Workspace} workspace
-     * @param {String} domain
-     * @param {String} typeName
-     * @return {String}
-     */
-    function getMBeanTypeObjectName(workspace, domain, typeName) {
-        var folder = getMBeanTypeFolder(workspace, domain, typeName);
-        return Core.pathGet(folder, ["objectName"]);
-    }
-    Jmx.getMBeanTypeObjectName = getMBeanTypeObjectName;
-    /**
-     * Creates a remote workspace given a remote jolokia for querying the JMX MBeans inside the jolokia
-     * @param remoteJolokia
-     * @param remoteJolokiaStatus
-     * @param $location
-     * @param localStorage
-     * @return {Workspace}
-     */
-    function createRemoteWorkspace(remoteJolokia, remoteJolokiaStatus, $location, localStorage, $rootScope, $compile, $templateCache, HawtioNav) {
-        if ($rootScope === void 0) { $rootScope = null; }
-        if ($compile === void 0) { $compile = null; }
-        if ($templateCache === void 0) { $templateCache = null; }
-        if (HawtioNav === void 0) { HawtioNav = null; }
-        // lets create a child workspace object for the remote container
-        var jolokiaStatus = {
-            xhr: null,
-            listMethod: remoteJolokiaStatus.listMethod,
-            listMBean: remoteJolokiaStatus.listMBean
-        };
-        // disable reload notifications
-        var jmxTreeLazyLoadRegistry = Core.lazyLoaders;
-        var profileWorkspace = new Jmx.Workspace(remoteJolokia, jolokiaStatus, jmxTreeLazyLoadRegistry, $location, $compile, $templateCache, localStorage, $rootScope, HawtioNav);
-        Jmx.log.info("Loading the profile using jolokia: " + remoteJolokia);
-        profileWorkspace.loadTree();
-        return profileWorkspace;
-    }
-    Jmx.createRemoteWorkspace = createRemoteWorkspace;
-})(Jmx || (Jmx = {}));
 /// <reference path="../../jvm/ts/jolokiaService.ts"/>
 /// <reference path="jmxHelpers.ts"/>
 var Jmx;
@@ -6072,493 +5901,81 @@ var Jmx;
     }());
     Jmx.Workspace = Workspace;
 })(Jmx || (Jmx = {}));
-/// <reference path="../../jmx/ts/folder.ts"/>
-/// <reference path="../../jmx/ts/workspace.ts"/>
-var Diagnostics;
-(function (Diagnostics) {
-    var DiagnosticsService = /** @class */ (function () {
-        DiagnosticsService.$inject = ["workspace", "configManager"];
-        function DiagnosticsService(workspace, configManager) {
-            'ngInject';
-            this.workspace = workspace;
-            this.configManager = configManager;
+/// <reference path="folder.ts"/>
+/// <reference path="workspace.ts"/>
+var Jmx;
+(function (Jmx) {
+    Jmx.pluginName = 'hawtio-jmx';
+    Jmx.log = Logger.get(Jmx.pluginName);
+    Jmx.currentProcessId = '';
+    Jmx.templatePath = 'plugins/jmx/html';
+    // Add a few functions to the Core namespace
+    /**
+     * Returns the Folder object for the given domain name and type name or null if it can not be found
+     * @method getMBeanTypeFolder
+     * @for Core
+     * @static
+     * @param {Workspace} workspace
+     * @param {String} domain
+     * @param {String} typeName}
+     * @return {Folder}
+     */
+    function getMBeanTypeFolder(workspace, domain, typeName) {
+        if (workspace) {
+            var mbeanTypesToDomain = workspace.mbeanTypesToDomain || {};
+            var types = mbeanTypesToDomain[typeName] || {};
+            var answer = types[domain];
+            if (angular.isArray(answer) && answer.length) {
+                return answer[0];
+            }
+            return answer;
         }
-        DiagnosticsService.prototype.getTabs = function () {
-            var tabs = [];
-            if (this.hasDiagnosticFunction('jfrCheck') && this.configManager.isRouteEnabled('/diagnostics/jfr')) {
-                tabs.push(new Core.HawtioTab('Flight Recorder', '/diagnostics/jfr'));
-            }
-            if (this.hasDiagnosticFunction('gcClassHistogram') && this.configManager.isRouteEnabled('/diagnostics/heap')) {
-                tabs.push(new Core.HawtioTab('Class Histogram', '/diagnostics/heap'));
-            }
-            if (this.hasHotspotDiagnostic() && this.configManager.isRouteEnabled('/diagnostics/flags')) {
-                tabs.push(new Core.HawtioTab('Hotspot Diagnostic', '/diagnostics/flags'));
-            }
-            return tabs;
-        };
-        DiagnosticsService.prototype.hasHotspotDiagnostic = function () {
-            return this.workspace.treeContainsDomainAndProperties('com.sun.management', { type: 'HotSpotDiagnostic' });
-        };
-        DiagnosticsService.prototype.hasDiagnosticFunction = function (operation) {
-            var diagnostics = this.workspace.findMBeanWithProperties('com.sun.management', { type: 'DiagnosticCommand' });
-            return diagnostics && diagnostics.mbean && diagnostics.mbean.op && diagnostics.mbean.op[operation];
-        };
-        DiagnosticsService.prototype.findMyPid = function (title) {
-            //snatch PID from window title
-            var regex = /pid:(\d+)/g;
-            var pid = regex.exec(title);
-            if (pid && pid[1]) {
-                return pid[1];
-            }
-            else {
-                return null;
-            }
-        };
-        return DiagnosticsService;
-    }());
-    Diagnostics.DiagnosticsService = DiagnosticsService;
-})(Diagnostics || (Diagnostics = {}));
-/// <reference path="./diagnostics.service.ts"/>
-var Diagnostics;
-(function (Diagnostics) {
-    DiagnosticsHeapController.$inject = ["$scope", "jolokia", "diagnosticsService"];
-    function DiagnosticsHeapController($scope, jolokia, diagnosticsService) {
-        'ngInject';
-        var instanceCounts;
-        var byteCounts;
-        $scope.items = [];
-        $scope.loading = false;
-        $scope.lastLoaded = null;
-        $scope.toolbarConfig = {
-            actionsConfig: {
-                actionsInclude: true
-            },
-            isTableView: true
-        };
-        $scope.tableConfig = {
-            selectionMatchProp: 'name',
-            showCheckboxes: false
-        };
-        $scope.tableDtOptions = {
-            order: [[0, "asc"]]
-        };
-        $scope.pageConfig = {
-            pageSize: 20
-        };
-        $scope.tableColumns = [
-            {
-                header: '#',
-                itemField: 'num'
-            },
-            {
-                header: 'Instances',
-                itemField: 'count'
-            },
-            {
-                header: '<delta',
-                itemField: 'deltaCount'
-            },
-            {
-                header: 'Bytes',
-                itemField: 'bytes'
-            },
-            {
-                header: '<delta',
-                itemField: 'deltaBytes'
-            },
-            {
-                header: 'Class name',
-                itemField: 'name',
-                templateFn: function (value) { return "<span class=\"table-cell-truncated\" title=\"" + value + "\">" + value + "</span>"; }
-            }
-        ];
-        $scope.loadClassStats = function () {
-            $scope.loading = true;
-            Core.$apply($scope);
-            jolokia.request({
-                type: 'exec',
-                mbean: 'com.sun.management:type=DiagnosticCommand',
-                operation: 'gcClassHistogram([Ljava.lang.String;)',
-                arguments: ['']
-            }, {
-                success: render,
-                error: function (response) {
-                    Diagnostics.log.error('Failed to get class histogram: ' + response.error);
-                    $scope.loading = false;
-                    Core.$apply($scope);
-                }
-            });
-        };
-        function render(response) {
-            var classHistogram = response.value;
-            var lines = response.value.split('\n');
-            var parsed = [];
-            var classCounts = {};
-            var bytesCounts = {};
-            for (var i = 0; i < lines.length; i++) {
-                var values = lines[i].match(/\s*(\d+):\s*(\d+)\s*(\d+)\s*(\S+)\s*/);
-                if (values && values.length >= 5) {
-                    var className = translateJniName(values[4]);
-                    var count = values[2];
-                    var bytes = values[3];
-                    var entry = {
-                        num: values[1],
-                        count: count,
-                        bytes: bytes,
-                        name: className,
-                        deltaCount: findDelta(instanceCounts, className, count),
-                        deltaBytes: findDelta(byteCounts, className, bytes)
-                    };
-                    parsed.push(entry);
-                    classCounts[className] = count;
-                    bytesCounts[className] = bytes;
-                }
-            }
-            $scope.items = parsed;
-            $scope.lastLoaded = Date.now();
-            instanceCounts = classCounts;
-            byteCounts = bytesCounts;
-            Core.$apply($scope);
-            setTimeout(function () {
-                $scope.loading = false;
-                Core.$apply($scope);
-            });
-        }
-        function findDelta(oldCounts, className, newValue) {
-            if (!oldCounts) {
-                return '';
-            }
-            var oldValue = oldCounts[className];
-            if (oldValue) {
-                return oldValue - newValue;
-            }
-            else {
-                return newValue;
-            }
-        }
-        function translateJniName(name) {
-            if (name.length == 1) {
-                switch (name.charAt(0)) {
-                    case 'I':
-                        return 'int';
-                    case 'S':
-                        return 'short';
-                    case 'C':
-                        return 'char';
-                    case 'Z':
-                        return 'boolean';
-                    case 'D':
-                        return 'double';
-                    case 'F':
-                        return 'float';
-                    case 'J':
-                        return 'long';
-                    case 'B':
-                        return 'byte';
-                }
-            }
-            else {
-                switch (name.charAt(0)) {
-                    case '[':
-                        return translateJniName(name.substring(1)) + '[]';
-                    case 'L':
-                        if (name.endsWith(';')) {
-                            return translateJniName(name.substring(1, name.indexOf(';')));
-                        }
-                    default:
-                        return name;
-                }
-            }
-        }
+        return null;
     }
-    Diagnostics.DiagnosticsHeapController = DiagnosticsHeapController;
-})(Diagnostics || (Diagnostics = {}));
-/// <reference path="diagnostics.service.ts"/>
-var Diagnostics;
-(function (Diagnostics) {
-    DiagnosticsJfrController.$inject = ["$scope", "$location", "workspace", "jolokia", "localStorage", "diagnosticsService"];
-    function splitResponse(response) {
-        return response.match(/Dumped recording "(.+)",(.+) written to:\r?\n\r?\n(.+)/);
+    Jmx.getMBeanTypeFolder = getMBeanTypeFolder;
+    /**
+     * Returns the JMX objectName for the given jmx domain and type name
+     * @method getMBeanTypeObjectName
+     * @for Core
+     * @static
+     * @param {Workspace} workspace
+     * @param {String} domain
+     * @param {String} typeName
+     * @return {String}
+     */
+    function getMBeanTypeObjectName(workspace, domain, typeName) {
+        var folder = getMBeanTypeFolder(workspace, domain, typeName);
+        return Core.pathGet(folder, ["objectName"]);
     }
-    function buildStartParams(jfrSettings) {
-        var params = [];
-        if (jfrSettings.name && jfrSettings.name.length > 0) {
-            params.push('name="' + jfrSettings.name + '"');
-        }
-        if (jfrSettings.filename && jfrSettings.filename.length > 0) {
-            params.push('filename="' + jfrSettings.filename + '"');
-        }
-        params.push('dumponexit=' + jfrSettings.dumpOnExit);
-        if (jfrSettings.limitType != 'unlimited') {
-            params.push(jfrSettings.limitType + '=' + jfrSettings.limitValue);
-        }
-        return params;
+    Jmx.getMBeanTypeObjectName = getMBeanTypeObjectName;
+    /**
+     * Creates a remote workspace given a remote jolokia for querying the JMX MBeans inside the jolokia
+     * @param remoteJolokia
+     * @param remoteJolokiaStatus
+     * @param $location
+     * @param localStorage
+     * @return {Workspace}
+     */
+    function createRemoteWorkspace(remoteJolokia, remoteJolokiaStatus, $location, localStorage, $rootScope, $compile, $templateCache, HawtioNav) {
+        if ($rootScope === void 0) { $rootScope = null; }
+        if ($compile === void 0) { $compile = null; }
+        if ($templateCache === void 0) { $templateCache = null; }
+        if (HawtioNav === void 0) { HawtioNav = null; }
+        // lets create a child workspace object for the remote container
+        var jolokiaStatus = {
+            xhr: null,
+            listMethod: remoteJolokiaStatus.listMethod,
+            listMBean: remoteJolokiaStatus.listMBean
+        };
+        // disable reload notifications
+        var jmxTreeLazyLoadRegistry = Core.lazyLoaders;
+        var profileWorkspace = new Jmx.Workspace(remoteJolokia, jolokiaStatus, jmxTreeLazyLoadRegistry, $location, $compile, $templateCache, localStorage, $rootScope, HawtioNav);
+        Jmx.log.info("Loading the profile using jolokia: " + remoteJolokia);
+        profileWorkspace.loadTree();
+        return profileWorkspace;
     }
-    function buildDumpParams(jfrSettings) {
-        return [
-            'filename="' + jfrSettings.filename + '"',
-            'name="' + jfrSettings.name + '"'
-        ];
-    }
-    function DiagnosticsJfrController($scope, $location, workspace, jolokia, localStorage, diagnosticsService) {
-        'ngInject';
-        $scope.forms = {};
-        $scope.pid = diagnosticsService.findMyPid($scope.pageTitle);
-        $scope.recordings = [];
-        $scope.settingsVisible = false;
-        $scope.jfrSettings = {
-            limitType: 'unlimited',
-            limitValue: '',
-            name: '',
-            dumpOnExit: true,
-            recordingNumber: '',
-            filename: ''
-        };
-        $scope.formConfig = {
-            properties: {
-                name: {
-                    type: "java.lang.String",
-                    tooltip: "Name for this connection",
-                    "input-attributes": {
-                        "placeholder": "Recording name (optional)..."
-                    }
-                },
-                limitType: {
-                    type: "java.lang.String",
-                    tooltip: "Duration if any",
-                    enum: ['unlimited', 'duration', 'maxsize']
-                },
-                limitValue: {
-                    type: "java.lang.String",
-                    tooltip: "Limit value. duration: [val]s/m/h, maxsize: [val]kB/MB/GB",
-                    required: false,
-                    "input-attributes": {
-                        "ng-show": "jfrSettings.limitType != 'unlimited'"
-                    }
-                },
-                dumpOnExit: {
-                    type: "java.lang.Boolean",
-                    tooltip: "Automatically dump recording on VM exit"
-                },
-                filename: {
-                    type: "java.lang.String",
-                    tooltip: "Filename",
-                    "input-attributes": {
-                        "placeholder": "Specify file name *.jfr (optional)..."
-                    }
-                },
-            }
-        };
-        $scope.unlock = function () {
-            executeDiagnosticFunction('vmUnlockCommercialFeatures()', 'VM.unlock_commercial_features', [], null);
-        };
-        $scope.startRecording = function () {
-            if ($scope.isRecording) {
-                $scope.jfrSettings.name = null;
-                $scope.jfrSettings.filename = null;
-            }
-            executeDiagnosticFunction('jfrStart([Ljava.lang.String;)', 'JFR.start', [buildStartParams($scope.jfrSettings)], null);
-        };
-        $scope.dumpRecording = function () {
-            executeDiagnosticFunction('jfrDump([Ljava.lang.String;)', 'JFR.dump', [buildDumpParams($scope.jfrSettings)], function (response) {
-                var matches = splitResponse(response);
-                Diagnostics.log.debug("response: " + response
-                    + " split: " + matches + "split2: "
-                    + matches);
-                if (matches) {
-                    var recordingData = {
-                        number: matches[1],
-                        size: matches[2],
-                        file: matches[3],
-                        time: Date.now()
-                    };
-                    Diagnostics.log.debug("data: "
-                        + recordingData);
-                    addRecording(recordingData, $scope.recordings);
-                }
-            });
-        };
-        $scope.closeMessageForGood = function (key) {
-            localStorage[key] = "false";
-        };
-        $scope.isMessageVisible = function (key) {
-            return localStorage[key] !== "false";
-        };
-        $scope.stopRecording = function () {
-            var name = $scope.jfrSettings.name;
-            $scope.jfrSettings.filename = '';
-            $scope.jfrSettings.name = '';
-            executeDiagnosticFunction('jfrStop([Ljava.lang.String;)', 'JFR.stop', ['name="' + name + '"'], null);
-        };
-        $scope.toggleSettingsVisible = function () {
-            $scope.settingsVisible = !$scope.settingsVisible;
-            Core.$apply($scope);
-        };
-        Core.register(jolokia, $scope, [{
-                type: 'exec',
-                operation: 'jfrCheck([Ljava.lang.String;)',
-                mbean: 'com.sun.management:type=DiagnosticCommand',
-                arguments: ['']
-            }], Core.onSuccess(render));
-        function render(response) {
-            var statusString = response.value;
-            $scope.jfrEnabled = statusString.indexOf("not enabled") == -1;
-            $scope.isRunning = statusString.indexOf("(running)") > -1;
-            $scope.isRecording = $scope.isRunning || statusString.indexOf("(stopped)") > -1;
-            if ((statusString.indexOf("Use JFR.") > -1 || statusString
-                .indexOf("Use VM.") > -1)
-                && $scope.pid) {
-                statusString = statusString.replace("Use ", "Use command line: jcmd " + $scope.pid + " ");
-            }
-            $scope.jfrStatus = statusString;
-            if ($scope.isRecording) {
-                var regex = /recording=(\d+) name="(.+?)"/g;
-                if ($scope.isRunning) {
-                    regex = /recording=(\d+) name="(.+?)".+?\(running\)/g;
-                }
-                var parsed = regex.exec(statusString);
-                $scope.jfrSettings.recordingNumber = parsed[1];
-                $scope.jfrSettings.name = parsed[2];
-                var parsedFilename = statusString.match(/filename="(.+)"/);
-                if (parsedFilename && parsedFilename[1]) {
-                    $scope.jfrSettings.filename = parsedFilename[1];
-                }
-                else {
-                    $scope.jfrSettings.filename = 'recording' + parsed[1] + '.jfr';
-                }
-            }
-            Core.$apply($scope);
-        }
-        function addRecording(recording, recordings) {
-            for (var i = 0; i < recordings.length; i++) {
-                if (recordings[i].file === recording.file) {
-                    recordings[i] = recording;
-                    return;
-                }
-            }
-            recordings.push(recording);
-        }
-        function showArguments(arguments) {
-            var result = '';
-            var first = true;
-            for (var i = 0; i < arguments.length; i++) {
-                if (first) {
-                    first = false;
-                }
-                else {
-                    result += ',';
-                }
-                result += arguments[i];
-            }
-            return result;
-        }
-        function executeDiagnosticFunction(operation, jcmd, arguments, callback) {
-            Diagnostics.log.debug(Date.now() + " Invoking operation "
-                + operation + " with arguments" + arguments + " settings: " + JSON.stringify($scope.jfrSettings));
-            $scope.jcmd = 'jcmd ' + $scope.pid + ' ' + jcmd + ' ' + showArguments(arguments);
-            jolokia.request([{
-                    type: "exec",
-                    operation: operation,
-                    mbean: 'com.sun.management:type=DiagnosticCommand',
-                    arguments: arguments
-                }, {
-                    type: 'exec',
-                    operation: 'jfrCheck([Ljava.lang.String;)',
-                    mbean: 'com.sun.management:type=DiagnosticCommand',
-                    arguments: ['']
-                }], Core.onSuccess(function (response) {
-                Diagnostics.log.debug("Diagnostic Operation "
-                    + operation + " was successful" + response.value);
-                if (response.request.operation.indexOf("jfrCheck") > -1) {
-                    render(response);
-                }
-                else {
-                    if (callback) {
-                        callback(response.value);
-                    }
-                    Core.$apply($scope);
-                }
-            }, {
-                error: function (response) {
-                    Diagnostics.log.warn("Diagnostic Operation "
-                        + operation + " failed", response);
-                }
-            }));
-        }
-    }
-    Diagnostics.DiagnosticsJfrController = DiagnosticsJfrController;
-})(Diagnostics || (Diagnostics = {}));
-/// <reference path="diagnostics.service.ts"/>
-var Diagnostics;
-(function (Diagnostics) {
-    DiagnosticsLayoutController.$inject = ["$location", "diagnosticsService"];
-    function DiagnosticsLayoutController($location, diagnosticsService) {
-        'ngInject';
-        this.tabs = diagnosticsService.getTabs();
-        this.goto = function (tab) {
-            $location.path(tab.path);
-        };
-    }
-    Diagnostics.DiagnosticsLayoutController = DiagnosticsLayoutController;
-})(Diagnostics || (Diagnostics = {}));
-var Diagnostics;
-(function (Diagnostics) {
-    DiagnosticsConfig.$inject = ["configManager"];
-    function DiagnosticsConfig(configManager) {
-        'ngInject';
-        configManager
-            .addRoute('/diagnostics/jfr', { templateUrl: 'plugins/diagnostics/html/jfr.html' })
-            .addRoute('/diagnostics/heap', { templateUrl: 'plugins/diagnostics/html/heap.html' })
-            .addRoute('/diagnostics/flags', { templateUrl: 'plugins/diagnostics/html/flags.html' });
-    }
-    Diagnostics.DiagnosticsConfig = DiagnosticsConfig;
-})(Diagnostics || (Diagnostics = {}));
-/// <reference path="../../jmx/ts/workspace.ts"/>
-/// <reference path="diagnostics.service.ts"/>
-var Diagnostics;
-(function (Diagnostics) {
-    DiagnosticsInit.$inject = ["$rootScope", "viewRegistry", "helpRegistry", "workspace", "diagnosticsService"];
-    function DiagnosticsInit($rootScope, viewRegistry, helpRegistry, workspace, diagnosticsService) {
-        'ngInject';
-        viewRegistry['diagnostics'] = 'plugins/diagnostics/html/layout.html';
-        helpRegistry.addUserDoc('diagnostics', 'plugins/diagnostics/doc/help.md');
-        var unsubscribe = $rootScope.$on('jmxTreeUpdated', function () {
-            unsubscribe();
-            var tabs = diagnosticsService.getTabs();
-            workspace.topLevelTabs.push({
-                id: "diagnostics",
-                content: "Diagnostics",
-                title: "JVM Diagnostics",
-                isValid: function () { return tabs.length > 0; },
-                href: function () { return tabs[0].path; },
-                isActive: function (workspace) { return workspace.isLinkActive("diagnostics"); }
-            });
-        });
-    }
-    Diagnostics.DiagnosticsInit = DiagnosticsInit;
-})(Diagnostics || (Diagnostics = {}));
-/// <reference path="diagnostics.config.ts"/>
-/// <reference path="diagnostics.init.ts"/>
-/// <reference path="diagnostics-layout.controller.ts"/>
-/// <reference path="diagnostics-jfr.controller.ts"/>
-/// <reference path="diagnostics-heap.controller.ts"/>
-/// <reference path="diagnostics-flags.controller.ts"/>
-/// <reference path="diagnostics.service.ts"/>
-var Diagnostics;
-(function (Diagnostics) {
-    var pluginName = 'hawtio-diagnostics';
-    Diagnostics.log = Logger.get(pluginName);
-    Diagnostics._module = angular
-        .module(pluginName, [])
-        .config(Diagnostics.DiagnosticsConfig)
-        .run(Diagnostics.DiagnosticsInit)
-        .controller("DiagnosticsLayoutController", Diagnostics.DiagnosticsLayoutController)
-        .controller("DiagnosticsJfrController", Diagnostics.DiagnosticsJfrController)
-        .controller("DiagnosticsHeapController", Diagnostics.DiagnosticsHeapController)
-        .controller("DiagnosticsFlagsController", Diagnostics.DiagnosticsFlagsController)
-        .service('diagnosticsService', Diagnostics.DiagnosticsService);
-    hawtioPluginLoader.addModule(pluginName);
-})(Diagnostics || (Diagnostics = {}));
+    Jmx.createRemoteWorkspace = createRemoteWorkspace;
+})(Jmx || (Jmx = {}));
 var Jmx;
 (function (Jmx) {
     function createDashboardLink(widgetType, widget) {
@@ -7787,9 +7204,13 @@ var Jmx;
         return TreeHeaderController;
     }());
     Jmx.TreeHeaderController = TreeHeaderController;
+})(Jmx || (Jmx = {}));
+/// <reference path="tree-header.controller.ts"/>
+var Jmx;
+(function (Jmx) {
     Jmx.treeHeaderComponent = {
         templateUrl: 'plugins/jmx/html/tree/header.html',
-        controller: TreeHeaderController
+        controller: Jmx.TreeHeaderController
     };
 })(Jmx || (Jmx = {}));
 var Jmx;
@@ -8653,6 +8074,589 @@ var Jmx;
     }
     Jmx.enableTree = enableTree;
 })(Jmx || (Jmx = {}));
+var Diagnostics;
+(function (Diagnostics) {
+    DiagnosticsFlagsController.$inject = ["$scope", "jolokia"];
+    function DiagnosticsFlagsController($scope, jolokia) {
+        'ngInject';
+        var readRequest = {
+            type: 'read',
+            mbean: 'com.sun.management:type=HotSpotDiagnostic',
+            arguments: []
+        };
+        $scope.flags = [];
+        // $scope.tableDef = tableDef();
+        Core.register(jolokia, $scope, [readRequest], Core.onSuccess(render));
+        function render(response) {
+            //remove watches on previous content
+            for (var i = 0; i < $scope.flags.length; i++) {
+                $scope.flags[i].deregisterWatch();
+            }
+            $scope.flags = response.value.DiagnosticOptions;
+            for (var i = 0; i < $scope.flags.length; i++) {
+                var flag = $scope.flags[i];
+                flag.value = parseValue(flag.value); //convert to typed value
+                if (flag.writeable) {
+                    flag.dataType = typeof (flag.value);
+                }
+                else {
+                    flag.dataType = "readonly";
+                }
+                flag.deregisterWatch = $scope.$watch('flags[' + i + ']', function (newValue, oldValue) {
+                    if (newValue.value != oldValue.value) {
+                        jolokia.request([{
+                                type: 'exec',
+                                mbean: 'com.sun.management:type=HotSpotDiagnostic',
+                                operation: 'setVMOption(java.lang.String,java.lang.String)',
+                                arguments: [newValue.name, newValue.value]
+                            }, readRequest], Core.onSuccess(function (response) {
+                            if (response.request.type === "read") {
+                                render(response);
+                            }
+                            else {
+                                Diagnostics.log.info("Set VM option " + newValue.name + "=" + newValue.value);
+                            }
+                        }));
+                    }
+                }, true);
+            }
+            Core.$apply($scope);
+        }
+        function parseValue(value) {
+            if (typeof (value) === "string") {
+                if (value.match(/true/)) {
+                    return true;
+                }
+                else if (value.match(/false/)) {
+                    return false;
+                }
+                else if (value.match(/\d+/)) {
+                    return Number(value);
+                }
+            }
+            return value;
+        }
+        // function tableDef() {
+        //   return {
+        //     selectedItems: [],
+        //     data: 'flags',
+        //     showFilter: true,
+        //     filterOptions: {
+        //       filterText: ''
+        //     },
+        //     showSelectionCheckbox: false,
+        //     enableRowClickSelection: true,
+        //     multiSelect: false,
+        //     primaryKeyFn: function (entity, idx) {
+        //       return entity.name;
+        //     },
+        //     columnDefs: [
+        //       {
+        //         field: 'name',
+        //         displayName: 'VM Flag',
+        //         resizable: true
+        //       }, {
+        //         field: 'origin',
+        //         displayName: 'Origin',
+        //         resizable: true
+        //       }, {
+        //         field: 'value',
+        //         displayName: 'Value',
+        //         resizable: true,
+        //         cellTemplate: '<div ng-switch on="row.entity.dataType"><span ng-switch-when="readonly">{{row.entity.value}}</span><input ng-switch-when="boolean" type="checkbox" ng-model="row.entity.value"></input><input ng-switch-when="string" type="text" ng-model="row.entity.value"></input><input ng-switch-when="number" type="number" ng-model="row.entity.value"></input></div>'
+        //       }]
+        //   };
+        // }
+    }
+    Diagnostics.DiagnosticsFlagsController = DiagnosticsFlagsController;
+})(Diagnostics || (Diagnostics = {}));
+/// <reference path="../../jmx/ts/folder.ts"/>
+/// <reference path="../../jmx/ts/workspace.ts"/>
+var Diagnostics;
+(function (Diagnostics) {
+    var DiagnosticsService = /** @class */ (function () {
+        DiagnosticsService.$inject = ["workspace", "configManager"];
+        function DiagnosticsService(workspace, configManager) {
+            'ngInject';
+            this.workspace = workspace;
+            this.configManager = configManager;
+        }
+        DiagnosticsService.prototype.getTabs = function () {
+            var tabs = [];
+            if (this.hasDiagnosticFunction('jfrCheck') && this.configManager.isRouteEnabled('/diagnostics/jfr')) {
+                tabs.push(new Core.HawtioTab('Flight Recorder', '/diagnostics/jfr'));
+            }
+            if (this.hasDiagnosticFunction('gcClassHistogram') && this.configManager.isRouteEnabled('/diagnostics/heap')) {
+                tabs.push(new Core.HawtioTab('Class Histogram', '/diagnostics/heap'));
+            }
+            if (this.hasHotspotDiagnostic() && this.configManager.isRouteEnabled('/diagnostics/flags')) {
+                tabs.push(new Core.HawtioTab('Hotspot Diagnostic', '/diagnostics/flags'));
+            }
+            return tabs;
+        };
+        DiagnosticsService.prototype.hasHotspotDiagnostic = function () {
+            return this.workspace.treeContainsDomainAndProperties('com.sun.management', { type: 'HotSpotDiagnostic' });
+        };
+        DiagnosticsService.prototype.hasDiagnosticFunction = function (operation) {
+            var diagnostics = this.workspace.findMBeanWithProperties('com.sun.management', { type: 'DiagnosticCommand' });
+            return diagnostics && diagnostics.mbean && diagnostics.mbean.op && diagnostics.mbean.op[operation];
+        };
+        DiagnosticsService.prototype.findMyPid = function (title) {
+            //snatch PID from window title
+            var regex = /pid:(\d+)/g;
+            var pid = regex.exec(title);
+            if (pid && pid[1]) {
+                return pid[1];
+            }
+            else {
+                return null;
+            }
+        };
+        return DiagnosticsService;
+    }());
+    Diagnostics.DiagnosticsService = DiagnosticsService;
+})(Diagnostics || (Diagnostics = {}));
+/// <reference path="./diagnostics.service.ts"/>
+var Diagnostics;
+(function (Diagnostics) {
+    DiagnosticsHeapController.$inject = ["$scope", "jolokia", "diagnosticsService"];
+    function DiagnosticsHeapController($scope, jolokia, diagnosticsService) {
+        'ngInject';
+        var instanceCounts;
+        var byteCounts;
+        $scope.items = [];
+        $scope.loading = false;
+        $scope.lastLoaded = null;
+        $scope.toolbarConfig = {
+            actionsConfig: {
+                actionsInclude: true
+            },
+            isTableView: true
+        };
+        $scope.tableConfig = {
+            selectionMatchProp: 'name',
+            showCheckboxes: false
+        };
+        $scope.tableDtOptions = {
+            order: [[0, "asc"]]
+        };
+        $scope.pageConfig = {
+            pageSize: 20
+        };
+        $scope.tableColumns = [
+            {
+                header: '#',
+                itemField: 'num'
+            },
+            {
+                header: 'Instances',
+                itemField: 'count'
+            },
+            {
+                header: '<delta',
+                itemField: 'deltaCount'
+            },
+            {
+                header: 'Bytes',
+                itemField: 'bytes'
+            },
+            {
+                header: '<delta',
+                itemField: 'deltaBytes'
+            },
+            {
+                header: 'Class name',
+                itemField: 'name',
+                templateFn: function (value) { return "<span class=\"table-cell-truncated\" title=\"" + value + "\">" + value + "</span>"; }
+            }
+        ];
+        $scope.loadClassStats = function () {
+            $scope.loading = true;
+            Core.$apply($scope);
+            jolokia.request({
+                type: 'exec',
+                mbean: 'com.sun.management:type=DiagnosticCommand',
+                operation: 'gcClassHistogram([Ljava.lang.String;)',
+                arguments: ['']
+            }, {
+                success: render,
+                error: function (response) {
+                    Diagnostics.log.error('Failed to get class histogram: ' + response.error);
+                    $scope.loading = false;
+                    Core.$apply($scope);
+                }
+            });
+        };
+        function render(response) {
+            var classHistogram = response.value;
+            var lines = response.value.split('\n');
+            var parsed = [];
+            var classCounts = {};
+            var bytesCounts = {};
+            for (var i = 0; i < lines.length; i++) {
+                var values = lines[i].match(/\s*(\d+):\s*(\d+)\s*(\d+)\s*(\S+)\s*/);
+                if (values && values.length >= 5) {
+                    var className = translateJniName(values[4]);
+                    var count = values[2];
+                    var bytes = values[3];
+                    var entry = {
+                        num: values[1],
+                        count: count,
+                        bytes: bytes,
+                        name: className,
+                        deltaCount: findDelta(instanceCounts, className, count),
+                        deltaBytes: findDelta(byteCounts, className, bytes)
+                    };
+                    parsed.push(entry);
+                    classCounts[className] = count;
+                    bytesCounts[className] = bytes;
+                }
+            }
+            $scope.items = parsed;
+            $scope.lastLoaded = Date.now();
+            instanceCounts = classCounts;
+            byteCounts = bytesCounts;
+            Core.$apply($scope);
+            setTimeout(function () {
+                $scope.loading = false;
+                Core.$apply($scope);
+            });
+        }
+        function findDelta(oldCounts, className, newValue) {
+            if (!oldCounts) {
+                return '';
+            }
+            var oldValue = oldCounts[className];
+            if (oldValue) {
+                return oldValue - newValue;
+            }
+            else {
+                return newValue;
+            }
+        }
+        function translateJniName(name) {
+            if (name.length == 1) {
+                switch (name.charAt(0)) {
+                    case 'I':
+                        return 'int';
+                    case 'S':
+                        return 'short';
+                    case 'C':
+                        return 'char';
+                    case 'Z':
+                        return 'boolean';
+                    case 'D':
+                        return 'double';
+                    case 'F':
+                        return 'float';
+                    case 'J':
+                        return 'long';
+                    case 'B':
+                        return 'byte';
+                }
+            }
+            else {
+                switch (name.charAt(0)) {
+                    case '[':
+                        return translateJniName(name.substring(1)) + '[]';
+                    case 'L':
+                        if (name.endsWith(';')) {
+                            return translateJniName(name.substring(1, name.indexOf(';')));
+                        }
+                    default:
+                        return name;
+                }
+            }
+        }
+    }
+    Diagnostics.DiagnosticsHeapController = DiagnosticsHeapController;
+})(Diagnostics || (Diagnostics = {}));
+/// <reference path="diagnostics.service.ts"/>
+var Diagnostics;
+(function (Diagnostics) {
+    DiagnosticsJfrController.$inject = ["$scope", "$location", "workspace", "jolokia", "localStorage", "diagnosticsService"];
+    function splitResponse(response) {
+        return response.match(/Dumped recording "(.+)",(.+) written to:\r?\n\r?\n(.+)/);
+    }
+    function buildStartParams(jfrSettings) {
+        var params = [];
+        if (jfrSettings.name && jfrSettings.name.length > 0) {
+            params.push('name="' + jfrSettings.name + '"');
+        }
+        if (jfrSettings.filename && jfrSettings.filename.length > 0) {
+            params.push('filename="' + jfrSettings.filename + '"');
+        }
+        params.push('dumponexit=' + jfrSettings.dumpOnExit);
+        if (jfrSettings.limitType != 'unlimited') {
+            params.push(jfrSettings.limitType + '=' + jfrSettings.limitValue);
+        }
+        return params;
+    }
+    function buildDumpParams(jfrSettings) {
+        return [
+            'filename="' + jfrSettings.filename + '"',
+            'name="' + jfrSettings.name + '"'
+        ];
+    }
+    function DiagnosticsJfrController($scope, $location, workspace, jolokia, localStorage, diagnosticsService) {
+        'ngInject';
+        $scope.forms = {};
+        $scope.pid = diagnosticsService.findMyPid($scope.pageTitle);
+        $scope.recordings = [];
+        $scope.settingsVisible = false;
+        $scope.jfrSettings = {
+            limitType: 'unlimited',
+            limitValue: '',
+            name: '',
+            dumpOnExit: true,
+            recordingNumber: '',
+            filename: ''
+        };
+        $scope.formConfig = {
+            properties: {
+                name: {
+                    type: "java.lang.String",
+                    tooltip: "Name for this connection",
+                    "input-attributes": {
+                        "placeholder": "Recording name (optional)..."
+                    }
+                },
+                limitType: {
+                    type: "java.lang.String",
+                    tooltip: "Duration if any",
+                    enum: ['unlimited', 'duration', 'maxsize']
+                },
+                limitValue: {
+                    type: "java.lang.String",
+                    tooltip: "Limit value. duration: [val]s/m/h, maxsize: [val]kB/MB/GB",
+                    required: false,
+                    "input-attributes": {
+                        "ng-show": "jfrSettings.limitType != 'unlimited'"
+                    }
+                },
+                dumpOnExit: {
+                    type: "java.lang.Boolean",
+                    tooltip: "Automatically dump recording on VM exit"
+                },
+                filename: {
+                    type: "java.lang.String",
+                    tooltip: "Filename",
+                    "input-attributes": {
+                        "placeholder": "Specify file name *.jfr (optional)..."
+                    }
+                },
+            }
+        };
+        $scope.unlock = function () {
+            executeDiagnosticFunction('vmUnlockCommercialFeatures()', 'VM.unlock_commercial_features', [], null);
+        };
+        $scope.startRecording = function () {
+            if ($scope.isRecording) {
+                $scope.jfrSettings.name = null;
+                $scope.jfrSettings.filename = null;
+            }
+            executeDiagnosticFunction('jfrStart([Ljava.lang.String;)', 'JFR.start', [buildStartParams($scope.jfrSettings)], null);
+        };
+        $scope.dumpRecording = function () {
+            executeDiagnosticFunction('jfrDump([Ljava.lang.String;)', 'JFR.dump', [buildDumpParams($scope.jfrSettings)], function (response) {
+                var matches = splitResponse(response);
+                Diagnostics.log.debug("response: " + response
+                    + " split: " + matches + "split2: "
+                    + matches);
+                if (matches) {
+                    var recordingData = {
+                        number: matches[1],
+                        size: matches[2],
+                        file: matches[3],
+                        time: Date.now()
+                    };
+                    Diagnostics.log.debug("data: "
+                        + recordingData);
+                    addRecording(recordingData, $scope.recordings);
+                }
+            });
+        };
+        $scope.closeMessageForGood = function (key) {
+            localStorage[key] = "false";
+        };
+        $scope.isMessageVisible = function (key) {
+            return localStorage[key] !== "false";
+        };
+        $scope.stopRecording = function () {
+            var name = $scope.jfrSettings.name;
+            $scope.jfrSettings.filename = '';
+            $scope.jfrSettings.name = '';
+            executeDiagnosticFunction('jfrStop([Ljava.lang.String;)', 'JFR.stop', ['name="' + name + '"'], null);
+        };
+        $scope.toggleSettingsVisible = function () {
+            $scope.settingsVisible = !$scope.settingsVisible;
+            Core.$apply($scope);
+        };
+        Core.register(jolokia, $scope, [{
+                type: 'exec',
+                operation: 'jfrCheck([Ljava.lang.String;)',
+                mbean: 'com.sun.management:type=DiagnosticCommand',
+                arguments: ['']
+            }], Core.onSuccess(render));
+        function render(response) {
+            var statusString = response.value;
+            $scope.jfrEnabled = statusString.indexOf("not enabled") == -1;
+            $scope.isRunning = statusString.indexOf("(running)") > -1;
+            $scope.isRecording = $scope.isRunning || statusString.indexOf("(stopped)") > -1;
+            if ((statusString.indexOf("Use JFR.") > -1 || statusString
+                .indexOf("Use VM.") > -1)
+                && $scope.pid) {
+                statusString = statusString.replace("Use ", "Use command line: jcmd " + $scope.pid + " ");
+            }
+            $scope.jfrStatus = statusString;
+            if ($scope.isRecording) {
+                var regex = /recording=(\d+) name="(.+?)"/g;
+                if ($scope.isRunning) {
+                    regex = /recording=(\d+) name="(.+?)".+?\(running\)/g;
+                }
+                var parsed = regex.exec(statusString);
+                $scope.jfrSettings.recordingNumber = parsed[1];
+                $scope.jfrSettings.name = parsed[2];
+                var parsedFilename = statusString.match(/filename="(.+)"/);
+                if (parsedFilename && parsedFilename[1]) {
+                    $scope.jfrSettings.filename = parsedFilename[1];
+                }
+                else {
+                    $scope.jfrSettings.filename = 'recording' + parsed[1] + '.jfr';
+                }
+            }
+            Core.$apply($scope);
+        }
+        function addRecording(recording, recordings) {
+            for (var i = 0; i < recordings.length; i++) {
+                if (recordings[i].file === recording.file) {
+                    recordings[i] = recording;
+                    return;
+                }
+            }
+            recordings.push(recording);
+        }
+        function showArguments(arguments) {
+            var result = '';
+            var first = true;
+            for (var i = 0; i < arguments.length; i++) {
+                if (first) {
+                    first = false;
+                }
+                else {
+                    result += ',';
+                }
+                result += arguments[i];
+            }
+            return result;
+        }
+        function executeDiagnosticFunction(operation, jcmd, arguments, callback) {
+            Diagnostics.log.debug(Date.now() + " Invoking operation "
+                + operation + " with arguments" + arguments + " settings: " + JSON.stringify($scope.jfrSettings));
+            $scope.jcmd = 'jcmd ' + $scope.pid + ' ' + jcmd + ' ' + showArguments(arguments);
+            jolokia.request([{
+                    type: "exec",
+                    operation: operation,
+                    mbean: 'com.sun.management:type=DiagnosticCommand',
+                    arguments: arguments
+                }, {
+                    type: 'exec',
+                    operation: 'jfrCheck([Ljava.lang.String;)',
+                    mbean: 'com.sun.management:type=DiagnosticCommand',
+                    arguments: ['']
+                }], Core.onSuccess(function (response) {
+                Diagnostics.log.debug("Diagnostic Operation "
+                    + operation + " was successful" + response.value);
+                if (response.request.operation.indexOf("jfrCheck") > -1) {
+                    render(response);
+                }
+                else {
+                    if (callback) {
+                        callback(response.value);
+                    }
+                    Core.$apply($scope);
+                }
+            }, {
+                error: function (response) {
+                    Diagnostics.log.warn("Diagnostic Operation "
+                        + operation + " failed", response);
+                }
+            }));
+        }
+    }
+    Diagnostics.DiagnosticsJfrController = DiagnosticsJfrController;
+})(Diagnostics || (Diagnostics = {}));
+/// <reference path="diagnostics.service.ts"/>
+var Diagnostics;
+(function (Diagnostics) {
+    DiagnosticsLayoutController.$inject = ["$location", "diagnosticsService"];
+    function DiagnosticsLayoutController($location, diagnosticsService) {
+        'ngInject';
+        this.tabs = diagnosticsService.getTabs();
+        this.goto = function (tab) {
+            $location.path(tab.path);
+        };
+    }
+    Diagnostics.DiagnosticsLayoutController = DiagnosticsLayoutController;
+})(Diagnostics || (Diagnostics = {}));
+var Diagnostics;
+(function (Diagnostics) {
+    DiagnosticsConfig.$inject = ["configManager"];
+    function DiagnosticsConfig(configManager) {
+        'ngInject';
+        configManager
+            .addRoute('/diagnostics/jfr', { templateUrl: 'plugins/diagnostics/html/jfr.html' })
+            .addRoute('/diagnostics/heap', { templateUrl: 'plugins/diagnostics/html/heap.html' })
+            .addRoute('/diagnostics/flags', { templateUrl: 'plugins/diagnostics/html/flags.html' });
+    }
+    Diagnostics.DiagnosticsConfig = DiagnosticsConfig;
+})(Diagnostics || (Diagnostics = {}));
+/// <reference path="../../jmx/ts/workspace.ts"/>
+/// <reference path="diagnostics.service.ts"/>
+var Diagnostics;
+(function (Diagnostics) {
+    DiagnosticsInit.$inject = ["$rootScope", "viewRegistry", "helpRegistry", "workspace", "diagnosticsService"];
+    function DiagnosticsInit($rootScope, viewRegistry, helpRegistry, workspace, diagnosticsService) {
+        'ngInject';
+        viewRegistry['diagnostics'] = 'plugins/diagnostics/html/layout.html';
+        helpRegistry.addUserDoc('diagnostics', 'plugins/diagnostics/doc/help.md');
+        var unsubscribe = $rootScope.$on('jmxTreeUpdated', function () {
+            unsubscribe();
+            var tabs = diagnosticsService.getTabs();
+            workspace.topLevelTabs.push({
+                id: "diagnostics",
+                content: "Diagnostics",
+                title: "JVM Diagnostics",
+                isValid: function () { return tabs.length > 0; },
+                href: function () { return tabs[0].path; },
+                isActive: function (workspace) { return workspace.isLinkActive("diagnostics"); }
+            });
+        });
+    }
+    Diagnostics.DiagnosticsInit = DiagnosticsInit;
+})(Diagnostics || (Diagnostics = {}));
+/// <reference path="diagnostics.config.ts"/>
+/// <reference path="diagnostics.init.ts"/>
+/// <reference path="diagnostics-layout.controller.ts"/>
+/// <reference path="diagnostics-jfr.controller.ts"/>
+/// <reference path="diagnostics-heap.controller.ts"/>
+/// <reference path="diagnostics-flags.controller.ts"/>
+/// <reference path="diagnostics.service.ts"/>
+var Diagnostics;
+(function (Diagnostics) {
+    var pluginName = 'hawtio-diagnostics';
+    Diagnostics.log = Logger.get(pluginName);
+    Diagnostics._module = angular
+        .module(pluginName, [])
+        .config(Diagnostics.DiagnosticsConfig)
+        .run(Diagnostics.DiagnosticsInit)
+        .controller("DiagnosticsLayoutController", Diagnostics.DiagnosticsLayoutController)
+        .controller("DiagnosticsJfrController", Diagnostics.DiagnosticsJfrController)
+        .controller("DiagnosticsHeapController", Diagnostics.DiagnosticsHeapController)
+        .controller("DiagnosticsFlagsController", Diagnostics.DiagnosticsFlagsController)
+        .service('diagnosticsService', Diagnostics.DiagnosticsService);
+    hawtioPluginLoader.addModule(pluginName);
+})(Diagnostics || (Diagnostics = {}));
 /// <reference path="jvmPlugin.ts"/>
 var JVM;
 (function (JVM) {

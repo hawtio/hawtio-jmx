@@ -2,22 +2,72 @@
 /// <reference types="angular" />
 /// <reference types="jquery" />
 /// <reference types="core" />
-/// <reference types="forms" />
 /// <reference types="angular-route" />
-declare namespace Diagnostics {
-    interface JvmFlag {
-        name: string;
-        value: any;
-        writeable: boolean;
-        origin: string;
-        deregisterWatch: any;
-        dataType: string;
-    }
-    interface JvmFlagsScope extends ng.IScope {
-        flags: Array<JvmFlag>;
-        tableDef: any;
-    }
-    function DiagnosticsFlagsController($scope: JvmFlagsScope, jolokia: Jolokia.IJolokia): void;
+/// <reference types="forms" />
+declare namespace JVM {
+    const rootPath = "plugins/jvm";
+    const templatePath: string;
+    const pluginName = "hawtio-jvm";
+    const log: Logging.Logger;
+    const connectControllerKey = "jvmConnectSettings";
+    const connectionSettingsKey: string;
+    const logoPath = "img/icons/jvm/";
+    const logoRegistry: {
+        'jetty': string;
+        'tomcat': string;
+        'generic': string;
+    };
+}
+declare namespace JVM {
+    /**
+     * Adds common properties and functions to the scope
+     * @method configureScope
+     * @for Jvm
+     * @param {*} $scope
+     * @param {ng.ILocationService} $location
+     * @param {Core.Workspace} workspace
+     */
+    function configureScope($scope: any, $location: any, workspace: any): void;
+    function hasLocalMBean(workspace: any): any;
+    function hasDiscoveryMBean(workspace: any): any;
+    /**
+     * Creates a jolokia object for connecting to the container with the given remote jolokia URL,
+     * username and password
+     * @method createJolokia
+     * @for Core
+     * @static
+     * @param {String} url
+     * @param {String} username
+     * @param {String} password
+     * @return {Object}
+     */
+    function createJolokia(url: string, username: string, password: string): Jolokia.IJolokia;
+    function getRecentConnections(localStorage: any): any;
+    function addRecentConnection(localStorage: any, name: any): void;
+    function removeRecentConnection(localStorage: any, name: any): void;
+    function clearConnections(): void;
+    function isRemoteConnection(): boolean;
+    function connectToServer(localStorage: any, options: Core.ConnectToServerOptions): void;
+    function saveConnection(options: Core.ConnectOptions): void;
+    /**
+     * Loads all of the available connections from local storage
+     * @returns {Core.ConnectionMap}
+     */
+    function loadConnections(): Core.ConnectOptions[];
+    /**
+     * Saves the connection map to local storage
+     * @param connections array of all connections to be stored
+     */
+    function saveConnections(connections: Core.ConnectOptions[]): void;
+    function getConnectionNameParameter(): any;
+    /**
+     * Returns the connection options for the given connection name from localStorage
+     */
+    function getConnectOptions(name: string, localStorage?: WindowLocalStorage): Core.ConnectOptions;
+    /**
+     * Creates the Jolokia URL string for the given connection options
+     */
+    function createServerConnectionUrl(options: Core.ConnectOptions): string;
 }
 declare namespace Jmx {
     /**
@@ -221,71 +271,6 @@ declare namespace JVM {
     function ConnectController($scope: any, $location: ng.ILocationService, localStorage: Storage, workspace: Jmx.Workspace, $uibModal: any, connectService: ConnectService): void;
 }
 declare namespace JVM {
-    const rootPath = "plugins/jvm";
-    const templatePath: string;
-    const pluginName = "hawtio-jvm";
-    const log: Logging.Logger;
-    const connectControllerKey = "jvmConnectSettings";
-    const connectionSettingsKey: string;
-    const logoPath = "img/icons/jvm/";
-    const logoRegistry: {
-        'jetty': string;
-        'tomcat': string;
-        'generic': string;
-    };
-}
-declare namespace JVM {
-    /**
-     * Adds common properties and functions to the scope
-     * @method configureScope
-     * @for Jvm
-     * @param {*} $scope
-     * @param {ng.ILocationService} $location
-     * @param {Core.Workspace} workspace
-     */
-    function configureScope($scope: any, $location: any, workspace: any): void;
-    function hasLocalMBean(workspace: any): any;
-    function hasDiscoveryMBean(workspace: any): any;
-    /**
-     * Creates a jolokia object for connecting to the container with the given remote jolokia URL,
-     * username and password
-     * @method createJolokia
-     * @for Core
-     * @static
-     * @param {String} url
-     * @param {String} username
-     * @param {String} password
-     * @return {Object}
-     */
-    function createJolokia(url: string, username: string, password: string): Jolokia.IJolokia;
-    function getRecentConnections(localStorage: any): any;
-    function addRecentConnection(localStorage: any, name: any): void;
-    function removeRecentConnection(localStorage: any, name: any): void;
-    function clearConnections(): void;
-    function isRemoteConnection(): boolean;
-    function connectToServer(localStorage: any, options: Core.ConnectToServerOptions): void;
-    function saveConnection(options: Core.ConnectOptions): void;
-    /**
-     * Loads all of the available connections from local storage
-     * @returns {Core.ConnectionMap}
-     */
-    function loadConnections(): Core.ConnectOptions[];
-    /**
-     * Saves the connection map to local storage
-     * @param connections array of all connections to be stored
-     */
-    function saveConnections(connections: Core.ConnectOptions[]): void;
-    function getConnectionNameParameter(): any;
-    /**
-     * Returns the connection options for the given connection name from localStorage
-     */
-    function getConnectOptions(name: string, localStorage?: WindowLocalStorage): Core.ConnectOptions;
-    /**
-     * Creates the Jolokia URL string for the given connection options
-     */
-    function createServerConnectionUrl(options: Core.ConnectOptions): string;
-}
-declare namespace JVM {
     class ConnectService {
         private $q;
         private $window;
@@ -325,43 +310,6 @@ declare namespace JVM {
         isDummy: boolean;
         running: boolean;
     }
-}
-declare namespace Jmx {
-    const pluginName = "hawtio-jmx";
-    const log: Logging.Logger;
-    let currentProcessId: string;
-    const templatePath = "plugins/jmx/html";
-    /**
-     * Returns the Folder object for the given domain name and type name or null if it can not be found
-     * @method getMBeanTypeFolder
-     * @for Core
-     * @static
-     * @param {Workspace} workspace
-     * @param {String} domain
-     * @param {String} typeName}
-     * @return {Folder}
-     */
-    function getMBeanTypeFolder(workspace: Workspace, domain: string, typeName: string): Folder;
-    /**
-     * Returns the JMX objectName for the given jmx domain and type name
-     * @method getMBeanTypeObjectName
-     * @for Core
-     * @static
-     * @param {Workspace} workspace
-     * @param {String} domain
-     * @param {String} typeName
-     * @return {String}
-     */
-    function getMBeanTypeObjectName(workspace: Workspace, domain: string, typeName: string): string;
-    /**
-     * Creates a remote workspace given a remote jolokia for querying the JMX MBeans inside the jolokia
-     * @param remoteJolokia
-     * @param remoteJolokiaStatus
-     * @param $location
-     * @param localStorage
-     * @return {Workspace}
-     */
-    function createRemoteWorkspace(remoteJolokia: Jolokia.IJolokia, remoteJolokiaStatus: JVM.JolokiaStatus, $location: ng.ILocationService, localStorage: Storage, $rootScope?: ng.IRootScopeService, $compile?: ng.ICompileService, $templateCache?: ng.ITemplateCacheService, HawtioNav?: HawtioMainNav.Registry): Workspace;
 }
 declare namespace Jmx {
     /**
@@ -566,89 +514,42 @@ declare namespace Jmx {
         isOsgiCompendiumFolder(): boolean;
     }
 }
-declare namespace Diagnostics {
-    class DiagnosticsService {
-        private workspace;
-        private configManager;
-        constructor(workspace: Jmx.Workspace, configManager: Core.ConfigManager);
-        getTabs(): any[];
-        private hasHotspotDiagnostic();
-        private hasDiagnosticFunction(operation);
-        findMyPid(title: any): string;
-    }
-}
-declare namespace Diagnostics {
-    interface ClassStats {
-        num: string;
-        count: string;
-        bytes: string;
-        name: string;
-        deltaCount: string;
-        deltaBytes: string;
-    }
-    interface HeapControllerScope extends ng.IScope {
-        items: Array<ClassStats>;
-        loading: boolean;
-        lastLoaded: any;
-        toolbarConfig: any;
-        tableConfig: any;
-        tableDtOptions: any;
-        tableColumns: Array<any>;
-        pageConfig: object;
-        loadClassStats: () => void;
-    }
-    function DiagnosticsHeapController($scope: HeapControllerScope, jolokia: Jolokia.IJolokia, diagnosticsService: DiagnosticsService): void;
-}
-declare namespace Diagnostics {
-    interface JfrSettings {
-        limitType: string;
-        limitValue: string;
-        recordingNumber: string;
-        dumpOnExit: boolean;
-        name: string;
-        filename: string;
-    }
-    interface Recording {
-        number: string;
-        size: string;
-        file: string;
-        time: number;
-    }
-    interface JfrControllerScope extends ng.IScope {
-        forms: any;
-        jfrEnabled: boolean;
-        isRecording: boolean;
-        isRunning: boolean;
-        jfrSettings: JfrSettings;
-        unlock: () => void;
-        startRecording: () => void;
-        stopRecording: () => void;
-        dumpRecording: () => void;
-        formConfig: Forms.FormConfiguration;
-        recordings: Array<Recording>;
-        pid: string;
-        jfrStatus: string;
-        pageTitle: string;
-        settingsVisible: boolean;
-        toggleSettingsVisible: () => void;
-        jcmd: string;
-        closeMessageForGood: (key: string) => void;
-        isMessageVisible: (key: string) => boolean;
-    }
-    function DiagnosticsJfrController($scope: JfrControllerScope, $location: ng.ILocationService, workspace: Jmx.Workspace, jolokia: Jolokia.IJolokia, localStorage: Storage, diagnosticsService: DiagnosticsService): void;
-}
-declare namespace Diagnostics {
-    function DiagnosticsLayoutController($location: any, diagnosticsService: any): void;
-}
-declare namespace Diagnostics {
-    function DiagnosticsConfig(configManager: Core.ConfigManager): void;
-}
-declare namespace Diagnostics {
-    function DiagnosticsInit($rootScope: ng.IScope, viewRegistry: any, helpRegistry: any, workspace: Jmx.Workspace, diagnosticsService: DiagnosticsService): void;
-}
-declare namespace Diagnostics {
+declare namespace Jmx {
+    const pluginName = "hawtio-jmx";
     const log: Logging.Logger;
-    const _module: angular.IModule;
+    let currentProcessId: string;
+    const templatePath = "plugins/jmx/html";
+    /**
+     * Returns the Folder object for the given domain name and type name or null if it can not be found
+     * @method getMBeanTypeFolder
+     * @for Core
+     * @static
+     * @param {Workspace} workspace
+     * @param {String} domain
+     * @param {String} typeName}
+     * @return {Folder}
+     */
+    function getMBeanTypeFolder(workspace: Workspace, domain: string, typeName: string): Folder;
+    /**
+     * Returns the JMX objectName for the given jmx domain and type name
+     * @method getMBeanTypeObjectName
+     * @for Core
+     * @static
+     * @param {Workspace} workspace
+     * @param {String} domain
+     * @param {String} typeName
+     * @return {String}
+     */
+    function getMBeanTypeObjectName(workspace: Workspace, domain: string, typeName: string): string;
+    /**
+     * Creates a remote workspace given a remote jolokia for querying the JMX MBeans inside the jolokia
+     * @param remoteJolokia
+     * @param remoteJolokiaStatus
+     * @param $location
+     * @param localStorage
+     * @return {Workspace}
+     */
+    function createRemoteWorkspace(remoteJolokia: Jolokia.IJolokia, remoteJolokiaStatus: JVM.JolokiaStatus, $location: ng.ILocationService, localStorage: Storage, $rootScope?: ng.IRootScopeService, $compile?: ng.ICompileService, $templateCache?: ng.ITemplateCacheService, HawtioNav?: HawtioMainNav.Registry): Workspace;
 }
 declare namespace Jmx {
     function createDashboardLink(widgetType: any, widget: any): string;
@@ -848,6 +749,8 @@ declare namespace Jmx {
         expandAll(): any;
         contractAll(): any;
     }
+}
+declare namespace Jmx {
     const treeHeaderComponent: angular.IComponentOptions;
 }
 declare namespace Jmx {
@@ -893,6 +796,105 @@ declare namespace Jmx {
     function updateTreeSelectionFromURLAndAutoSelect($location: any, treeElement: any, autoSelect: (Folder) => NodeSelection, activateIfNoneSelected?: boolean): void;
     function getUniqueTypeNames(children: NodeSelection[]): string[];
     function enableTree($scope: any, $location: ng.ILocationService, workspace: Workspace, treeElement: any, children: Array<NodeSelection>): void;
+}
+declare namespace Diagnostics {
+    interface JvmFlag {
+        name: string;
+        value: any;
+        writeable: boolean;
+        origin: string;
+        deregisterWatch: any;
+        dataType: string;
+    }
+    interface JvmFlagsScope extends ng.IScope {
+        flags: Array<JvmFlag>;
+        tableDef: any;
+    }
+    function DiagnosticsFlagsController($scope: JvmFlagsScope, jolokia: Jolokia.IJolokia): void;
+}
+declare namespace Diagnostics {
+    class DiagnosticsService {
+        private workspace;
+        private configManager;
+        constructor(workspace: Jmx.Workspace, configManager: Core.ConfigManager);
+        getTabs(): any[];
+        private hasHotspotDiagnostic();
+        private hasDiagnosticFunction(operation);
+        findMyPid(title: any): string;
+    }
+}
+declare namespace Diagnostics {
+    interface ClassStats {
+        num: string;
+        count: string;
+        bytes: string;
+        name: string;
+        deltaCount: string;
+        deltaBytes: string;
+    }
+    interface HeapControllerScope extends ng.IScope {
+        items: Array<ClassStats>;
+        loading: boolean;
+        lastLoaded: any;
+        toolbarConfig: any;
+        tableConfig: any;
+        tableDtOptions: any;
+        tableColumns: Array<any>;
+        pageConfig: object;
+        loadClassStats: () => void;
+    }
+    function DiagnosticsHeapController($scope: HeapControllerScope, jolokia: Jolokia.IJolokia, diagnosticsService: DiagnosticsService): void;
+}
+declare namespace Diagnostics {
+    interface JfrSettings {
+        limitType: string;
+        limitValue: string;
+        recordingNumber: string;
+        dumpOnExit: boolean;
+        name: string;
+        filename: string;
+    }
+    interface Recording {
+        number: string;
+        size: string;
+        file: string;
+        time: number;
+    }
+    interface JfrControllerScope extends ng.IScope {
+        forms: any;
+        jfrEnabled: boolean;
+        isRecording: boolean;
+        isRunning: boolean;
+        jfrSettings: JfrSettings;
+        unlock: () => void;
+        startRecording: () => void;
+        stopRecording: () => void;
+        dumpRecording: () => void;
+        formConfig: Forms.FormConfiguration;
+        recordings: Array<Recording>;
+        pid: string;
+        jfrStatus: string;
+        pageTitle: string;
+        settingsVisible: boolean;
+        toggleSettingsVisible: () => void;
+        jcmd: string;
+        closeMessageForGood: (key: string) => void;
+        isMessageVisible: (key: string) => boolean;
+    }
+    function DiagnosticsJfrController($scope: JfrControllerScope, $location: ng.ILocationService, workspace: Jmx.Workspace, jolokia: Jolokia.IJolokia, localStorage: Storage, diagnosticsService: DiagnosticsService): void;
+}
+declare namespace Diagnostics {
+    function DiagnosticsLayoutController($location: any, diagnosticsService: any): void;
+}
+declare namespace Diagnostics {
+    function DiagnosticsConfig(configManager: Core.ConfigManager): void;
+}
+declare namespace Diagnostics {
+    function DiagnosticsInit($rootScope: ng.IScope, viewRegistry: any, helpRegistry: any, workspace: Jmx.Workspace, diagnosticsService: DiagnosticsService): void;
+}
+declare namespace Diagnostics {
+    const log: Logging.Logger;
+    const _module: angular.IModule;
 }
 declare namespace JVM {
 }
