@@ -1436,7 +1436,7 @@ angular.module('dangle')
                     ajaxParams.async = false;
                     var xhr = $.ajax(ajaxParams);
                     if (httpSuccess(xhr)) {
-                        return $.parseJSON(xhr.responseText);
+                        return JSON.parse(xhr.responseText);
                     } else {
                         return null;
                     }
