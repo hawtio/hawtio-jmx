@@ -31,9 +31,13 @@ module Runtime {
     export interface Metric {
         index: number;//to prevent default sorting on names alphabetically
         name: string;
-        category: string;
+        categoryLink: CategoryLink;
         value: any;
         referenceValue: any;
+    }
+
+    export interface CategoryLink {
+        description: string;
         link: string;
     }
 
@@ -43,7 +47,9 @@ module Runtime {
     }
 
     export interface MetricsControllerScope extends ng.IScope {
-        metricsTableConfig: any;
+        tableConfig: any;
+        tableDtOptions: any;
+        tableColumns: Array<any>;
         threading: Threading;
         operatingSystem: OperatingSystem;
         heapUsage: MemoryUsage;
@@ -71,51 +77,6 @@ module Runtime {
         CollectionTime: number;
     }
 
-    function metricsTableConfig() {
-        return {
-            selectedItems: [],
-            data: 'metrics',
-            showFilter: true,
-            filterOptions: {
-                filterText: ''
-            },
-            showSelectionCheckbox: false,
-            enableRowClickSelection: true,
-            multiSelect: false,
-            primaryKeyFn: ( entity, idx ) => {
-                return entity.index;
-            },
-            columnDefs: [
-                {
-                    field: 'index',
-                    displayName: '#'
-                },
-                {
-                    field: 'name',
-                    displayName: 'Metric',
-                    resizable: true
-                },
-                {
-                    field: 'category',
-                    displayName: 'Category',
-                    resizable: true,
-                    cellTemplate: '<div class="ngCellText ng-binding" title="row.entity.category"><a href="{{row.entity.link}}">{{row.entity.category}}</a></div>'
-                },
-                {
-                    field: 'value',
-                    displayName: 'Value',
-                    resizable: true,
-                    cellTemplate: '<div class="align-right ngCellText ng-binding" title="row.entity.value">{{row.entity.value}}</div>'
-                },
-                {
-                    field: 'referenceValue',
-                    displayName: '',
-                    resizable: true,
-                    cellTemplate: '<div class="align-right ngCellText ng-binding" title="row.entity.referenceValue">{{row.entity.referenceValue}}</div>'
-                }
-            ]
-        };
-    }
 
     function deriveMetrics( scope: MetricsControllerScope, filter: ng.IFilterService ) {
 
@@ -149,22 +110,22 @@ module Runtime {
 
         if ( scope.operatingSystem ) {
             var osLink = 'jmx/attributes?nid=root-java.lang-OperatingSystem';
-            newMetrics.push( { index: index++, name: 'File descriptors (open/max)', category: 'OS', value: withSpaceAsThousandSeparator( scope.operatingSystem.OpenFileDescriptorCount ), referenceValue: withSpaceAsThousandSeparator( scope.operatingSystem.MaxFileDescriptorCount ), link: osLink });
-            newMetrics.push( { index: index++, name: 'System CPU load', category: 'OS', value: toPercentage( scope.operatingSystem.SystemCpuLoad ), referenceValue: '', link: osLink });
+            newMetrics.push( { index: index++, name: 'File descriptors (open/max)', categoryLink: {description: 'OS', link: osLink}, value: withSpaceAsThousandSeparator( scope.operatingSystem.OpenFileDescriptorCount ), referenceValue: withSpaceAsThousandSeparator( scope.operatingSystem.MaxFileDescriptorCount ) });
+            newMetrics.push( { index: index++, name: 'System CPU load', categoryLink: {description: 'OS', link: osLink}, value: toPercentage( scope.operatingSystem.SystemCpuLoad ), referenceValue: '' });
             newMetrics.push( {
-                index: index++, name: 'Physical memory (free/total)', category: 'OS', link: osLink,
+                index: index++, name: 'Physical memory (free/total)', categoryLink: {description: 'OS', link: osLink},
                 value: separatedAndWithPercent( scope.operatingSystem.FreePhysicalMemorySize, scope.operatingSystem.TotalPhysicalMemorySize ),
                 referenceValue: withSpaceAsThousandSeparator( scope.operatingSystem.TotalPhysicalMemorySize )
             });
 
             newMetrics.push( {
-                index: index++, name: 'Swap memory space (free/total)', category: 'OS', link: osLink,
+                index: index++, name: 'Swap memory space (free/total)', categoryLink: {description: 'OS', link: osLink},
                 value: separatedAndWithPercent( scope.operatingSystem.FreeSwapSpaceSize, scope.operatingSystem.TotalSwapSpaceSize ),
                 referenceValue: withSpaceAsThousandSeparator( scope.operatingSystem.TotalSwapSpaceSize )
             });
 
             newMetrics.push( {
-                index: index++, name: 'Process CPU (load/time)', category: 'OS', link: osLink,
+                index: index++, name: 'Process CPU (load/time)', categoryLink: {description: 'OS', link: osLink},
                 value: toPercentage( scope.operatingSystem.ProcessCpuLoad ),
                 referenceValue: Core.humanizeMilliseconds( scope.operatingSystem.ProcessCpuTime / 1000000 )
             });
@@ -173,7 +134,7 @@ module Runtime {
 
         if ( scope.heapUsage ) {
             newMetrics.push( {
-                index: index++, name: 'Heap usage (used/max)', category: 'Memory', link: 'diagnostics/heap',
+                index: index++, name: 'Heap usage (used/max)', categoryLink: {description: 'OS', link: osLink},
                 value: separatedAndWithPercent( scope.heapUsage.used, scope.heapUsage.max ),
                 referenceValue: withSpaceAsThousandSeparator( scope.heapUsage.max )
             });
@@ -181,14 +142,14 @@ module Runtime {
 
         if ( scope.threading ) {
             newMetrics.push( {
-                index: index++, name: 'Thread count (current/peak)', category: 'Threads', link: 'threads',
+                index: index++, name: 'Thread count (current/peak)', categoryLink: {description: 'Threads', link: 'threads'},
                 value: scope.threading.ThreadCount, referenceValue: scope.threading.PeakThreadCount
             });
         }
 
         if ( scope.classLoading ) {
             newMetrics.push( {
-                index: index++, name: 'Classes loaded (current/peak)', category: 'Code', link: 'diagnostics/heap',
+                index: index++, name: 'Classes loaded (current/peak)', categoryLink: {description: 'Code', link: 'diagnostics/heap'},
                 value: withSpaceAsThousandSeparator( scope.classLoading.LoadedClassCount ),
                 referenceValue: withSpaceAsThousandSeparator( scope.classLoading.TotalLoadedClassCount )
             });
@@ -197,7 +158,7 @@ module Runtime {
         for ( var name in scope.garbageCollectors ) {
             var garbageCollector: GarbageCollector = scope.garbageCollectors[name];
             newMetrics.push( {
-                index: index++, name: garbageCollector.Name + ' (collections/time)', category: 'GC', link: 'jmx/attributes?nid=root-java.lang-GarbageCollector',
+                index: index++, name: garbageCollector.Name + ' (collections/time)', categoryLink: {description: 'GC', link: 'jmx/attributes?nid=root-java.lang-GarbageCollector'},
                 value: garbageCollector.CollectionCount, referenceValue: withSpaceAsThousandSeparator( garbageCollector.CollectionTime ) + " ms"
             });
         }
@@ -217,7 +178,6 @@ module Runtime {
                 Core.$apply( $scope );
             }
         }
-        $scope.metricsTableConfig = metricsTableConfig();
         $scope.updaters = {};
         $scope.garbageCollectors = {};
         $scope.updaters['java.lang:type=Threading'] = ( threading: Threading ) => { $scope.threading = threading };
@@ -243,6 +203,47 @@ module Runtime {
                 arguments: []
             });
         }
+
+    $scope.tableConfig = {
+      selectionMatchProp: 'name',
+      showCheckboxes: false
+    };
+
+    $scope.tableDtOptions = {
+      order: [[0, "asc"]]
+    };
+
+
+    $scope.tableColumns = [
+      {
+        header: '#',
+        itemField: 'index',
+      },
+      {
+        header: 'Metric',
+        itemField: 'name',
+      },
+
+      {
+          itemField: 'categoryLink',
+          header: 'Category',
+          templateFn: value => `<div class="ngCellText ng-binding" title="${value.description}"><a href="${value.link}">${value.description}</a></div>`
+      },
+{
+          itemField: 'value',
+          header: 'Value',
+          templateFn: value => `<div class="align-right ngCellText ng-binding" title="${value}">${value}</div>`
+      },
+{
+          itemField: 'referenceValue',
+          header: '',
+          templateFn: value => `<div class="align-right ngCellText ng-binding" title="${value}">${value}</div>`
+      }
+
+
+    ];
+//<div class="ngCellText ng-binding" title="row.entity.category"><a href="{{row.entity.link}}">{{row.entity.category}}</a></div>
+
         Core.register( jolokia, $scope, requests, Core.onSuccess( render ) );
     }
 }
