@@ -19,6 +19,18 @@ namespace JVM {
       });
     }
 
+    execute(mbean: string, operation: string, ...args: any[]): ng.IPromise<any> {
+      return this.$q((resolve, reject) => {
+        this.jolokia.request(
+          { type: 'exec', mbean: mbean, operation: operation, arguments: args },
+          { success: response => resolve(response.value) },
+          { error: response => {
+              log.error(`JolokiaService.execute('${mbean}', '${operation}', '${args}') failed. Error: ${response.error}`);
+              reject(response.error);
+            }
+          });
+      });
+    }
   }
 
   _module.service("jolokiaService", JolokiaService);

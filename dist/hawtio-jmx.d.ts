@@ -901,6 +901,7 @@ declare namespace JVM {
         private jolokia;
         constructor($q: ng.IQService, jolokia: Jolokia.IJolokia);
         getAttribute(mbean: string, attribute: string): ng.IPromise<any>;
+        execute(mbean: string, operation: string, ...args: any[]): ng.IPromise<any>;
     }
 }
 /**
