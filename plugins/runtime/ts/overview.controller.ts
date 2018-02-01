@@ -13,6 +13,9 @@ module Runtime {
         operatingSystem: OperatingSystem;
         classPath: string;
         uptime: String;
+        showSummary: boolean;
+        showWd: boolean;
+        showCmd: boolean;
     }
 
     function javaPath( runtime: Runtime ) {
@@ -63,6 +66,9 @@ module Runtime {
             Core.$apply( $scope );
 
         }
+        $scope.showSummary = true;
+        $scope.showWd = true;
+        $scope.showCmd = true;
         Core.register( jolokia, $scope, [{
             type: 'read',
             mbean: runtimeMbean,

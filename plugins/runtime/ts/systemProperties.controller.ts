@@ -12,6 +12,7 @@ namespace Runtime {
     tableConfig: any;
     tableDtOptions: any;
     tableColumns: Array<any>;
+    rowNum: number;
 
 }
 
@@ -20,6 +21,7 @@ namespace Runtime {
     export function RuntimeSystemPropertiesController( $scope: SystemPropertiesControllerScope, jolokia: Jolokia.IJolokia, workspace: Jmx.Workspace )  {
         'ngInject';
         $scope.systemProperties = [];
+        $scope.rowNum = 0;
 
     const FILTER_FUNCTIONS = {
       name: (systemProperties, name) => {
@@ -96,17 +98,22 @@ namespace Runtime {
     };
 
 
+    let row = 0;
     $scope.tableColumns = [
       {
         header: 'Property',
         itemField: 'name',
-        templateFn: value => `<div class="forceBreakLongLines hardWidthLimitM" zero-clipboard data-clipboard-text="${value}">${value}</div>`
+        templateFn: value => {
+          const id="key-" + value.replace('.','-');
+          return '<div class="forceBreakLongLines hardWidthLimitM" id="' + id + ' " hawtio-clipboard="#' + id + '"  data-clipboard-target="#' + id + '">' + value + '</div>';}
       },
 
       {
           itemField: 'value',
           header: 'Value',
-          templateFn: value => `<div class="forceBreakLongLines hardWidthLimitM" zero-clipboard data-clipboard-text="${value}">${value}</div>`
+          templateFn: (value, item) => {
+            const id="key-" + item.name.replace('.','-');
+            return '<div class="forceBreakLongLines hardWidthLimitM" id="' + id + ' " hawtio-clipboard="#' + id + '"  data-clipboard-target="#' + id + '">' + value + '</div>';}
       }
 
     ];
