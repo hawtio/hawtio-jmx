@@ -66,7 +66,7 @@ namespace JVM {
       options["userName"] = "";
       options["password"] = "";
       // connect to root by default as we do not want to show welcome page
-      options["view"] = "#/";
+      options["view"] = "runtime/overview";
 
       const con = Core.createConnectToServerOptions(options);
       con.name = "local-" + port;

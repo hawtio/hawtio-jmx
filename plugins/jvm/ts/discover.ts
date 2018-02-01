@@ -41,6 +41,7 @@ namespace JVM {
       angular.extend(options, urlObject);
       options.userName = agent.username;
       options.password = agent.password;
+      options.view="runtime/overview";
       connectToServer(localStorage, options);
     }
 
