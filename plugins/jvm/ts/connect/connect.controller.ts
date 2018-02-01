@@ -177,7 +177,7 @@ namespace JVM {
       window.close();
     }
 
-    $scope.connections = loadConnections();    
+    $scope.connections = loadConnections();
   }
 
 }

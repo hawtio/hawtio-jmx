@@ -48,7 +48,7 @@ namespace JVM {
         _.merge(options, jolokiaURI.query(true));
         _.assign(options, query);
         log.debug("options: ", options);
-        let connections = loadConnections();
+        const connections = loadConnections().filter(connection => connection.name !== name);
         connections.push(options);
         saveConnections(connections);
         uri.hash("").query({
