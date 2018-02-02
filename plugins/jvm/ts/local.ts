@@ -65,7 +65,7 @@ namespace JVM {
       // add empty username as we dont need login
       options["userName"] = "";
       options["password"] = "";
-      // connect to root by default as we do not want to show welcome page
+      // show the overview tab by default to give confirmation to the user that the connection was ok
       options["view"] = "runtime/overview";
 
       const con = Core.createConnectToServerOptions(options);

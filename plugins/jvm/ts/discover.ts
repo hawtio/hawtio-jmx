@@ -41,6 +41,7 @@ namespace JVM {
       angular.extend(options, urlObject);
       options.userName = agent.username;
       options.password = agent.password;
+      // show the overview tab by default to give confirmation to the user that the connection was ok
       options.view="runtime/overview";
       connectToServer(localStorage, options);
     }
