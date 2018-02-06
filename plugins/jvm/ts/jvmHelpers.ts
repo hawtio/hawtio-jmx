@@ -107,8 +107,8 @@ module Core {
     addRecentConnection(localStorage, options.name);
     if (!('userName' in options)) {
       var userDetails = <Core.UserDetails> HawtioCore.injector.get('userDetails');
-      options.userName = userDetails.username;
-      options.password = userDetails.password;
+      options['userName'] = userDetails.username;
+      options['password'] = userDetails.password;
     }
     saveConnection(options);
     var $window:ng.IWindowService = HawtioCore.injector.get<ng.IWindowService>('$window');

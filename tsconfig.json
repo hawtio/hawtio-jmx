@@ -2,6 +2,7 @@
     "compilerOptions": {
       "target": "ES5",
       "outFile": "compiled.js",
+      "declaration": true,
       "typeRoots": [
         "libs/hawtio-core-dts/types"
       ]

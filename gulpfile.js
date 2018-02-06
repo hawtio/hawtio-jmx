@@ -34,24 +34,22 @@ gulp.task('clean-defs', function() {
   return del('defs.d.ts');
 });
 
-gulp.task('tsc', ['clean-defs'], function() {
-  var cwd = process.cwd();
+/** Adjust the reference path of any typescript-built plugin this project depends on */
+gulp.task('path-adjust', function() {
+  return gulp.src('libs/**/defs.d.ts')
+    .pipe(plugins.replace(/"libs/gm, '"../../libs'))
+    .pipe(gulp.dest('libs'));
+});
+
+gulp.task('tsc', ['clean-defs', 'path-adjust'], function() {
   var tsResult = gulp.src(config.ts)
     .pipe(config.tsProject());
-
-    return eventStream.merge(
-      tsResult.js
-        .pipe(plugins.concat('compiled.js'))
-        .pipe(gulp.dest('.')),
-      tsResult.dts
-        .pipe(gulp.dest('d.ts')))
-        .pipe(plugins.filter('**/*.d.ts'))
-        .pipe(plugins.concatFilenames('defs.d.ts', {
-          root: cwd,
-          prepend: '/// <reference path="',
-          append: '"/>'
-        }))
-        .pipe(gulp.dest('.'));
+  return eventStream.merge(
+    tsResult.js,
+    tsResult.dts
+      .pipe(plugins.rename('defs.d.ts'))
+  )
+  .pipe(gulp.dest('.'));
 });
 
 gulp.task('less', function () {
