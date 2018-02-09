@@ -3,7 +3,6 @@
 /// <reference types="jquery" />
 /// <reference types="core" />
 /// <reference types="forms" />
-/// <reference types="angular-route" />
 declare namespace Diagnostics {
     interface JvmFlag {
         name: string;
@@ -699,20 +698,13 @@ declare namespace Jmx {
     const headerComponent: angular.IComponentOptions;
 }
 declare namespace Jmx {
-    class TabController {
-        private $scope;
-        private $route;
+    class NavigationController {
         private $location;
-        private layoutTree;
-        private layoutFull;
-        private viewRegistry;
-        private workspace;
-        constructor($scope: any, $route: angular.route.IRouteService, $location: ng.ILocationService, layoutTree: string, layoutFull: any, viewRegistry: any, workspace: Workspace);
-        isTabActive(path: string): boolean;
-        goto(path: string): ng.ILocationService;
-        editChart(): ng.ILocationService | boolean;
+        constructor($location: ng.ILocationService);
+        tabs: Core.HawtioTab[];
+        goto(tab: Core.HawtioTab): void;
     }
-    const tabComponent: angular.IComponentOptions;
+    const navigationComponent: angular.IComponentOptions;
 }
 declare namespace Jmx {
     const commonModule: string;
