@@ -1,0 +1,13 @@
+<div class="runtime-controller"
+	ng-controller="RuntimeSystemPropertiesController">
+  <h1>System Properties</h1>
+
+	<div class="row-fluid">
+    <div>
+      <pf-toolbar config="toolbarConfig">
+      </pf-toolbar>
+      <pf-table-view config="tableConfig" dt-options="tableDtOptions"
+                     colummns="tableColumns" items="filteredProperties"></pf-table-view>
+    </div>
+	</div>
+</div>
