@@ -5,7 +5,7 @@ namespace JVM {
   _module.controller("JVM.DiscoveryController", ["$scope", "localStorage", "jolokia", ($scope, localStorage, jolokia) => {
 
     $scope.discovering = true;
-    $scope.agents = <any> undefined;
+    $scope.agents = <any>undefined;
 
     $scope.$watch('agents', (newValue, oldValue) => {
       if (newValue !== oldValue) {
@@ -17,17 +17,17 @@ namespace JVM {
       (<any>$)($event.currentTarget).parents('.popover').prev().popover('hide');
     };
 
-    function getMoreJvmDetails(agents){
-        for(let key in agents) {
-            const agent=agents[key];
-            if(agent.url && !agent.secured ) {
-                const dedicatedJolokia=createJolokia(agent.url, agent.username, agent.password);
-                agent.startTime=dedicatedJolokia.getAttribute('java.lang:type=Runtime', 'StartTime');
-                if(!$scope.hasName(agent)){//only look for command if agent vm is not known
-                    agent.command=dedicatedJolokia.getAttribute('java.lang:type=Runtime', 'SystemProperties', 'sun.java.command');
-                }
-            }
+    function getMoreJvmDetails(agents) {
+      for (let key in agents) {
+        const agent = agents[key];
+        if (agent.url && !agent.secured) {
+          const dedicatedJolokia = createJolokia(agent.url, agent.username, agent.password);
+          agent.startTime = dedicatedJolokia.getAttribute('java.lang:type=Runtime', 'StartTime');
+          if (!$scope.hasName(agent)) {//only look for command if agent vm is not known
+            agent.command = dedicatedJolokia.getAttribute('java.lang:type=Runtime', 'SystemProperties', 'sun.java.command');
+          }
         }
+      }
     }
 
     function doConnect(agent) {
@@ -35,8 +35,8 @@ namespace JVM {
         Core.notification('warning', 'No URL available to connect to agent');
         return;
       }
-      const options:Core.ConnectToServerOptions = Core.createConnectOptions();
-      options.name = agent.agent_description  || 'discover-' + agent.agent_id;
+      const options: Core.ConnectOptions = Core.createConnectOptions();
+      options.name = agent.agent_description || 'discover-' + agent.agent_id;
       const urlObject = Core.parseUrl(agent.url);
       angular.extend(options, urlObject);
       options.userName = agent.username;
@@ -87,7 +87,6 @@ namespace JVM {
 
     $scope.hasName = (agent) => {
       return !!(agent.server_vendor && agent.server_product && agent.server_version);
-
     };
 
     $scope.render = (response) => {

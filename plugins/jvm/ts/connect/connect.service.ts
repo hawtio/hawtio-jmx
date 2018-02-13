@@ -3,7 +3,7 @@
 namespace JVM {
 
   export class ConnectService {
-    
+
     constructor(private $q: ng.IQService, private $window: ng.IWindowService) {
       'ngInject';
     }
@@ -19,30 +19,30 @@ namespace JVM {
         }).request({
           type: 'version'
         }, {
-          success: response => {
-            resolve('Connected successfully');
-          },
-          error: response => {
-            reject('Connection failed');
-          },
-          ajaxError: response => {
-            reject(response.status === 403 ? 'Incorrect username or password' : 'Connection failed');
-            console.clear();
-          }
-        });
+            success: response => {
+              resolve('Connected successfully');
+            },
+            error: response => {
+              reject('Connection failed');
+            },
+            ajaxError: response => {
+              reject(response.status === 403 ? 'Incorrect username or password' : 'Connection failed');
+              console.clear();
+            }
+          });
       });
     };
 
-    connect(connection: Core.ConnectToServerOptions) {
+    connect(connection: Core.ConnectOptions) {
       log.debug("Connecting with options: ", StringHelpers.toString(connection));
-      const url = URI('').search({con: connection.name}).toString();
+      const url = URI('').search({ con: connection.name }).toString();
       const newWindow = this.$window.open(url);
       newWindow['credentials'] = {
         username: connection.userName,
         password: connection.password
       };
     }
-    
+
   }
 
 }

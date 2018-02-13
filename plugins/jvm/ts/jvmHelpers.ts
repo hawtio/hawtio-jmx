@@ -32,11 +32,11 @@ namespace JVM {
   }
 
   export function hasLocalMBean(workspace) {
-    return workspace.treeContainsDomainAndProperties('hawtio', {type: 'JVMList'});
+    return workspace.treeContainsDomainAndProperties('hawtio', { type: 'JVMList' });
   }
 
   export function hasDiscoveryMBean(workspace) {
-    return workspace.treeContainsDomainAndProperties('jolokia', {type: 'Discovery'});
+    return workspace.treeContainsDomainAndProperties('jolokia', { type: 'Discovery' });
   }
 
   /**
@@ -51,7 +51,7 @@ namespace JVM {
    * @return {Object}
    */
   export function createJolokia(url: string, username: string, password: string) {
-    const jolokiaParams:Jolokia.IParams = {
+    const jolokiaParams: Jolokia.IParams = {
       url: url,
       username: username,
       password: password,
@@ -88,18 +88,18 @@ namespace JVM {
     return ('con' in new URI().query(true));
   }
 
-  export function connectToServer(localStorage, options:Core.ConnectToServerOptions) {
+  export function connectToServer(localStorage, options: Core.ConnectOptions) {
     log.debug("Connecting with options: ", StringHelpers.toString(options));
     const clone = angular.extend({}, options);
     addRecentConnection(localStorage, clone.name);
     if (!('userName' in clone)) {
-      const userDetails = <Core.UserDetails> HawtioCore.injector.get('userDetails');
+      const userDetails = <Core.UserDetails>HawtioCore.injector.get('userDetails');
       clone.userName = userDetails.username;
       clone.password = userDetails.password;
     }
     //must save to local storage, to be picked up by new tab
     saveConnection(clone);
-    const $window:ng.IWindowService = HawtioCore.injector.get<ng.IWindowService>('$window');
+    const $window: ng.IWindowService = HawtioCore.injector.get<ng.IWindowService>('$window');
     let url = (clone.view || '/') + '?con=' + clone.name;
     url = url.replace(/\?/g, "&");
     url = url.replace(/&/, "?");
@@ -115,8 +115,8 @@ namespace JVM {
   export function saveConnection(options: Core.ConnectOptions) {
     const connections = loadConnections();
 
-    let existingIndex=_.findIndex(connections, (element) => {return element.name === options.name});
-    if(existingIndex != -1) {
+    let existingIndex = _.findIndex(connections, (element) => { return element.name === options.name });
+    if (existingIndex != -1) {
       connections[existingIndex] = options;
     } else {
       connections.unshift(options);
@@ -133,14 +133,14 @@ namespace JVM {
   export function loadConnections(): Core.ConnectOptions[] {
     const localStorage = Core.getLocalStorage();
     try {
-      const connections = <Core.ConnectOptions[]> angular.fromJson(localStorage[Core.connectionSettingsKey]);
+      const connections = <Core.ConnectOptions[]>angular.fromJson(localStorage[Core.connectionSettingsKey]);
       if (!connections) {
         // nothing found on local storage
-        return <Core.ConnectOptions[]> [];
+        return <Core.ConnectOptions[]>[];
       } else if (!_.isArray(connections)) {
         // found the legacy connections map
         delete localStorage[Core.connectionSettingsKey];
-        return <Core.ConnectOptions[]> [];
+        return <Core.ConnectOptions[]>[];
       } else {
         // found a valid connections array
         return connections;
@@ -148,7 +148,7 @@ namespace JVM {
     } catch (e) {
       // corrupt config
       delete localStorage[Core.connectionSettingsKey];
-      return <Core.ConnectOptions[]> [];
+      return <Core.ConnectOptions[]>[];
     }
   }
 
@@ -163,12 +163,12 @@ namespace JVM {
 
   export function getConnectionNameParameter() {
     return new URI().search(true)['con'];
-}
+  }
 
   /**
    * Returns the connection options for the given connection name from localStorage
    */
-  export function getConnectOptions(name:string, localStorage = Core.getLocalStorage()): Core.ConnectOptions {
+  export function getConnectOptions(name: string, localStorage = Core.getLocalStorage()): Core.ConnectOptions {
     if (!name) {
       return null;
     }
@@ -179,18 +179,18 @@ namespace JVM {
   /**
    * Creates the Jolokia URL string for the given connection options
    */
-  export function createServerConnectionUrl(options:Core.ConnectOptions) {
+  export function createServerConnectionUrl(options: Core.ConnectOptions) {
     Logger.get("Core").debug("Connect to server, options: ", StringHelpers.toString(options));
-    let answer:string = null;
+    let answer: string = null;
     if (options.jolokiaUrl) {
       answer = <string>options.jolokiaUrl;
     }
     if (answer === null) {
       const uri = new URI();
-      uri.protocol(<string> options.scheme || 'http')
-         .host(<string> options.host || 'localhost')
-         .port(<string> (options.port || '80'))
-         .path(<string> options.path);
+      uri.protocol(<string>options.scheme || 'http')
+        .host(<string>options.host || 'localhost')
+        .port(<string>(options.port || '80'))
+        .path(<string>options.path);
 
       answer = UrlHelpers.join('proxy', uri.protocol(), uri.hostname(), uri.port(), uri.path());
     }

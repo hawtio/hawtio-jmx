@@ -90,9 +90,9 @@
     codemirror "5.33.0"
     js-beautify "1.7.5"
 
-"@hawtio/utilities@3.2.0", "@hawtio/utilities@~3.0.8":
-  version "3.2.0"
-  resolved "https://registry.yarnpkg.com/@hawtio/utilities/-/utilities-3.2.0.tgz#31506054856fdd3013ab3e4c8dadbcb55f599ef9"
+"@hawtio/utilities@3.2.0", "@hawtio/utilities@3.2.1", "@hawtio/utilities@~3.0.8":
+  version "3.2.1"
+  resolved "https://registry.yarnpkg.com/@hawtio/utilities/-/utilities-3.2.1.tgz#5b0edabd0682083967144ae764b26120b42f6340"
   dependencies:
     "@hawtio/core" "3.2.1"
     angular-file-upload "~2.5.0"

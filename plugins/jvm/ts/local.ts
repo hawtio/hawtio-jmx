@@ -14,10 +14,10 @@ namespace JVM {
     $scope.initDone = false;
     $scope.filter = '';
     const listRequest = {
-        type: 'exec', mbean: mbeanName,
-        operation: 'listLocalJVMs()',
-        arguments: []
-      };
+      type: 'exec', mbean: mbeanName,
+      operation: 'listLocalJVMs()',
+      arguments: []
+    };
 
     $scope.filterMatches = (jvm) => {
       if (Core.isBlank($scope.filter)) {
@@ -52,7 +52,7 @@ namespace JVM {
         type: 'exec', mbean: mbeanName,
         operation: 'startAgent(java.lang.String)',
         arguments: [pid]
-      },listRequest], Core.onSuccess(renderIfList));
+      }, listRequest], Core.onSuccess(renderIfList));
     };
 
     $scope.connectTo = (url, scheme, host, port, path) => {
@@ -68,7 +68,7 @@ namespace JVM {
       // connect to root by default as we do not want to show welcome page
       options["view"] = "#/";
 
-      const con = Core.createConnectToServerOptions(options);
+      const con = Core.createConnectOptions(options);
       con.name = "local-" + port;
 
       log.debug("Connecting to local JVM agent: " + url);
@@ -81,9 +81,9 @@ namespace JVM {
      * how to respond to success
      */
     function renderIfList(response) {
-        if ( response.request.operation.indexOf( "listLocalJVMs" ) > -1 ) {
-           render( response );
-        }
+      if (response.request.operation.indexOf("listLocalJVMs") > -1) {
+        render(response);
+      }
     }
 
     function render(response) {
