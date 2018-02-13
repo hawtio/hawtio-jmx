@@ -1,5 +1,10 @@
 ### Change Log
 
+#### 3.2.10
+* Clear local storage upon Jolokia invocation logout
+
+...
+
 #### 2.0.3
 * Search/replace bootstrap 2.x classes to 3.x
 

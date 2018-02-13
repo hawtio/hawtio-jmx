@@ -262,6 +262,8 @@ namespace JVM {
               authService.logout(); // just logout
             }
             Core.executePreLogoutTasks(() => {
+              Core.clearLocalStorageOnLogout(localStorage);
+
               Core.executePostLogoutTasks(() => {
                 log.debug("Executing logout callback after successfully executed postLogoutTasks");
               });
