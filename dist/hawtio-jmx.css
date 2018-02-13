@@ -473,6 +473,41 @@ div.tree-nav-layout .sidebar-pf .rg-right {
   margin-top: 20px;
 }
 
+.runtime-nav-main {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: auto;
+}
+.runtime-nav-main .nav-tabs {
+  flex: 0 0 auto;
+  padding-top: 20px;
+  margin-left: 20px;
+  margin-right: 20px;
+}
+.runtime-nav-main .contents {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  position: relative;
+  padding-left: 20px;
+  padding-right: 20px;
+}
+
+.runtime-sysprops-main .table {
+  table-layout: fixed;
+  margin-bottom: 0;
+}
+.runtime-sysprops-main .table th:nth-child(1) {
+  width: 300px;
+}
+.runtime-sysprops-main .table td:nth-child(1) {
+  width: 300px;
+  word-break: break-all;
+}
+.runtime-sysprops-main .table td:nth-child(2) {
+  word-break: break-all;
+}
+
 @media screen and (max-width: 767px) {
 }
 @media (min-width: 768px) {

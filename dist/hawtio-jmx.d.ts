@@ -1,8 +1,56 @@
+/// <reference types="angular-route" />
 /// <reference types="angular" />
+/// <reference types="core" />
 /// <reference types="utilities" />
 /// <reference types="jquery" />
-/// <reference types="core" />
 /// <reference types="forms" />
+declare namespace Runtime {
+    function configureRoutes($routeProvider: angular.route.IRouteProvider): void;
+    function configureRuntime($rootScope: ng.IScope, viewRegistry: any, helpRegistry: Core.HelpRegistry, workspace: Jmx.Workspace): void;
+}
+declare namespace Runtime {
+    interface SystemProperty {
+        name: string;
+        value: string;
+    }
+}
+declare namespace Runtime {
+    class SystemPropertiesService {
+        private jolokiaService;
+        constructor(jolokiaService: JVM.JolokiaService);
+        getSystemProperties(): ng.IPromise<SystemProperty[]>;
+    }
+}
+declare namespace Runtime {
+    class SystemPropertiesController {
+        private $interval;
+        private systemPropertiesService;
+        private toolbarConfig;
+        private tableConfig;
+        private pageConfig;
+        private tableColumns;
+        private tableDtOptions;
+        private sysprops;
+        private tableItems;
+        constructor($interval: ng.IIntervalService, systemPropertiesService: SystemPropertiesService);
+        $onInit(): void;
+        private loadData();
+        private applyFilters(filters);
+    }
+    const systemPropertiesComponent: angular.IComponentOptions;
+}
+declare namespace Runtime {
+    const systemPropertiesModule: string;
+}
+declare namespace Runtime {
+    function RuntimeLayoutController($location: ng.ILocationService): void;
+}
+declare namespace Runtime {
+    const layoutModule: string;
+}
+declare namespace Runtime {
+    const log: Logging.Logger;
+}
 declare namespace Diagnostics {
     interface JvmFlag {
         name: string;
@@ -27,7 +75,7 @@ declare namespace JVM {
     const pluginName = "hawtio-jvm";
     const log: Logging.Logger;
     const connectControllerKey = "jvmConnectSettings";
-    const connectionSettingsKey = "jvmConnect";
+    const connectionSettingsKey: string;
     const logoPath = "img/icons/jvm/";
     const logoRegistry: {
         'jetty': string;
