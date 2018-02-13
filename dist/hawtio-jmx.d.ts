@@ -27,7 +27,7 @@ declare namespace JVM {
     const pluginName = "hawtio-jvm";
     const log: Logging.Logger;
     const connectControllerKey = "jvmConnectSettings";
-    const connectionSettingsKey: string;
+    const connectionSettingsKey = "jvmConnect";
     const logoPath = "img/icons/jvm/";
     const logoRegistry: {
         'jetty': string;
@@ -64,7 +64,7 @@ declare namespace JVM {
     function removeRecentConnection(localStorage: any, name: any): void;
     function clearConnections(): void;
     function isRemoteConnection(): boolean;
-    function connectToServer(localStorage: any, options: Core.ConnectToServerOptions): void;
+    function connectToServer(localStorage: any, options: Core.ConnectOptions): void;
     function saveConnection(options: Core.ConnectOptions): void;
     /**
      * Loads all of the available connections from local storage
@@ -92,7 +92,7 @@ declare namespace JVM {
         private $window;
         constructor($q: ng.IQService, $window: ng.IWindowService);
         testConnection(connection: Core.ConnectOptions): ng.IPromise<string>;
-        connect(connection: Core.ConnectToServerOptions): void;
+        connect(connection: Core.ConnectOptions): void;
     }
 }
 declare namespace JVM {

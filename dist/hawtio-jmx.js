@@ -4704,6 +4704,7 @@ var JVM;
                             authService.logout(); // just logout
                         }
                         Core.executePreLogoutTasks(function () {
+                            Core.clearLocalStorageOnLogout(localStorage);
                             Core.executePostLogoutTasks(function () {
                                 JVM.log.debug("Executing logout callback after successfully executed postLogoutTasks");
                             });
@@ -8765,7 +8766,7 @@ var JVM;
                 options["password"] = "";
                 // connect to root by default as we do not want to show welcome page
                 options["view"] = "#/";
-                var con = Core.createConnectToServerOptions(options);
+                var con = Core.createConnectOptions(options);
                 con.name = "local-" + port;
                 JVM.log.debug("Connecting to local JVM agent: " + url);
                 JVM.connectToServer(localStorage, con);
