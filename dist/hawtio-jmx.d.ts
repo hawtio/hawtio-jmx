@@ -75,7 +75,7 @@ declare namespace JVM {
     const pluginName = "hawtio-jvm";
     const log: Logging.Logger;
     const connectControllerKey = "jvmConnectSettings";
-    const connectionSettingsKey: string;
+    const connectionSettingsKey = "jvmConnect";
     const logoPath = "img/icons/jvm/";
     const logoRegistry: {
         'jetty': string;
