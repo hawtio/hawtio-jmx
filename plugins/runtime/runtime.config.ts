@@ -6,6 +6,7 @@ namespace Runtime {
     $routeProvider
       .when('/runtime', {redirectTo: '/runtime/sysprops'})
       .when('/runtime/sysprops', {template: '<runtime-system-properties></runtime-system-properties>'})
+      .when('/runtime/metrics', {template: '<runtime-metrics></runtime-metrics>'})
   }
 
   export function configureRuntime($rootScope: ng.IScope,
@@ -24,16 +25,10 @@ namespace Runtime {
         id: "runtime",
         content: "Runtime",
         title: "Runtime",
-        isValid: () => isValid(workspace),
+        isValid: () => workspace.treeContainsDomainAndProperties('java.lang'),
         href: () => '/runtime',
         isActive: (workspace: Jmx.Workspace) => workspace.isMainTabActive('runtime')
       });
     });
-  }
-
-  function isValid(workspace: Jmx.Workspace) {
-    return workspace.treeContainsDomainAndProperties('java.lang', {type: 'Runtime'}) &&
-           workspace.treeContainsDomainAndProperties('java.lang', {type: 'Memory'}) &&
-           workspace.treeContainsDomainAndProperties('java.lang', {type: 'ClassLoading'})
   }
 }

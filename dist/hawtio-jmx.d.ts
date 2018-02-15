@@ -43,6 +43,66 @@ declare namespace Runtime {
     const systemPropertiesModule: string;
 }
 declare namespace Runtime {
+    class MetricsService {
+        private jolokia;
+        private workspace;
+        constructor(jolokia: Jolokia.IJolokia, workspace: Jmx.Workspace);
+        registerJolokiaRequests(scope: ng.IScope, callback: any): void;
+        unregisterJolokiaRequests(scope: ng.IScope): void;
+        createMetric(name: string, value: any, unit?: string): Metric;
+        createUtilizationMetric(name: string, used: any, total: any, unit?: string): UtilizationMetric;
+        private createMBeanRequest(mbean);
+    }
+}
+declare namespace Runtime {
+    enum MetricType {
+        JVM = "JVM",
+        SYSTEM = "System",
+        SPRING_BOOT = "Spring Boot",
+    }
+    class Metric {
+        name: string;
+        value: any;
+        unit: string;
+        constructor(name: string, value: any, unit?: string);
+        getDescription(): string;
+    }
+    class UtilizationMetric extends Metric {
+        name: string;
+        value: any;
+        available: any;
+        unit: string;
+        constructor(name: string, value: any, available: any, unit: string);
+        getDescription(): string;
+    }
+    class MetricGroup {
+        type: MetricType;
+        metrics: Metric[];
+        constructor(type: MetricType, metrics?: Metric[]);
+        updateMetrics(metrics: Metric[]): void;
+    }
+}
+declare namespace Runtime {
+    class MetricsController {
+        private $scope;
+        private metricsService;
+        private $filter;
+        private humanizeService;
+        private loading;
+        private metricGroups;
+        constructor($scope: any, metricsService: MetricsService, $filter: ng.IFilterService, humanizeService: Core.HumanizeService);
+        $onInit(): void;
+        $onDestroy(): void;
+        private loadMetrics(result);
+        private getMetricGroup(type);
+        private formatBytes(bytes);
+    }
+    const metricsComponent: angular.IComponentOptions;
+}
+declare namespace Runtime {
+    const metricsModule: string;
+}
+declare namespace Runtime {
     function RuntimeLayoutController($location: ng.ILocationService): void;
 }
 declare namespace Runtime {
