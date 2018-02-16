@@ -31,6 +31,26 @@ namespace JVM {
           });
       });
     }
+
+    readMany(mbeans: string[]): ng.IPromise<any> {
+      return this.$q((resolve, reject) => {
+        const requests = mbeans.map(mbean => ({type: "read", mbean: mbean}));
+        const objects = [];
+        this.jolokia.request(requests, {
+          success: response => {
+            objects.push(response.value);
+            if (objects.length === requests.length) {
+              resolve(objects);
+            }
+          }
+        },{
+          error: response => {
+            log.error(`JolokiaService.readMany('${mbeans}') failed. Error: ${response.error}`);
+            reject(response.error);
+          }
+        });
+      });
+    }    
   }
 
   _module.service("jolokiaService", JolokiaService);

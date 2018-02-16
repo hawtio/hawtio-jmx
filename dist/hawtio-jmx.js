@@ -9122,6 +9122,26 @@ var JVM;
                 });
             });
         };
+        JolokiaService.prototype.readMany = function (mbeans) {
+            var _this = this;
+            return this.$q(function (resolve, reject) {
+                var requests = mbeans.map(function (mbean) { return ({ type: "read", mbean: mbean }); });
+                var objects = [];
+                _this.jolokia.request(requests, {
+                    success: function (response) {
+                        objects.push(response.value);
+                        if (objects.length === requests.length) {
+                            resolve(objects);
+                        }
+                    }
+                }, {
+                    error: function (response) {
+                        JVM.log.error("JolokiaService.readMany('" + mbeans + "') failed. Error: " + response.error);
+                        reject(response.error);
+                    }
+                });
+            });
+        };
         return JolokiaService;
     }());
     JVM.JolokiaService = JolokiaService;
