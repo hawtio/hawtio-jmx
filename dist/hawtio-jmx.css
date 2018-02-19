@@ -176,15 +176,8 @@ pf-table-view > .container-fluid {
 .rightAlignedNumber {
   text-align: right;
 }
-.diagnostics-class-histogram-table tr td:nth-child(1),
-.diagnostics-class-histogram-table tr td:nth-child(2),
-.diagnostics-class-histogram-table tr td:nth-child(3),
-.diagnostics-class-histogram-table tr td:nth-child(4),
-.diagnostics-class-histogram-table tr td:nth-child(5) {
-  text-align: right;
-}
-.diagnostics-class-histogram-table tr td:nth-child(6) {
-  max-width: 300px;
+.diagnostics-class-histogram-table tr td:nth-child(1) {
+  word-break: break-all;
 }
 .diagnostics-nav-main {
   display: flex;

@@ -686,7 +686,6 @@ declare namespace Diagnostics {
 }
 declare namespace Diagnostics {
     interface ClassStats {
-        num: string;
         count: string;
         bytes: string;
         name: string;

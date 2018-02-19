@@ -3,7 +3,6 @@
 namespace Diagnostics {
 
   export interface ClassStats {
-    num: string;
     count: string;
     bytes: string;
     name: string;
@@ -47,7 +46,7 @@ namespace Diagnostics {
     };
 
     $scope.tableDtOptions = {
-      order: [[0, "asc"]]
+      order: [[1, "desc"]]
     };
 
     $scope.pageConfig = {
@@ -56,16 +55,8 @@ namespace Diagnostics {
 
     $scope.tableColumns = [
       {
-        header: '#',
-        itemField: 'num'
-      },
-      {
-        header: 'Instances',
-        itemField: 'count'
-      },
-      {
-        header: 'Instances Delta',
-        itemField: 'deltaCount'
+        header: 'Class Name',
+        itemField: 'name'
       },
       {
         header: 'Bytes',
@@ -76,9 +67,12 @@ namespace Diagnostics {
         itemField: 'deltaBytes'
       },
       {
-        header: 'Class Name',
-        itemField: 'name',
-        templateFn: value => `<span class="table-cell-truncated" title="${value}">${value}</span>`
+        header: 'Instances',
+        itemField: 'count'
+      },
+      {
+        header: 'Instances Delta',
+        itemField: 'deltaCount'
       }
     ];
 
@@ -113,7 +107,6 @@ namespace Diagnostics {
           const count = values[2];
           const bytes = values[3];
           const entry = {
-            num: values[1],
             count: count,
             bytes: bytes,
             name: className,
@@ -181,9 +174,6 @@ namespace Diagnostics {
             return name;
         }
       }
-
     }
-
   }
-
 }
