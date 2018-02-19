@@ -40,7 +40,7 @@ namespace Diagnostics {
       },
       isTableView: true
     };
-    
+
     $scope.tableConfig = {
       selectionMatchProp: 'name',
       showCheckboxes: false
@@ -64,7 +64,7 @@ namespace Diagnostics {
         itemField: 'count'
       },
       {
-        header: '<delta',
+        header: 'Instances Delta',
         itemField: 'deltaCount'
       },
       {
@@ -72,11 +72,11 @@ namespace Diagnostics {
         itemField: 'bytes'
       },
       {
-        header: '<delta',
+        header: 'Bytes Delta',
         itemField: 'deltaBytes'
       },
       {
-        header: 'Class name',
+        header: 'Class Name',
         itemField: 'name',
         templateFn: value => `<span class="table-cell-truncated" title="${value}">${value}</span>`
       }

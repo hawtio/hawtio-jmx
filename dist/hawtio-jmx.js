@@ -6579,7 +6579,7 @@ var Diagnostics;
                 itemField: 'count'
             },
             {
-                header: '<delta',
+                header: 'Instances Delta',
                 itemField: 'deltaCount'
             },
             {
@@ -6587,11 +6587,11 @@ var Diagnostics;
                 itemField: 'bytes'
             },
             {
-                header: '<delta',
+                header: 'Bytes Delta',
                 itemField: 'deltaBytes'
             },
             {
-                header: 'Class name',
+                header: 'Class Name',
                 itemField: 'name',
                 templateFn: function (value) { return "<span class=\"table-cell-truncated\" title=\"" + value + "\">" + value + "</span>"; }
             }
