@@ -14,15 +14,14 @@ namespace RBAC {
   export const pluginName: string = "hawtio-rbac";
   export const log: Logging.Logger = Logger.get(pluginName);
 
-  export const _module = angular
+  angular
     .module(pluginName, [])
     .directive('hawtioShow', HawtioShow.factory)
     .service('rbacTasks', RBACTasksFactory.create)
-    .service('rbacACLMBean', RBACACLMBeanFactory.create);
+    .service('rbacACLMBean', RBACACLMBeanFactory.create)
+    .run(addTreePostProcessor);
 
   const TREE_POSTPROCESSOR_NAME = "rbacTreePostprocessor";
-
-  _module.run(addTreePostProcessor);
 
   function addTreePostProcessor(
     jolokia: Jolokia.IJolokia,
