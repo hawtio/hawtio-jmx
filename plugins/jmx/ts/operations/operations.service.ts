@@ -101,7 +101,11 @@ namespace Jmx {
               if (response === null || response === 'null') {
                 resolve('Operation Succeeded!');
               } else if (typeof response === 'string') {
-                resolve(response);
+                if (response.trim() === '') {
+                  resolve('Empty string');
+                } else {
+                  resolve(response);
+                }
               } else {
                 resolve(angular.toJson(response, true));
               }
