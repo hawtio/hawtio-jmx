@@ -11,12 +11,11 @@
     "build": "gulp build"
   },
   "dependencies": {
-    "@hawtio/core": "3.2.12",
+    "@hawtio/core": "3.2.13",
     "@hawtio/forms": "3.0.12",
     "@hawtio/ui": "3.2.0",
     "@hawtio/utilities": "3.2.2",
     "@types/jqueryui": "1.12.0",
-    "angular-patternfly": "4.14.0",
     "angular-resizable": "1.2.0",
     "patternfly-bootstrap-treeview": "2.1.5"
   },
@@ -70,7 +69,6 @@
     "underscore.string": "3.3.4",
     "yargs": "8.0.2",
     "lodash": "4.17.4",
-    "patternfly": "3.25.1",
     "nopt": "3.0.6",
     "lru-cache": "3.2.0",
     "minimist": "1.2.0",
@@ -187,7 +185,8 @@
     "codemirror": "5.33.0",
     "js-beautify": "1.7.5",
     "bootstrap-datepicker": "1.7.1",
-    "@hawtio/core": "3.2.12",
-    "@hawtio/utilities": "3.2.2"
+    "@hawtio/core": "3.2.13",
+    "@hawtio/utilities": "3.2.2",
+    "patternfly": "3.40.0"
   }
 }
