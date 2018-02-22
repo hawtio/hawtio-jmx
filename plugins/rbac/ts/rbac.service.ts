@@ -18,12 +18,12 @@ namespace RBAC {
     }
   }
 
-  class RBACTasksImpl extends Core.TasksImpl implements RBACTasks {
+  class RBACTasksImpl extends Core.Tasks implements RBACTasks {
 
     private ACLMBean: string = null;
 
     constructor(private deferred: ng.IDeferred<string>) {
-      super();
+      super("RBAC");
     }
 
     fetchJMXSecurityMBeans(jolokia: Jolokia.IJolokia): void {

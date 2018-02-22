@@ -31,7 +31,7 @@ namespace RBAC {
     workspace: Jmx.Workspace): void {
     'ngInject';
 
-    preLogoutTasks.addTask("resetRBAC", () => {
+    preLogoutTasks.addTask("ResetRBAC", () => {
       log.debug("Resetting RBAC tasks");
       rbacTasks.reset();
       workspace.removeNamedTreePostProcessor(TREE_POSTPROCESSOR_NAME);

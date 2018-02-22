@@ -196,7 +196,7 @@ namespace JVM {
   }]);
 
   // the jolokia URL we're connected to
-  _module.factory('jolokiaUrl', [(): string | boolean => getJolokiaUrl()]);
+  _module.factory('jolokiaUrl', (): string | boolean => getJolokiaUrl());
 
   // holds the status returned from the last jolokia call and hints for jolokia.list optimization
   _module.factory('jolokiaStatus', createJolokiaStatus);
@@ -242,7 +242,8 @@ namespace JVM {
     jolokiaStatus: JolokiaStatus,
     jolokiaParams: Jolokia.IParams,
     jolokiaUrl: string,
-    authService: Core.AuthService): Jolokia.IJolokia {
+    userDetails: Core.UserDetails,
+    postLoginTasks: Core.Tasks): Jolokia.IJolokia {
     'ngInject';
 
     let jolokia: Jolokia.IJolokia = null;
@@ -250,7 +251,9 @@ namespace JVM {
     if (jolokiaUrl) {
       $.ajaxSetup({ beforeSend: getBeforeSend() });
 
-      Core.executePostLoginTasks();
+      // execute post-login tasks in case they are not yet executed
+      // TODO: Where is the right place to execute post-login tasks for unauthenticated hawtio app?
+      postLoginTasks.execute();
 
       let modal = null;
       if (jolokiaParams['ajaxError'] == null) {
@@ -259,15 +262,8 @@ namespace JVM {
             if (window.opener) {
               window.close(); // close window connected to remote server
             } else {
-              authService.logout(); // just logout
+              userDetails.logout(); // just logout
             }
-            Core.executePreLogoutTasks(() => {
-              Core.clearLocalStorageOnLogout(localStorage);
-
-              Core.executePostLogoutTasks(() => {
-                log.debug("Executing logout callback after successfully executed postLogoutTasks");
-              });
-            });
           } else {
             jolokiaStatus.xhr = xhr;
           }
