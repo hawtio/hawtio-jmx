@@ -4882,7 +4882,7 @@ var JVM;
 var JVM;
 (function (JVM) {
     createJolokiaParams.$inject = ["jolokiaUrl", "localStorage"];
-    createJolokia.$inject = ["localStorage", "jolokiaStatus", "jolokiaParams", "jolokiaUrl", "authService"];
+    createJolokia.$inject = ["localStorage", "jolokiaStatus", "jolokiaParams", "jolokiaUrl", "userDetails", "postLoginTasks"];
     var JolokiaListMethod;
     (function (JolokiaListMethod) {
         // constant meaning that general LIST+EXEC Jolokia operations should be used
@@ -5079,7 +5079,7 @@ var JVM;
             return getConnectionOptions();
         }]);
     // the jolokia URL we're connected to
-    JVM._module.factory('jolokiaUrl', [function () { return getJolokiaUrl(); }]);
+    JVM._module.factory('jolokiaUrl', function () { return getJolokiaUrl(); });
     // holds the status returned from the last jolokia call and hints for jolokia.list optimization
     JVM._module.factory('jolokiaStatus', createJolokiaStatus);
     JVM._module.factory('jolokiaParams', createJolokiaParams);
@@ -5111,12 +5111,14 @@ var JVM;
         answer['url'] = jolokiaUrl;
         return answer;
     }
-    function createJolokia(localStorage, jolokiaStatus, jolokiaParams, jolokiaUrl, authService) {
+    function createJolokia(localStorage, jolokiaStatus, jolokiaParams, jolokiaUrl, userDetails, postLoginTasks) {
         'ngInject';
         var jolokia = null;
         if (jolokiaUrl) {
             $.ajaxSetup({ beforeSend: getBeforeSend() });
-            Core.executePostLoginTasks();
+            // execute post-login tasks in case they are not yet executed
+            // TODO: Where is the right place to execute post-login tasks for unauthenticated hawtio app?
+            postLoginTasks.execute();
             var modal = null;
             if (jolokiaParams['ajaxError'] == null) {
                 jolokiaParams['ajaxError'] = function (xhr, textStatus, error) {
@@ -5125,14 +5127,8 @@ var JVM;
                             window.close(); // close window connected to remote server
                         }
                         else {
-                            authService.logout(); // just logout
+                            userDetails.logout(); // just logout
                         }
-                        Core.executePreLogoutTasks(function () {
-                            Core.clearLocalStorageOnLogout(localStorage);
-                            Core.executePostLogoutTasks(function () {
-                                JVM.log.debug("Executing logout callback after successfully executed postLogoutTasks");
-                            });
-                        });
                     }
                     else {
                         jolokiaStatus.xhr = xhr;
@@ -9528,7 +9524,7 @@ var RBAC;
     var RBACTasksImpl = /** @class */ (function (_super) {
         __extends(RBACTasksImpl, _super);
         function RBACTasksImpl(deferred) {
-            var _this = _super.call(this) || this;
+            var _this = _super.call(this, "RBAC") || this;
             _this.deferred = deferred;
             _this.ACLMBean = null;
             return _this;
@@ -9579,7 +9575,7 @@ var RBAC;
             return this.deferred.promise;
         };
         return RBACTasksImpl;
-    }(Core.TasksImpl));
+    }(Core.Tasks));
 })(RBAC || (RBAC = {}));
 /**
  * @namespace RBAC
@@ -9605,7 +9601,7 @@ var RBAC;
     var TREE_POSTPROCESSOR_NAME = "rbacTreePostprocessor";
     function addTreePostProcessor(jolokia, jolokiaStatus, rbacTasks, preLogoutTasks, workspace) {
         'ngInject';
-        preLogoutTasks.addTask("resetRBAC", function () {
+        preLogoutTasks.addTask("ResetRBAC", function () {
             RBAC.log.debug("Resetting RBAC tasks");
             rbacTasks.reset();
             workspace.removeNamedTreePostProcessor(TREE_POSTPROCESSOR_NAME);
