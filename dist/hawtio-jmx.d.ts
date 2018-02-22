@@ -1,12 +1,35 @@
-/// <reference types="angular-route" />
-/// <reference types="angular" />
 /// <reference types="core" />
+/// <reference types="angular" />
+/// <reference types="angular-route" />
 /// <reference types="utilities" />
 /// <reference types="jquery" />
 /// <reference types="forms" />
+declare namespace About {
+    class AboutController {
+        private configManager;
+        private jolokia;
+        private jolokiaService;
+        flags: {
+            open: boolean;
+        };
+        title: string;
+        productInfo: object[];
+        additionalInfo: string;
+        copyright: string;
+        constructor(configManager: Core.ConfigManager, jolokia: JVM.DummyJolokia, jolokiaService: JVM.JolokiaService);
+        $onInit(): void;
+        onClose(): void;
+    }
+    const aboutComponent: angular.IComponentOptions;
+}
+declare namespace About {
+    function configureMenu(HawtioExtension: Core.HawtioExtension, $compile: ng.ICompileService): void;
+}
+declare namespace About {
+}
 declare namespace Runtime {
     function configureRoutes($routeProvider: angular.route.IRouteProvider): void;
-    function configureRuntime($rootScope: ng.IScope, viewRegistry: any, helpRegistry: Core.HelpRegistry, workspace: Jmx.Workspace): void;
+    function configureRuntime($rootScope: ng.IScope, viewRegistry: any, helpRegistry: Help.HelpRegistry, workspace: Jmx.Workspace): void;
 }
 declare namespace Runtime {
     interface SystemProperty {

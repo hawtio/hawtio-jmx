@@ -11,7 +11,7 @@ namespace Runtime {
 
   export function configureRuntime($rootScope: ng.IScope,
                                    viewRegistry,
-                                   helpRegistry: Core.HelpRegistry,
+                                   helpRegistry: Help.HelpRegistry,
                                    workspace: Jmx.Workspace) {
     'ngInject';
 

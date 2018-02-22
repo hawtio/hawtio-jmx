@@ -96,7 +96,7 @@ namespace Runtime {
 
   export const systemPropertiesComponent: angular.IComponentOptions = {
     template: `
-      <div class="runtime-sysprops-main">
+      <div class="table-view runtime-sysprops-main">
         <h1>System Properties</h1>
         <pf-toolbar config="$ctrl.toolbarConfig"></pf-toolbar>
         <pf-table-view config="$ctrl.tableConfig"
