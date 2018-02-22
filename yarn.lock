@@ -73,9 +73,9 @@
     underscore.string "^3.3.4"
     urijs "^1.18.10"
 
-"@hawtio/ui@3.2.0", "@hawtio/ui@~3.0.25":
-  version "3.2.0"
-  resolved "https://registry.yarnpkg.com/@hawtio/ui/-/ui-3.2.0.tgz#29ed6aa1d01cd7d7e5e704dc5dd16a2e6e76e0a4"
+"@hawtio/ui@3.2.1", "@hawtio/ui@~3.0.25":
+  version "3.2.1"
+  resolved "https://registry.yarnpkg.com/@hawtio/ui/-/ui-3.2.1.tgz#89a9b54dd55f7e46e649491ac9e1ef723c6a3a8b"
   dependencies:
     "@hawtio/core" "3.2.3"
     "@hawtio/core-dts" "3.0.18"
@@ -2652,7 +2652,7 @@ patternfly-bootstrap-treeview@2.1.5, patternfly-bootstrap-treeview@~2.1.0:
     bootstrap "3.3.x"
     jquery ">= 2.1.x"
 
-patternfly@3.32.1, patternfly@^3.37.1, patternfly@~3.30.0:
+patternfly@3.32.1, patternfly@3.40.0, patternfly@^3.37.1, patternfly@~3.30.0:
   version "3.40.0"
   resolved "https://registry.yarnpkg.com/patternfly/-/patternfly-3.40.0.tgz#cb17c9b98b9df73a4d96949536ce6cdc12f435a0"
   dependencies:
