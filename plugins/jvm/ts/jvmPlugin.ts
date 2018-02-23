@@ -25,7 +25,6 @@ namespace JVM {
     helpRegistry: Help.HelpRegistry,
     preferencesRegistry: Core.PreferencesRegistry,
     ConnectOptions: Core.ConnectOptions,
-    localStorage: Storage,
     preLogoutTasks: Core.Tasks,
     locationChangeStartTasks: Core.ParameterizedTasks,
     HawtioDashboard,
@@ -62,15 +61,12 @@ namespace JVM {
     // clean up local storage upon logout
     preLogoutTasks.addTask('CleanupJvmConnectCredentials', () => {
       log.debug("Clean up credentials from JVM connection settings in local storage");
-      let connectionsJson = localStorage[connectionSettingsKey];
-      if (!connectionsJson) {
-        return;
-      }
-      let connections: Core.ConnectOptions[] = angular.fromJson(connectionsJson);
+      let connections: Core.ConnectOptions[] = loadConnections();
       connections.forEach((connection) => {
         delete connection.userName;
         delete connection.password;
       });
+      saveConnections(connections);
     });
 
     let builder = HawtioNav.builder();
