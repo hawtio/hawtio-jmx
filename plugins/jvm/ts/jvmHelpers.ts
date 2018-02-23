@@ -133,22 +133,22 @@ namespace JVM {
   export function loadConnections(): Core.ConnectOptions[] {
     const localStorage = Core.getLocalStorage();
     try {
-      const connections = <Core.ConnectOptions[]>angular.fromJson(localStorage[Core.connectionSettingsKey]);
+      const connections: Core.ConnectOptions[] = angular.fromJson(localStorage[connectionSettingsKey]);
       if (!connections) {
         // nothing found on local storage
-        return <Core.ConnectOptions[]>[];
+        return [];
       } else if (!_.isArray(connections)) {
         // found the legacy connections map
-        delete localStorage[Core.connectionSettingsKey];
-        return <Core.ConnectOptions[]>[];
+        delete localStorage[connectionSettingsKey];
+        return [];
       } else {
         // found a valid connections array
         return connections;
       }
     } catch (e) {
       // corrupt config
-      delete localStorage[Core.connectionSettingsKey];
-      return <Core.ConnectOptions[]>[];
+      delete localStorage[connectionSettingsKey];
+      return [];
     }
   }
 
@@ -157,8 +157,8 @@ namespace JVM {
    * @param connections array of all connections to be stored
    */
   export function saveConnections(connections: Core.ConnectOptions[]) {
-    Logger.get("Core").debug("Saving connection array: ", StringHelpers.toString(connections));
-    localStorage[Core.connectionSettingsKey] = angular.toJson(connections);
+    log.debug("Saving connection array:", StringHelpers.toString(connections));
+    localStorage[connectionSettingsKey] = angular.toJson(connections);
   }
 
   export function getConnectionNameParameter() {
