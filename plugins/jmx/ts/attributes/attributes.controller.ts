@@ -251,13 +251,7 @@ namespace Jmx {
         description: 'Value',
         label: "Value",
         type: 'string',
-        formTemplate: `
-          <div class="hawtio-clipboard-container">
-            <button hawtio-clipboard="#attribute-value" class="btn btn-default avoid-scrollbar">
-              <i class="fa fa-clipboard" aria-hidden="true"></i>
-            </button>
-            <textarea id="attribute-value" class='form-control' style="overflow-y: scroll" rows='${rows}' readonly='true'>{{entity.attrValueView}}</textarea>
-          </div>
+        formTemplate: `<textarea id="attribute-value" class='form-control' style="overflow-y: scroll" rows='${rows}' readonly='true'></textarea>
         `
       };
       // just to be safe, then delete not needed part of the schema
@@ -279,14 +273,7 @@ namespace Jmx {
         description: 'Value',
         label: "Value",
         type: 'string',
-        formTemplate: `
-          <div class="hawtio-clipboard-container">
-            <button hawtio-clipboard="#attribute-value" class="btn btn-default avoid-scrollbar">
-              <i class="fa fa-clipboard" aria-hidden="true"></i>
-            </button>
-            <textarea id="attribute-value" class='form-control' style="overflow-y: scroll" rows='${rows}'>{{entity.attrValueEdit}}</textarea>
-          </div>
-        `
+        formTemplate: `<textarea id="attribute-value" class='form-control' style="overflow-y: scroll" rows='${rows}'></textarea>`
       };
       // just to be safe, then delete not needed part of the schema
       if ($scope.attributeSchemaEdit) {

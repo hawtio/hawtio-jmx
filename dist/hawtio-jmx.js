@@ -4606,7 +4606,7 @@ var JVM;
     JVM.pluginName = 'hawtio-jvm';
     JVM.log = Logger.get(JVM.pluginName);
     JVM.connectControllerKey = "jvmConnectSettings";
-    JVM.connectionSettingsKey = Core.connectionSettingsKey;
+    JVM.connectionSettingsKey = 'jvmConnect';
     JVM.logoPath = 'img/icons/jvm/';
     JVM.logoRegistry = {
         'jetty': JVM.logoPath + 'jetty-logo-80x22.png',
@@ -4742,14 +4742,14 @@ var JVM;
     function loadConnections() {
         var localStorage = Core.getLocalStorage();
         try {
-            var connections = angular.fromJson(localStorage[Core.connectionSettingsKey]);
+            var connections = angular.fromJson(localStorage[JVM.connectionSettingsKey]);
             if (!connections) {
                 // nothing found on local storage
                 return [];
             }
             else if (!_.isArray(connections)) {
                 // found the legacy connections map
-                delete localStorage[Core.connectionSettingsKey];
+                delete localStorage[JVM.connectionSettingsKey];
                 return [];
             }
             else {
@@ -4759,7 +4759,7 @@ var JVM;
         }
         catch (e) {
             // corrupt config
-            delete localStorage[Core.connectionSettingsKey];
+            delete localStorage[JVM.connectionSettingsKey];
             return [];
         }
     }
@@ -4769,8 +4769,8 @@ var JVM;
      * @param connections array of all connections to be stored
      */
     function saveConnections(connections) {
-        Logger.get("Core").debug("Saving connection array: ", StringHelpers.toString(connections));
-        localStorage[Core.connectionSettingsKey] = angular.toJson(connections);
+        JVM.log.debug("Saving connection array:", StringHelpers.toString(connections));
+        localStorage[JVM.connectionSettingsKey] = angular.toJson(connections);
     }
     JVM.saveConnections = saveConnections;
     function getConnectionNameParameter() {
@@ -4890,51 +4890,67 @@ var JVM;
 /// <reference path="connect/connect.module.ts"/>
 var JVM;
 (function (JVM) {
-    JVM.windowJolokia = undefined;
-    JVM._module = angular.module(JVM.pluginName, [JVM.ConnectModule]);
-    JVM._module.config(["$provide", "$routeProvider", function ($provide, $routeProvider) {
-            $routeProvider
-                .when('/jvm', { redirectTo: '/jvm/connect' })
-                .when('/jvm/welcome', { templateUrl: UrlHelpers.join(JVM.templatePath, 'welcome.html') })
-                .when('/jvm/discover', { templateUrl: UrlHelpers.join(JVM.templatePath, 'discover.html') })
-                .when('/jvm/connect', { templateUrl: UrlHelpers.join(JVM.templatePath, 'connect.html') })
-                .when('/jvm/local', { templateUrl: UrlHelpers.join(JVM.templatePath, 'local.html') });
-        }]);
-    JVM._module.constant('mbeanName', 'hawtio:type=JVMList');
-    JVM._module.run(["HawtioNav", "$location", "workspace", "viewRegistry", "layoutFull", "helpRegistry", "preferencesRegistry", "ConnectOptions", "locationChangeStartTasks", "HawtioDashboard", "HawtioExtension", "$templateCache", "$compile", function (nav, $location, workspace, viewRegistry, layoutFull, helpRegistry, preferencesRegistry, ConnectOptions, locationChangeStartTasks, dash, extensions, $templateCache, $compile) {
-            viewRegistry['jvm'] = "plugins/jvm/html/layoutConnect.html";
-            extensions.add('hawtio-header', function ($scope) {
-                var template = $templateCache.get(UrlHelpers.join(JVM.templatePath, 'navbarHeaderExtension.html'));
-                return $compile(template)($scope);
+    defineRoutes.$inject = ["$provide", "$routeProvider"];
+    configurePlugin.$inject = ["HawtioNav", "$location", "viewRegistry", "helpRegistry", "preferencesRegistry", "ConnectOptions", "preLogoutTasks", "locationChangeStartTasks", "HawtioDashboard", "HawtioExtension", "$templateCache", "$compile"];
+    JVM._module = angular
+        .module(JVM.pluginName, [JVM.ConnectModule])
+        .config(defineRoutes)
+        .constant('mbeanName', 'hawtio:type=JVMList')
+        .run(configurePlugin);
+    function defineRoutes($provide, $routeProvider) {
+        'ngInject';
+        $routeProvider
+            .when('/jvm', { redirectTo: '/jvm/connect' })
+            .when('/jvm/welcome', { templateUrl: UrlHelpers.join(JVM.templatePath, 'welcome.html') })
+            .when('/jvm/discover', { templateUrl: UrlHelpers.join(JVM.templatePath, 'discover.html') })
+            .when('/jvm/connect', { templateUrl: UrlHelpers.join(JVM.templatePath, 'connect.html') })
+            .when('/jvm/local', { templateUrl: UrlHelpers.join(JVM.templatePath, 'local.html') });
+    }
+    function configurePlugin(HawtioNav, $location, viewRegistry, helpRegistry, preferencesRegistry, ConnectOptions, preLogoutTasks, locationChangeStartTasks, HawtioDashboard, HawtioExtension, $templateCache, $compile) {
+        'ngInject';
+        viewRegistry['jvm'] = "plugins/jvm/html/layoutConnect.html";
+        HawtioExtension.add('hawtio-header', function ($scope) {
+            var template = $templateCache.get(UrlHelpers.join(JVM.templatePath, 'navbarHeaderExtension.html'));
+            return $compile(template)($scope);
+        });
+        if (!HawtioDashboard.inDashboard) {
+            // ensure that if the connection parameter is present, that we keep it
+            locationChangeStartTasks.addTask('ConParam', function ($event, newUrl, oldUrl) {
+                // we can't execute until the app is initialized...
+                if (!HawtioCore.injector) {
+                    return;
+                }
+                if (!ConnectOptions || !ConnectOptions.name || !newUrl) {
+                    return;
+                }
+                var newQuery = new URI(newUrl).query(true);
+                if (!newQuery.con) {
+                    newQuery['con'] = ConnectOptions.name;
+                    $location.search(newQuery);
+                }
             });
-            if (!dash.inDashboard) {
-                // ensure that if the connection parameter is present, that we keep it
-                locationChangeStartTasks.addTask('ConParam', function ($event, newUrl, oldUrl) {
-                    // we can't execute until the app is initialized...
-                    if (!HawtioCore.injector) {
-                        return;
-                    }
-                    if (!ConnectOptions || !ConnectOptions.name || !newUrl) {
-                        return;
-                    }
-                    var newQuery = new URI(newUrl).query(true);
-                    if (!newQuery.con) {
-                        newQuery['con'] = ConnectOptions.name;
-                        $location.search(newQuery);
-                    }
-                });
-            }
-            var builder = nav.builder();
-            var tab = builder.id('jvm')
-                .href(function () { return '/jvm'; })
-                .title(function () { return 'Connect'; })
-                .isValid(function () { return ConnectOptions == null || ConnectOptions.name == null; })
-                .build();
-            nav.add(tab);
-            helpRegistry.addUserDoc('jvm', 'plugins/jvm/doc/help.md');
-            preferencesRegistry.addTab("Connect", 'plugins/jvm/html/reset.html');
-            preferencesRegistry.addTab("Jolokia", "plugins/jvm/html/jolokia-preferences.html");
-        }]);
+        }
+        // clean up local storage upon logout
+        preLogoutTasks.addTask('CleanupJvmConnectCredentials', function () {
+            JVM.log.debug("Clean up credentials from JVM connection settings in local storage");
+            var connections = JVM.loadConnections();
+            connections.forEach(function (connection) {
+                delete connection.userName;
+                delete connection.password;
+            });
+            JVM.saveConnections(connections);
+        });
+        var builder = HawtioNav.builder();
+        var tab = builder.id('jvm')
+            .href(function () { return '/jvm'; })
+            .title(function () { return 'Connect'; })
+            .isValid(function () { return ConnectOptions == null || ConnectOptions.name == null; })
+            .build();
+        HawtioNav.add(tab);
+        helpRegistry.addUserDoc('jvm', 'plugins/jvm/doc/help.md');
+        preferencesRegistry.addTab("Connect", 'plugins/jvm/html/reset.html');
+        preferencesRegistry.addTab("Jolokia", "plugins/jvm/html/jolokia-preferences.html");
+    }
     hawtioPluginLoader.addModule(JVM.pluginName);
 })(JVM || (JVM = {}));
 /// <reference path="jvmPlugin.ts"/>
@@ -7388,7 +7404,7 @@ var Jmx;
                 description: 'Value',
                 label: "Value",
                 type: 'string',
-                formTemplate: "\n          <div class=\"hawtio-clipboard-container\">\n            <button hawtio-clipboard=\"#attribute-value\" class=\"btn btn-default avoid-scrollbar\">\n              <i class=\"fa fa-clipboard\" aria-hidden=\"true\"></i>\n            </button>\n            <textarea id=\"attribute-value\" class='form-control' style=\"overflow-y: scroll\" rows='" + rows + "' readonly='true'>{{entity.attrValueView}}</textarea>\n          </div>\n        "
+                formTemplate: "<textarea id=\"attribute-value\" class='form-control' style=\"overflow-y: scroll\" rows='" + rows + "' readonly='true'></textarea>\n        "
             };
             // just to be safe, then delete not needed part of the schema
             if ($scope.attributeSchemaView) {
@@ -7408,7 +7424,7 @@ var Jmx;
                 description: 'Value',
                 label: "Value",
                 type: 'string',
-                formTemplate: "\n          <div class=\"hawtio-clipboard-container\">\n            <button hawtio-clipboard=\"#attribute-value\" class=\"btn btn-default avoid-scrollbar\">\n              <i class=\"fa fa-clipboard\" aria-hidden=\"true\"></i>\n            </button>\n            <textarea id=\"attribute-value\" class='form-control' style=\"overflow-y: scroll\" rows='" + rows + "'>{{entity.attrValueEdit}}</textarea>\n          </div>\n        "
+                formTemplate: "<textarea id=\"attribute-value\" class='form-control' style=\"overflow-y: scroll\" rows='" + rows + "'></textarea>"
             };
             // just to be safe, then delete not needed part of the schema
             if ($scope.attributeSchemaEdit) {
@@ -8985,332 +9001,6 @@ var Jmx;
             Core.register(jolokia, $scope, $scope.reqs, Core.onSuccess($scope.render));
         }]);
 })(Jmx || (Jmx = {}));
-/// <reference path="jvmPlugin.ts"/>
-var JVM;
-(function (JVM) {
-    JVM._module.controller("JVM.DiscoveryController", ["$scope", "localStorage", "jolokia", function ($scope, localStorage, jolokia) {
-            $scope.discovering = true;
-            $scope.agents = undefined;
-            $scope.$watch('agents', function (newValue, oldValue) {
-                if (newValue !== oldValue) {
-                    $scope.selectedAgent = _.find($scope.agents, function (a) { return a['selected']; });
-                }
-            }, true);
-            $scope.closePopover = function ($event) {
-                $($event.currentTarget).parents('.popover').prev().popover('hide');
-            };
-            function getMoreJvmDetails(agents) {
-                for (var key in agents) {
-                    var agent = agents[key];
-                    if (agent.url && !agent.secured) {
-                        var dedicatedJolokia = JVM.createJolokia(agent.url, agent.username, agent.password);
-                        agent.startTime = dedicatedJolokia.getAttribute('java.lang:type=Runtime', 'StartTime');
-                        if (!$scope.hasName(agent)) {
-                            agent.command = dedicatedJolokia.getAttribute('java.lang:type=Runtime', 'SystemProperties', 'sun.java.command');
-                        }
-                    }
-                }
-            }
-            function doConnect(agent) {
-                if (!agent.url) {
-                    Core.notification('warning', 'No URL available to connect to agent');
-                    return;
-                }
-                var options = Core.createConnectOptions();
-                options.name = agent.agent_description || 'discover-' + agent.agent_id;
-                var urlObject = Core.parseUrl(agent.url);
-                angular.extend(options, urlObject);
-                options.userName = agent.username;
-                options.password = agent.password;
-                JVM.connectToServer(localStorage, options);
-            }
-            $scope.connectWithCredentials = function ($event, agent) {
-                $scope.closePopover($event);
-                doConnect(agent);
-            };
-            $scope.gotoServer = function ($event, agent) {
-                if (agent.secured) {
-                    $($event.currentTarget).popover('show');
-                }
-                else {
-                    doConnect(agent);
-                }
-            };
-            $scope.getElementId = function (agent) {
-                return agent.agent_id.dasherize().replace(/\./g, "-");
-            };
-            $scope.getLogo = function (agent) {
-                if (agent.server_product) {
-                    return JVM.logoRegistry[agent.server_product];
-                }
-                return JVM.logoRegistry['generic'];
-            };
-            $scope.filterMatches = function (agent) {
-                if (Core.isBlank($scope.filter)) {
-                    return true;
-                }
-                else {
-                    var needle = $scope.filter.toLowerCase();
-                    var haystack = angular.toJson(agent).toLowerCase();
-                    return haystack.indexOf(needle) !== 0;
-                }
-            };
-            $scope.getAgentIdClass = function (agent) {
-                if ($scope.hasName(agent)) {
-                    return "";
-                }
-                return "strong";
-            };
-            $scope.hasName = function (agent) {
-                return !!(agent.server_vendor && agent.server_product && agent.server_version);
-            };
-            $scope.render = function (response) {
-                $scope.discovering = false;
-                if (response) {
-                    var responseJson = angular.toJson(response, true);
-                    if ($scope.responseJson !== responseJson) {
-                        $scope.responseJson = responseJson;
-                        $scope.agents = response;
-                        getMoreJvmDetails($scope.agents);
-                    }
-                }
-                Core.$apply($scope);
-            };
-            $scope.fetch = function () {
-                $scope.discovering = true;
-                // use 10 sec timeout
-                jolokia.execute('jolokia:type=Discovery', 'lookupAgentsWithTimeout(int)', 10 * 1000, Core.onSuccess($scope.render));
-            };
-            $scope.fetch();
-        }]);
-})(JVM || (JVM = {}));
-/// <reference path="jvmPlugin.ts"/>
-var JVM;
-(function (JVM) {
-    JVM.HeaderController = JVM._module.controller("JVM.HeaderController", ["$scope", "ConnectOptions", function ($scope, ConnectOptions) {
-            if (ConnectOptions) {
-                $scope.containerName = ConnectOptions.name || "";
-                if (ConnectOptions.returnTo) {
-                    $scope.goBack = function () {
-                        window.location.href = ConnectOptions.returnTo;
-                    };
-                }
-            }
-        }]);
-})(JVM || (JVM = {}));
-/// <reference path="jvmPlugin.ts"/>
-var JVM;
-(function (JVM) {
-    JolokiaPreferences.$inject = ["$scope", "localStorage", "jolokiaParams", "$window"];
-    var SHOW_ALERT = 'showJolokiaPreferencesAlert';
-    function JolokiaPreferences($scope, localStorage, jolokiaParams, $window) {
-        'ngInject';
-        // Initialize tooltips
-        $('[data-toggle="tooltip"]').tooltip();
-        Core.initPreferenceScope($scope, localStorage, {
-            'updateRate': {
-                'value': 5000,
-                'post': function (newValue) {
-                    $scope.$emit('UpdateRate', newValue);
-                }
-            },
-            'maxDepth': {
-                'value': JVM.DEFAULT_MAX_DEPTH,
-                'converter': parseInt,
-                'formatter': parseInt,
-                'post': function (newValue) {
-                    jolokiaParams.maxDepth = newValue;
-                    localStorage['jolokiaParams'] = angular.toJson(jolokiaParams);
-                }
-            },
-            'maxCollectionSize': {
-                'value': JVM.DEFAULT_MAX_COLLECTION_SIZE,
-                'converter': parseInt,
-                'formatter': parseInt,
-                'post': function (newValue) {
-                    jolokiaParams.maxCollectionSize = newValue;
-                    localStorage['jolokiaParams'] = angular.toJson(jolokiaParams);
-                }
-            }
-        });
-        $scope.showAlert = !!$window.sessionStorage.getItem(SHOW_ALERT);
-        $window.sessionStorage.removeItem(SHOW_ALERT);
-        $scope.reboot = function () {
-            $window.sessionStorage.setItem(SHOW_ALERT, 'true');
-            $window.location.reload();
-        };
-    }
-    JVM.JolokiaPreferences = JolokiaPreferences;
-    JVM._module.controller("JVM.JolokiaPreferences", JolokiaPreferences);
-})(JVM || (JVM = {}));
-var JVM;
-(function (JVM) {
-    var JolokiaService = /** @class */ (function () {
-        JolokiaService.$inject = ["$q", "jolokia"];
-        function JolokiaService($q, jolokia) {
-            'ngInject';
-            this.$q = $q;
-            this.jolokia = jolokia;
-        }
-        JolokiaService.prototype.getAttribute = function (mbean, attribute) {
-            var _this = this;
-            return this.$q(function (resolve, reject) {
-                _this.jolokia.request({ type: 'read', mbean: mbean, attribute: attribute }, { success: function (response) { return resolve(response.value); } }, { error: function (response) {
-                        JVM.log.error("JolokiaService.getAttribute('" + mbean + "', '" + attribute + "') failed. Error: " + response.error);
-                        reject(response.error);
-                    }
-                });
-            });
-        };
-        JolokiaService.prototype.execute = function (mbean, operation) {
-            var _this = this;
-            var args = [];
-            for (var _i = 2; _i < arguments.length; _i++) {
-                args[_i - 2] = arguments[_i];
-            }
-            return this.$q(function (resolve, reject) {
-                _this.jolokia.request({ type: 'exec', mbean: mbean, operation: operation, arguments: args }, { success: function (response) { return resolve(response.value); } }, { error: function (response) {
-                        JVM.log.error("JolokiaService.execute('" + mbean + "', '" + operation + "', '" + args + "') failed. Error: " + response.error);
-                        reject(response.error);
-                    }
-                });
-            });
-        };
-        JolokiaService.prototype.readMany = function (mbeans) {
-            var _this = this;
-            return this.$q(function (resolve, reject) {
-                var requests = mbeans.map(function (mbean) { return ({ type: "read", mbean: mbean }); });
-                var objects = [];
-                _this.jolokia.request(requests, {
-                    success: function (response) {
-                        objects.push(response.value);
-                        if (objects.length === requests.length) {
-                            resolve(objects);
-                        }
-                    }
-                }, {
-                    error: function (response) {
-                        JVM.log.error("JolokiaService.readMany('" + mbeans + "') failed. Error: " + response.error);
-                        reject(response.error);
-                    }
-                });
-            });
-        };
-        return JolokiaService;
-    }());
-    JVM.JolokiaService = JolokiaService;
-    JVM._module.service("jolokiaService", JolokiaService);
-})(JVM || (JVM = {}));
-/// <reference path="jvmPlugin.ts"/>
-/**
- * @module JVM
- */
-var JVM;
-(function (JVM) {
-    JVM._module.controller("JVM.JVMsController", ["$scope", "$location", "localStorage", "workspace", "jolokia", "mbeanName", function ($scope, $location, localStorage, workspace, jolokia, mbeanName) {
-            JVM.configureScope($scope, $location, workspace);
-            $scope.data = [];
-            $scope.deploying = false;
-            $scope.status = '';
-            $scope.initDone = false;
-            $scope.filter = '';
-            var listRequest = {
-                type: 'exec', mbean: mbeanName,
-                operation: 'listLocalJVMs()',
-                arguments: []
-            };
-            $scope.filterMatches = function (jvm) {
-                if (Core.isBlank($scope.filter)) {
-                    return true;
-                }
-                else {
-                    return jvm.alias.toLowerCase().has($scope.filter.toLowerCase());
-                }
-            };
-            $scope.fetch = function () {
-                jolokia.request(listRequest, {
-                    success: render,
-                    error: function (response) {
-                        $scope.data = [];
-                        $scope.initDone = true;
-                        $scope.status = 'Could not discover local JVM processes: ' + response.error;
-                        Core.$apply($scope);
-                    }
-                });
-            };
-            $scope.stopAgent = function (pid) {
-                jolokia.request([{
-                        type: 'exec', mbean: mbeanName,
-                        operation: 'stopAgent(java.lang.String)',
-                        arguments: [pid]
-                    }, listRequest], Core.onSuccess(renderIfList));
-            };
-            $scope.startAgent = function (pid) {
-                jolokia.request([{
-                        type: 'exec', mbean: mbeanName,
-                        operation: 'startAgent(java.lang.String)',
-                        arguments: [pid]
-                    }, listRequest], Core.onSuccess(renderIfList));
-            };
-            $scope.connectTo = function (url, scheme, host, port, path) {
-                // we only need the port and path from the url, as we got the rest
-                var options = {};
-                options["scheme"] = scheme;
-                options["host"] = host;
-                options["port"] = port;
-                options["path"] = path;
-                // add empty username as we dont need login
-                options["userName"] = "";
-                options["password"] = "";
-                // connect to root by default as we do not want to show welcome page
-                options["view"] = "#/";
-                var con = Core.createConnectOptions(options);
-                con.name = "local-" + port;
-                JVM.log.debug("Connecting to local JVM agent: " + url);
-                JVM.connectToServer(localStorage, con);
-                Core.$apply($scope);
-            };
-            /**
-             * Since the requests are bundled, check the operation in callback to decide on
-             * how to respond to success
-             */
-            function renderIfList(response) {
-                if (response.request.operation.indexOf("listLocalJVMs") > -1) {
-                    render(response);
-                }
-            }
-            function render(response) {
-                $scope.initDone = true;
-                $scope.data = response.value;
-                if ($scope.data.length === 0) {
-                    $scope.status = 'Could not discover local JVM processes';
-                }
-                Core.$apply($scope);
-            }
-            $scope.fetch();
-        }]);
-})(JVM || (JVM = {}));
-/// <reference path="./jvmPlugin.ts"/>
-var JVM;
-(function (JVM) {
-    JVM._module.controller("JVM.NavController", ["$scope", "$location", "workspace", function ($scope, $location, workspace) {
-            JVM.configureScope($scope, $location, workspace);
-            $scope.isLocalEnabled = JVM.hasLocalMBean(workspace);
-            $scope.isDiscoveryEnabled = JVM.hasDiscoveryMBean(workspace);
-        }]);
-})(JVM || (JVM = {}));
-/// <reference path="./jvmPlugin.ts"/>
-var JVM;
-(function (JVM) {
-    JVM._module.controller("JVM.ResetController", ["$scope", "localStorage", function ($scope, localStorage) {
-            $scope.showAlert = false;
-            $scope.doClearConnectSettings = function () {
-                delete localStorage[JVM.connectControllerKey];
-                delete localStorage[JVM.connectionSettingsKey];
-                $scope.showAlert = true;
-            };
-        }]);
-})(JVM || (JVM = {}));
 var RBAC;
 (function (RBAC) {
     var JmxTreeProcessor = /** @class */ (function () {
@@ -9671,6 +9361,332 @@ var RBAC;
     }
     hawtioPluginLoader.addModule(RBAC.pluginName);
 })(RBAC || (RBAC = {}));
+/// <reference path="jvmPlugin.ts"/>
+var JVM;
+(function (JVM) {
+    JVM._module.controller("JVM.DiscoveryController", ["$scope", "localStorage", "jolokia", function ($scope, localStorage, jolokia) {
+            $scope.discovering = true;
+            $scope.agents = undefined;
+            $scope.$watch('agents', function (newValue, oldValue) {
+                if (newValue !== oldValue) {
+                    $scope.selectedAgent = _.find($scope.agents, function (a) { return a['selected']; });
+                }
+            }, true);
+            $scope.closePopover = function ($event) {
+                $($event.currentTarget).parents('.popover').prev().popover('hide');
+            };
+            function getMoreJvmDetails(agents) {
+                for (var key in agents) {
+                    var agent = agents[key];
+                    if (agent.url && !agent.secured) {
+                        var dedicatedJolokia = JVM.createJolokia(agent.url, agent.username, agent.password);
+                        agent.startTime = dedicatedJolokia.getAttribute('java.lang:type=Runtime', 'StartTime');
+                        if (!$scope.hasName(agent)) {
+                            agent.command = dedicatedJolokia.getAttribute('java.lang:type=Runtime', 'SystemProperties', 'sun.java.command');
+                        }
+                    }
+                }
+            }
+            function doConnect(agent) {
+                if (!agent.url) {
+                    Core.notification('warning', 'No URL available to connect to agent');
+                    return;
+                }
+                var options = Core.createConnectOptions();
+                options.name = agent.agent_description || 'discover-' + agent.agent_id;
+                var urlObject = Core.parseUrl(agent.url);
+                angular.extend(options, urlObject);
+                options.userName = agent.username;
+                options.password = agent.password;
+                JVM.connectToServer(localStorage, options);
+            }
+            $scope.connectWithCredentials = function ($event, agent) {
+                $scope.closePopover($event);
+                doConnect(agent);
+            };
+            $scope.gotoServer = function ($event, agent) {
+                if (agent.secured) {
+                    $($event.currentTarget).popover('show');
+                }
+                else {
+                    doConnect(agent);
+                }
+            };
+            $scope.getElementId = function (agent) {
+                return agent.agent_id.dasherize().replace(/\./g, "-");
+            };
+            $scope.getLogo = function (agent) {
+                if (agent.server_product) {
+                    return JVM.logoRegistry[agent.server_product];
+                }
+                return JVM.logoRegistry['generic'];
+            };
+            $scope.filterMatches = function (agent) {
+                if (Core.isBlank($scope.filter)) {
+                    return true;
+                }
+                else {
+                    var needle = $scope.filter.toLowerCase();
+                    var haystack = angular.toJson(agent).toLowerCase();
+                    return haystack.indexOf(needle) !== 0;
+                }
+            };
+            $scope.getAgentIdClass = function (agent) {
+                if ($scope.hasName(agent)) {
+                    return "";
+                }
+                return "strong";
+            };
+            $scope.hasName = function (agent) {
+                return !!(agent.server_vendor && agent.server_product && agent.server_version);
+            };
+            $scope.render = function (response) {
+                $scope.discovering = false;
+                if (response) {
+                    var responseJson = angular.toJson(response, true);
+                    if ($scope.responseJson !== responseJson) {
+                        $scope.responseJson = responseJson;
+                        $scope.agents = response;
+                        getMoreJvmDetails($scope.agents);
+                    }
+                }
+                Core.$apply($scope);
+            };
+            $scope.fetch = function () {
+                $scope.discovering = true;
+                // use 10 sec timeout
+                jolokia.execute('jolokia:type=Discovery', 'lookupAgentsWithTimeout(int)', 10 * 1000, Core.onSuccess($scope.render));
+            };
+            $scope.fetch();
+        }]);
+})(JVM || (JVM = {}));
+/// <reference path="jvmPlugin.ts"/>
+var JVM;
+(function (JVM) {
+    JVM.HeaderController = JVM._module.controller("JVM.HeaderController", ["$scope", "ConnectOptions", function ($scope, ConnectOptions) {
+            if (ConnectOptions) {
+                $scope.containerName = ConnectOptions.name || "";
+                if (ConnectOptions.returnTo) {
+                    $scope.goBack = function () {
+                        window.location.href = ConnectOptions.returnTo;
+                    };
+                }
+            }
+        }]);
+})(JVM || (JVM = {}));
+/// <reference path="jvmPlugin.ts"/>
+var JVM;
+(function (JVM) {
+    JolokiaPreferences.$inject = ["$scope", "localStorage", "jolokiaParams", "$window"];
+    var SHOW_ALERT = 'showJolokiaPreferencesAlert';
+    function JolokiaPreferences($scope, localStorage, jolokiaParams, $window) {
+        'ngInject';
+        // Initialize tooltips
+        $('[data-toggle="tooltip"]').tooltip();
+        Core.initPreferenceScope($scope, localStorage, {
+            'updateRate': {
+                'value': 5000,
+                'post': function (newValue) {
+                    $scope.$emit('UpdateRate', newValue);
+                }
+            },
+            'maxDepth': {
+                'value': JVM.DEFAULT_MAX_DEPTH,
+                'converter': parseInt,
+                'formatter': parseInt,
+                'post': function (newValue) {
+                    jolokiaParams.maxDepth = newValue;
+                    localStorage['jolokiaParams'] = angular.toJson(jolokiaParams);
+                }
+            },
+            'maxCollectionSize': {
+                'value': JVM.DEFAULT_MAX_COLLECTION_SIZE,
+                'converter': parseInt,
+                'formatter': parseInt,
+                'post': function (newValue) {
+                    jolokiaParams.maxCollectionSize = newValue;
+                    localStorage['jolokiaParams'] = angular.toJson(jolokiaParams);
+                }
+            }
+        });
+        $scope.showAlert = !!$window.sessionStorage.getItem(SHOW_ALERT);
+        $window.sessionStorage.removeItem(SHOW_ALERT);
+        $scope.reboot = function () {
+            $window.sessionStorage.setItem(SHOW_ALERT, 'true');
+            $window.location.reload();
+        };
+    }
+    JVM.JolokiaPreferences = JolokiaPreferences;
+    JVM._module.controller("JVM.JolokiaPreferences", JolokiaPreferences);
+})(JVM || (JVM = {}));
+var JVM;
+(function (JVM) {
+    var JolokiaService = /** @class */ (function () {
+        JolokiaService.$inject = ["$q", "jolokia"];
+        function JolokiaService($q, jolokia) {
+            'ngInject';
+            this.$q = $q;
+            this.jolokia = jolokia;
+        }
+        JolokiaService.prototype.getAttribute = function (mbean, attribute) {
+            var _this = this;
+            return this.$q(function (resolve, reject) {
+                _this.jolokia.request({ type: 'read', mbean: mbean, attribute: attribute }, { success: function (response) { return resolve(response.value); } }, { error: function (response) {
+                        JVM.log.error("JolokiaService.getAttribute('" + mbean + "', '" + attribute + "') failed. Error: " + response.error);
+                        reject(response.error);
+                    }
+                });
+            });
+        };
+        JolokiaService.prototype.execute = function (mbean, operation) {
+            var _this = this;
+            var args = [];
+            for (var _i = 2; _i < arguments.length; _i++) {
+                args[_i - 2] = arguments[_i];
+            }
+            return this.$q(function (resolve, reject) {
+                _this.jolokia.request({ type: 'exec', mbean: mbean, operation: operation, arguments: args }, { success: function (response) { return resolve(response.value); } }, { error: function (response) {
+                        JVM.log.error("JolokiaService.execute('" + mbean + "', '" + operation + "', '" + args + "') failed. Error: " + response.error);
+                        reject(response.error);
+                    }
+                });
+            });
+        };
+        JolokiaService.prototype.readMany = function (mbeans) {
+            var _this = this;
+            return this.$q(function (resolve, reject) {
+                var requests = mbeans.map(function (mbean) { return ({ type: "read", mbean: mbean }); });
+                var objects = [];
+                _this.jolokia.request(requests, {
+                    success: function (response) {
+                        objects.push(response.value);
+                        if (objects.length === requests.length) {
+                            resolve(objects);
+                        }
+                    }
+                }, {
+                    error: function (response) {
+                        JVM.log.error("JolokiaService.readMany('" + mbeans + "') failed. Error: " + response.error);
+                        reject(response.error);
+                    }
+                });
+            });
+        };
+        return JolokiaService;
+    }());
+    JVM.JolokiaService = JolokiaService;
+    JVM._module.service("jolokiaService", JolokiaService);
+})(JVM || (JVM = {}));
+/// <reference path="jvmPlugin.ts"/>
+/**
+ * @module JVM
+ */
+var JVM;
+(function (JVM) {
+    JVM._module.controller("JVM.JVMsController", ["$scope", "$location", "localStorage", "workspace", "jolokia", "mbeanName", function ($scope, $location, localStorage, workspace, jolokia, mbeanName) {
+            JVM.configureScope($scope, $location, workspace);
+            $scope.data = [];
+            $scope.deploying = false;
+            $scope.status = '';
+            $scope.initDone = false;
+            $scope.filter = '';
+            var listRequest = {
+                type: 'exec', mbean: mbeanName,
+                operation: 'listLocalJVMs()',
+                arguments: []
+            };
+            $scope.filterMatches = function (jvm) {
+                if (Core.isBlank($scope.filter)) {
+                    return true;
+                }
+                else {
+                    return jvm.alias.toLowerCase().has($scope.filter.toLowerCase());
+                }
+            };
+            $scope.fetch = function () {
+                jolokia.request(listRequest, {
+                    success: render,
+                    error: function (response) {
+                        $scope.data = [];
+                        $scope.initDone = true;
+                        $scope.status = 'Could not discover local JVM processes: ' + response.error;
+                        Core.$apply($scope);
+                    }
+                });
+            };
+            $scope.stopAgent = function (pid) {
+                jolokia.request([{
+                        type: 'exec', mbean: mbeanName,
+                        operation: 'stopAgent(java.lang.String)',
+                        arguments: [pid]
+                    }, listRequest], Core.onSuccess(renderIfList));
+            };
+            $scope.startAgent = function (pid) {
+                jolokia.request([{
+                        type: 'exec', mbean: mbeanName,
+                        operation: 'startAgent(java.lang.String)',
+                        arguments: [pid]
+                    }, listRequest], Core.onSuccess(renderIfList));
+            };
+            $scope.connectTo = function (url, scheme, host, port, path) {
+                // we only need the port and path from the url, as we got the rest
+                var options = {};
+                options["scheme"] = scheme;
+                options["host"] = host;
+                options["port"] = port;
+                options["path"] = path;
+                // add empty username as we dont need login
+                options["userName"] = "";
+                options["password"] = "";
+                // connect to root by default as we do not want to show welcome page
+                options["view"] = "#/";
+                var con = Core.createConnectOptions(options);
+                con.name = "local-" + port;
+                JVM.log.debug("Connecting to local JVM agent: " + url);
+                JVM.connectToServer(localStorage, con);
+                Core.$apply($scope);
+            };
+            /**
+             * Since the requests are bundled, check the operation in callback to decide on
+             * how to respond to success
+             */
+            function renderIfList(response) {
+                if (response.request.operation.indexOf("listLocalJVMs") > -1) {
+                    render(response);
+                }
+            }
+            function render(response) {
+                $scope.initDone = true;
+                $scope.data = response.value;
+                if ($scope.data.length === 0) {
+                    $scope.status = 'Could not discover local JVM processes';
+                }
+                Core.$apply($scope);
+            }
+            $scope.fetch();
+        }]);
+})(JVM || (JVM = {}));
+/// <reference path="./jvmPlugin.ts"/>
+var JVM;
+(function (JVM) {
+    JVM._module.controller("JVM.NavController", ["$scope", "$location", "workspace", function ($scope, $location, workspace) {
+            JVM.configureScope($scope, $location, workspace);
+            $scope.isLocalEnabled = JVM.hasLocalMBean(workspace);
+            $scope.isDiscoveryEnabled = JVM.hasDiscoveryMBean(workspace);
+        }]);
+})(JVM || (JVM = {}));
+/// <reference path="./jvmPlugin.ts"/>
+var JVM;
+(function (JVM) {
+    JVM._module.controller("JVM.ResetController", ["$scope", "localStorage", function ($scope, localStorage) {
+            $scope.showAlert = false;
+            $scope.doClearConnectSettings = function () {
+                delete localStorage[JVM.connectControllerKey];
+                delete localStorage[JVM.connectionSettingsKey];
+                $scope.showAlert = true;
+            };
+        }]);
+})(JVM || (JVM = {}));
 /// <reference path="../../jmx/ts/workspace.ts" />
 var Threads;
 (function (Threads) {
@@ -10270,15 +10286,15 @@ var Jmx;
     Jmx.enableTree = enableTree;
 })(Jmx || (Jmx = {}));
 
-angular.module('hawtio-jmx-templates', []).run(['$templateCache', function($templateCache) {$templateCache.put('plugins/jmx/html/areaChart.html','<div ng-controller="Jmx.AreaChartController">\n  <script type="text/ng-template" id="areaChart">\n    <fs-area bind="data" duration="250" interpolate="false" point-radius="5" width="width" height="height" label=""></fs-area>\n  </script>\n  <div compile="template"></div>\n</div>\n');
+angular.module('hawtio-jmx-templates', []).run(['$templateCache', function($templateCache) {$templateCache.put('plugins/diagnostics/html/flags.html','<div ng-controller="DiagnosticsFlagsController">\n  <h1>Hotspot Diagnostics</h1>\n  <table class="table table-striped table-bordered">\n    <thead>\n      <tr>\n        <th>VM Flag</th>\n        <th>Origin</th>\n        <th>Value</th>\n      </tr>\n    </thead>\n    <tbody>\n      <tr ng-repeat="flag in flags track by flag.name">\n        <td>{{flag.name}}</td>\n        <td>{{flag.origin}}</td>\n        <td>\n          <div ng-switch on="flag.dataType">\n            <span ng-switch-when="readonly">{{flag.value}}</span>\n            <input ng-switch-when="boolean" type="checkbox" ng-model="flag.value"></input>\n            <input ng-switch-when="string" type="text" ng-model="flag.value"></input>\n            <input ng-switch-when="number" type="number" ng-model="flag.value"></input>\n          </div>\n        </td>\n      </tr>\n    </tbody>\n  </table>  \n</div>');
+$templateCache.put('plugins/diagnostics/html/heap.html','<div ng-controller="DiagnosticsHeapController" class="table-view">\n  <h1>Class Histogram</h1>\n  <p>\n    <strong>Please note:</strong> Loading class histogram may be very expensive, depending on the size and\n    layout of the heap. Alternatively, use the <samp>jcmd</samp> utility:<br>\n    <samp>jcmd &lt;process id/main class&gt; GC.class_histogram<samp>\n  </p>\n  <p>\n    <button type="button" class="btn btn-primary" ng-click="loadClassStats()" ng-disabled="loading">\n      Load class histogram\n    </button>\n  </p>\n  <p ng-show="loading">\n    Loading...\n  </p>\n  <div ng-show="!loading && items.length > 0">\n    <pf-toolbar config="toolbarConfig">\n      <span ng-show="lastLoaded">\n        Last loaded: {{lastLoaded | date: \'yyyy-MM-dd hh:mm:ss\'}}\n      </span>\n    </pf-toolbar>\n    <pf-table-view class="diagnostics-class-histogram-table" config="tableConfig" dt-options="tableDtOptions"\n                   page-config="pageConfig" columns="tableColumns" items="items"></pf-table-view>\n  </div>\n</div>\n');
+$templateCache.put('plugins/diagnostics/html/jfr.html','<div ng-controller="DiagnosticsJfrController">\n  <h1>Flight Recorder</h1>\n  <div class="row-fluid jfr-column-container"\n       hawtio-auto-columns=".jfr-column">\n\n    <div class="jfr-column">\n      <div class="alert alert-warning alert-dismissable" ng-show="!jfrEnabled && isMessageVisible(\'jfrShowUnlockWarning\')">\n        <button type="button"\n           class="close"\n           data-dismiss="alert"\n           aria-hidden="true" ng-click="closeMessageForGood(\'jfrShowUnlockWarning\')" ><span class="pficon pficon-close"></span></button>\n        <span class="pficon pficon-warning-triangle-o"></span>\n        <strong>Please note:</strong> Running Java Flight Recorder on\n        production systems requires a <a\n        href="http://www.oracle.com/technetwork/java/javaseproducts/overview/index.html"\n        class="alert-link">license</a>.\n      </div>\n      <div class="alert alert-info alert-dismissable" ng-show="isMessageVisible(\'jfrShowJcmd\')">\n        <button type="button"\n                class="close"\n                data-dismiss="alert"\n                aria-hidden="true" ng-click="closeMessageForGood(\'jfrShowJcmd\')"><span class="pficon pficon-close"></span></button>\n        <span class="pficon pficon-info"></span>\n        <strong>Info:</strong>Equivalent command of last action: <code>{{jcmd}}</code>\n      </div>\n      <div class="casettePlayer">\n        <div class="casette">\n          <svg role="img"\n               aria-label="recording indicator"\n               xmlns="http://www.w3.org/2000/svg"\n               version="1.1"\n               viewBox="0 0 24 24"\n               width="25"\n               height="25"\n               id="recordingIndicator">\n            <circle cx="12"\n                    cy="12"\n                    r="11"\n                    fill="red"\n                    ng-show="isRunning">\n              <animate attributeType="XML"\n                       attributeName="fill"\n                       from="#ff0000"\n                       to="#000000"\n                       dur="2s"\n                       repeatCount="indefinite"></animate>\n            </circle>\n          </svg>\n          <div class="cassetteLabelCutCorners"></div>\n          <div class="casetteLabel">\n            {{jfrStatus}}\n            <div class="notLabel">\n              <div class="wrapCog"\n                   ng-class="{\'spinning\': isRunning}">\n                <svg role="img"\n                     aria-label="cassette wheel"\n                     xmlns="http://www.w3.org/2000/svg"\n                     version="1.1"\n                     viewBox="0 0 24 24"\n                     width="50"\n                     height="50"\n                     ng-class="{\'spinning\': isRecording}"\n                     id="leftcog">\n                  <circle cx="12"\n                          cy="12"\n                          r="11"\n                          fill="white"></circle>\n                  <circle cx="12"\n                          cy="12"\n                          r="8"\n                          fill="black"></circle>\n                  <rect x="2"\n                        y="10"\n                        width="20"\n                        height="4"\n                        fill="black"\n                        stroke="none"></rect>\n                  <rect x="2"\n                        y="10"\n                        width="20"\n                        height="4"\n                        fill="black"\n                        stroke="none"\n                        transform="rotate(45,12,12)"></rect>\n                  <rect x="2"\n                        y="10"\n                        width="20"\n                        height="4"\n                        fill="black"\n                        stroke="none"\n                        transform="rotate(90,12,12)"></rect>\n                  <rect x="2"\n                        y="10"\n                        width="20"\n                        height="4"\n                        fill="black"\n                        stroke="none"\n                        transform="rotate(135,12,12)"></rect>\n                </svg>\n              </div>\n              <div class="wrapCog"\n                   ng-class="{\'spinning\': isRunning}"\n                   id="rightCogWrapper">\n                <svg role="img"\n                     aria-label="cassette wheel"\n                     xmlns="http://www.w3.org/2000/svg"\n                     version="1.1"\n                     viewBox="0 0 24 24"\n                     width="50"\n                     height="50"\n                     ng-class="{\'spinning\': isRecording}">\n                  <circle cx="12"\n                          cy="12"\n                          r="11"\n                          fill="white"></circle>\n                  <circle cx="12"\n                          cy="12"\n                          r="8"\n                          fill="black"></circle>\n                  <rect x="2"\n                        y="10"\n                        width="20"\n                        height="4"\n                        fill="black"\n                        stroke="none"></rect>\n                  <rect x="2"\n                        y="10"\n                        width="20"\n                        height="4"\n                        fill="black"\n                        stroke="none"\n                        transform="rotate(45,12,12)"></rect>\n                  <rect x="2"\n                        y="10"\n                        width="20"\n                        height="4"\n                        fill="black"\n                        stroke="none"\n                        transform="rotate(90,12,12)"></rect>\n                  <rect x="2"\n                        y="10"\n                        width="20"\n                        height="4"\n                        fill="black"\n                        stroke="none"\n                        transform="rotate(135,12,12)"></rect>\n                </svg>\n              </div>\n            </div>\n          </div>\n        </div>\n        <div id="casetteButtons">\n\n          <button class="recorderButton btn"\n                  tooltip="Unlock commercial features to be able to record"\n                  ng-click="unlock()"\n                  ng-disabled="jfrEnabled"\n                  ng-class="jfrEnabled ? \'disabledJfrButton\' : \'raisedButton\'">\n            <i class="fa-5x"\n               ng-class="jfrEnabled ? \'pficon-unlocked\' : \'pficon-locked\'"></i>\n          </button>\n          <button class="recorderButton btn"\n                  ng-enabled="!isRunning"\n                  ng-class="!jfrEnabled || isRunning ? \'disabledJfrButton\' : \'raisedButton\'"\n                  tooltip="Start recording"\n                  ng-click="startRecording()"\n                  ng-disabled="isRunning">\n            <div class="recordingSymbol"\n                 id="rec"></div>\n          </button>\n          <button class="recorderButton btn"\n                  title="Dump recording to disk"\n                  ng-class="jfrEnabled && isRecording ? \'raisedButton\' : \'disabledJfrButton\'"\n                  ng-disabled="!isRecording"\n                  tooltip="Dump {{jfrSettings.name}} to disk"\n                  ng-click="dumpRecording()">\n            <i class="pficon-save fa-5x"></i>\n          </button>\n          <button class="recorderButton btn"\n                  ng-disabled="!isRecording"\n                  ng-class="jfrEnabled && isRecording ? \'raisedButton\' : \'disabledJfrButton\'"\n                  tooltip="Stop {{jfrSettings.name}}"\n                  ng-click="stopRecording()">\n            <div class="recordingSymbol"\n                 id="stop"></div>\n          </button>\n          <button class="recorderButton btn"\n                  ng-class="jfrEnabled && !settingsVisible ? \'raisedButton\' : \'disabledJfrButton\'"\n                  tooltip="Show/hide settings"\n                  ng-click="toggleSettingsVisible()">\n            <i class="pficon-settings fa-5x"></i>\n          </button>\n        </div>\n      </div>\n    </div>\n\n    <div class="jfr-column"\n         ng-show="settingsVisible">\n\n\n      <dl>\n        <dt>Recorder Settings</dt>\n        <dd>\n          <div simple-form\n               name="jfrForm"\n               data="formConfig"\n               entity="jfrSettings"></div>\n\n        </dd>\n      </dl>\n\n    </div>\n    <table ng-show="!!recordings.length"\n           class="table table-condensed table-striped">\n      <tr>\n        <th>Rec#</th>\n        <th>Size</th>\n        <th>Time</th>\n        <th>File</th>\n      </tr>\n      <tr ng-repeat="aRecording in recordings">\n        <td>{{aRecording.number}}</td>\n        <td>{{aRecording.size}}</td>\n        <td>{{aRecording.time | date: \'yyyy-MM-dd HH:mm:ss\' }}</td>\n        <td><a href="file://{{aRecording.file}}">{{aRecording.file}}</a></td>\n      </tr>\n    </table>\n\n  </div>\n\n</div>\n');
+$templateCache.put('plugins/diagnostics/html/layout.html','<div class="diagnostics-nav-main">\n  <div ng-controller="DiagnosticsLayoutController as $ctrl">\n    <hawtio-tabs tabs="$ctrl.tabs" on-change="$ctrl.goto(tab)"></hawtio-tabs>\n  </div>\n  <div class="contents" ng-view></div>\n</div>\n');
+$templateCache.put('plugins/jmx/html/areaChart.html','<div ng-controller="Jmx.AreaChartController">\n  <script type="text/ng-template" id="areaChart">\n    <fs-area bind="data" duration="250" interpolate="false" point-radius="5" width="width" height="height" label=""></fs-area>\n  </script>\n  <div compile="template"></div>\n</div>\n');
 $templateCache.put('plugins/jmx/html/chartEdit.html','<div class="jmx-charts-edit-view" ng-controller="Jmx.ChartEditController">\n  <form>\n    <div class="form-group" ng-show="canEditChart()">\n      <button type="submit" class="btn btn-primary" ng-click="viewChart()" ng-disabled="!selectedAttributes.length && !selectedMBeans.length">\n        View Chart\n      </button>\n    </div>\n\n    <div class="row">\n      <div class="form-group col-md-6" ng-show="showAttributes()">\n        <label for="attributes">Attributes</label>\n        <select id="attributes" class="form-control" size="20" multiple ng-multiple="true" ng-model="selectedAttributes" ng-options="name | humanize for (name, value) in metrics"></select>\n      </div>\n      <div class="form-group col-md-6" ng-show="showElements()">\n        <label for="mbeans">Elements</label>\n        <select id="mbeans" class="form-control" size="20" multiple ng-multiple="true" ng-model="selectedMBeans" ng-options="name for (name, value) in mbeans"></select>\n      </div>\n    </div>\n\n    <p ng-if="!canEditChart()">\n      No numeric metrics available. Please select another item to chart on.\n    </p>\n  </form>\n</div>');
 $templateCache.put('plugins/jmx/html/charts.html','<div ng-controller="Jmx.ChartController">\n  <h2>Chart</h2>\n  <div ng-switch="errorMessage()">\n    <div ng-switch-when="metrics">No valid metrics to show for this mbean.</div>\n    <div ng-switch-when="updateRate">Charts aren\'t available when the update rate is set to "No refreshes", go to the <a ng-href="#/preferences{{hash}}">Preferences</a> panel and set a refresh rate to enable charts</div>\n    <div id="charts"></div>\n  </div>\n</div>\n');
 $templateCache.put('plugins/jmx/html/donutChart.html','<div ng-controller="Jmx.DonutChartController">\n  <script type="text/ng-template" id="donut">\n    <fs-donut bind="data" outer-radius="200" inner-radius="75"></fs-donut>\n  </script>\n  <div compile="template"></div>\n</div>\n');
 $templateCache.put('plugins/jmx/html/layoutTree.html','<div class="tree-nav-layout">\n  <div class="sidebar-pf sidebar-pf-left" resizable r-directions="[\'right\']">\n    <tree-header></tree-header>\n    <tree></tree>\n  </div>\n  <div class="tree-nav-main">\n    <jmx-header></jmx-header>\n    <jmx-navigation></jmx-navigation>\n    <div class="contents" ng-view></div>\n  </div>\n</div>\n');
-$templateCache.put('plugins/diagnostics/html/flags.html','<div ng-controller="DiagnosticsFlagsController">\n  <h1>Hotspot Diagnostics</h1>\n  <table class="table table-striped table-bordered">\n    <thead>\n      <tr>\n        <th>VM Flag</th>\n        <th>Origin</th>\n        <th>Value</th>\n      </tr>\n    </thead>\n    <tbody>\n      <tr ng-repeat="flag in flags track by flag.name">\n        <td>{{flag.name}}</td>\n        <td>{{flag.origin}}</td>\n        <td>\n          <div ng-switch on="flag.dataType">\n            <span ng-switch-when="readonly">{{flag.value}}</span>\n            <input ng-switch-when="boolean" type="checkbox" ng-model="flag.value"></input>\n            <input ng-switch-when="string" type="text" ng-model="flag.value"></input>\n            <input ng-switch-when="number" type="number" ng-model="flag.value"></input>\n          </div>\n        </td>\n      </tr>\n    </tbody>\n  </table>  \n</div>');
-$templateCache.put('plugins/diagnostics/html/heap.html','<div ng-controller="DiagnosticsHeapController" class="table-view">\n  <h1>Class Histogram</h1>\n  <p>\n    <strong>Please note:</strong> Loading class histogram may be very expensive, depending on the size and\n    layout of the heap. Alternatively, use the <samp>jcmd</samp> utility:<br>\n    <samp>jcmd &lt;process id/main class&gt; GC.class_histogram<samp>\n  </p>\n  <p>\n    <button type="button" class="btn btn-primary" ng-click="loadClassStats()" ng-disabled="loading">\n      Load class histogram\n    </button>\n  </p>\n  <p ng-show="loading">\n    Loading...\n  </p>\n  <div ng-show="!loading && items.length > 0">\n    <pf-toolbar config="toolbarConfig">\n      <span ng-show="lastLoaded">\n        Last loaded: {{lastLoaded | date: \'yyyy-MM-dd hh:mm:ss\'}}\n      </span>\n    </pf-toolbar>\n    <pf-table-view class="diagnostics-class-histogram-table" config="tableConfig" dt-options="tableDtOptions"\n                   page-config="pageConfig" columns="tableColumns" items="items"></pf-table-view>\n  </div>\n</div>\n');
-$templateCache.put('plugins/diagnostics/html/jfr.html','<div ng-controller="DiagnosticsJfrController">\n  <h1>Flight Recorder</h1>\n  <div class="row-fluid jfr-column-container"\n       hawtio-auto-columns=".jfr-column">\n\n    <div class="jfr-column">\n      <div class="alert alert-warning alert-dismissable" ng-show="!jfrEnabled && isMessageVisible(\'jfrShowUnlockWarning\')">\n        <button type="button"\n           class="close"\n           data-dismiss="alert"\n           aria-hidden="true" ng-click="closeMessageForGood(\'jfrShowUnlockWarning\')" ><span class="pficon pficon-close"></span></button>\n        <span class="pficon pficon-warning-triangle-o"></span>\n        <strong>Please note:</strong> Running Java Flight Recorder on\n        production systems requires a <a\n        href="http://www.oracle.com/technetwork/java/javaseproducts/overview/index.html"\n        class="alert-link">license</a>.\n      </div>\n      <div class="alert alert-info alert-dismissable" ng-show="isMessageVisible(\'jfrShowJcmd\')">\n        <button type="button"\n                class="close"\n                data-dismiss="alert"\n                aria-hidden="true" ng-click="closeMessageForGood(\'jfrShowJcmd\')"><span class="pficon pficon-close"></span></button>\n        <span class="pficon pficon-info"></span>\n        <strong>Info:</strong>Equivalent command of last action: <code>{{jcmd}}</code>\n      </div>\n      <div class="casettePlayer">\n        <div class="casette">\n          <svg role="img"\n               aria-label="recording indicator"\n               xmlns="http://www.w3.org/2000/svg"\n               version="1.1"\n               viewBox="0 0 24 24"\n               width="25"\n               height="25"\n               id="recordingIndicator">\n            <circle cx="12"\n                    cy="12"\n                    r="11"\n                    fill="red"\n                    ng-show="isRunning">\n              <animate attributeType="XML"\n                       attributeName="fill"\n                       from="#ff0000"\n                       to="#000000"\n                       dur="2s"\n                       repeatCount="indefinite"></animate>\n            </circle>\n          </svg>\n          <div class="cassetteLabelCutCorners"></div>\n          <div class="casetteLabel">\n            {{jfrStatus}}\n            <div class="notLabel">\n              <div class="wrapCog"\n                   ng-class="{\'spinning\': isRunning}">\n                <svg role="img"\n                     aria-label="cassette wheel"\n                     xmlns="http://www.w3.org/2000/svg"\n                     version="1.1"\n                     viewBox="0 0 24 24"\n                     width="50"\n                     height="50"\n                     ng-class="{\'spinning\': isRecording}"\n                     id="leftcog">\n                  <circle cx="12"\n                          cy="12"\n                          r="11"\n                          fill="white"></circle>\n                  <circle cx="12"\n                          cy="12"\n                          r="8"\n                          fill="black"></circle>\n                  <rect x="2"\n                        y="10"\n                        width="20"\n                        height="4"\n                        fill="black"\n                        stroke="none"></rect>\n                  <rect x="2"\n                        y="10"\n                        width="20"\n                        height="4"\n                        fill="black"\n                        stroke="none"\n                        transform="rotate(45,12,12)"></rect>\n                  <rect x="2"\n                        y="10"\n                        width="20"\n                        height="4"\n                        fill="black"\n                        stroke="none"\n                        transform="rotate(90,12,12)"></rect>\n                  <rect x="2"\n                        y="10"\n                        width="20"\n                        height="4"\n                        fill="black"\n                        stroke="none"\n                        transform="rotate(135,12,12)"></rect>\n                </svg>\n              </div>\n              <div class="wrapCog"\n                   ng-class="{\'spinning\': isRunning}"\n                   id="rightCogWrapper">\n                <svg role="img"\n                     aria-label="cassette wheel"\n                     xmlns="http://www.w3.org/2000/svg"\n                     version="1.1"\n                     viewBox="0 0 24 24"\n                     width="50"\n                     height="50"\n                     ng-class="{\'spinning\': isRecording}">\n                  <circle cx="12"\n                          cy="12"\n                          r="11"\n                          fill="white"></circle>\n                  <circle cx="12"\n                          cy="12"\n                          r="8"\n                          fill="black"></circle>\n                  <rect x="2"\n                        y="10"\n                        width="20"\n                        height="4"\n                        fill="black"\n                        stroke="none"></rect>\n                  <rect x="2"\n                        y="10"\n                        width="20"\n                        height="4"\n                        fill="black"\n                        stroke="none"\n                        transform="rotate(45,12,12)"></rect>\n                  <rect x="2"\n                        y="10"\n                        width="20"\n                        height="4"\n                        fill="black"\n                        stroke="none"\n                        transform="rotate(90,12,12)"></rect>\n                  <rect x="2"\n                        y="10"\n                        width="20"\n                        height="4"\n                        fill="black"\n                        stroke="none"\n                        transform="rotate(135,12,12)"></rect>\n                </svg>\n              </div>\n            </div>\n          </div>\n        </div>\n        <div id="casetteButtons">\n\n          <button class="recorderButton btn"\n                  tooltip="Unlock commercial features to be able to record"\n                  ng-click="unlock()"\n                  ng-disabled="jfrEnabled"\n                  ng-class="jfrEnabled ? \'disabledJfrButton\' : \'raisedButton\'">\n            <i class="fa-5x"\n               ng-class="jfrEnabled ? \'pficon-unlocked\' : \'pficon-locked\'"></i>\n          </button>\n          <button class="recorderButton btn"\n                  ng-enabled="!isRunning"\n                  ng-class="!jfrEnabled || isRunning ? \'disabledJfrButton\' : \'raisedButton\'"\n                  tooltip="Start recording"\n                  ng-click="startRecording()"\n                  ng-disabled="isRunning">\n            <div class="recordingSymbol"\n                 id="rec"></div>\n          </button>\n          <button class="recorderButton btn"\n                  title="Dump recording to disk"\n                  ng-class="jfrEnabled && isRecording ? \'raisedButton\' : \'disabledJfrButton\'"\n                  ng-disabled="!isRecording"\n                  tooltip="Dump {{jfrSettings.name}} to disk"\n                  ng-click="dumpRecording()">\n            <i class="pficon-save fa-5x"></i>\n          </button>\n          <button class="recorderButton btn"\n                  ng-disabled="!isRecording"\n                  ng-class="jfrEnabled && isRecording ? \'raisedButton\' : \'disabledJfrButton\'"\n                  tooltip="Stop {{jfrSettings.name}}"\n                  ng-click="stopRecording()">\n            <div class="recordingSymbol"\n                 id="stop"></div>\n          </button>\n          <button class="recorderButton btn"\n                  ng-class="jfrEnabled && !settingsVisible ? \'raisedButton\' : \'disabledJfrButton\'"\n                  tooltip="Show/hide settings"\n                  ng-click="toggleSettingsVisible()">\n            <i class="pficon-settings fa-5x"></i>\n          </button>\n        </div>\n      </div>\n    </div>\n\n    <div class="jfr-column"\n         ng-show="settingsVisible">\n\n\n      <dl>\n        <dt>Recorder Settings</dt>\n        <dd>\n          <div simple-form\n               name="jfrForm"\n               data="formConfig"\n               entity="jfrSettings"></div>\n\n        </dd>\n      </dl>\n\n    </div>\n    <table ng-show="!!recordings.length"\n           class="table table-condensed table-striped">\n      <tr>\n        <th>Rec#</th>\n        <th>Size</th>\n        <th>Time</th>\n        <th>File</th>\n      </tr>\n      <tr ng-repeat="aRecording in recordings">\n        <td>{{aRecording.number}}</td>\n        <td>{{aRecording.size}}</td>\n        <td>{{aRecording.time | date: \'yyyy-MM-dd HH:mm:ss\' }}</td>\n        <td><a href="file://{{aRecording.file}}">{{aRecording.file}}</a></td>\n      </tr>\n    </table>\n\n  </div>\n\n</div>\n');
-$templateCache.put('plugins/diagnostics/html/layout.html','<div class="diagnostics-nav-main">\n  <div ng-controller="DiagnosticsLayoutController as $ctrl">\n    <hawtio-tabs tabs="$ctrl.tabs" on-change="$ctrl.goto(tab)"></hawtio-tabs>\n  </div>\n  <div class="contents" ng-view></div>\n</div>\n');
 $templateCache.put('plugins/jvm/html/connect-delete-warning.html','<div class="modal-header">\n  <button type="button" class="close" aria-label="Close" ng-click="$dismiss()">\n    <span class="pficon pficon-close" aria-hidden="true"></span>\n  </button>\n  <h4>Are you sure?</h4>\n</div>\n<div class="modal-body">\n  <p>You are about to delete this connection.</p>\n</div>\n<div class="modal-footer">\n  <button type="button" class="btn btn-default" ng-click="$dismiss()">Cancel</button>\n  <button type="button" class="btn btn-danger" ng-click="$close()">Delete</button>\n</div>\n');
 $templateCache.put('plugins/jvm/html/connect-edit.html','<div class="modal-header">\n  <button type="button" class="close" aria-label="Close" ng-click="$dismiss()">\n    <span class="pficon pficon-close" aria-hidden="true"></span>\n  </button>\n  <h4 class="modal-title" ng-show="!model.name">Add Connection</h4>\n  <h4 class="modal-title" ng-show="model.name">Edit Connection</h4>\n</div>\n<form name="connectForm" class="form-horizontal jvm-connection-form" ng-submit="saveConnection(model)">\n  <div class="modal-body">\n    <p class="fields-status-pf">The fields marked with\n      <span class="required-pf">*</span> are required.</p>\n    <div class="form-group" ng-class="{\'has-error\': model.errors.name}">\n      <label class="col-sm-3 control-label required-pf" for="connection-name">Name</label>\n      <div class="col-sm-8">\n        <input type="text" id="connection-name" class="form-control" name="name" ng-model="model.connection.name" pf-focused="!model.connection.name">\n        <span class="help-block" ng-show="model.errors.name">{{model.errors.name}}</span>\n      </div>\n    </div>\n    <div class="form-group">\n      <label class="col-sm-3 control-label required-pf" for="connection-scheme">Scheme</label>\n      <div class="col-sm-8">\n        <select id="connection-scheme" class="form-control" name="scheme" ng-model="model.connection.scheme">\n          <option>http</option>\n          <option>https</option>\n        </select>\n      </div>\n    </div>\n    <div class="form-group" ng-class="{\'has-error\': model.errors.host}">\n      <label class="col-sm-3 control-label required-pf" for="connection-host">Host</label>\n      <div class="col-sm-8">\n        <input type="text" id="connection-host" class="form-control" name="host" ng-model="model.connection.host" ng-change="">\n        <span class="help-block" ng-show="model.errors.host">{{model.errors.host}}</span>\n      </div>\n    </div>\n    <div class="form-group">\n      <label class="col-sm-3 control-label" for="connection-port">Port</label>\n      <div class="col-sm-8">\n        <input type="number" id="connection-port" class="form-control" name="port" ng-model="model.connection.port" ng-change="resetTestConnection()">\n      </div>\n    </div>\n    <div class="form-group">\n      <label class="col-sm-3 control-label" for="connection-path">Path</label>\n      <div class="col-sm-8">\n        <input type="text" id="connection-path" class="form-control" name="path" ng-model="model.connection.path" ng-change="resetTestConnection()">\n      </div>\n    </div>\n    <div class="form-group">\n      <label class="col-sm-3 control-label" for="connection-path">Username</label>\n      <div class="col-sm-8">\n        <input type="text" id="connection-username" class="form-control" name="userName" ng-model="model.connection.userName" ng-change="resetTestConnection()">\n        <span class="help-block">Username is not saved</span>\n      </div>\n    </div>\n    <div class="form-group">\n      <label class="col-sm-3 control-label" for="connection-path">Password</label>\n      <div class="col-sm-8">\n        <input type="password" id="connection-password" class="form-control" name="password" ng-model="model.connection.password" ng-change="resetTestConnection()">\n        <span class="help-block">Password is not saved</span>\n      </div>\n    </div>\n    <div class="form-group">\n      <div class="col-sm-offset-3 col-sm-8">\n        <button type="button" class="btn btn-default" ng-click="testConnection(model.connection)">\n          Test Connection\n        </button>\n        <span class="jvm-connection-test-msg" ng-show="model.test.message">\n          <span class="pficon" ng-class="{\'pficon-ok\': model.test.ok, \'pficon-warning-triangle-o\': !model.test.ok}"></span>\n          {{model.test.message}}\n        </span>\n      </div>\n    </div>\n  </div>\n  <div class="modal-footer">\n    <button type="button" class="btn btn-default" ng-click="$dismiss()">Cancel</button>\n    <button type="submit" class="btn btn-primary" ng-show="!model.connection.name">Add</button>\n    <button type="submit" class="btn btn-primary" ng-show="model.connection.name">Save</button>\n  </div>\n</form>');
 $templateCache.put('plugins/jvm/html/connect-login.html','<div class="modal-header">\n  <button type="button" class="close" aria-label="Close" ng-click="$dismiss()">\n    <span class="pficon pficon-close" aria-hidden="true"></span>\n  </button>\n  <h4 class="modal-title">Log In</h4>\n</div>\n<form name="connectForm" class="form-horizontal" ng-submit="login(connection)">\n  <div class="modal-body">\n    <div class="alert alert-danger" ng-show="showErrorMessage">\n      <span class="pficon pficon-error-circle-o"></span> Incorrect username or password\n    </div>\n    <div class="form-group">\n      <label class="col-sm-3 control-label" for="connection-username">Username</label>\n      <div class="col-sm-8">\n        <input type="text" id="connection-username" class="form-control" name="userName"\n               ng-model="connection.userName" autofocus>\n      </div>\n    </div>\n    <div class="form-group">\n      <label class="col-sm-3 control-label" for="connection-password">Password</label>\n      <div class="col-sm-8">\n        <input type="password" id="connection-password" class="form-control" name="password"\n               ng-model="connection.password">\n      </div>\n    </div>\n  </div>\n  <div class="modal-footer">\n    <button type="button" class="btn btn-default" ng-click="$dismiss()">Cancel</button>\n    <button type="submit" class="btn btn-primary">Log In</button>\n  </div>\n</form>\n');
@@ -10290,15 +10306,15 @@ $templateCache.put('plugins/jvm/html/layoutConnect.html','<div class="jvm-nav-ma
 $templateCache.put('plugins/jvm/html/local.html','<div ng-controller="JVM.JVMsController">\n  <h1>Local</h1>\n  <p ng-if="!initDone">\n    Please wait, discovering local JVM processes...\n  </p>\n  <div ng-if="initDone">\n    <p ng-if=\'status\'>\n      {{status}}\n    </p>\n    <div ng-if=\'data.length > 0\'>\n      <div class="row toolbar-pf">\n        <div class="col-sm-12">\n          <form class="toolbar-pf-actions">\n            <div class="form-group">\n              <input type="text" class="form-control" ng-model="filter" placeholder="Filter..." autocomplete="off">\n            </div>  \n            <div class="form-group">\n              <button class="btn btn-default" ng-click="fetch()" title="Refresh"><i class="fa fa-refresh"></i> Refresh</button>\n            </div>  \n          </form>  \n        </div>  \n      </div>  \n      <table class=\'centered table table-bordered table-condensed table-striped\'>\n        <thead>\n        <tr>\n          <th style="width: 70px">PID</th>\n          <th>Name</th>\n          <th style="width: 300px">Agent URL</th>\n          <th style="width: 50px"></th>\n        </tr>\n        </thead>\n        <tbody>\n        <tr ng-repeat="jvm in data track by $index" ng-show="filterMatches(jvm)">\n          <td>{{jvm.id}}</td>\n          <td title="{{jvm.displayName}}">{{jvm.alias}}</td>\n          <td><a href=\'\' title="Connect to this agent"\n                 ng-click="connectTo(jvm.url, jvm.scheme, jvm.hostname, jvm.port, jvm.path)">{{jvm.agentUrl}}</a></td>\n          <td>\n            <a class=\'btn control-button\' href="" title="Stop agent" ng-show="jvm.agentUrl"\n             ng-click="stopAgent(jvm.id)"><i class="pficon-close"></i></a>\n            <a class=\'btn control-button\' href="" title="Start agent" ng-hide="jvm.agentUrl"\n             ng-click="startAgent(jvm.id)"><i class="pficon-running"></i></a>\n          </td>\n        </tr>\n        </tbody>\n      </table>\n    </div>\n  </div>\n</div>\n');
 $templateCache.put('plugins/jvm/html/navbarHeaderExtension.html','<style>\n  .navbar-header-hawtio-jvm {\n    float: left;\n    margin: 0;\n  }\n\n  .navbar-header-hawtio-jvm h4 {\n    color: white;\n    margin: 0px;\n  }\n\n  .navbar-header-hawtio-jvm li {\n    list-style-type: none;\n    display: inline-block;\n    margin-right: 10px;\n    margin-top: 4px;\n  }\n</style>\n<ul class="navbar-header-hawtio-jvm" ng-controller="JVM.HeaderController">\n  <li ng-show="containerName"><h4 ng-bind="containerName"></h4></li>\n  <li ng-show="goBack"><strong><a href="" ng-click="goBack()">Back</a></strong></li>\n</ul>\n');
 $templateCache.put('plugins/jvm/html/reset.html','<div ng-controller="JVM.ResetController">\n  <div class="alert alert-success jvm-reset-connections-alert" ng-if="showAlert">\n    <span class="pficon pficon-ok"></span>\n    Connections cleared successfully!\n  </div>\n  <h3>Clear saved connections</h3>\n  <p>\n    Clear all saved connection settings stored in your browser\'s local storage.\n  </p>\n  <p>\n    <button class="btn btn-danger" ng-click="doClearConnectSettings()">Clear saved connections</button>\n  </p>\n</div>');
-$templateCache.put('plugins/threads/html/threads.html','<div id="threads-page" class="table-view" ng-controller="ThreadsController">\n\n  <h1>Threads</h1>\n\n  <pf-toolbar config="toolbarConfig"></pf-toolbar>\n\n  <pf-table-view class="threads-table" config="tableConfig" dt-options="tableDtOptions"\n    columns="tableColumns" items="filteredThreads" action-buttons="tableActionButtons">\n  </pf-table-view>\n\n  <script type="text/ng-template" id="threadModalContent.html">\n    <div class="modal-header">\n      <button type="button" class="close" aria-label="Close" ng-click="$close()">\n        <span class="pficon pficon-close" aria-hidden="true"></span>\n      </button>\n      <h4 class="modal-title">Thread</h4>\n    </div>\n    <div class="modal-body">\n      <div class="row">\n        <div class="col-md-12">\n          <dl class="dl-horizontal">\n            <dt>ID</dt>\n            <dd>{{thread.threadId}}</dd>\n            <dt>Name</dt>\n            <dd>{{thread.threadName}}</dd>\n            <dt>Waited Count</dt>\n            <dd>{{thread.waitedCount}}</dd>\n            <dt>Waited Time</dt>\n            <dd>{{thread.waitedTime}} ms</dd>\n            <dt>Blocked Count</dt>\n            <dd>{{thread.blockedCount}}</dd>\n            <dt>Blocked Time</dt>\n            <dd>{{thread.blockedTime}} ms</dd>\n            <div ng-show="thread.lockInfo != null">\n              <dt>Lock Name</dt>\n              <dd>{{thread.lockName}}</dd>\n              <dt>Lock Class Name</dt>\n              <dd>{{thread.lockInfo.className}}</dd>\n              <dt>Lock Identity Hash Code</dt>\n              <dd>{{thread.lockInfo.identityHashCode}}</dd>\n            </div>\n            <div ng-show="thread.lockOwnerId > 0">\n              <dt>Waiting for lock owned by</dt>\n              <dd><a href="" ng-click="selectThreadById(thread.lockOwnerId)">{{thread.lockOwnerId}} - {{thread.lockOwnerName}}</a></dd>\n            </div>\n            <div ng-show="thread.lockedSynchronizers.length > 0">\n              <dt>Locked Synchronizers</dt>\n              <dd>\n                <ol class="list-unstyled">\n                  <li ng-repeat="synchronizer in thread.lockedSynchronizers">\n                    <span title="Class Name">{{synchronizer.className}}</span> -\n                    <span title="Identity Hash Code">{{synchronizer.identityHashCode}}</span>\n                  </li>\n                </ol>\n              </dd>\n            </div>\n          </dl>\n        </div>\n      </div>\n      <div class="row" ng-show="thread.lockedMonitors.length > 0">\n        <div class="col-md-12">\n          <dl>\n            <dt>Locked Monitors</dt>\n            <dd>\n              <ol class="zebra-list">\n                <li ng-repeat="monitor in thread.lockedMonitors">\n                  Frame: <strong>{{monitor.lockedStackDepth}}</strong>\n                  <span class="green">{{monitor.lockedStackFrame.className}}</span>\n                  <span class="bold">.</span>\n                  <span class="blue bold">{{monitor.lockedStackFrame.methodName}}</span>\n                  &nbsp;({{monitor.lockedStackFrame.fileName}}<span ng-show="frame.lineNumber > 0">:{{monitor.lockedStackFrame.lineNumber}}</span>)\n                  <span class="orange" ng-show="monitor.lockedStackFrame.nativeMethod">(Native)</span>\n                </li>\n              </ol>\n            </dd>\n          </dl>\n        </div>\n      </div>\n      <div class="row">\n        <div class="col-md-12">\n          <dl>\n            <dt>Stack Trace</dt>\n            <dd>\n              <ol class="zebra-list">\n                <li ng-repeat="frame in thread.stackTrace">\n                  <span class="green">{{frame.className}}</span>\n                  <span class="bold">.</span>\n                  <span class="blue bold">{{frame.methodName}}</span>\n                  &nbsp;({{frame.fileName}}<span ng-show="frame.lineNumber > 0">:{{frame.lineNumber}}</span>)\n                  <span class="orange" ng-show="frame.nativeMethod">(Native)</span>\n                </li>\n              </ol>\n            </dd>\n          </dl>\n        </div>\n      </div>\n    </div>\n  </script>\n\n</div>\n');
 $templateCache.put('plugins/runtime/layout/layout.html','<div class="runtime-nav-main">\n  <div ng-controller="RuntimeLayoutController as $ctrl">\n    <hawtio-tabs tabs="$ctrl.tabs" on-change="$ctrl.goto(tab)"></hawtio-tabs>\n  </div>\n  <div class="contents" ng-view></div>\n</div>\n');
-$templateCache.put('plugins/jmx/html/attributes/attributes.html','<script type="text/ng-template" id="gridTemplate">\n  <table class="table table-striped table-bordered table-hover jmx-attributes-table"\n    ng-class="{\'ht-table-extra-columns\': hasExtraColumns}"\n    hawtio-simple-table="gridOptions">\n  </table>\n</script>\n\n<div class="table-view" ng-controller="Jmx.AttributesController">\n\n  <h2>Attributes</h2>\n  \n  <div ng-if="gridData.length > 0">\n    <div compile="attributes"></div>\n  </div>\n\n  <!-- modal dialog to show/edit the attribute -->\n  <div hawtio-confirm-dialog="showAttributeDialog" ok-button-text="Update"\n       show-ok-button="{{entity.rw ? \'true\' : \'false\'}}" on-ok="onUpdateAttribute()" on-cancel="onCancelAttribute()"\n       cancel-button-text="Close" title="Attribute: {{entity.key}}" optional-size="lg">\n    <div class="dialog-body">\n      <!-- have a form for view and another for edit -->\n      <div simple-form ng-hide="!entity.rw" name="attributeEditor" mode="edit" entity=\'entity\' data=\'attributeSchemaEdit\'></div>\n      <div simple-form ng-hide="entity.rw" name="attributeViewer" mode="view" entity=\'entity\' data=\'attributeSchemaView\'></div>\n    </div>\n  </div>\n\n</div>\n');
+$templateCache.put('plugins/threads/html/threads.html','<div id="threads-page" class="table-view" ng-controller="ThreadsController">\n\n  <h1>Threads</h1>\n\n  <pf-toolbar config="toolbarConfig"></pf-toolbar>\n\n  <pf-table-view class="threads-table" config="tableConfig" dt-options="tableDtOptions"\n    columns="tableColumns" items="filteredThreads" action-buttons="tableActionButtons">\n  </pf-table-view>\n\n  <script type="text/ng-template" id="threadModalContent.html">\n    <div class="modal-header">\n      <button type="button" class="close" aria-label="Close" ng-click="$close()">\n        <span class="pficon pficon-close" aria-hidden="true"></span>\n      </button>\n      <h4 class="modal-title">Thread</h4>\n    </div>\n    <div class="modal-body">\n      <div class="row">\n        <div class="col-md-12">\n          <dl class="dl-horizontal">\n            <dt>ID</dt>\n            <dd>{{thread.threadId}}</dd>\n            <dt>Name</dt>\n            <dd>{{thread.threadName}}</dd>\n            <dt>Waited Count</dt>\n            <dd>{{thread.waitedCount}}</dd>\n            <dt>Waited Time</dt>\n            <dd>{{thread.waitedTime}} ms</dd>\n            <dt>Blocked Count</dt>\n            <dd>{{thread.blockedCount}}</dd>\n            <dt>Blocked Time</dt>\n            <dd>{{thread.blockedTime}} ms</dd>\n            <div ng-show="thread.lockInfo != null">\n              <dt>Lock Name</dt>\n              <dd>{{thread.lockName}}</dd>\n              <dt>Lock Class Name</dt>\n              <dd>{{thread.lockInfo.className}}</dd>\n              <dt>Lock Identity Hash Code</dt>\n              <dd>{{thread.lockInfo.identityHashCode}}</dd>\n            </div>\n            <div ng-show="thread.lockOwnerId > 0">\n              <dt>Waiting for lock owned by</dt>\n              <dd><a href="" ng-click="selectThreadById(thread.lockOwnerId)">{{thread.lockOwnerId}} - {{thread.lockOwnerName}}</a></dd>\n            </div>\n            <div ng-show="thread.lockedSynchronizers.length > 0">\n              <dt>Locked Synchronizers</dt>\n              <dd>\n                <ol class="list-unstyled">\n                  <li ng-repeat="synchronizer in thread.lockedSynchronizers">\n                    <span title="Class Name">{{synchronizer.className}}</span> -\n                    <span title="Identity Hash Code">{{synchronizer.identityHashCode}}</span>\n                  </li>\n                </ol>\n              </dd>\n            </div>\n          </dl>\n        </div>\n      </div>\n      <div class="row" ng-show="thread.lockedMonitors.length > 0">\n        <div class="col-md-12">\n          <dl>\n            <dt>Locked Monitors</dt>\n            <dd>\n              <ol class="zebra-list">\n                <li ng-repeat="monitor in thread.lockedMonitors">\n                  Frame: <strong>{{monitor.lockedStackDepth}}</strong>\n                  <span class="green">{{monitor.lockedStackFrame.className}}</span>\n                  <span class="bold">.</span>\n                  <span class="blue bold">{{monitor.lockedStackFrame.methodName}}</span>\n                  &nbsp;({{monitor.lockedStackFrame.fileName}}<span ng-show="frame.lineNumber > 0">:{{monitor.lockedStackFrame.lineNumber}}</span>)\n                  <span class="orange" ng-show="monitor.lockedStackFrame.nativeMethod">(Native)</span>\n                </li>\n              </ol>\n            </dd>\n          </dl>\n        </div>\n      </div>\n      <div class="row">\n        <div class="col-md-12">\n          <dl>\n            <dt>Stack Trace</dt>\n            <dd>\n              <ol class="zebra-list">\n                <li ng-repeat="frame in thread.stackTrace">\n                  <span class="green">{{frame.className}}</span>\n                  <span class="bold">.</span>\n                  <span class="blue bold">{{frame.methodName}}</span>\n                  &nbsp;({{frame.fileName}}<span ng-show="frame.lineNumber > 0">:{{frame.lineNumber}}</span>)\n                  <span class="orange" ng-show="frame.nativeMethod">(Native)</span>\n                </li>\n              </ol>\n            </dd>\n          </dl>\n        </div>\n      </div>\n    </div>\n  </script>\n\n</div>\n');
+$templateCache.put('plugins/jmx/html/attributes/attributes.html','<script type="text/ng-template" id="gridTemplate">\n  <table class="table table-striped table-bordered table-hover jmx-attributes-table"\n    ng-class="{\'ht-table-extra-columns\': hasExtraColumns}"\n    hawtio-simple-table="gridOptions">\n  </table>\n</script>\n\n<div class="table-view" ng-controller="Jmx.AttributesController">\n\n  <h2>Attributes</h2>\n\n  <div ng-if="gridData.length > 0">\n    <div compile="attributes"></div>\n  </div>\n\n  <!-- modal dialog to show/edit the attribute -->\n  <div hawtio-confirm-dialog="showAttributeDialog" ok-button-text="Update"\n       show-ok-button="{{entity.rw ? \'true\' : \'false\'}}" on-ok="onUpdateAttribute()" on-cancel="onCancelAttribute()"\n       cancel-button-text="Close" title="Attribute: {{entity.key}}" optional-size="lg">\n    <div class="dialog-body">\n      <!-- have a form for view and another for edit -->\n      <div simple-form ng-hide="!entity.rw" name="attributeEditor" mode="edit" entity=\'entity\' data=\'attributeSchemaEdit\'></div>\n      <div simple-form ng-hide="entity.rw" name="attributeViewer" mode="view" entity=\'entity\' data=\'attributeSchemaView\'></div>\n    </div>\n  </div>\n\n</div>\n');
 $templateCache.put('plugins/jmx/html/operations/operation-form.html','<p ng-hide="$ctrl.operation.args.length">\n  This JMX operation requires no arguments. Click the \'Execute\' button to invoke the operation.\n</p>\n<p ng-show="$ctrl.operation.args.length">\n  This JMX operation requires some parameters. Fill in the fields below and click the \'Execute\' button\n  to invoke the operation.\n</p>\n\n<form class="form-horizontal" ng-submit="$ctrl.execute()">\n  <div class="form-group" ng-repeat="formField in $ctrl.formFields">\n    <label class="col-sm-2 control-label" for="{{formField.label}}">{{formField.label}}</label>\n    <div class="col-sm-10">\n      <input type="{{formField.type}}" id="{{formField.label}}" ng-class="{\'form-control\': formField.type !== \'checkbox\'}"\n        ng-model="formField.value" ng-disabled="!$ctrl.operation.canInvoke">\n      <span class="help-block">{{formField.helpText}}</span>\n    </div>\n  </div>\n  <div class="form-group">\n    <div ng-class="{\'col-sm-offset-2 col-sm-10\': $ctrl.operation.args.length, \'col-sm-12\': !$ctrl.operation.args.length}">\n      <button type="submit" class="btn btn-primary" ng-disabled="!$ctrl.operation.canInvoke || $ctrl.isExecuting">Execute</button>\n    </div>\n  </div>\n</form>\n\n<form ng-show="$ctrl.operationResult">\n  <div class="form-group">\n    <label>Result</label>\n    <div class="hawtio-clipboard-container">\n      <button hawtio-clipboard="#operation-result" class="btn btn-default btn-lg">\n        <i class="fa fa-clipboard" aria-hidden="true"></i>\n      </button>\n      <pre ng-class="{\'jmx-operation-error\': $ctrl.operationFailed}">{{$ctrl.operationResult}}</pre>\n    </div>\n    <textarea id="operation-result" class="hawtio-clipboard-hidden-target">{{$ctrl.operationResult}}</textarea>\n  </div>\n</form>\n');
 $templateCache.put('plugins/jmx/html/operations/operations.html','<h2>Operations</h2>\n<p ng-if="$ctrl.operations.length === 0">\n  This MBean has no JMX operations.\n</p>\n<div ng-if="$ctrl.operations.length > 0">\n  <p>\n    This MBean supports the following JMX operations. Expand an item in the list to invoke that operation.\n  </p>\n  <pf-list-view class="jmx-operations-list-view" items="$ctrl.operations" config="$ctrl.config"\n    menu-actions="$ctrl.menuActions">\n    <div class="list-view-pf-stacked">\n      <div class="list-group-item-heading">\n        <span class="pficon pficon-locked" ng-if="!item.canInvoke"></span>\n        {{item.readableName}}\n      </div>\n      <div class="list-group-item-text">\n        {{item.description}}\n      </div>\n    </div>\n    <list-expanded-content>\n      <operation-form operation="$parent.item"></operation-form>\n    </list-expanded-content>\n  </pf-list-view>\n</div>\n');
 $templateCache.put('plugins/jmx/html/tree/content.html','<div class="tree-nav-sidebar-content">\n  <div class="spinner spinner-lg" ng-hide="$ctrl.treeFetched()"></div>\n  <div id="jmxtree" class="treeview-pf-hover treeview-pf-select"></div>\n</div>\n');
 $templateCache.put('plugins/jmx/html/tree/header.html','<div class="tree-nav-sidebar-header">\n  <form role="form" class="search-pf has-button">\n    <div class="form-group has-clear">\n      <div class="search-pf-input-group">\n        <label for="input-search" class="sr-only">Search Tree:</label>\n        <input id="input-search" type="search" class="form-control" placeholder="Search tree:"\n          ng-model="$ctrl.filter">\n        <button type="button" class="clear" aria-hidden="true"\n          ng-hide="$ctrl.filter.length === 0"\n          ng-click="$ctrl.filter = \'\'">\n          <span class="pficon pficon-close"></span>\n        </button>\n      </div>\n    </div>\n    <div class="form-group tree-nav-buttons">\n      <span class="badge" ng-class="{positive: $ctrl.result.length > 0}"\n        ng-show="$ctrl.filter.length > 0">\n        {{$ctrl.result.length}}\n      </span>\n      <i class="fa fa-plus-square-o" title="Expand All" ng-click="$ctrl.expandAll()"></i>\n      <i class="fa fa-minus-square-o" title="Collapse All" ng-click="$ctrl.contractAll()"></i>\n    </div>\n  </form>\n</div>\n');
-$templateCache.put('plugins/jmx/doc/help.md','## JMX\n\nThe [JMX](#/jmx/attributes) plugin in [hawtio](http://hawt.io "hawtio") gives a raw view of the underlying JMX metric data, allowing access to the entire JMX domain tree of MBeans.\n');
 $templateCache.put('plugins/diagnostics/doc/help.md','## Diagnostics\n\nThe Diagnostics plugin provides diagnostic information about the JVM via the JVM DiagnosticCommand and HotspotDiangostic interfaces. The functionality is similar to the Diagnostic Commands view in Java Mission Control (jmc) or the command line tool jcmd. The plugin will provide corresponding jcmd commands in some scenarios.\n\n### Flight recorder\n\nThe Java Flight Recorder can be used to record diagnostics from a running Java process.  \n\n#### Unlock\n\nCommercial features must be enabled in order to use the flight recorder. The padlock will be locked and no operations are available if commercial options are not enabled. Click the padlock to unlock and enable flight recordings. Note: Running commercial options on a production system requires a valid license.\n\n#### Start\n\nStarts a recording. \n\n#### Dump\n\nDumps the contents of the current recording to disk. The file path will be listed in a table below.\n\n#### Stop\n\nStops the current recording.\n\n#### Settings\n\nHide/show the options pane.\n\n### Class Histogram\n\nClass histogram retrieves the number of instances of loaded classes and the amount of bytes they take up. \nIf the operation is repeated it will also show the difference since last run.\n\n### JVM flags\n\nThis table shows the JVM diagnostic flag settings. Your are also able to modify the settings in a running JVM.\n');
+$templateCache.put('plugins/jmx/doc/help.md','## JMX\n\nThe [JMX](#/jmx/attributes) plugin in [hawtio](http://hawt.io "hawtio") gives a raw view of the underlying JMX metric data, allowing access to the entire JMX domain tree of MBeans.\n');
 $templateCache.put('plugins/jvm/doc/help.md','## Connect\n\nThe Connect tab allows you to connect to local and remote Jolokia instances so you can examine JVMs.\n\nThe "Remote" sub-tab is used to manually add connection details for a Jolokia instance.  You can store connection details and quickly recall the details of a connection and connect.\n\nThe use proxy option should often be enabled, as hawtio is running in your browser; usually due to CORS; you cannot open a different host or port from your browser (due to browse security restrictions); so we have to use a proxy servlet inside the hawtio web app to proxy all requests for a different jolokia server - so we can communicate with a different jolokia agent.\nIf you use the hawtio Chrome Extension this isn\u2019t required; since Chrome Extensions are allowed to connect to any host/port.\n\nThe "Local" sub-tab lists local JVMs running on your machine and allows you to install the Jolokia JVM agent into a running JVM and connect to it.\nFor this to actually work you need to have your JDK\'s "tools.jar" in the classpath, along with Jolokia\'s JVM agent jar.\n\nThe "Discover" sub-tab lists all JVMs which Jolokia could discover in the network, using its built-in discovery.\n');
-$templateCache.put('plugins/threads/doc/help.md','## Threads\n\nThe Threads plugin in [hawtio](http://hawt.io "hawtio") offers functionality for inspecting the threads running in the JVM.\n');
-$templateCache.put('plugins/runtime/doc/help.md','## Runtime plugin\n\nThe runtime plugin displays information about the JVM runtime.\n\n#### System Properties\n\nDisplays a filterable and sortable list of system properties.\n\n#### Metrics\n\nDisplays runtime metrics from the JVM, such as memory, CPU, garbage collection and more.\n');}]); hawtioPluginLoader.addModule("hawtio-jmx-templates");
+$templateCache.put('plugins/runtime/doc/help.md','## Runtime plugin\n\nThe runtime plugin displays information about the JVM runtime.\n\n#### System Properties\n\nDisplays a filterable and sortable list of system properties.\n\n#### Metrics\n\nDisplays runtime metrics from the JVM, such as memory, CPU, garbage collection and more.\n');
+$templateCache.put('plugins/threads/doc/help.md','## Threads\n\nThe Threads plugin in [hawtio](http://hawt.io "hawtio") offers functionality for inspecting the threads running in the JVM.\n');}]); hawtioPluginLoader.addModule("hawtio-jmx-templates");
