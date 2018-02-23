@@ -1008,6 +1008,33 @@ declare namespace Jmx {
 declare namespace Jmx {
     var DonutChartController: angular.IModule;
 }
+declare namespace JVM {
+}
+declare namespace JVM {
+    var HeaderController: angular.IModule;
+}
+declare namespace JVM {
+    function JolokiaPreferences($scope: any, localStorage: any, jolokiaParams: any, $window: any): void;
+}
+declare namespace JVM {
+    class JolokiaService {
+        private $q;
+        private jolokia;
+        constructor($q: ng.IQService, jolokia: Jolokia.IJolokia);
+        getAttribute(mbean: string, attribute: string): ng.IPromise<any>;
+        execute(mbean: string, operation: string, ...args: any[]): ng.IPromise<any>;
+        readMany(mbeans: string[]): ng.IPromise<any>;
+    }
+}
+/**
+ * @module JVM
+ */
+declare namespace JVM {
+}
+declare namespace JVM {
+}
+declare namespace JVM {
+}
 declare namespace RBAC {
     class JmxTreeProcessor {
         private jolokia;
@@ -1056,33 +1083,6 @@ declare namespace RBAC {
 declare namespace RBAC {
     const pluginName: string;
     const log: Logging.Logger;
-}
-declare namespace JVM {
-}
-declare namespace JVM {
-    var HeaderController: angular.IModule;
-}
-declare namespace JVM {
-    function JolokiaPreferences($scope: any, localStorage: any, jolokiaParams: any, $window: any): void;
-}
-declare namespace JVM {
-    class JolokiaService {
-        private $q;
-        private jolokia;
-        constructor($q: ng.IQService, jolokia: Jolokia.IJolokia);
-        getAttribute(mbean: string, attribute: string): ng.IPromise<any>;
-        execute(mbean: string, operation: string, ...args: any[]): ng.IPromise<any>;
-        readMany(mbeans: string[]): ng.IPromise<any>;
-    }
-}
-/**
- * @module JVM
- */
-declare namespace JVM {
-}
-declare namespace JVM {
-}
-declare namespace JVM {
 }
 declare namespace Threads {
     var pluginName: string;

@@ -14,6 +14,17 @@ namespace Jmx {
     $scope.jolokia = null;
     $scope.charts = null;
 
+    $scope.toolbarConfig = {
+      actionsConfig: {
+        primaryActions: [
+          {
+            name: 'Edit',
+            actionFn: () => $location.path('/jmx/chartEdit')
+          }
+        ]
+      }
+    };
+
     $scope.reset = () => {
       if ($scope.context) {
         $scope.context.stop();
