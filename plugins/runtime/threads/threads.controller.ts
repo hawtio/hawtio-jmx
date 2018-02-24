@@ -1,10 +1,9 @@
-/// <reference path="./threadsPlugin.ts"/>
 /// <reference path="./threads.service.ts"/>
 
-namespace Threads {
+namespace Runtime {
 
-  _module.controller('ThreadsController', ['$scope', '$uibModal', 'threadsService', ($scope, $uibModal,
-    threadsService: ThreadsService) => {
+  export function ThreadsController($scope, $uibModal, threadsService: ThreadsService) {
+    'ngInject';
 
     const FILTER_FUNCTIONS = {
       state: (threads, state) => threads.filter(thread => thread.threadState === state),
@@ -132,6 +131,6 @@ namespace Threads {
       });
     }
 
-  }]);
+  }
 
 }

@@ -1,9 +1,8 @@
 /// <reference path="runtime.config.ts"/>
-/// <reference path="sysprops/sysprops.component.ts"/>
 /// <reference path="sysprops/sysprops.module.ts"/>
-/// <reference path="metrics/metrics.component.ts"/>
 /// <reference path="metrics/metrics.module.ts"/>
 /// <reference path="layout/layout.module.ts"/>
+/// <reference path="threads/threads.module.ts"/>
 
 namespace Runtime {
 
@@ -11,7 +10,8 @@ namespace Runtime {
     .module('hawtio-runtime', [
       layoutModule,
       systemPropertiesModule,
-      metricsModule
+      metricsModule,
+      threadsModule
     ])
     .config(configureRoutes)
     .run(configureRuntime)

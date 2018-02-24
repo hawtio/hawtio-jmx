@@ -1,6 +1,4 @@
-/// <reference path="./threadsPlugin.ts"/>
-
-namespace Threads {
+namespace Runtime {
 
   export class ThreadsService {
 
@@ -14,6 +12,7 @@ namespace Threads {
     };
     
     constructor(private $q: angular.IQService, private jolokia: Jolokia.IJolokia) {
+      'ngInject';
     }
 
     getThreads(): angular.IPromise<any[]> {
@@ -33,7 +32,5 @@ namespace Threads {
     }
 
   }
-
-  _module.service('threadsService', ['$q', 'jolokia', ThreadsService]);
 
 }

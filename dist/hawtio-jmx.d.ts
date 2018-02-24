@@ -126,10 +126,25 @@ declare namespace Runtime {
     const metricsModule: string;
 }
 declare namespace Runtime {
-    function RuntimeLayoutController($location: ng.ILocationService): void;
+    function RuntimeLayoutController($location: ng.ILocationService, workspace: Jmx.Workspace): void;
 }
 declare namespace Runtime {
     const layoutModule: string;
+}
+declare namespace Runtime {
+    class ThreadsService {
+        private $q;
+        private jolokia;
+        private static STATE_LABELS;
+        constructor($q: angular.IQService, jolokia: Jolokia.IJolokia);
+        getThreads(): angular.IPromise<any[]>;
+    }
+}
+declare namespace Runtime {
+    function ThreadsController($scope: any, $uibModal: any, threadsService: ThreadsService): void;
+}
+declare namespace Runtime {
+    const threadsModule: string;
 }
 declare namespace Runtime {
     const log: Logging.Logger;
@@ -1083,31 +1098,6 @@ declare namespace RBAC {
 declare namespace RBAC {
     const pluginName: string;
     const log: Logging.Logger;
-}
-declare namespace Threads {
-    var pluginName: string;
-    var templatePath: string;
-    var log: Logging.Logger;
-    var jmxDomain: string;
-    var mbeanType: string;
-    var mbean: string;
-    var _module: angular.IModule;
-}
-declare namespace Threads {
-    class ThreadsService {
-        private $q;
-        private jolokia;
-        private static STATE_LABELS;
-        constructor($q: angular.IQService, jolokia: Jolokia.IJolokia);
-        getThreads(): angular.IPromise<any[]>;
-    }
-}
-declare namespace Threads {
-}
-/**
- * @module Threads
- */
-declare namespace Threads {
 }
 declare namespace Jmx {
     function findLazyLoadingFunction(workspace: Workspace, folder: any): (workspace: Workspace, folder: Folder, onComplete: (children: NodeSelection[]) => void) => void;
