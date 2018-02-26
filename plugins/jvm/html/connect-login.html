@@ -1,14 +1,11 @@
 <div class="modal-header">
-  <button type="button" class="close" aria-label="Close" ng-click="$dismiss()">
+  <button type="button" class="close" aria-label="Close" ng-click="$close()">
     <span class="pficon pficon-close" aria-hidden="true"></span>
   </button>
   <h4 class="modal-title">Log In</h4>
 </div>
 <form name="connectForm" class="form-horizontal" ng-submit="login(connection)">
   <div class="modal-body">
-    <div class="alert alert-danger" ng-show="showErrorMessage">
-      <span class="pficon pficon-error-circle-o"></span> Incorrect username or password
-    </div>
     <div class="form-group">
       <label class="col-sm-3 control-label" for="connection-username">Username</label>
       <div class="col-sm-8">
@@ -25,7 +22,7 @@
     </div>
   </div>
   <div class="modal-footer">
-    <button type="button" class="btn btn-default" ng-click="$dismiss()">Cancel</button>
+    <button type="button" class="btn btn-default" ng-click="$close()">Cancel</button>
     <button type="submit" class="btn btn-primary">Log In</button>
   </div>
 </form>

@@ -8,28 +8,25 @@ namespace JVM {
       'ngInject';
     }
 
-    testConnection(connection: Core.ConnectOptions): ng.IPromise<string> {
+    testConnection(connection: Core.ConnectOptions): ng.IPromise<boolean> {
       return this.$q((resolve, reject) => {
         new Jolokia({
           url: createServerConnectionUrl(connection),
           method: 'post',
-          mimeType: 'application/json',
-          username: connection.userName ? connection.userName.toString() : '',
-          password: connection.password ? connection.password.toString() : '',
+          mimeType: 'application/json'
         }).request({
           type: 'version'
         }, {
-            success: response => {
-              resolve('Connected successfully');
-            },
-            error: response => {
-              reject('Connection failed');
-            },
-            ajaxError: response => {
-              reject(response.status === 403 ? 'Incorrect username or password' : 'Connection failed');
-              console.clear();
-            }
-          });
+          success: response => {
+            resolve(true);
+          },
+          error: response => {
+            resolve(false);
+          },
+          ajaxError: response => {
+            resolve(response.status === 403 ? true : false);
+          }
+        });
       });
     };
 

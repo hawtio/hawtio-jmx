@@ -2,8 +2,8 @@
   <button type="button" class="close" aria-label="Close" ng-click="$dismiss()">
     <span class="pficon pficon-close" aria-hidden="true"></span>
   </button>
-  <h4 class="modal-title" ng-show="!model.name">Add Connection</h4>
-  <h4 class="modal-title" ng-show="model.name">Edit Connection</h4>
+  <h4 class="modal-title" ng-show="!model.connection.name">Add Connection</h4>
+  <h4 class="modal-title" ng-show="model.connection.name">Edit Connection</h4>
 </div>
 <form name="connectForm" class="form-horizontal jvm-connection-form" ng-submit="saveConnection(model)">
   <div class="modal-body">
@@ -42,20 +42,6 @@
       <label class="col-sm-3 control-label" for="connection-path">Path</label>
       <div class="col-sm-8">
         <input type="text" id="connection-path" class="form-control" name="path" ng-model="model.connection.path" ng-change="resetTestConnection()">
-      </div>
-    </div>
-    <div class="form-group">
-      <label class="col-sm-3 control-label" for="connection-path">Username</label>
-      <div class="col-sm-8">
-        <input type="text" id="connection-username" class="form-control" name="userName" ng-model="model.connection.userName" ng-change="resetTestConnection()">
-        <span class="help-block">Username is not saved</span>
-      </div>
-    </div>
-    <div class="form-group">
-      <label class="col-sm-3 control-label" for="connection-path">Password</label>
-      <div class="col-sm-8">
-        <input type="password" id="connection-password" class="form-control" name="password" ng-model="model.connection.password" ng-change="resetTestConnection()">
-        <span class="help-block">Password is not saved</span>
       </div>
     </div>
     <div class="form-group">

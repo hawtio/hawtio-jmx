@@ -75,26 +75,14 @@ namespace JVM {
       let errors = validateConnectionForm(connection);
       
       if (Object.keys(errors).length === 0) {
-        // save connection without username and password values
-        connection.userName = '';
-        connection.password = '';
-
-        connectService.testConnection(connection)
-        .then(successMesssage => {
-          connection.secure = false;
-        })
-        .catch(errorMesssage => {
-          connection.secure = true;
-        });
-        
         if (model.isAddAction()) {
           $scope.connections.unshift(connection);
         } else {
           angular.extend(originalConnection, connection);
         }
-        
+
         saveConnections($scope.connections);
-        
+
         modalInstance.close();
       } else {
         model.errors = errors;
@@ -103,13 +91,14 @@ namespace JVM {
 
     $scope.testConnection = function(connection: Core.ConnectOptions) {
       connectService.testConnection(connection)
-        .then(successMesssage => {
-          $scope.model.test.ok = true;
-          $scope.model.test.message = successMesssage;
-        })
-        .catch(errorMesssage => {
-          $scope.model.test.ok = false;
-          $scope.model.test.message = errorMesssage;
+        .then(success => {
+          if (success) {
+            $scope.model.test.ok = true;
+            $scope.model.test.message = 'Connected successfully';
+          } else {
+            $scope.model.test.ok = false;
+            $scope.model.test.message = 'Connection failed';
+          }
         });
     };
 
@@ -139,27 +128,16 @@ namespace JVM {
     }
 
     function connect(action, connection: Core.ConnectOptions) {
-      $scope.showErrorMessage = false;
-      if (connection.secure) {
-        $scope.connection = angular.extend({}, connection);
-        modalInstance = $uibModal.open({
-          templateUrl: 'plugins/jvm/html/connect-login.html',
-          scope: $scope
-        });
-      } else {
-        connectService.connect(connection);
-      }
+      $scope.connection = angular.extend({}, connection);
+      modalInstance = $uibModal.open({
+        templateUrl: 'plugins/jvm/html/connect-login.html',
+        scope: $scope
+      });
     }
 
     $scope.login = function(connection: Core.ConnectOptions) {
       connectService.connect(connection);
-      connectService.testConnection(connection)
-      .then(successMesssage => {
-        modalInstance.close();
-      })
-      .catch(errorMesssage => {
-        $scope.showErrorMessage = true;
-      });
+      modalInstance.close();
     }
 
     var autoconnect = $location.search();
