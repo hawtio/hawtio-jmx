@@ -238,11 +238,34 @@ declare namespace JVM {
         private $window;
         constructor($q: ng.IQService, $window: ng.IWindowService);
         testConnection(connection: Core.ConnectOptions): ng.IPromise<boolean>;
+        checkCredentials(connection: Core.ConnectOptions, username: string, password: string): ng.IPromise<boolean>;
         connect(connection: Core.ConnectOptions): void;
     }
 }
 declare namespace JVM {
     function ConnectionUrlFilter(): (connection: Core.ConnectOptions) => string;
+}
+declare namespace JVM {
+    class ConnectLoginController {
+        private $uibModal;
+        private ConnectOptions;
+        constructor($uibModal: any, ConnectOptions: Core.ConnectOptions);
+        $onInit(): void;
+    }
+    const connectLoginComponent: angular.IComponentOptions;
+}
+declare namespace JVM {
+    class ConnectLoginModalController {
+        private ConnectOptions;
+        private connectService;
+        close: Function;
+        dismiss: Function;
+        invalidCredentials: boolean;
+        constructor(ConnectOptions: Core.ConnectOptions, connectService: ConnectService);
+        cancel(): void;
+        login(username: string, password: string): void;
+    }
+    const connectLoginModalComponent: angular.IComponentOptions;
 }
 declare namespace JVM {
     const ConnectModule: string;
@@ -260,7 +283,6 @@ declare namespace JVM {
     const DEFAULT_MAX_COLLECTION_SIZE = 50000;
     let ConnectionName: string;
     function getConnectionName(reset?: boolean): string;
-    function getConnectionOptions(): Core.ConnectOptions;
     function getJolokiaUrl(): string | boolean;
     interface JolokiaStatus {
         xhr: JQueryXHR;

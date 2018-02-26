@@ -128,16 +128,7 @@ namespace JVM {
     }
 
     function connect(action, connection: Core.ConnectOptions) {
-      $scope.connection = angular.extend({}, connection);
-      modalInstance = $uibModal.open({
-        templateUrl: 'plugins/jvm/html/connect-login.html',
-        scope: $scope
-      });
-    }
-
-    $scope.login = function(connection: Core.ConnectOptions) {
       connectService.connect(connection);
-      modalInstance.close();
     }
 
     var autoconnect = $location.search();

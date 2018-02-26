@@ -131,7 +131,7 @@ namespace JVM {
     return ConnectionName;
   }
 
-  export function getConnectionOptions(): Core.ConnectOptions {
+  const connectOptions: Core.ConnectOptions = (function() {
     let name = getConnectionName();
     if (Core.isBlank(name)) {
       // this will fail any if (ConnectOptions) check
@@ -140,25 +140,26 @@ namespace JVM {
     let answer = getConnectOptions(name);
     // search for passed credentials when connecting to remote server
     try {
-      if (window['credentials']) {
-        answer.userName = window['credentials'].username;
-        answer.password = window['credentials'].password;
+      if (window.opener && window.opener.credentials) {
+        const credentials = window.opener.credentials;
+        answer.userName = credentials.username;
+        answer.password = credentials.password;
+        delete window.opener.credentials;
       }
     } catch (securityException) {
       // ignore
     }
     return answer;
-  }
+  })();
 
   export function getJolokiaUrl(): string | boolean {
     let answer = undefined;
-    let ConnectOptions = getConnectionOptions();
     let documentBase = HawtioCore.documentBase();
-    if (!ConnectOptions || !ConnectOptions.name) {
+    if (!connectOptions || !connectOptions.name) {
       log.debug("Using discovered URL");
       answer = discoveredUrl;
     } else {
-      answer = createServerConnectionUrl(ConnectOptions);
+      answer = createServerConnectionUrl(connectOptions);
       log.debug("Using configured URL");
     }
     if (!answer) {
@@ -173,7 +174,7 @@ namespace JVM {
     } else {
       jolokiaURI = new URI(UrlHelpers.join(documentBase, answer));
     }
-    if (!ConnectOptions || !ConnectOptions.jolokiaUrl) {
+    if (!connectOptions || !connectOptions.jolokiaUrl) {
       if (!jolokiaURI.protocol()) {
         jolokiaURI.protocol(windowURI.protocol());
       }
@@ -191,9 +192,7 @@ namespace JVM {
 
   _module.service('ConnectionName', [() => (reset = false) => getConnectionName(reset)]);
 
-  _module.service('ConnectOptions', [(): Core.ConnectOptions => {
-    return getConnectionOptions();
-  }]);
+  _module.service('ConnectOptions', [(): Core.ConnectOptions => connectOptions]);
 
   // the jolokia URL we're connected to
   _module.factory('jolokiaUrl', (): string | boolean => getJolokiaUrl());
@@ -238,6 +237,7 @@ namespace JVM {
   }
 
   function createJolokia(
+    $location: ng.ILocationService,
     localStorage: Storage,
     jolokiaStatus: JolokiaStatus,
     jolokiaParams: Jolokia.IParams,
@@ -255,12 +255,11 @@ namespace JVM {
       // TODO: Where is the right place to execute post-login tasks for unauthenticated hawtio app?
       postLoginTasks.execute();
 
-      let modal = null;
-      if (jolokiaParams['ajaxError'] == null) {
-        jolokiaParams['ajaxError'] = (xhr: JQueryXHR, textStatus: string, error: string) => {
+      if (!jolokiaParams.ajaxError) {
+        jolokiaParams.ajaxError = (xhr: JQueryXHR, textStatus: string, error: string) => {
           if (xhr.status === 401 || xhr.status === 403) {
             if (window.opener) {
-              window.close(); // close window connected to remote server
+              $location.path('/jvm/connect-login');
             } else {
               userDetails.logout(); // just logout
             }
@@ -312,17 +311,16 @@ namespace JVM {
   function getBeforeSend(): (xhr: JQueryXHR) => any {
     // Just set Authorization for now...
     let headers = ['Authorization'];
-    let connectionOptions = getConnectionOptions();
-    if (connectionOptions && connectionOptions['token']) {
+    if (connectOptions && connectOptions['token']) {
       log.debug("Setting authorization header to token");
       return (xhr: JQueryXHR) => headers.forEach((header) =>
-        xhr.setRequestHeader(header, 'Bearer ' + connectionOptions['token']));
-    } else if (connectionOptions && connectionOptions.userName && connectionOptions.password) {
+        xhr.setRequestHeader(header, 'Bearer ' + connectOptions['token']));
+    } else if (connectOptions && connectOptions.userName && connectOptions.password) {
       log.debug("Setting authorization header to username/password");
       return (xhr: JQueryXHR) => headers.forEach((header) =>
         xhr.setRequestHeader(
           header,
-          Core.getBasicAuthHeader(connectionOptions.userName as string, connectionOptions.password as string)));
+          Core.getBasicAuthHeader(connectOptions.userName as string, connectOptions.password as string)));
     } else {
       log.debug("Not setting any authorization header");
       return (xhr: JQueryXHR) => { };

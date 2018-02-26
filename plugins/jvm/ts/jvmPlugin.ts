@@ -15,6 +15,7 @@ namespace JVM {
       .when('/jvm/welcome', { templateUrl: UrlHelpers.join(templatePath, 'welcome.html') })
       .when('/jvm/discover', { templateUrl: UrlHelpers.join(templatePath, 'discover.html') })
       .when('/jvm/connect', { templateUrl: UrlHelpers.join(templatePath, 'connect.html') })
+      .when('/jvm/connect-login', { template: '<connect-login></connect-login>' })
       .when('/jvm/local', { templateUrl: UrlHelpers.join(templatePath, 'local.html') });
   }
 

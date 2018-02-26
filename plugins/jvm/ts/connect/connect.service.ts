@@ -30,14 +30,34 @@ namespace JVM {
       });
     };
 
+    checkCredentials(connection: Core.ConnectOptions, username: string, password: string): ng.IPromise<boolean> {
+      return this.$q((resolve, reject) => {
+        new Jolokia({
+          url: createServerConnectionUrl(connection),
+          method: 'post',
+          mimeType: 'application/json',
+          username: username,
+          password: password
+        }).request({
+          type: 'version'
+        }, {
+          success: response => {
+            resolve(true);
+          },
+          error: response => {
+            resolve(false);
+          },
+          ajaxError: response => {
+            resolve(false);
+          }
+        });
+      });
+    };
+    
     connect(connection: Core.ConnectOptions) {
       log.debug("Connecting with options: ", StringHelpers.toString(connection));
       const url = URI('').search({ con: connection.name }).toString();
-      const newWindow = this.$window.open(url);
-      newWindow['credentials'] = {
-        username: connection.userName,
-        password: connection.password
-      };
+      this.$window.open(url);
     }
 
   }
