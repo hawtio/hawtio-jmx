@@ -2,7 +2,7 @@ namespace JVM {
 
   export class ConnectLoginController {
 
-    constructor(private $uibModal, private ConnectOptions: Core.ConnectOptions) {
+    constructor(private $uibModal, private ConnectOptions: ConnectOptions) {
       'ngInject';
     }
 

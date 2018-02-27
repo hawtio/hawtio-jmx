@@ -34,7 +34,7 @@ namespace JVM {
         let jolokiaURI = new URI(jolokiaUrl);
         let name = query['title'] || 'Unknown Connection';
         let token = query['token'] || Core.trimLeading(uri.hash(), '#');
-        let options = Core.createConnectOptions({
+        let options = createConnectOptions({
           jolokiaUrl: jolokiaUrl,
           name: name,
           scheme: jolokiaURI.protocol(),
@@ -131,7 +131,7 @@ namespace JVM {
     return ConnectionName;
   }
 
-  const connectOptions: Core.ConnectOptions = (function () {
+  const connectOptions: ConnectOptions = (function() {
     let name = getConnectionName();
     if (Core.isBlank(name)) {
       // this will fail any if (ConnectOptions) check
@@ -192,7 +192,7 @@ namespace JVM {
 
   _module.service('ConnectionName', [() => (reset = false) => getConnectionName(reset)]);
 
-  _module.service('ConnectOptions', [(): Core.ConnectOptions => connectOptions]);
+  _module.service('ConnectOptions', [() => connectOptions]);
 
   // the jolokia URL we're connected to
   _module.factory('jolokiaUrl', (): string | boolean => getJolokiaUrl());
@@ -357,6 +357,35 @@ namespace JVM {
   export interface DummyJolokia extends Jolokia.IJolokia {
     isDummy: boolean;
     running: boolean;
+  }
+
+  export interface ConnectOptions {
+    name?: String;
+    scheme?: String;
+    host?: String;
+    port?: Number;
+    path?: String;
+    useProxy?: boolean;
+    jolokiaUrl?: String;
+    userName?: String;
+    password?: String;
+    reachable?: boolean;
+  }
+
+  export function createConnectOptions(options: ConnectOptions = {}): ConnectOptions {
+    const defaults: ConnectOptions = {
+      name: null,
+      scheme: 'http',
+      host: null,
+      port: null,
+      path: null,
+      useProxy: true,
+      jolokiaUrl: null,
+      userName: null,
+      password: null,
+      reachable: true
+    };
+    return angular.extend(defaults, options);
   }
 
 }

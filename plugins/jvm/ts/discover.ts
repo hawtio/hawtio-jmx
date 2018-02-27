@@ -35,7 +35,7 @@ namespace JVM {
         Core.notification('warning', 'No URL available to connect to agent');
         return;
       }
-      const options: Core.ConnectOptions = Core.createConnectOptions();
+      const options = createConnectOptions();
       options.name = agent.agent_description || 'discover-' + agent.agent_id;
       const urlObject = Core.parseUrl(agent.url);
       angular.extend(options, urlObject);

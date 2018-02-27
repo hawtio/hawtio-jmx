@@ -88,7 +88,7 @@ namespace JVM {
     return ('con' in new URI().query(true));
   }
 
-  export function connectToServer(localStorage, options: Core.ConnectOptions) {
+  export function connectToServer(localStorage, options: ConnectOptions) {
     log.debug("Connecting with options: ", StringHelpers.toString(options));
     const clone = angular.extend({}, options);
     addRecentConnection(localStorage, clone.name);
@@ -112,7 +112,7 @@ namespace JVM {
     };
   }
 
-  export function saveConnection(options: Core.ConnectOptions) {
+  export function saveConnection(options: ConnectOptions) {
     const connections = loadConnections();
 
     let existingIndex = _.findIndex(connections, (element) => { return element.name === options.name });
@@ -124,16 +124,13 @@ namespace JVM {
     saveConnections(connections);
   }
 
-
-
   /**
    * Loads all of the available connections from local storage
-   * @returns {Core.ConnectionMap}
    */
-  export function loadConnections(): Core.ConnectOptions[] {
+  export function loadConnections(): ConnectOptions[] {
     const localStorage = Core.getLocalStorage();
     try {
-      const connections: Core.ConnectOptions[] = angular.fromJson(localStorage[connectionSettingsKey]);
+      const connections: ConnectOptions[] = angular.fromJson(localStorage[connectionSettingsKey]);
       if (!connections) {
         // nothing found on local storage
         return [];
@@ -156,7 +153,7 @@ namespace JVM {
    * Saves the connection map to local storage
    * @param connections array of all connections to be stored
    */
-  export function saveConnections(connections: Core.ConnectOptions[]) {
+  export function saveConnections(connections: ConnectOptions[]) {
     log.debug("Saving connection array:", StringHelpers.toString(connections));
     localStorage[connectionSettingsKey] = angular.toJson(connections);
   }
@@ -168,7 +165,7 @@ namespace JVM {
   /**
    * Returns the connection options for the given connection name from localStorage
    */
-  export function getConnectOptions(name: string, localStorage = Core.getLocalStorage()): Core.ConnectOptions {
+  export function getConnectOptions(name: string, localStorage = Core.getLocalStorage()): ConnectOptions {
     if (!name) {
       return null;
     }
@@ -179,7 +176,7 @@ namespace JVM {
   /**
    * Creates the Jolokia URL string for the given connection options
    */
-  export function createServerConnectionUrl(options: Core.ConnectOptions) {
+  export function createServerConnectionUrl(options: ConnectOptions) {
     Logger.get("Core").debug("Connect to server, options: ", StringHelpers.toString(options));
     let answer: string = null;
     if (options.jolokiaUrl) {

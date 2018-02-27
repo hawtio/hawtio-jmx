@@ -57,18 +57,14 @@ namespace JVM {
 
     $scope.connectTo = (url, scheme, host, port, path) => {
       // we only need the port and path from the url, as we got the rest
-      const options = {};
-      options["scheme"] = scheme;
-      options["host"] = host;
-      options["port"] = port;
-      options["path"] = path;
-      // add empty username as we dont need login
-      options["userName"] = "";
-      options["password"] = "";
-      // connect to root by default as we do not want to show welcome page
-      options["view"] = "#/";
+      const options: ConnectOptions = {
+        scheme: scheme,
+        host: host,
+        port: port,
+        path: path
+      };
 
-      const con = Core.createConnectOptions(options);
+      const con = createConnectOptions(options);
       con.name = "local-" + port;
 
       log.debug("Connecting to local JVM agent: " + url);

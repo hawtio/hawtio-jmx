@@ -1,8 +1,8 @@
 /// <reference types="core" />
 /// <reference types="angular" />
 /// <reference types="angular-route" />
-/// <reference types="utilities" />
 /// <reference types="jquery" />
+/// <reference types="utilities" />
 /// <reference types="forms" />
 declare namespace About {
     class AboutController {
@@ -165,9 +165,6 @@ declare namespace Diagnostics {
     function DiagnosticsFlagsController($scope: JvmFlagsScope, jolokia: Jolokia.IJolokia): void;
 }
 declare namespace JVM {
-    function ConnectController($scope: any, $location: ng.ILocationService, localStorage: Storage, workspace: Jmx.Workspace, $uibModal: any, connectService: ConnectService): void;
-}
-declare namespace JVM {
     const rootPath = "plugins/jvm";
     const templatePath: string;
     const pluginName = "hawtio-jvm";
@@ -210,46 +207,109 @@ declare namespace JVM {
     function removeRecentConnection(localStorage: any, name: any): void;
     function clearConnections(): void;
     function isRemoteConnection(): boolean;
-    function connectToServer(localStorage: any, options: Core.ConnectOptions): void;
-    function saveConnection(options: Core.ConnectOptions): void;
+    function connectToServer(localStorage: any, options: ConnectOptions): void;
+    function saveConnection(options: ConnectOptions): void;
     /**
      * Loads all of the available connections from local storage
-     * @returns {Core.ConnectionMap}
      */
-    function loadConnections(): Core.ConnectOptions[];
+    function loadConnections(): ConnectOptions[];
     /**
      * Saves the connection map to local storage
      * @param connections array of all connections to be stored
      */
-    function saveConnections(connections: Core.ConnectOptions[]): void;
+    function saveConnections(connections: ConnectOptions[]): void;
     function getConnectionNameParameter(): any;
     /**
      * Returns the connection options for the given connection name from localStorage
      */
-    function getConnectOptions(name: string, localStorage?: WindowLocalStorage): Core.ConnectOptions;
+    function getConnectOptions(name: string, localStorage?: WindowLocalStorage): ConnectOptions;
     /**
      * Creates the Jolokia URL string for the given connection options
      */
-    function createServerConnectionUrl(options: Core.ConnectOptions): string;
+    function createServerConnectionUrl(options: ConnectOptions): string;
 }
 declare namespace JVM {
     class ConnectService {
         private $q;
         private $window;
         constructor($q: ng.IQService, $window: ng.IWindowService);
-        testConnection(connection: Core.ConnectOptions): ng.IPromise<boolean>;
-        checkCredentials(connection: Core.ConnectOptions, username: string, password: string): ng.IPromise<boolean>;
-        connect(connection: Core.ConnectOptions): void;
+        getConnections(): ConnectOptions[];
+        saveConnections(connections: ConnectOptions[]): void;
+        testConnection(connection: ConnectOptions): ng.IPromise<boolean>;
+        checkCredentials(connection: ConnectOptions, username: string, password: string): ng.IPromise<boolean>;
+        connect(connection: ConnectOptions): void;
     }
 }
 declare namespace JVM {
-    function ConnectionUrlFilter(): (connection: Core.ConnectOptions) => string;
+    class ConnectController {
+        private $uibModal;
+        private connectService;
+        connections: ConnectOptions[];
+        toolbarConfig: {
+            actionsConfig: {
+                primaryActions: {
+                    name: string;
+                    actionFn: () => void;
+                }[];
+            };
+        };
+        listConfig: {
+            selectionMatchProp: string;
+            selectItems: boolean;
+            showSelectBox: boolean;
+        };
+        listActionButtons: {
+            name: string;
+            actionFn: (action: any, connection: any) => void;
+        }[];
+        listActionDropDown: {
+            name: string;
+            actionFn: (action: any, connection: any) => void;
+        }[];
+        constructor($uibModal: any, connectService: ConnectService);
+        $onInit(): void;
+        private addConnection();
+        private editConnection(connection);
+        private deleteConnection(connection);
+        private connect(connection);
+    }
+    const connectComponent: angular.IComponentOptions;
+}
+declare namespace JVM {
+    class ConnectEditModalController {
+        private connectService;
+        modalInstance: any;
+        resolve: {
+            connection: ConnectOptions;
+        };
+        connection: ConnectOptions;
+        errors: {};
+        test: {
+            ok: boolean;
+            message: any;
+        };
+        constructor(connectService: ConnectService);
+        $onInit(): void;
+        testConnection(connection: ConnectOptions): void;
+        cancel(): void;
+        saveConnection(connection: any): void;
+        private validateConnection(connection);
+    }
+    const connectEditModalComponent: angular.IComponentOptions;
+}
+declare namespace JVM {
+    class ConnectDeleteModalController {
+        modalInstance: any;
+        cancel(): void;
+        deleteConnection(): void;
+    }
+    const connectDeleteModalComponent: angular.IComponentOptions;
 }
 declare namespace JVM {
     class ConnectLoginController {
         private $uibModal;
         private ConnectOptions;
-        constructor($uibModal: any, ConnectOptions: Core.ConnectOptions);
+        constructor($uibModal: any, ConnectOptions: ConnectOptions);
         $onInit(): void;
     }
     const connectLoginComponent: angular.IComponentOptions;
@@ -258,14 +318,23 @@ declare namespace JVM {
     class ConnectLoginModalController {
         private ConnectOptions;
         private connectService;
-        close: Function;
-        dismiss: Function;
+        modalInstance: any;
         invalidCredentials: boolean;
-        constructor(ConnectOptions: Core.ConnectOptions, connectService: ConnectService);
+        constructor(ConnectOptions: ConnectOptions, connectService: ConnectService);
         cancel(): void;
         login(username: string, password: string): void;
     }
     const connectLoginModalComponent: angular.IComponentOptions;
+}
+declare namespace JVM {
+    class ConnectUnreachableModalController {
+        modalInstance: any;
+        ok(): void;
+    }
+    const connectUnreachableModalComponent: angular.IComponentOptions;
+}
+declare namespace JVM {
+    function ConnectionUrlFilter(): (connection: ConnectOptions) => string;
 }
 declare namespace JVM {
     const ConnectModule: string;
@@ -293,6 +362,19 @@ declare namespace JVM {
         isDummy: boolean;
         running: boolean;
     }
+    interface ConnectOptions {
+        name?: String;
+        scheme?: String;
+        host?: String;
+        port?: Number;
+        path?: String;
+        useProxy?: boolean;
+        jolokiaUrl?: String;
+        userName?: String;
+        password?: String;
+        reachable?: boolean;
+    }
+    function createConnectOptions(options?: ConnectOptions): ConnectOptions;
 }
 declare namespace Jmx {
     /**

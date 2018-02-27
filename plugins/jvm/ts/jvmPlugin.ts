@@ -14,7 +14,7 @@ namespace JVM {
       .when('/jvm', { redirectTo: '/jvm/connect' })
       .when('/jvm/welcome', { templateUrl: UrlHelpers.join(templatePath, 'welcome.html') })
       .when('/jvm/discover', { templateUrl: UrlHelpers.join(templatePath, 'discover.html') })
-      .when('/jvm/connect', { templateUrl: UrlHelpers.join(templatePath, 'connect.html') })
+      .when('/jvm/connect', { template: '<connect></connect>' })
       .when('/jvm/connect-login', { template: '<connect-login></connect-login>' })
       .when('/jvm/local', { templateUrl: UrlHelpers.join(templatePath, 'local.html') });
   }
@@ -25,7 +25,7 @@ namespace JVM {
     viewRegistry,
     helpRegistry: Help.HelpRegistry,
     preferencesRegistry: Core.PreferencesRegistry,
-    ConnectOptions: Core.ConnectOptions,
+    ConnectOptions: ConnectOptions,
     preLogoutTasks: Core.Tasks,
     locationChangeStartTasks: Core.ParameterizedTasks,
     HawtioDashboard,
@@ -62,7 +62,7 @@ namespace JVM {
     // clean up local storage upon logout
     preLogoutTasks.addTask('CleanupJvmConnectCredentials', () => {
       log.debug("Clean up credentials from JVM connection settings in local storage");
-      let connections: Core.ConnectOptions[] = loadConnections();
+      let connections = loadConnections();
       connections.forEach((connection) => {
         delete connection.userName;
         delete connection.password;

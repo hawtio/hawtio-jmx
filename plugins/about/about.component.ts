@@ -15,7 +15,7 @@ namespace About {
     $onInit() {
       this.title = this.configManager.getBrandingValue('appName');
       this.additionalInfo = this.configManager.getBrandingValue('aboutDescription');
-      if (!this.jolokia.isDummy) {
+      if (!this.jolokia.isDummy && this.jolokia.version()) {
         this.productInfo = [
           { name: 'Jolokia', value: this.jolokia.version().agent }
         ];

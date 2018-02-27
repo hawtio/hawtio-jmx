@@ -1,20 +1,10 @@
-<div ng-controller="ConnectController">
-
+<div>
   <h1>Remote</h1>
-
   <div class="row">
     <div class="col-md-7">
-      <div class="toolbar-pf">
-        <form class="toolbar-pf-actions" ng-submit="addConnection()">
-          <div class="form-group">
-            <button type="button" class="btn btn-default" ng-click="showAddConnectionModal()">
-              Add connection
-            </button>
-          </div>
-        </form>
-      </div>
-      <pf-list-view class="jvm-connection-list"
-        items="connections" config="config" action-buttons="actionButtons" menu-actions="actionDropDown">
+      <pf-toolbar config="$ctrl.toolbarConfig"></pf-toolbar>
+      <pf-list-view class="jvm-connection-list" items="$ctrl.connections" config="$ctrl.listConfig"
+        action-buttons="$ctrl.listActionButtons" menu-actions="$ctrl.listActionDropDown">
         <div class="list-view-pf-description">
           <div class="list-group-item-heading">
             {{item.name}}

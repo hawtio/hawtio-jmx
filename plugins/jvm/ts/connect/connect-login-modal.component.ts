@@ -1,36 +1,32 @@
 namespace JVM {
 
   export class ConnectLoginModalController {
-
-    close: Function;
-    dismiss: Function;
+    modalInstance: any;
     invalidCredentials = false;
 
-    constructor(private ConnectOptions: Core.ConnectOptions, private connectService: ConnectService) {
+    constructor(private ConnectOptions: ConnectOptions, private connectService: ConnectService) {
       'ngInject';
     }
 
     cancel() {
-      this.dismiss();
+      this.modalInstance.dismiss();
     }
 
     login(username: string, password: string) {
       this.connectService.checkCredentials(this.ConnectOptions, username, password)
         .then(ok => {
           if (ok) {
-            this.close({$value: {username: username, password: password}});
+            this.modalInstance.close({username: username, password: password});
           } else {
             this.invalidCredentials = true;
           }
         });
     }
-
   }
 
   export const connectLoginModalComponent: angular.IComponentOptions = {
     bindings: {
-      close: '&',
-      dismiss: '&'
+      modalInstance: '<'
     },
     template: `
       <div class="modal-header">

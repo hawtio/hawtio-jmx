@@ -8,29 +8,42 @@ namespace JVM {
       'ngInject';
     }
 
-    testConnection(connection: Core.ConnectOptions): ng.IPromise<boolean> {
+    getConnections(): ConnectOptions[] {
+      const connectionsJson = this.$window.localStorage.getItem(connectionSettingsKey);
+      return connectionsJson ? JSON.parse(connectionsJson) : [];
+    }
+
+    saveConnections(connections: ConnectOptions[]) {
+      this.$window.localStorage.setItem(connectionSettingsKey, JSON.stringify(connections));
+    }
+
+    testConnection(connection: ConnectOptions): ng.IPromise<boolean> {
       return this.$q((resolve, reject) => {
-        new Jolokia({
-          url: createServerConnectionUrl(connection),
-          method: 'post',
-          mimeType: 'application/json'
-        }).request({
-          type: 'version'
-        }, {
-          success: response => {
-            resolve(true);
-          },
-          error: response => {
-            resolve(false);
-          },
-          ajaxError: response => {
-            resolve(response.status === 403 ? true : false);
-          }
-        });
+        try {
+          new Jolokia({
+            url: createServerConnectionUrl(connection),
+            method: 'post',
+            mimeType: 'application/json'
+          }).request({
+            type: 'version'
+          }, {
+            success: response => {
+              resolve(true);
+            },
+            error: response => {
+              resolve(false);
+            },
+            ajaxError: response => {
+              resolve(response.status === 403 ? true : false);
+            }
+          });
+        } catch (error) {
+          resolve(false);
+        }
       });
     };
 
-    checkCredentials(connection: Core.ConnectOptions, username: string, password: string): ng.IPromise<boolean> {
+    checkCredentials(connection: ConnectOptions, username: string, password: string): ng.IPromise<boolean> {
       return this.$q((resolve, reject) => {
         new Jolokia({
           url: createServerConnectionUrl(connection),
@@ -54,7 +67,7 @@ namespace JVM {
       });
     };
     
-    connect(connection: Core.ConnectOptions) {
+    connect(connection: ConnectOptions) {
       log.debug("Connecting with options: ", StringHelpers.toString(connection));
       const url = URI('').search({ con: connection.name }).toString();
       this.$window.open(url);

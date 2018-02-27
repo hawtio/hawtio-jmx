@@ -1,18 +1,24 @@
-/// <reference path="connect.controller.ts"/>
-/// <reference path="connect.service.ts"/>
-/// <reference path="connection-url.filter.ts"/>
+/// <reference path="connect.component.ts"/>
+/// <reference path="connect-edit-modal.component.ts"/>
+/// <reference path="connect-delete-modal.component.ts"/>
 /// <reference path="connect-login.component.ts"/>
 /// <reference path="connect-login-modal.component.ts"/>
+/// <reference path="connect-unreachable-modal.component.ts"/>
+/// <reference path="connect.service.ts"/>
+/// <reference path="connection-url.filter.ts"/>
 
 namespace JVM {
 
   export const ConnectModule = angular
     .module('hawtio-jvm-connect', [])
-    .controller('ConnectController', ConnectController)
-    .service('connectService', ConnectService)
-    .filter('connectionUrl', ConnectionUrlFilter)
+    .component('connect', connectComponent)
+    .component('connectEditModal', connectEditModalComponent)
+    .component('connectDeleteModal', connectDeleteModalComponent)
     .component('connectLogin', connectLoginComponent)
     .component('connectLoginModal', connectLoginModalComponent)
+    .component('connectUnreachableModal', connectUnreachableModalComponent)
+    .service('connectService', ConnectService)
+    .filter('connectionUrl', ConnectionUrlFilter)
     .name;
 
 }
