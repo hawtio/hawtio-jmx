@@ -11,7 +11,7 @@
     "build": "gulp build"
   },
   "dependencies": {
-    "@hawtio/core": "3.2.14",
+    "@hawtio/core": "3.2.15",
     "@hawtio/forms": "3.0.12",
     "@hawtio/ui": "3.2.1",
     "@hawtio/utilities": "3.2.2",
@@ -185,7 +185,7 @@
     "codemirror": "5.33.0",
     "js-beautify": "1.7.5",
     "bootstrap-datepicker": "1.7.1",
-    "@hawtio/core": "3.2.14",
+    "@hawtio/core": "3.2.15",
     "@hawtio/utilities": "3.2.2",
     "patternfly": "3.40.0"
   }
