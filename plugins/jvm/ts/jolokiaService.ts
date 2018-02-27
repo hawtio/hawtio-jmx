@@ -131,7 +131,7 @@ namespace JVM {
     return ConnectionName;
   }
 
-  const connectOptions: Core.ConnectOptions = (function() {
+  const connectOptions: Core.ConnectOptions = (function () {
     let name = getConnectionName();
     if (Core.isBlank(name)) {
       // this will fail any if (ConnectOptions) check
@@ -242,7 +242,7 @@ namespace JVM {
     jolokiaStatus: JolokiaStatus,
     jolokiaParams: Jolokia.IParams,
     jolokiaUrl: string,
-    userDetails: Core.UserDetails,
+    userDetails: Core.AuthService,
     postLoginTasks: Core.Tasks): Jolokia.IJolokia {
     'ngInject';
 
@@ -261,7 +261,10 @@ namespace JVM {
             if (window.opener) {
               $location.path('/jvm/connect-login');
             } else {
-              userDetails.logout(); // just logout
+              // just logout
+              if (userDetails.loggedIn) {
+                userDetails.logout();
+              }
             }
           } else {
             jolokiaStatus.xhr = xhr;
