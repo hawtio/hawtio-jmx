@@ -7,12 +7,12 @@ namespace Jmx {
     }
 
     tabs = [
-      new Core.HawtioTab('Attributes', '/jmx/attributes'),
-      new Core.HawtioTab('Operations', '/jmx/operations'),
-      new Core.HawtioTab('Chart', '/jmx/charts')
+      new Nav.HawtioTab('Attributes', '/jmx/attributes'),
+      new Nav.HawtioTab('Operations', '/jmx/operations'),
+      new Nav.HawtioTab('Chart', '/jmx/charts')
     ];    
     
-    goto(tab: Core.HawtioTab): void {
+    goto(tab: Nav.HawtioTab): void {
       this.$location.path(tab.path);
     }
   }

@@ -4,12 +4,12 @@ namespace Runtime {
       'ngInject';
 
       this.tabs = [
-        new Core.HawtioTab('System Properties', '/runtime/sysprops'),
-        new Core.HawtioTab('Metrics', '/runtime/metrics')
+        new Nav.HawtioTab('System Properties', '/runtime/sysprops'),
+        new Nav.HawtioTab('Metrics', '/runtime/metrics')
       ];
 
       if (workspace.treeContainsDomainAndProperties('java.lang', { type: 'Threading' })) {
-        this.tabs.push(new Core.HawtioTab('Threads', '/runtime/threads'));
+        this.tabs.push(new Nav.HawtioTab('Threads', '/runtime/threads'));
       }
 
       this.goto = tab => {

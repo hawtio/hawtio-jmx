@@ -11,13 +11,13 @@ namespace Diagnostics {
     getTabs() {
       const tabs = [];
       if (this.hasDiagnosticFunction('jfrCheck') && this.configManager.isRouteEnabled('/diagnostics/jfr')) {
-        tabs.push(new Core.HawtioTab('Flight Recorder', '/diagnostics/jfr'));
+        tabs.push(new Nav.HawtioTab('Flight Recorder', '/diagnostics/jfr'));
       }
       if (this.hasDiagnosticFunction('gcClassHistogram') && this.configManager.isRouteEnabled('/diagnostics/heap')) {
-        tabs.push(new Core.HawtioTab('Class Histogram', '/diagnostics/heap'));
+        tabs.push(new Nav.HawtioTab('Class Histogram', '/diagnostics/heap'));
       }
       if (this.hasHotspotDiagnostic() && this.configManager.isRouteEnabled('/diagnostics/flags')) {
-        tabs.push(new Core.HawtioTab('Hotspot Diagnostic', '/diagnostics/flags'));
+        tabs.push(new Nav.HawtioTab('Hotspot Diagnostic', '/diagnostics/flags'));
       }
       return tabs;
     }

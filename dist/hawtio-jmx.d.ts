@@ -2,7 +2,6 @@
 /// <reference types="angular" />
 /// <reference types="angular-route" />
 /// <reference types="jquery" />
-/// <reference types="utilities" />
 /// <reference types="forms" />
 declare namespace About {
     class AboutController {
@@ -609,7 +608,7 @@ declare namespace Jmx {
      * @param localStorage
      * @return {Workspace}
      */
-    function createRemoteWorkspace(remoteJolokia: Jolokia.IJolokia, remoteJolokiaStatus: JVM.JolokiaStatus, $location: ng.ILocationService, localStorage: Storage, $rootScope?: ng.IRootScopeService, $compile?: ng.ICompileService, $templateCache?: ng.ITemplateCacheService, HawtioNav?: HawtioMainNav.Registry): Workspace;
+    function createRemoteWorkspace(remoteJolokia: Jolokia.IJolokia, remoteJolokiaStatus: JVM.JolokiaStatus, $location: ng.ILocationService, localStorage: Storage, $rootScope?: ng.IRootScopeService, $compile?: ng.ICompileService, $templateCache?: ng.ITemplateCacheService, HawtioNav?: Nav.Registry): Workspace;
 }
 declare namespace Jmx {
     /**
@@ -635,7 +634,7 @@ declare namespace Jmx {
         $templateCache: ng.ITemplateCacheService;
         localStorage: Storage;
         $rootScope: ng.IRootScopeService;
-        HawtioNav: HawtioMainNav.Registry;
+        HawtioNav: Nav.Registry;
         operationCounter: number;
         selection: NodeSelection;
         tree: Folder;
@@ -657,7 +656,7 @@ declare namespace Jmx {
         mapData: {};
         private rootId;
         private separator;
-        constructor(jolokia: Jolokia.IJolokia, jolokiaStatus: JVM.JolokiaStatus, jmxTreeLazyLoadRegistry: any, $location: ng.ILocationService, $compile: ng.ICompileService, $templateCache: ng.ITemplateCacheService, localStorage: Storage, $rootScope: ng.IRootScopeService, HawtioNav: HawtioMainNav.Registry);
+        constructor(jolokia: Jolokia.IJolokia, jolokiaStatus: JVM.JolokiaStatus, jmxTreeLazyLoadRegistry: any, $location: ng.ILocationService, $compile: ng.ICompileService, $templateCache: ng.ITemplateCacheService, localStorage: Storage, $rootScope: ng.IRootScopeService, HawtioNav: Nav.Registry);
         /**
          * Creates a shallow copy child workspace with its own selection and location
          * @method createChildWorkspace
@@ -949,8 +948,8 @@ declare namespace Jmx {
     class NavigationController {
         private $location;
         constructor($location: ng.ILocationService);
-        tabs: Core.HawtioTab[];
-        goto(tab: Core.HawtioTab): void;
+        tabs: Nav.HawtioTab[];
+        goto(tab: Nav.HawtioTab): void;
     }
     const navigationComponent: angular.IComponentOptions;
 }

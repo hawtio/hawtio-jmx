@@ -56,7 +56,7 @@ namespace Jmx {
       public $templateCache: ng.ITemplateCacheService,
       public localStorage: Storage,
       public $rootScope: ng.IRootScopeService,
-      public HawtioNav: HawtioMainNav.Registry) {
+      public HawtioNav: Nav.Registry) {
 
       // set defaults
       if (!('autoRefresh' in localStorage)) {

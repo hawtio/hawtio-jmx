@@ -4,26 +4,6 @@
 
 @pf-padding: @grid-gutter-width / 2;
 
-html {
-  height: 100%;
-}
-
-body {
-  height: 100%;
-}
-
-#main {
-  height: 100%;
-  overflow: auto;
-  padding-left: 0;
-  padding-right: 0;
-
-  & > div[ng-view] {
-    padding-left: @pf-padding;
-    padding-right: @pf-padding;
-  }
-}
-
 .main-content {
   margin-top: @pf-padding;
 }
@@ -38,15 +18,6 @@ body {
 
 .table-view {
   margin-bottom: @pf-padding;
-}
-
-.spinner.loading-page {
-  margin-top: 30px;
-}
-
-.loading-message {
-  margin-top: 30px;
-  text-align: center;
 }
 
 .modal dd {

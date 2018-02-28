@@ -20,7 +20,7 @@ namespace JVM {
   }
 
   function configurePlugin(
-    HawtioNav: HawtioMainNav.Registry,
+    HawtioNav: Nav.Registry,
     $location: ng.ILocationService,
     viewRegistry,
     helpRegistry: Help.HelpRegistry,

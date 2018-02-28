@@ -17,7 +17,7 @@ namespace Jmx {
     treeModule
   ]);
 
-  _module.config(['HawtioNavBuilderProvider', "$routeProvider", (builder: HawtioMainNav.BuilderFactory, $routeProvider) => {
+  _module.config(['HawtioNavBuilderProvider', "$routeProvider", (builder: Nav.BuilderFactory, $routeProvider) => {
 
     $routeProvider
       .when('/jmx', { redirectTo: '/jmx/attributes' })
@@ -45,7 +45,7 @@ namespace Jmx {
     jolokiaStatus: JVM.JolokiaStatus,
     $rootScope,
     userDetails,
-    HawtioNav: HawtioMainNav.Registry) => {
+    HawtioNav: Nav.Registry) => {
     let workspace = new Workspace(jolokia, jolokiaStatus, jmxTreeLazyLoadRegistry, $location, $compile, $templateCache, localStorage, $rootScope, HawtioNav);
     workspace.loadTree();
     return workspace;
@@ -56,7 +56,7 @@ namespace Jmx {
   _module.factory('jmxTreeLazyLoadRegistry', () => Core.lazyLoaders);
 
   _module.run(["HawtioNav", "$location", "workspace", "viewRegistry", "layoutTree", "layoutFull", "jolokia", "helpRegistry", "pageTitle", "$templateCache", (
-      nav: HawtioMainNav.Registry,
+      nav: Nav.Registry,
       $location: ng.ILocationService,
       workspace: Workspace,
       viewRegistry,
