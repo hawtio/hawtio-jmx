@@ -4473,11 +4473,11 @@ var JVM;
 var JVM;
 (function (JVM) {
     var ConnectLoginController = /** @class */ (function () {
-        ConnectLoginController.$inject = ["$uibModal", "ConnectOptions"];
-        function ConnectLoginController($uibModal, ConnectOptions) {
+        ConnectLoginController.$inject = ["$uibModal", "$location"];
+        function ConnectLoginController($uibModal, $location) {
             'ngInject';
             this.$uibModal = $uibModal;
-            this.ConnectOptions = ConnectOptions;
+            this.$location = $location;
         }
         ConnectLoginController.prototype.$onInit = function () {
             var _this = this;
@@ -4487,8 +4487,7 @@ var JVM;
             })
                 .result.then(function (credentials) {
                 window.opener.credentials = credentials;
-                var url = URI('').search({ con: _this.ConnectOptions.name }).toString();
-                window.location.href = url;
+                window.location.href = _this.$location.search().redirect;
             })
                 .catch(function (error) {
                 window.close();
@@ -4801,16 +4800,11 @@ var JVM;
         }
         var answer = JVM.getConnectOptions(name);
         // search for passed credentials when connecting to remote server
-        try {
-            if (window.opener && window.opener.credentials) {
-                var credentials = window.opener.credentials;
-                answer.userName = credentials.username;
-                answer.password = credentials.password;
-                delete window.opener.credentials;
-            }
-        }
-        catch (securityException) {
-            // ignore
+        if (window.opener && window.opener.credentials) {
+            var credentials = window.opener.credentials;
+            answer.userName = credentials.username;
+            answer.password = credentials.password;
+            window.opener.credentials = null;
         }
         return answer;
     })();
@@ -4902,9 +4896,12 @@ var JVM;
             postLoginTasks.execute();
             if (!jolokiaParams.ajaxError) {
                 jolokiaParams.ajaxError = function (xhr, textStatus, error) {
-                    if (xhr.status === 401 || xhr.status === 403) {
-                        if (window.opener) {
-                            $location.path('/jvm/connect-login');
+                    if (xhr.status === 403) {
+                        // if new window opened in Connect > Remote page, then authenticate
+                        if (window.opener && $location.path() === '/') {
+                            jolokia.stop();
+                            var redirectUrl = $location.absUrl();
+                            $location.path('/jvm/connect-login').search('redirect', redirectUrl);
                         }
                         else {
                             // just logout

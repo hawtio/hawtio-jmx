@@ -185,8 +185,8 @@ declare namespace JVM {
 declare namespace JVM {
     class ConnectLoginController {
         private $uibModal;
-        private ConnectOptions;
-        constructor($uibModal: any, ConnectOptions: ConnectOptions);
+        private $location;
+        constructor($uibModal: any, $location: ng.ILocationService);
         $onInit(): void;
     }
     const connectLoginComponent: angular.IComponentOptions;

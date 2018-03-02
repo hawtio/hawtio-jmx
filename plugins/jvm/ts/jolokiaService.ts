@@ -139,15 +139,11 @@ namespace JVM {
     }
     let answer = getConnectOptions(name);
     // search for passed credentials when connecting to remote server
-    try {
-      if (window.opener && window.opener.credentials) {
-        const credentials = window.opener.credentials;
-        answer.userName = credentials.username;
-        answer.password = credentials.password;
-        delete window.opener.credentials;
-      }
-    } catch (securityException) {
-      // ignore
+    if (window.opener && window.opener.credentials) {
+      const credentials = window.opener.credentials;
+      answer.userName = credentials.username;
+      answer.password = credentials.password;
+      window.opener.credentials = null;
     }
     return answer;
   })();
@@ -257,9 +253,12 @@ namespace JVM {
 
       if (!jolokiaParams.ajaxError) {
         jolokiaParams.ajaxError = (xhr: JQueryXHR, textStatus: string, error: string) => {
-          if (xhr.status === 401 || xhr.status === 403) {
-            if (window.opener) {
-              $location.path('/jvm/connect-login');
+          if (xhr.status === 403) {
+            // if new window opened in Connect > Remote page, then authenticate
+            if (window.opener && $location.path() === '/') {
+              jolokia.stop();
+              const redirectUrl = $location.absUrl();
+              $location.path('/jvm/connect-login').search('redirect', redirectUrl);
             } else {
               // just logout
               if (userDetails.loggedIn) {

@@ -405,21 +405,6 @@ div.tree-nav-layout .sidebar-pf .rg-right {
   margin-top: 20px;
 }
 
-.runtime-sysprops-main .table {
-  table-layout: fixed;
-  margin-bottom: 0;
-}
-.runtime-sysprops-main .table th:nth-child(1) {
-  width: 300px;
-}
-.runtime-sysprops-main .table td:nth-child(1) {
-  width: 300px;
-  word-break: break-all;
-}
-.runtime-sysprops-main .table td:nth-child(2) {
-  word-break: break-all;
-}
-
 @media screen and (max-width: 767px) {
 }
 @media (min-width: 768px) {
@@ -448,4 +433,19 @@ div.tree-nav-layout .sidebar-pf .rg-right {
 #threads-page .table tr td:nth-child(6),
 #threads-page .table tr td:nth-child(7) {
   text-align: center;
+}
+
+.runtime-sysprops-main .table {
+  table-layout: fixed;
+  margin-bottom: 0;
+}
+.runtime-sysprops-main .table th:nth-child(1) {
+  width: 300px;
+}
+.runtime-sysprops-main .table td:nth-child(1) {
+  width: 300px;
+  word-break: break-all;
+}
+.runtime-sysprops-main .table td:nth-child(2) {
+  word-break: break-all;
 }

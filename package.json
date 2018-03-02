@@ -199,6 +199,10 @@
     "connect": "3.6.6",
     "tmp": "0.0.33",
     "component-emitter": "1.2.1",
-    "readable-stream": "1.1.14"
+    "readable-stream": "1.1.14",
+    "type-is": "1.6.16",
+    "livereload-js": "2.3.0",
+    "tough-cookie": "2.3.4",
+    "uuid": "3.2.1"
   }
 }
