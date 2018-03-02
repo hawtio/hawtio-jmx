@@ -13,7 +13,7 @@ namespace Runtime {
         .then(data => {
           let systemProperties: SystemProperty[] = [];
 
-          angular.forEach(data.SystemProperties, (value, key) => {
+          angular.forEach(data.SystemProperties, (value: string, key: string) => {
             let sysprop: SystemProperty = {
               name: key,
               value: value
