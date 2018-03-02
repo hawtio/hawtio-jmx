@@ -929,11 +929,15 @@ declare namespace Jmx {
         total: string;
         terms: string;
         remaining: string;
+        attribute?: undefined;
     } | {
         type: string;
         title: string;
         mbean: string;
         attribute: string;
+        total?: undefined;
+        terms?: undefined;
+        remaining?: undefined;
     })[];
 }
 declare namespace Jmx {

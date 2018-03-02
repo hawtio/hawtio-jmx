@@ -7367,6 +7367,16 @@ var Diagnostics;
         .service('diagnosticsService', Diagnostics.DiagnosticsService);
     hawtioPluginLoader.addModule(pluginName);
 })(Diagnostics || (Diagnostics = {}));
+/// <reference path="diagnostics.service.ts"/>
+describe("DiagnosticsService", function () {
+    var diagnosticsService;
+    beforeEach(function () {
+        diagnosticsService = new Diagnostics.DiagnosticsService(null, null);
+    });
+    it("should exist", function () {
+        expect(diagnosticsService).not.toBeUndefined();
+    });
+});
 var Jmx;
 (function (Jmx) {
     function createDashboardLink(widgetType, widget) {

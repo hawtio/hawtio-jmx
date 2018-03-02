@@ -7,7 +7,8 @@ var gulp = require('gulp'),
     s = require('underscore.string'),
     argv = require('yargs').argv,
     logger = require('js-logger'),
-    hawtio = require('@hawtio/node-backend');
+    hawtio = require('@hawtio/node-backend'),
+    Server = require('karma').Server;
 
 var plugins = gulpLoadPlugins({});
 
@@ -142,6 +143,12 @@ gulp.task('connect', ['watch'], function() {
 gulp.task('reload', function() {
   gulp.src('.')
     .pipe(hawtio.reload());
+});
+
+gulp.task('test', ['build'], function (done) {
+  new Server({
+    configFile: __dirname + '/karma.conf.js'
+  }, done).start();
 });
 
 gulp.task('build', ['tsc', 'less', 'template', 'concat', 'clean']);
