@@ -3915,601 +3915,6 @@ var About;
         .name;
     hawtioPluginLoader.addModule(aboutModule);
 })(About || (About = {}));
-var Runtime;
-(function (Runtime) {
-    configureRoutes.$inject = ["$routeProvider"];
-    configureRuntime.$inject = ["$rootScope", "viewRegistry", "helpRegistry", "workspace"];
-    function configureRoutes($routeProvider) {
-        'ngInject';
-        $routeProvider
-            .when('/runtime', { redirectTo: '/runtime/sysprops' })
-            .when('/runtime/sysprops', { template: '<runtime-system-properties></runtime-system-properties>' })
-            .when('/runtime/metrics', { template: '<runtime-metrics></runtime-metrics>' })
-            .when('/runtime/threads', { templateUrl: 'plugins/runtime/threads/threads.html' });
-    }
-    Runtime.configureRoutes = configureRoutes;
-    function configureRuntime($rootScope, viewRegistry, helpRegistry, workspace) {
-        'ngInject';
-        viewRegistry['runtime'] = 'plugins/runtime/layout/layout.html';
-        helpRegistry.addUserDoc('runtime', 'plugins/runtime/doc/help.md');
-        var unsubscribe = $rootScope.$on('jmxTreeUpdated', function () {
-            unsubscribe();
-            workspace.topLevelTabs.push({
-                id: "runtime",
-                content: "Runtime",
-                title: "Runtime",
-                isValid: function () { return workspace.treeContainsDomainAndProperties('java.lang'); },
-                href: function () { return '/runtime'; },
-                isActive: function (workspace) { return workspace.isMainTabActive('runtime'); }
-            });
-        });
-    }
-    Runtime.configureRuntime = configureRuntime;
-})(Runtime || (Runtime = {}));
-/// <reference path="sysprop.ts"/>
-var Runtime;
-(function (Runtime) {
-    var SystemPropertiesService = /** @class */ (function () {
-        SystemPropertiesService.$inject = ["jolokiaService"];
-        function SystemPropertiesService(jolokiaService) {
-            'ngInject';
-            this.jolokiaService = jolokiaService;
-        }
-        SystemPropertiesService.prototype.getSystemProperties = function () {
-            return this.jolokiaService.getAttribute('java.lang:type=Runtime', null)
-                .then(function (data) {
-                var systemProperties = [];
-                angular.forEach(data.SystemProperties, function (value, key) {
-                    var sysprop = {
-                        name: key,
-                        value: value
-                    };
-                    systemProperties.push(sysprop);
-                });
-                return systemProperties;
-            });
-        };
-        return SystemPropertiesService;
-    }());
-    Runtime.SystemPropertiesService = SystemPropertiesService;
-})(Runtime || (Runtime = {}));
-/// <reference path="sysprops.service.ts"/>
-/// <reference path="sysprop.ts"/>
-var Runtime;
-(function (Runtime) {
-    var SystemPropertiesController = /** @class */ (function () {
-        SystemPropertiesController.$inject = ["$interval", "systemPropertiesService"];
-        function SystemPropertiesController($interval, systemPropertiesService) {
-            'ngInject';
-            var _this = this;
-            this.$interval = $interval;
-            this.systemPropertiesService = systemPropertiesService;
-            this.toolbarConfig = {
-                filterConfig: {
-                    fields: [
-                        {
-                            id: 'name',
-                            title: 'Name',
-                            placeholder: 'Filter by name...',
-                            filterType: 'text'
-                        },
-                        {
-                            id: 'value',
-                            title: 'Value',
-                            placeholder: 'Filter by value...',
-                            filterType: 'text'
-                        },
-                    ],
-                    onFilterChange: function (filters) {
-                        _this.applyFilters(filters);
-                    },
-                    resultsCount: 0
-                },
-                isTableView: true
-            };
-            this.tableConfig = {
-                selectionMatchProp: 'name',
-                showCheckboxes: false
-            };
-            this.pageConfig = {
-                pageSize: 20
-            };
-            this.tableColumns = [
-                {
-                    header: 'Property',
-                    itemField: 'name',
-                },
-                {
-                    header: 'Value',
-                    itemField: 'value',
-                }
-            ];
-            this.tableDtOptions = {
-                order: [[0, "asc"]]
-            };
-            this.sysprops = [];
-            this.tableItems = [];
-        }
-        SystemPropertiesController.prototype.$onInit = function () {
-            this.loadData();
-        };
-        SystemPropertiesController.prototype.loadData = function () {
-            var _this = this;
-            this.systemPropertiesService.getSystemProperties()
-                .then(function (sysprops) {
-                _this.sysprops = sysprops;
-                _this.tableItems = sysprops;
-                _this.toolbarConfig.filterConfig.resultsCount = sysprops.length;
-            }).catch(function (error) { return Core.notification('danger', error); });
-            ;
-        };
-        SystemPropertiesController.prototype.applyFilters = function (filters) {
-            var filteredSysProps = this.sysprops;
-            filters.forEach(function (filter) {
-                var regExp = new RegExp(filter.value, 'i');
-                switch (filter.id) {
-                    case 'name':
-                        filteredSysProps = filteredSysProps.filter(function (sysprop) { return sysprop.name.match(regExp) !== null; });
-                        break;
-                    case 'value':
-                        filteredSysProps = filteredSysProps.filter(function (sysprop) { return sysprop.value.match(regExp) !== null; });
-                        break;
-                }
-            });
-            this.tableItems = filteredSysProps;
-            this.toolbarConfig.filterConfig.resultsCount = filteredSysProps.length;
-        };
-        return SystemPropertiesController;
-    }());
-    Runtime.SystemPropertiesController = SystemPropertiesController;
-    Runtime.systemPropertiesComponent = {
-        template: "\n      <div class=\"table-view runtime-sysprops-main\">\n        <h1>System Properties</h1>\n        <pf-toolbar config=\"$ctrl.toolbarConfig\"></pf-toolbar>\n        <pf-table-view config=\"$ctrl.tableConfig\"\n                       columns=\"$ctrl.tableColumns\"\n                       items=\"$ctrl.tableItems\"\n                       page-config=\"$ctrl.pageConfig\"\n                       dt-options=\"$ctrl.tableDtOptions\">\n        </pf-table-view>\n      </div>\n    ",
-        controller: SystemPropertiesController
-    };
-})(Runtime || (Runtime = {}));
-/// <reference path="sysprops.component.ts"/>
-/// <reference path="sysprops.service.ts"/>
-var Runtime;
-(function (Runtime) {
-    Runtime.systemPropertiesModule = angular
-        .module('runtime-system-properties', [])
-        .component('runtimeSystemProperties', Runtime.systemPropertiesComponent)
-        .service('systemPropertiesService', Runtime.SystemPropertiesService)
-        .name;
-})(Runtime || (Runtime = {}));
-var Runtime;
-(function (Runtime) {
-    var MetricsService = /** @class */ (function () {
-        MetricsService.$inject = ["jolokia", "workspace"];
-        function MetricsService(jolokia, workspace) {
-            'ngInject';
-            this.jolokia = jolokia;
-            this.workspace = workspace;
-        }
-        MetricsService.prototype.registerJolokiaRequests = function (scope, callback) {
-            var requests = [
-                this.createMBeanRequest('java.lang:type=Threading'),
-                this.createMBeanRequest('java.lang:type=Memory'),
-                this.createMBeanRequest('java.lang:type=OperatingSystem'),
-                this.createMBeanRequest('java.lang:type=ClassLoading'),
-                this.createMBeanRequest('java.lang:type=Runtime'),
-                this.createMBeanRequest('org.springframework.boot:type=Endpoint,name=metricsEndpoint')
-            ];
-            Core.register(this.jolokia, scope, requests, Core.onSuccess(callback));
-        };
-        MetricsService.prototype.unregisterJolokiaRequests = function (scope) {
-            Core.unregister(this.jolokia, scope);
-        };
-        MetricsService.prototype.createMetric = function (name, value, unit) {
-            return new Runtime.Metric(name, value, unit);
-        };
-        MetricsService.prototype.createUtilizationMetric = function (name, used, total, unit) {
-            return new Runtime.UtilizationMetric(name, used, total, unit);
-        };
-        MetricsService.prototype.createMBeanRequest = function (mbean) {
-            return {
-                type: 'read',
-                mbean: mbean,
-                arguments: []
-            };
-        };
-        return MetricsService;
-    }());
-    Runtime.MetricsService = MetricsService;
-})(Runtime || (Runtime = {}));
-var Runtime;
-(function (Runtime) {
-    var MetricType;
-    (function (MetricType) {
-        MetricType["JVM"] = "JVM";
-        MetricType["SYSTEM"] = "System";
-        MetricType["SPRING_BOOT"] = "Spring Boot";
-    })(MetricType = Runtime.MetricType || (Runtime.MetricType = {}));
-    var Metric = /** @class */ (function () {
-        function Metric(name, value, unit) {
-            this.name = name;
-            this.value = value;
-            this.unit = unit;
-        }
-        Metric.prototype.getDescription = function () {
-            return this.name + ": " + this.value + (this.unit != null ? " " + this.unit : "");
-        };
-        return Metric;
-    }());
-    Runtime.Metric = Metric;
-    var UtilizationMetric = /** @class */ (function (_super) {
-        __extends(UtilizationMetric, _super);
-        function UtilizationMetric(name, value, available, unit) {
-            var _this = _super.call(this, name, value, unit) || this;
-            _this.name = name;
-            _this.value = value;
-            _this.available = available;
-            _this.unit = unit;
-            return _this;
-        }
-        UtilizationMetric.prototype.getDescription = function () {
-            var unitDescription = (this.unit != null ? ' ' + this.unit : '');
-            var description = this.name + ": " + this.value;
-            description += " " + unitDescription + " of";
-            description += " " + this.available + unitDescription;
-            return description;
-        };
-        return UtilizationMetric;
-    }(Metric));
-    Runtime.UtilizationMetric = UtilizationMetric;
-    var MetricGroup = /** @class */ (function () {
-        function MetricGroup(type, metrics) {
-            if (metrics === void 0) { metrics = []; }
-            this.type = type;
-            this.metrics = metrics;
-        }
-        MetricGroup.prototype.updateMetrics = function (metrics) {
-            var _this = this;
-            metrics.forEach(function (metric) {
-                var index = _this.metrics.map(function (m) { return m.name; }).indexOf(metric.name);
-                if (index === -1) {
-                    _this.metrics.push(metric);
-                }
-                else {
-                    _this.metrics[index] = metric;
-                }
-            });
-        };
-        return MetricGroup;
-    }());
-    Runtime.MetricGroup = MetricGroup;
-})(Runtime || (Runtime = {}));
-/// <reference path="metrics.service.ts"/>
-/// <reference path="metric.ts"/>
-var Runtime;
-(function (Runtime) {
-    var MetricsController = /** @class */ (function () {
-        MetricsController.$inject = ["$scope", "metricsService", "$filter", "humanizeService"];
-        function MetricsController($scope, metricsService, $filter, humanizeService) {
-            'ngInject';
-            this.$scope = $scope;
-            this.metricsService = metricsService;
-            this.$filter = $filter;
-            this.humanizeService = humanizeService;
-            this.metricGroups = [];
-        }
-        MetricsController.prototype.$onInit = function () {
-            var _this = this;
-            this.loading = true;
-            this.metricsService.registerJolokiaRequests(this.$scope, function (result) {
-                _this.loading = false;
-                _this.loadMetrics(result);
-            });
-        };
-        MetricsController.prototype.$onDestroy = function () {
-            this.metricsService.unregisterJolokiaRequests(this.$scope);
-        };
-        MetricsController.prototype.loadMetrics = function (result) {
-            var _this = this;
-            var metrics = result.value;
-            var updates = [];
-            var updateType;
-            switch (result.request.mbean) {
-                case 'java.lang:type=Threading':
-                    updateType = Runtime.MetricType.JVM;
-                    updates.push(this.metricsService.createMetric('Thread count', metrics.ThreadCount));
-                    break;
-                case 'java.lang:type=Memory':
-                    updateType = Runtime.MetricType.JVM;
-                    var heapUsed = this.formatBytes(metrics.HeapMemoryUsage.used);
-                    updates.push(this.metricsService.createMetric('Heap used', heapUsed[0], heapUsed[1]));
-                    break;
-                case 'java.lang:type=OperatingSystem':
-                    var filterNumeric = this.$filter('number');
-                    var cpuLoad = filterNumeric(metrics.SystemCpuLoad * 100, 2);
-                    var loadAverage = filterNumeric(metrics.SystemLoadAverage, 2);
-                    var memFree = this.formatBytes(metrics.FreePhysicalMemorySize);
-                    var memTotal = this.formatBytes(metrics.TotalPhysicalMemorySize);
-                    updateType = Runtime.MetricType.SYSTEM;
-                    updates.push(this.metricsService.createMetric('Available processors', metrics.AvailableProcessors));
-                    updates.push(this.metricsService.createMetric('CPU load', cpuLoad, '%'));
-                    updates.push(this.metricsService.createMetric('Load average', loadAverage));
-                    updates.push(this.metricsService.createUtilizationMetric('Memory used', memFree[0], memTotal[0], memFree[1]));
-                    updates.push(this.metricsService.createUtilizationMetric('File descriptors used', metrics.OpenFileDescriptorCount, metrics.MaxFileDescriptorCount));
-                    break;
-                case 'java.lang:type=ClassLoading':
-                    updateType = Runtime.MetricType.JVM;
-                    updates.push(this.metricsService.createMetric('Classes loaded', metrics.LoadedClassCount));
-                    break;
-                case 'java.lang:type=Runtime':
-                    var filterDate = this.$filter('date');
-                    updateType = Runtime.MetricType.JVM;
-                    updates.push(this.metricsService.createMetric('Start time', filterDate(metrics.StartTime, 'yyyy-MM-dd HH:mm:ss')));
-                    updates.push(this.metricsService.createMetric('Uptime', Core.humanizeMilliseconds(metrics.Uptime)));
-                    break;
-                case 'org.springframework.boot:type=Endpoint,name=metricsEndpoint':
-                    updateType = Runtime.MetricType.SPRING_BOOT;
-                    updates.push(this.metricsService.createMetric('Active HTTP sessions', metrics.Data['httpsessions.active']));
-                    // Filter out other metrics which may be of interest
-                    Object.keys(metrics.Data).filter(function (key) {
-                        return /^(counter|gauge|datasource|cache)/.test(key);
-                    }).forEach(function (metricName) {
-                        updates.push(_this.metricsService.createMetric(_this.humanizeService.toSentenceCase(metricName), metrics.Data[metricName]));
-                    });
-                    break;
-            }
-            this.getMetricGroup(updateType).updateMetrics(updates);
-            Core.$apply(this.$scope);
-        };
-        MetricsController.prototype.getMetricGroup = function (type) {
-            var match = this.metricGroups.filter(function (group) { return group.type === type; });
-            if (match.length > 0) {
-                return match[0];
-            }
-            else {
-                var metricGroup = new Runtime.MetricGroup(type);
-                this.metricGroups.push(metricGroup);
-                return metricGroup;
-            }
-        };
-        MetricsController.prototype.formatBytes = function (bytes) {
-            if (bytes == 0) {
-                return [0, 'Bytes'];
-            }
-            var killobyte = 1024;
-            var decimalPlaces = 2;
-            var units = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
-            var i = Math.floor(Math.log(bytes) / Math.log(killobyte));
-            var value = parseFloat((bytes / Math.pow(killobyte, i)).toFixed(decimalPlaces));
-            var unit = units[i];
-            return [value, unit];
-        };
-        return MetricsController;
-    }());
-    Runtime.MetricsController = MetricsController;
-    Runtime.metricsComponent = {
-        template: "\n      <div class=\"runtime-metrics-main\">\n        <h1>Metrics</h1>\n        <div class=\"blank-slate-pf no-border\" ng-if=\"$ctrl.loading === false && $ctrl.metricGroups.length === 0\">\n          <div class=\"blank-slate-pf-icon\">\n            <span class=\"pficon pficon pficon-warning-triangle-o\"></span>\n          </div>\n          <h1>No Metrics</h1>\n          <p>There are no metrics to display.</p>\n          <p>Wait for some metrics to be generated or check your application configuration.</p>\n        </div>\n        <div class=\"cards-pf\" ng-if=\"$ctrl.metricGroups.length > 0\">\n          <div class=\"container-fluid container-cards-pf\">\n            <div class=\"row row-cards-pf\">\n              <div class=\"col-xs-12 col-sm-6 col-md-4 col-lg-3\" ng-repeat=\"group in $ctrl.metricGroups | orderBy: 'type'\">\n                <pf-card\n                  head-title=\"{{group.type}}\"\n                  show-spinner=\"group.metrics.length === 0\"\n                  spinner-text=\"Loading\">\n                  <div class=\"card-pf-info-item\" ng-repeat=\"metric in group.metrics | orderBy: 'name'\">\n                    {{metric.getDescription()}}\n                  </div>\n                </pf-card>\n              </div>\n            </div>\n          </div>\n        </div>\n      </div>\n    ",
-        controller: MetricsController
-    };
-})(Runtime || (Runtime = {}));
-/// <reference path="metrics.component.ts"/>
-/// <reference path="metrics.service.ts"/>
-var Runtime;
-(function (Runtime) {
-    Runtime.metricsModule = angular
-        .module('runtime-metrics', [])
-        .component('runtimeMetrics', Runtime.metricsComponent)
-        .service('metricsService', Runtime.MetricsService)
-        .name;
-})(Runtime || (Runtime = {}));
-var Runtime;
-(function (Runtime) {
-    RuntimeLayoutController.$inject = ["$location", "workspace"];
-    function RuntimeLayoutController($location, workspace) {
-        'ngInject';
-        this.tabs = [
-            new Nav.HawtioTab('System Properties', '/runtime/sysprops'),
-            new Nav.HawtioTab('Metrics', '/runtime/metrics')
-        ];
-        if (workspace.treeContainsDomainAndProperties('java.lang', { type: 'Threading' })) {
-            this.tabs.push(new Nav.HawtioTab('Threads', '/runtime/threads'));
-        }
-        this.goto = function (tab) {
-            $location.path(tab.path);
-        };
-    }
-    Runtime.RuntimeLayoutController = RuntimeLayoutController;
-})(Runtime || (Runtime = {}));
-/// <reference path="layout.controller.ts"/>
-var Runtime;
-(function (Runtime) {
-    Runtime.layoutModule = angular
-        .module('runtime-layout', [])
-        .controller('RuntimeLayoutController', Runtime.RuntimeLayoutController)
-        .name;
-})(Runtime || (Runtime = {}));
-var Runtime;
-(function (Runtime) {
-    var ThreadsService = /** @class */ (function () {
-        ThreadsService.$inject = ["$q", "jolokia"];
-        function ThreadsService($q, jolokia) {
-            'ngInject';
-            this.$q = $q;
-            this.jolokia = jolokia;
-        }
-        ThreadsService.prototype.getThreads = function () {
-            var _this = this;
-            return this.$q(function (resolve, reject) {
-                _this.jolokia.execute("java.lang:type=Threading", "dumpAllThreads", false, false, {
-                    success: function (threads) {
-                        threads.forEach(function (thread) {
-                            thread.threadState = ThreadsService.STATE_LABELS[thread.threadState];
-                            thread.waitedTime = thread.waitedTime > 0 ? Core.humanizeMilliseconds(thread.waitedTime) : '';
-                            thread.blockedTime = thread.blockedTime > 0 ? Core.humanizeMilliseconds(thread.blockedTime) : '';
-                            delete thread.lockMonitors;
-                        });
-                        resolve(threads);
-                    }
-                });
-            });
-        };
-        ThreadsService.STATE_LABELS = {
-            BLOCKED: 'Blocked',
-            NEW: 'New',
-            RUNNABLE: 'Runnable',
-            TERMINATED: 'Terminated',
-            TIMED_WAITING: 'Timed waiting',
-            WAITING: 'Waiting'
-        };
-        return ThreadsService;
-    }());
-    Runtime.ThreadsService = ThreadsService;
-})(Runtime || (Runtime = {}));
-/// <reference path="./threads.service.ts"/>
-var Runtime;
-(function (Runtime) {
-    ThreadsController.$inject = ["$scope", "$uibModal", "threadsService"];
-    function ThreadsController($scope, $uibModal, threadsService) {
-        'ngInject';
-        var FILTER_FUNCTIONS = {
-            state: function (threads, state) { return threads.filter(function (thread) { return thread.threadState === state; }); },
-            name: function (threads, name) {
-                var re = new RegExp(name, 'i');
-                return threads.filter(function (thread) { return re.test(thread.threadName); });
-            }
-        };
-        var allThreads;
-        $scope.toolbarConfig = {
-            filterConfig: {
-                fields: [
-                    {
-                        id: 'state',
-                        title: 'State',
-                        placeholder: 'Filter by state...',
-                        filterType: 'select',
-                        filterValues: ['Blocked', 'New', 'Runnable', 'Terminated', 'Timed waiting', 'Waiting']
-                    },
-                    {
-                        id: 'name',
-                        title: 'Name',
-                        placeholder: 'Filter by name...',
-                        filterType: 'text'
-                    }
-                ],
-                onFilterChange: filterChange
-            },
-            isTableView: true
-        };
-        $scope.tableConfig = {
-            selectionMatchProp: 'threadId',
-            showCheckboxes: false
-        };
-        $scope.tableDtOptions = {
-            order: [[0, "desc"]]
-        };
-        $scope.tableColumns = [
-            {
-                header: 'ID',
-                itemField: 'threadId'
-            },
-            {
-                header: 'State',
-                itemField: 'threadState'
-            },
-            {
-                header: 'Name',
-                itemField: 'threadName',
-                templateFn: function (value) { return "<span class=\"table-cell-truncated\" title=\"" + value + "\">" + value + "</span>"; }
-            },
-            {
-                header: 'Waited Time',
-                itemField: 'waitedTime'
-            },
-            {
-                header: 'Blocked Time',
-                itemField: 'blockedTime'
-            },
-            {
-                header: 'Native',
-                itemField: 'inNative',
-                templateFn: function (value) { return value ? '<span class="fa fa-circle" aria-hidden="true"></span>' : ''; }
-            },
-            {
-                header: 'Suspended',
-                itemField: 'suspended',
-                templateFn: function (value) { return value ? '<span class="fa fa-circle" aria-hidden="true"></span>' : ''; }
-            }
-        ];
-        $scope.tableItems = null;
-        $scope.tableActionButtons = [
-            {
-                name: 'More',
-                title: 'View more information about this thread',
-                actionFn: viewDetails
-            }
-        ];
-        (function init() {
-            loadThreads();
-        })();
-        function loadThreads() {
-            threadsService.getThreads().then(function (threads) {
-                allThreads = threads;
-                $scope.filteredThreads = threads;
-            });
-        }
-        function filterChange(filters) {
-            applyFilters(filters);
-            updateResultCount();
-        }
-        function applyFilters(filters) {
-            var filteredThreads = allThreads;
-            filters.forEach(function (filter) {
-                filteredThreads = FILTER_FUNCTIONS[filter.id](filteredThreads, filter.value);
-            });
-            $scope.filteredThreads = filteredThreads;
-        }
-        function updateResultCount() {
-            $scope.toolbarConfig.filterConfig.resultsCount = $scope.filteredThreads.length;
-        }
-        function viewDetails(action, item) {
-            $scope.thread = _.find($scope.filteredThreads, function (thread) { return thread.threadId === item.threadId; });
-            openModal();
-        }
-        function openModal() {
-            $uibModal.open({
-                templateUrl: 'threadModalContent.html',
-                scope: $scope,
-                size: 'lg'
-            });
-        }
-    }
-    Runtime.ThreadsController = ThreadsController;
-})(Runtime || (Runtime = {}));
-/// <reference path="threads.controller.ts"/>
-/// <reference path="threads.service.ts"/>
-var Runtime;
-(function (Runtime) {
-    Runtime.threadsModule = angular
-        .module('runtime-threads', [])
-        .controller('ThreadsController', Runtime.ThreadsController)
-        .service('threadsService', Runtime.ThreadsService)
-        .name;
-})(Runtime || (Runtime = {}));
-/// <reference path="runtime.config.ts"/>
-/// <reference path="sysprops/sysprops.module.ts"/>
-/// <reference path="metrics/metrics.module.ts"/>
-/// <reference path="layout/layout.module.ts"/>
-/// <reference path="threads/threads.module.ts"/>
-var Runtime;
-(function (Runtime) {
-    var runtimeModule = angular
-        .module('hawtio-runtime', [
-        Runtime.layoutModule,
-        Runtime.systemPropertiesModule,
-        Runtime.metricsModule,
-        Runtime.threadsModule
-    ])
-        .config(Runtime.configureRoutes)
-        .run(Runtime.configureRuntime)
-        .name;
-    hawtioPluginLoader.addModule(runtimeModule);
-    Runtime.log = Logger.get(runtimeModule);
-})(Runtime || (Runtime = {}));
 var Diagnostics;
 (function (Diagnostics) {
     DiagnosticsFlagsController.$inject = ["$scope", "jolokia"];
@@ -7367,16 +6772,6 @@ var Diagnostics;
         .service('diagnosticsService', Diagnostics.DiagnosticsService);
     hawtioPluginLoader.addModule(pluginName);
 })(Diagnostics || (Diagnostics = {}));
-/// <reference path="diagnostics.service.ts"/>
-describe("DiagnosticsService", function () {
-    var diagnosticsService;
-    beforeEach(function () {
-        diagnosticsService = new Diagnostics.DiagnosticsService(null, null);
-    });
-    it("should exist", function () {
-        expect(diagnosticsService).not.toBeUndefined();
-    });
-});
 var Jmx;
 (function (Jmx) {
     function createDashboardLink(widgetType, widget) {
@@ -9340,6 +8735,143 @@ var Jmx;
             Core.register(jolokia, $scope, $scope.reqs, Core.onSuccess($scope.render));
         }]);
 })(Jmx || (Jmx = {}));
+/// <reference path="folder.ts"/>
+/// <reference path="../workspace.ts"/>
+var Jmx;
+(function (Jmx) {
+    function findLazyLoadingFunction(workspace, folder) {
+        var factories = workspace.jmxTreeLazyLoadRegistry[folder.domain];
+        var lazyFunction = null;
+        if (factories && factories.length) {
+            angular.forEach(factories, function (customLoader) {
+                if (!lazyFunction) {
+                    lazyFunction = customLoader(folder);
+                }
+            });
+        }
+        return lazyFunction;
+    }
+    Jmx.findLazyLoadingFunction = findLazyLoadingFunction;
+    function registerLazyLoadHandler(domain, lazyLoaderFactory) {
+        var array = Core.lazyLoaders[domain];
+        if (!array) {
+            array = [];
+            Core.lazyLoaders[domain] = array;
+        }
+        array.push(lazyLoaderFactory);
+    }
+    Jmx.registerLazyLoadHandler = registerLazyLoadHandler;
+    function unregisterLazyLoadHandler(domain, lazyLoaderFactory) {
+        if (Core.lazyLoaders) {
+            var array = Core.lazyLoaders[domain];
+            if (array) {
+                array.remove(lazyLoaderFactory);
+            }
+        }
+    }
+    Jmx.unregisterLazyLoadHandler = unregisterLazyLoadHandler;
+    function updateTreeSelectionFromURL($location, treeElement, activateIfNoneSelected) {
+        if (activateIfNoneSelected === void 0) { activateIfNoneSelected = false; }
+        updateTreeSelectionFromURLAndAutoSelect($location, treeElement, null, activateIfNoneSelected);
+    }
+    Jmx.updateTreeSelectionFromURL = updateTreeSelectionFromURL;
+    function updateTreeSelectionFromURLAndAutoSelect($location, treeElement, autoSelect, activateIfNoneSelected) {
+        if (activateIfNoneSelected === void 0) { activateIfNoneSelected = false; }
+        var tree = treeElement.treeview(true);
+        var node;
+        // If there is a node id then select that one
+        var key = $location.search()['nid'];
+        if (key) {
+            node = _.find(tree.getNodes(), { id: key });
+        }
+        // Else optionally select the first node if there is no selection
+        if (!node && activateIfNoneSelected && tree.getSelected().length === 0) {
+            var children = tree.getNodes();
+            if (children.length > 0) {
+                node = children[0];
+                // invoke any auto select function, and use its result as new first, if any returned
+                if (autoSelect) {
+                    var result = autoSelect(node);
+                    if (result) {
+                        node = result;
+                    }
+                }
+            }
+        }
+        // Finally update the tree with the result node
+        if (node) {
+            tree.revealNode(node, { silent: true });
+            tree.selectNode(node, { silent: false });
+            tree.expandNode(node, { levels: 1, silent: true });
+        }
+        // Word-around to avoid collapsed parent node on re-parenting
+        tree.getExpanded().forEach(function (node) { return tree.revealNode(node, { silent: true }); });
+    }
+    Jmx.updateTreeSelectionFromURLAndAutoSelect = updateTreeSelectionFromURLAndAutoSelect;
+    function getUniqueTypeNames(children) {
+        var typeNameMap = {};
+        angular.forEach(children, function (mbean) {
+            var typeName = mbean.typeName;
+            if (typeName) {
+                typeNameMap[typeName] = mbean;
+            }
+        });
+        // only query if all the typenames are the same
+        return Object.keys(typeNameMap);
+    }
+    Jmx.getUniqueTypeNames = getUniqueTypeNames;
+    function enableTree($scope, $location, workspace, treeElement, children) {
+        treeElement.treeview({
+            lazyLoad: function (node, addNodes) {
+                var plugin = Jmx.findLazyLoadingFunction(workspace, node);
+                if (plugin) {
+                    Jmx.log.debug('Lazy loading folder', node.text);
+                    plugin(workspace, node, function (children) { return addNodes(children); });
+                }
+                // It seems to be required, as the lazyLoad property deletion done
+                // by the treeview component does not seem to work
+                node.lazyLoad = false;
+            },
+            onNodeSelected: function (event, node) {
+                // We need to clear any selected node state that may leave outside
+                // this tree element sub-graph so that the current selection is
+                // correctly taken into account when leaving for a wider tree graph,
+                // like when leaving the ActiveMQ or Camel trees to go to the JMX tree.
+                var clearSelection = function (n) {
+                    if (n.state && n.id !== node.id) {
+                        n.state.selected = false;
+                    }
+                    if (n.children) {
+                        n.children.forEach(clearSelection);
+                    }
+                };
+                clearSelection(workspace.tree);
+                // Expand one level down
+                // Lazy loaded node are automatically expanded once the children get added
+                if (!node.lazyLoad) {
+                    treeElement.treeview('expandNode', [node, { levels: 1, silent: true }]);
+                }
+                // Update the workspace state
+                // The treeview component clones the node passed with the event
+                // so let's lookup the original one
+                var selection = treeElement.treeview('getSelected')[0];
+                workspace.updateSelectionNode(selection);
+                Core.$apply($scope);
+            },
+            levels: 1,
+            data: children,
+            collapseIcon: 'fa fa-angle-down',
+            expandIcon: 'fa fa-angle-right',
+            nodeIcon: 'pficon pficon-folder-close',
+            showImage: true,
+            highlightSearchResults: true,
+            searchResultColor: '#b58100',
+            searchResultBackColor: '#fbeabc',
+            preventUnselect: true
+        });
+    }
+    Jmx.enableTree = enableTree;
+})(Jmx || (Jmx = {}));
 /// <reference path="jvmPlugin.ts"/>
 var JVM;
 (function (JVM) {
@@ -10026,143 +9558,601 @@ var RBAC;
     }
     hawtioPluginLoader.addModule(RBAC.pluginName);
 })(RBAC || (RBAC = {}));
-/// <reference path="folder.ts"/>
-/// <reference path="../workspace.ts"/>
-var Jmx;
-(function (Jmx) {
-    function findLazyLoadingFunction(workspace, folder) {
-        var factories = workspace.jmxTreeLazyLoadRegistry[folder.domain];
-        var lazyFunction = null;
-        if (factories && factories.length) {
-            angular.forEach(factories, function (customLoader) {
-                if (!lazyFunction) {
-                    lazyFunction = customLoader(folder);
+var Runtime;
+(function (Runtime) {
+    configureRoutes.$inject = ["$routeProvider"];
+    configureRuntime.$inject = ["$rootScope", "viewRegistry", "helpRegistry", "workspace"];
+    function configureRoutes($routeProvider) {
+        'ngInject';
+        $routeProvider
+            .when('/runtime', { redirectTo: '/runtime/sysprops' })
+            .when('/runtime/sysprops', { template: '<runtime-system-properties></runtime-system-properties>' })
+            .when('/runtime/metrics', { template: '<runtime-metrics></runtime-metrics>' })
+            .when('/runtime/threads', { templateUrl: 'plugins/runtime/threads/threads.html' });
+    }
+    Runtime.configureRoutes = configureRoutes;
+    function configureRuntime($rootScope, viewRegistry, helpRegistry, workspace) {
+        'ngInject';
+        viewRegistry['runtime'] = 'plugins/runtime/layout/layout.html';
+        helpRegistry.addUserDoc('runtime', 'plugins/runtime/doc/help.md');
+        var unsubscribe = $rootScope.$on('jmxTreeUpdated', function () {
+            unsubscribe();
+            workspace.topLevelTabs.push({
+                id: "runtime",
+                content: "Runtime",
+                title: "Runtime",
+                isValid: function () { return workspace.treeContainsDomainAndProperties('java.lang'); },
+                href: function () { return '/runtime'; },
+                isActive: function (workspace) { return workspace.isMainTabActive('runtime'); }
+            });
+        });
+    }
+    Runtime.configureRuntime = configureRuntime;
+})(Runtime || (Runtime = {}));
+/// <reference path="sysprop.ts"/>
+var Runtime;
+(function (Runtime) {
+    var SystemPropertiesService = /** @class */ (function () {
+        SystemPropertiesService.$inject = ["jolokiaService"];
+        function SystemPropertiesService(jolokiaService) {
+            'ngInject';
+            this.jolokiaService = jolokiaService;
+        }
+        SystemPropertiesService.prototype.getSystemProperties = function () {
+            return this.jolokiaService.getAttribute('java.lang:type=Runtime', null)
+                .then(function (data) {
+                var systemProperties = [];
+                angular.forEach(data.SystemProperties, function (value, key) {
+                    var sysprop = {
+                        name: key,
+                        value: value
+                    };
+                    systemProperties.push(sysprop);
+                });
+                return systemProperties;
+            });
+        };
+        return SystemPropertiesService;
+    }());
+    Runtime.SystemPropertiesService = SystemPropertiesService;
+})(Runtime || (Runtime = {}));
+/// <reference path="sysprops.service.ts"/>
+/// <reference path="sysprop.ts"/>
+var Runtime;
+(function (Runtime) {
+    var SystemPropertiesController = /** @class */ (function () {
+        SystemPropertiesController.$inject = ["$interval", "systemPropertiesService"];
+        function SystemPropertiesController($interval, systemPropertiesService) {
+            'ngInject';
+            var _this = this;
+            this.$interval = $interval;
+            this.systemPropertiesService = systemPropertiesService;
+            this.toolbarConfig = {
+                filterConfig: {
+                    fields: [
+                        {
+                            id: 'name',
+                            title: 'Name',
+                            placeholder: 'Filter by name...',
+                            filterType: 'text'
+                        },
+                        {
+                            id: 'value',
+                            title: 'Value',
+                            placeholder: 'Filter by value...',
+                            filterType: 'text'
+                        },
+                    ],
+                    onFilterChange: function (filters) {
+                        _this.applyFilters(filters);
+                    },
+                    resultsCount: 0
+                },
+                isTableView: true
+            };
+            this.tableConfig = {
+                selectionMatchProp: 'name',
+                showCheckboxes: false
+            };
+            this.pageConfig = {
+                pageSize: 20
+            };
+            this.tableColumns = [
+                {
+                    header: 'Property',
+                    itemField: 'name',
+                },
+                {
+                    header: 'Value',
+                    itemField: 'value',
+                }
+            ];
+            this.tableDtOptions = {
+                order: [[0, "asc"]]
+            };
+            this.sysprops = [];
+            this.tableItems = [];
+        }
+        SystemPropertiesController.prototype.$onInit = function () {
+            this.loadData();
+        };
+        SystemPropertiesController.prototype.loadData = function () {
+            var _this = this;
+            this.systemPropertiesService.getSystemProperties()
+                .then(function (sysprops) {
+                _this.sysprops = sysprops;
+                _this.tableItems = sysprops;
+                _this.toolbarConfig.filterConfig.resultsCount = sysprops.length;
+            }).catch(function (error) { return Core.notification('danger', error); });
+            ;
+        };
+        SystemPropertiesController.prototype.applyFilters = function (filters) {
+            var filteredSysProps = this.sysprops;
+            filters.forEach(function (filter) {
+                var regExp = new RegExp(filter.value, 'i');
+                switch (filter.id) {
+                    case 'name':
+                        filteredSysProps = filteredSysProps.filter(function (sysprop) { return sysprop.name.match(regExp) !== null; });
+                        break;
+                    case 'value':
+                        filteredSysProps = filteredSysProps.filter(function (sysprop) { return sysprop.value.match(regExp) !== null; });
+                        break;
                 }
             });
+            this.tableItems = filteredSysProps;
+            this.toolbarConfig.filterConfig.resultsCount = filteredSysProps.length;
+        };
+        return SystemPropertiesController;
+    }());
+    Runtime.SystemPropertiesController = SystemPropertiesController;
+    Runtime.systemPropertiesComponent = {
+        template: "\n      <div class=\"table-view runtime-sysprops-main\">\n        <h1>System Properties</h1>\n        <pf-toolbar config=\"$ctrl.toolbarConfig\"></pf-toolbar>\n        <pf-table-view config=\"$ctrl.tableConfig\"\n                       columns=\"$ctrl.tableColumns\"\n                       items=\"$ctrl.tableItems\"\n                       page-config=\"$ctrl.pageConfig\"\n                       dt-options=\"$ctrl.tableDtOptions\">\n        </pf-table-view>\n      </div>\n    ",
+        controller: SystemPropertiesController
+    };
+})(Runtime || (Runtime = {}));
+/// <reference path="sysprops.component.ts"/>
+/// <reference path="sysprops.service.ts"/>
+var Runtime;
+(function (Runtime) {
+    Runtime.systemPropertiesModule = angular
+        .module('runtime-system-properties', [])
+        .component('runtimeSystemProperties', Runtime.systemPropertiesComponent)
+        .service('systemPropertiesService', Runtime.SystemPropertiesService)
+        .name;
+})(Runtime || (Runtime = {}));
+var Runtime;
+(function (Runtime) {
+    var MetricsService = /** @class */ (function () {
+        MetricsService.$inject = ["jolokia", "workspace"];
+        function MetricsService(jolokia, workspace) {
+            'ngInject';
+            this.jolokia = jolokia;
+            this.workspace = workspace;
         }
-        return lazyFunction;
-    }
-    Jmx.findLazyLoadingFunction = findLazyLoadingFunction;
-    function registerLazyLoadHandler(domain, lazyLoaderFactory) {
-        var array = Core.lazyLoaders[domain];
-        if (!array) {
-            array = [];
-            Core.lazyLoaders[domain] = array;
+        MetricsService.prototype.registerJolokiaRequests = function (scope, callback) {
+            var requests = [
+                this.createMBeanRequest('java.lang:type=Threading'),
+                this.createMBeanRequest('java.lang:type=Memory'),
+                this.createMBeanRequest('java.lang:type=OperatingSystem'),
+                this.createMBeanRequest('java.lang:type=ClassLoading'),
+                this.createMBeanRequest('java.lang:type=Runtime'),
+                this.createMBeanRequest('org.springframework.boot:type=Endpoint,name=metricsEndpoint')
+            ];
+            Core.register(this.jolokia, scope, requests, Core.onSuccess(callback));
+        };
+        MetricsService.prototype.unregisterJolokiaRequests = function (scope) {
+            Core.unregister(this.jolokia, scope);
+        };
+        MetricsService.prototype.createMetric = function (name, value, unit) {
+            return new Runtime.Metric(name, value, unit);
+        };
+        MetricsService.prototype.createUtilizationMetric = function (name, used, total, unit) {
+            return new Runtime.UtilizationMetric(name, used, total, unit);
+        };
+        MetricsService.prototype.createMBeanRequest = function (mbean) {
+            return {
+                type: 'read',
+                mbean: mbean,
+                arguments: []
+            };
+        };
+        return MetricsService;
+    }());
+    Runtime.MetricsService = MetricsService;
+})(Runtime || (Runtime = {}));
+var Runtime;
+(function (Runtime) {
+    var MetricType;
+    (function (MetricType) {
+        MetricType["JVM"] = "JVM";
+        MetricType["SYSTEM"] = "System";
+        MetricType["SPRING_BOOT"] = "Spring Boot";
+    })(MetricType = Runtime.MetricType || (Runtime.MetricType = {}));
+    var Metric = /** @class */ (function () {
+        function Metric(name, value, unit) {
+            this.name = name;
+            this.value = value;
+            this.unit = unit;
         }
-        array.push(lazyLoaderFactory);
-    }
-    Jmx.registerLazyLoadHandler = registerLazyLoadHandler;
-    function unregisterLazyLoadHandler(domain, lazyLoaderFactory) {
-        if (Core.lazyLoaders) {
-            var array = Core.lazyLoaders[domain];
-            if (array) {
-                array.remove(lazyLoaderFactory);
+        Metric.prototype.getDescription = function () {
+            return this.name + ": " + this.value + (this.unit != null ? " " + this.unit : "");
+        };
+        return Metric;
+    }());
+    Runtime.Metric = Metric;
+    var UtilizationMetric = /** @class */ (function (_super) {
+        __extends(UtilizationMetric, _super);
+        function UtilizationMetric(name, value, available, unit) {
+            var _this = _super.call(this, name, value, unit) || this;
+            _this.name = name;
+            _this.value = value;
+            _this.available = available;
+            _this.unit = unit;
+            return _this;
+        }
+        UtilizationMetric.prototype.getDescription = function () {
+            var unitDescription = (this.unit != null ? ' ' + this.unit : '');
+            var description = this.name + ": " + this.value;
+            description += " " + unitDescription + " of";
+            description += " " + this.available + unitDescription;
+            return description;
+        };
+        return UtilizationMetric;
+    }(Metric));
+    Runtime.UtilizationMetric = UtilizationMetric;
+    var MetricGroup = /** @class */ (function () {
+        function MetricGroup(type, metrics) {
+            if (metrics === void 0) { metrics = []; }
+            this.type = type;
+            this.metrics = metrics;
+        }
+        MetricGroup.prototype.updateMetrics = function (metrics) {
+            var _this = this;
+            metrics.forEach(function (metric) {
+                var index = _this.metrics.map(function (m) { return m.name; }).indexOf(metric.name);
+                if (index === -1) {
+                    _this.metrics.push(metric);
+                }
+                else {
+                    _this.metrics[index] = metric;
+                }
+            });
+        };
+        return MetricGroup;
+    }());
+    Runtime.MetricGroup = MetricGroup;
+})(Runtime || (Runtime = {}));
+/// <reference path="metrics.service.ts"/>
+/// <reference path="metric.ts"/>
+var Runtime;
+(function (Runtime) {
+    var MetricsController = /** @class */ (function () {
+        MetricsController.$inject = ["$scope", "metricsService", "$filter", "humanizeService"];
+        function MetricsController($scope, metricsService, $filter, humanizeService) {
+            'ngInject';
+            this.$scope = $scope;
+            this.metricsService = metricsService;
+            this.$filter = $filter;
+            this.humanizeService = humanizeService;
+            this.metricGroups = [];
+        }
+        MetricsController.prototype.$onInit = function () {
+            var _this = this;
+            this.loading = true;
+            this.metricsService.registerJolokiaRequests(this.$scope, function (result) {
+                _this.loading = false;
+                _this.loadMetrics(result);
+            });
+        };
+        MetricsController.prototype.$onDestroy = function () {
+            this.metricsService.unregisterJolokiaRequests(this.$scope);
+        };
+        MetricsController.prototype.loadMetrics = function (result) {
+            var _this = this;
+            var metrics = result.value;
+            var updates = [];
+            var updateType;
+            switch (result.request.mbean) {
+                case 'java.lang:type=Threading':
+                    updateType = Runtime.MetricType.JVM;
+                    updates.push(this.metricsService.createMetric('Thread count', metrics.ThreadCount));
+                    break;
+                case 'java.lang:type=Memory':
+                    updateType = Runtime.MetricType.JVM;
+                    var heapUsed = this.formatBytes(metrics.HeapMemoryUsage.used);
+                    updates.push(this.metricsService.createMetric('Heap used', heapUsed[0], heapUsed[1]));
+                    break;
+                case 'java.lang:type=OperatingSystem':
+                    var filterNumeric = this.$filter('number');
+                    var cpuLoad = filterNumeric(metrics.SystemCpuLoad * 100, 2);
+                    var loadAverage = filterNumeric(metrics.SystemLoadAverage, 2);
+                    var memFree = this.formatBytes(metrics.FreePhysicalMemorySize);
+                    var memTotal = this.formatBytes(metrics.TotalPhysicalMemorySize);
+                    updateType = Runtime.MetricType.SYSTEM;
+                    updates.push(this.metricsService.createMetric('Available processors', metrics.AvailableProcessors));
+                    updates.push(this.metricsService.createMetric('CPU load', cpuLoad, '%'));
+                    updates.push(this.metricsService.createMetric('Load average', loadAverage));
+                    updates.push(this.metricsService.createUtilizationMetric('Memory used', memFree[0], memTotal[0], memFree[1]));
+                    updates.push(this.metricsService.createUtilizationMetric('File descriptors used', metrics.OpenFileDescriptorCount, metrics.MaxFileDescriptorCount));
+                    break;
+                case 'java.lang:type=ClassLoading':
+                    updateType = Runtime.MetricType.JVM;
+                    updates.push(this.metricsService.createMetric('Classes loaded', metrics.LoadedClassCount));
+                    break;
+                case 'java.lang:type=Runtime':
+                    var filterDate = this.$filter('date');
+                    updateType = Runtime.MetricType.JVM;
+                    updates.push(this.metricsService.createMetric('Start time', filterDate(metrics.StartTime, 'yyyy-MM-dd HH:mm:ss')));
+                    updates.push(this.metricsService.createMetric('Uptime', Core.humanizeMilliseconds(metrics.Uptime)));
+                    break;
+                case 'org.springframework.boot:type=Endpoint,name=metricsEndpoint':
+                    updateType = Runtime.MetricType.SPRING_BOOT;
+                    updates.push(this.metricsService.createMetric('Active HTTP sessions', metrics.Data['httpsessions.active']));
+                    // Filter out other metrics which may be of interest
+                    Object.keys(metrics.Data).filter(function (key) {
+                        return /^(counter|gauge|datasource|cache)/.test(key);
+                    }).forEach(function (metricName) {
+                        updates.push(_this.metricsService.createMetric(_this.humanizeService.toSentenceCase(metricName), metrics.Data[metricName]));
+                    });
+                    break;
             }
+            this.getMetricGroup(updateType).updateMetrics(updates);
+            Core.$apply(this.$scope);
+        };
+        MetricsController.prototype.getMetricGroup = function (type) {
+            var match = this.metricGroups.filter(function (group) { return group.type === type; });
+            if (match.length > 0) {
+                return match[0];
+            }
+            else {
+                var metricGroup = new Runtime.MetricGroup(type);
+                this.metricGroups.push(metricGroup);
+                return metricGroup;
+            }
+        };
+        MetricsController.prototype.formatBytes = function (bytes) {
+            if (bytes == 0) {
+                return [0, 'Bytes'];
+            }
+            var killobyte = 1024;
+            var decimalPlaces = 2;
+            var units = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+            var i = Math.floor(Math.log(bytes) / Math.log(killobyte));
+            var value = parseFloat((bytes / Math.pow(killobyte, i)).toFixed(decimalPlaces));
+            var unit = units[i];
+            return [value, unit];
+        };
+        return MetricsController;
+    }());
+    Runtime.MetricsController = MetricsController;
+    Runtime.metricsComponent = {
+        template: "\n      <div class=\"runtime-metrics-main\">\n        <h1>Metrics</h1>\n        <div class=\"blank-slate-pf no-border\" ng-if=\"$ctrl.loading === false && $ctrl.metricGroups.length === 0\">\n          <div class=\"blank-slate-pf-icon\">\n            <span class=\"pficon pficon pficon-warning-triangle-o\"></span>\n          </div>\n          <h1>No Metrics</h1>\n          <p>There are no metrics to display.</p>\n          <p>Wait for some metrics to be generated or check your application configuration.</p>\n        </div>\n        <div class=\"cards-pf\" ng-if=\"$ctrl.metricGroups.length > 0\">\n          <div class=\"container-fluid container-cards-pf\">\n            <div class=\"row row-cards-pf\">\n              <div class=\"col-xs-12 col-sm-6 col-md-4 col-lg-3\" ng-repeat=\"group in $ctrl.metricGroups | orderBy: 'type'\">\n                <pf-card\n                  head-title=\"{{group.type}}\"\n                  show-spinner=\"group.metrics.length === 0\"\n                  spinner-text=\"Loading\">\n                  <div class=\"card-pf-info-item\" ng-repeat=\"metric in group.metrics | orderBy: 'name'\">\n                    {{metric.getDescription()}}\n                  </div>\n                </pf-card>\n              </div>\n            </div>\n          </div>\n        </div>\n      </div>\n    ",
+        controller: MetricsController
+    };
+})(Runtime || (Runtime = {}));
+/// <reference path="metrics.component.ts"/>
+/// <reference path="metrics.service.ts"/>
+var Runtime;
+(function (Runtime) {
+    Runtime.metricsModule = angular
+        .module('runtime-metrics', [])
+        .component('runtimeMetrics', Runtime.metricsComponent)
+        .service('metricsService', Runtime.MetricsService)
+        .name;
+})(Runtime || (Runtime = {}));
+var Runtime;
+(function (Runtime) {
+    RuntimeLayoutController.$inject = ["$location", "workspace"];
+    function RuntimeLayoutController($location, workspace) {
+        'ngInject';
+        this.tabs = [
+            new Nav.HawtioTab('System Properties', '/runtime/sysprops'),
+            new Nav.HawtioTab('Metrics', '/runtime/metrics')
+        ];
+        if (workspace.treeContainsDomainAndProperties('java.lang', { type: 'Threading' })) {
+            this.tabs.push(new Nav.HawtioTab('Threads', '/runtime/threads'));
         }
+        this.goto = function (tab) {
+            $location.path(tab.path);
+        };
     }
-    Jmx.unregisterLazyLoadHandler = unregisterLazyLoadHandler;
-    function updateTreeSelectionFromURL($location, treeElement, activateIfNoneSelected) {
-        if (activateIfNoneSelected === void 0) { activateIfNoneSelected = false; }
-        updateTreeSelectionFromURLAndAutoSelect($location, treeElement, null, activateIfNoneSelected);
-    }
-    Jmx.updateTreeSelectionFromURL = updateTreeSelectionFromURL;
-    function updateTreeSelectionFromURLAndAutoSelect($location, treeElement, autoSelect, activateIfNoneSelected) {
-        if (activateIfNoneSelected === void 0) { activateIfNoneSelected = false; }
-        var tree = treeElement.treeview(true);
-        var node;
-        // If there is a node id then select that one
-        var key = $location.search()['nid'];
-        if (key) {
-            node = _.find(tree.getNodes(), { id: key });
+    Runtime.RuntimeLayoutController = RuntimeLayoutController;
+})(Runtime || (Runtime = {}));
+/// <reference path="layout.controller.ts"/>
+var Runtime;
+(function (Runtime) {
+    Runtime.layoutModule = angular
+        .module('runtime-layout', [])
+        .controller('RuntimeLayoutController', Runtime.RuntimeLayoutController)
+        .name;
+})(Runtime || (Runtime = {}));
+var Runtime;
+(function (Runtime) {
+    var ThreadsService = /** @class */ (function () {
+        ThreadsService.$inject = ["$q", "jolokia"];
+        function ThreadsService($q, jolokia) {
+            'ngInject';
+            this.$q = $q;
+            this.jolokia = jolokia;
         }
-        // Else optionally select the first node if there is no selection
-        if (!node && activateIfNoneSelected && tree.getSelected().length === 0) {
-            var children = tree.getNodes();
-            if (children.length > 0) {
-                node = children[0];
-                // invoke any auto select function, and use its result as new first, if any returned
-                if (autoSelect) {
-                    var result = autoSelect(node);
-                    if (result) {
-                        node = result;
+        ThreadsService.prototype.getThreads = function () {
+            var _this = this;
+            return this.$q(function (resolve, reject) {
+                _this.jolokia.execute("java.lang:type=Threading", "dumpAllThreads", false, false, {
+                    success: function (threads) {
+                        threads.forEach(function (thread) {
+                            thread.threadState = ThreadsService.STATE_LABELS[thread.threadState];
+                            thread.waitedTime = thread.waitedTime > 0 ? Core.humanizeMilliseconds(thread.waitedTime) : '';
+                            thread.blockedTime = thread.blockedTime > 0 ? Core.humanizeMilliseconds(thread.blockedTime) : '';
+                            delete thread.lockMonitors;
+                        });
+                        resolve(threads);
                     }
-                }
+                });
+            });
+        };
+        ThreadsService.STATE_LABELS = {
+            BLOCKED: 'Blocked',
+            NEW: 'New',
+            RUNNABLE: 'Runnable',
+            TERMINATED: 'Terminated',
+            TIMED_WAITING: 'Timed waiting',
+            WAITING: 'Waiting'
+        };
+        return ThreadsService;
+    }());
+    Runtime.ThreadsService = ThreadsService;
+})(Runtime || (Runtime = {}));
+/// <reference path="./threads.service.ts"/>
+var Runtime;
+(function (Runtime) {
+    ThreadsController.$inject = ["$scope", "$uibModal", "threadsService"];
+    function ThreadsController($scope, $uibModal, threadsService) {
+        'ngInject';
+        var FILTER_FUNCTIONS = {
+            state: function (threads, state) { return threads.filter(function (thread) { return thread.threadState === state; }); },
+            name: function (threads, name) {
+                var re = new RegExp(name, 'i');
+                return threads.filter(function (thread) { return re.test(thread.threadName); });
             }
-        }
-        // Finally update the tree with the result node
-        if (node) {
-            tree.revealNode(node, { silent: true });
-            tree.selectNode(node, { silent: false });
-            tree.expandNode(node, { levels: 1, silent: true });
-        }
-        // Word-around to avoid collapsed parent node on re-parenting
-        tree.getExpanded().forEach(function (node) { return tree.revealNode(node, { silent: true }); });
-    }
-    Jmx.updateTreeSelectionFromURLAndAutoSelect = updateTreeSelectionFromURLAndAutoSelect;
-    function getUniqueTypeNames(children) {
-        var typeNameMap = {};
-        angular.forEach(children, function (mbean) {
-            var typeName = mbean.typeName;
-            if (typeName) {
-                typeNameMap[typeName] = mbean;
-            }
-        });
-        // only query if all the typenames are the same
-        return Object.keys(typeNameMap);
-    }
-    Jmx.getUniqueTypeNames = getUniqueTypeNames;
-    function enableTree($scope, $location, workspace, treeElement, children) {
-        treeElement.treeview({
-            lazyLoad: function (node, addNodes) {
-                var plugin = Jmx.findLazyLoadingFunction(workspace, node);
-                if (plugin) {
-                    Jmx.log.debug('Lazy loading folder', node.text);
-                    plugin(workspace, node, function (children) { return addNodes(children); });
-                }
-                // It seems to be required, as the lazyLoad property deletion done
-                // by the treeview component does not seem to work
-                node.lazyLoad = false;
+        };
+        var allThreads;
+        $scope.toolbarConfig = {
+            filterConfig: {
+                fields: [
+                    {
+                        id: 'state',
+                        title: 'State',
+                        placeholder: 'Filter by state...',
+                        filterType: 'select',
+                        filterValues: ['Blocked', 'New', 'Runnable', 'Terminated', 'Timed waiting', 'Waiting']
+                    },
+                    {
+                        id: 'name',
+                        title: 'Name',
+                        placeholder: 'Filter by name...',
+                        filterType: 'text'
+                    }
+                ],
+                onFilterChange: filterChange
             },
-            onNodeSelected: function (event, node) {
-                // We need to clear any selected node state that may leave outside
-                // this tree element sub-graph so that the current selection is
-                // correctly taken into account when leaving for a wider tree graph,
-                // like when leaving the ActiveMQ or Camel trees to go to the JMX tree.
-                var clearSelection = function (n) {
-                    if (n.state && n.id !== node.id) {
-                        n.state.selected = false;
-                    }
-                    if (n.children) {
-                        n.children.forEach(clearSelection);
-                    }
-                };
-                clearSelection(workspace.tree);
-                // Expand one level down
-                // Lazy loaded node are automatically expanded once the children get added
-                if (!node.lazyLoad) {
-                    treeElement.treeview('expandNode', [node, { levels: 1, silent: true }]);
-                }
-                // Update the workspace state
-                // The treeview component clones the node passed with the event
-                // so let's lookup the original one
-                var selection = treeElement.treeview('getSelected')[0];
-                workspace.updateSelectionNode(selection);
-                Core.$apply($scope);
+            isTableView: true
+        };
+        $scope.tableConfig = {
+            selectionMatchProp: 'threadId',
+            showCheckboxes: false
+        };
+        $scope.tableDtOptions = {
+            order: [[0, "desc"]]
+        };
+        $scope.tableColumns = [
+            {
+                header: 'ID',
+                itemField: 'threadId'
             },
-            levels: 1,
-            data: children,
-            collapseIcon: 'fa fa-angle-down',
-            expandIcon: 'fa fa-angle-right',
-            nodeIcon: 'pficon pficon-folder-close',
-            showImage: true,
-            highlightSearchResults: true,
-            searchResultColor: '#b58100',
-            searchResultBackColor: '#fbeabc',
-            preventUnselect: true
-        });
+            {
+                header: 'State',
+                itemField: 'threadState'
+            },
+            {
+                header: 'Name',
+                itemField: 'threadName',
+                templateFn: function (value) { return "<span class=\"table-cell-truncated\" title=\"" + value + "\">" + value + "</span>"; }
+            },
+            {
+                header: 'Waited Time',
+                itemField: 'waitedTime'
+            },
+            {
+                header: 'Blocked Time',
+                itemField: 'blockedTime'
+            },
+            {
+                header: 'Native',
+                itemField: 'inNative',
+                templateFn: function (value) { return value ? '<span class="fa fa-circle" aria-hidden="true"></span>' : ''; }
+            },
+            {
+                header: 'Suspended',
+                itemField: 'suspended',
+                templateFn: function (value) { return value ? '<span class="fa fa-circle" aria-hidden="true"></span>' : ''; }
+            }
+        ];
+        $scope.tableItems = null;
+        $scope.tableActionButtons = [
+            {
+                name: 'More',
+                title: 'View more information about this thread',
+                actionFn: viewDetails
+            }
+        ];
+        (function init() {
+            loadThreads();
+        })();
+        function loadThreads() {
+            threadsService.getThreads().then(function (threads) {
+                allThreads = threads;
+                $scope.filteredThreads = threads;
+            });
+        }
+        function filterChange(filters) {
+            applyFilters(filters);
+            updateResultCount();
+        }
+        function applyFilters(filters) {
+            var filteredThreads = allThreads;
+            filters.forEach(function (filter) {
+                filteredThreads = FILTER_FUNCTIONS[filter.id](filteredThreads, filter.value);
+            });
+            $scope.filteredThreads = filteredThreads;
+        }
+        function updateResultCount() {
+            $scope.toolbarConfig.filterConfig.resultsCount = $scope.filteredThreads.length;
+        }
+        function viewDetails(action, item) {
+            $scope.thread = _.find($scope.filteredThreads, function (thread) { return thread.threadId === item.threadId; });
+            openModal();
+        }
+        function openModal() {
+            $uibModal.open({
+                templateUrl: 'threadModalContent.html',
+                scope: $scope,
+                size: 'lg'
+            });
+        }
     }
-    Jmx.enableTree = enableTree;
-})(Jmx || (Jmx = {}));
+    Runtime.ThreadsController = ThreadsController;
+})(Runtime || (Runtime = {}));
+/// <reference path="threads.controller.ts"/>
+/// <reference path="threads.service.ts"/>
+var Runtime;
+(function (Runtime) {
+    Runtime.threadsModule = angular
+        .module('runtime-threads', [])
+        .controller('ThreadsController', Runtime.ThreadsController)
+        .service('threadsService', Runtime.ThreadsService)
+        .name;
+})(Runtime || (Runtime = {}));
+/// <reference path="runtime.config.ts"/>
+/// <reference path="sysprops/sysprops.module.ts"/>
+/// <reference path="metrics/metrics.module.ts"/>
+/// <reference path="layout/layout.module.ts"/>
+/// <reference path="threads/threads.module.ts"/>
+var Runtime;
+(function (Runtime) {
+    var runtimeModule = angular
+        .module('hawtio-runtime', [
+        Runtime.layoutModule,
+        Runtime.systemPropertiesModule,
+        Runtime.metricsModule,
+        Runtime.threadsModule
+    ])
+        .config(Runtime.configureRoutes)
+        .run(Runtime.configureRuntime)
+        .name;
+    hawtioPluginLoader.addModule(runtimeModule);
+    Runtime.log = Logger.get(runtimeModule);
+})(Runtime || (Runtime = {}));
 
 angular.module('hawtio-jmx-templates', []).run(['$templateCache', function($templateCache) {$templateCache.put('plugins/diagnostics/html/flags.html','<div ng-controller="DiagnosticsFlagsController">\n  <h1>Hotspot Diagnostics</h1>\n  <table class="table table-striped table-bordered">\n    <thead>\n      <tr>\n        <th>VM Flag</th>\n        <th>Origin</th>\n        <th>Value</th>\n      </tr>\n    </thead>\n    <tbody>\n      <tr ng-repeat="flag in flags track by flag.name">\n        <td>{{flag.name}}</td>\n        <td>{{flag.origin}}</td>\n        <td>\n          <div ng-switch on="flag.dataType">\n            <span ng-switch-when="readonly">{{flag.value}}</span>\n            <input ng-switch-when="boolean" type="checkbox" ng-model="flag.value"></input>\n            <input ng-switch-when="string" type="text" ng-model="flag.value"></input>\n            <input ng-switch-when="number" type="number" ng-model="flag.value"></input>\n          </div>\n        </td>\n      </tr>\n    </tbody>\n  </table>  \n</div>');
 $templateCache.put('plugins/diagnostics/html/heap.html','<div ng-controller="DiagnosticsHeapController" class="table-view">\n  <h1>Class Histogram</h1>\n  <p>\n    <strong>Please note:</strong> Loading class histogram may be very expensive, depending on the size and\n    layout of the heap. Alternatively, use the <samp>jcmd</samp> utility:<br>\n    <samp>jcmd &lt;process id/main class&gt; GC.class_histogram<samp>\n  </p>\n  <p>\n    <button type="button" class="btn btn-primary" ng-click="loadClassStats()" ng-disabled="loading">\n      Load class histogram\n    </button>\n  </p>\n  <p ng-show="loading">\n    Loading...\n  </p>\n  <div ng-show="!loading && items.length > 0">\n    <pf-toolbar config="toolbarConfig">\n      <span ng-show="lastLoaded">\n        Last loaded: {{lastLoaded | date: \'yyyy-MM-dd hh:mm:ss\'}}\n      </span>\n    </pf-toolbar>\n    <pf-table-view class="diagnostics-class-histogram-table" config="tableConfig" dt-options="tableDtOptions"\n                   page-config="pageConfig" columns="tableColumns" items="items"></pf-table-view>\n  </div>\n</div>\n');

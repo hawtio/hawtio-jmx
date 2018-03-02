@@ -34,7 +34,7 @@ gulp.task('clean-defs', function() {
 });
 
 gulp.task('tsc', ['clean-defs'], function() {
-  var tsResult = gulp.src(config.ts)
+  var tsResult = config.tsProject.src()
     .pipe(plugins.if(config.sourceMap, plugins.sourcemaps.init()))
     .pipe(config.tsProject());
 

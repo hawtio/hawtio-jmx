@@ -1,8 +1,8 @@
 /// <reference types="core" />
 /// <reference types="angular" />
-/// <reference types="angular-route" />
 /// <reference types="jquery" />
 /// <reference types="forms" />
+/// <reference types="angular-route" />
 declare namespace About {
     class AboutController {
         private configManager;
@@ -25,128 +25,6 @@ declare namespace About {
     function configureMenu(HawtioExtension: Core.HawtioExtension, $compile: ng.ICompileService): void;
 }
 declare namespace About {
-}
-declare namespace Runtime {
-    function configureRoutes($routeProvider: angular.route.IRouteProvider): void;
-    function configureRuntime($rootScope: ng.IScope, viewRegistry: any, helpRegistry: Help.HelpRegistry, workspace: Jmx.Workspace): void;
-}
-declare namespace Runtime {
-    interface SystemProperty {
-        name: string;
-        value: string;
-    }
-}
-declare namespace Runtime {
-    class SystemPropertiesService {
-        private jolokiaService;
-        constructor(jolokiaService: JVM.JolokiaService);
-        getSystemProperties(): ng.IPromise<SystemProperty[]>;
-    }
-}
-declare namespace Runtime {
-    class SystemPropertiesController {
-        private $interval;
-        private systemPropertiesService;
-        private toolbarConfig;
-        private tableConfig;
-        private pageConfig;
-        private tableColumns;
-        private tableDtOptions;
-        private sysprops;
-        private tableItems;
-        constructor($interval: ng.IIntervalService, systemPropertiesService: SystemPropertiesService);
-        $onInit(): void;
-        private loadData();
-        private applyFilters(filters);
-    }
-    const systemPropertiesComponent: angular.IComponentOptions;
-}
-declare namespace Runtime {
-    const systemPropertiesModule: string;
-}
-declare namespace Runtime {
-    class MetricsService {
-        private jolokia;
-        private workspace;
-        constructor(jolokia: Jolokia.IJolokia, workspace: Jmx.Workspace);
-        registerJolokiaRequests(scope: ng.IScope, callback: any): void;
-        unregisterJolokiaRequests(scope: ng.IScope): void;
-        createMetric(name: string, value: any, unit?: string): Metric;
-        createUtilizationMetric(name: string, used: any, total: any, unit?: string): UtilizationMetric;
-        private createMBeanRequest(mbean);
-    }
-}
-declare namespace Runtime {
-    enum MetricType {
-        JVM = "JVM",
-        SYSTEM = "System",
-        SPRING_BOOT = "Spring Boot",
-    }
-    class Metric {
-        name: string;
-        value: any;
-        unit: string;
-        constructor(name: string, value: any, unit?: string);
-        getDescription(): string;
-    }
-    class UtilizationMetric extends Metric {
-        name: string;
-        value: any;
-        available: any;
-        unit: string;
-        constructor(name: string, value: any, available: any, unit: string);
-        getDescription(): string;
-    }
-    class MetricGroup {
-        type: MetricType;
-        metrics: Metric[];
-        constructor(type: MetricType, metrics?: Metric[]);
-        updateMetrics(metrics: Metric[]): void;
-    }
-}
-declare namespace Runtime {
-    class MetricsController {
-        private $scope;
-        private metricsService;
-        private $filter;
-        private humanizeService;
-        private loading;
-        private metricGroups;
-        constructor($scope: any, metricsService: MetricsService, $filter: ng.IFilterService, humanizeService: Core.HumanizeService);
-        $onInit(): void;
-        $onDestroy(): void;
-        private loadMetrics(result);
-        private getMetricGroup(type);
-        private formatBytes(bytes);
-    }
-    const metricsComponent: angular.IComponentOptions;
-}
-declare namespace Runtime {
-    const metricsModule: string;
-}
-declare namespace Runtime {
-    function RuntimeLayoutController($location: ng.ILocationService, workspace: Jmx.Workspace): void;
-}
-declare namespace Runtime {
-    const layoutModule: string;
-}
-declare namespace Runtime {
-    class ThreadsService {
-        private $q;
-        private jolokia;
-        private static STATE_LABELS;
-        constructor($q: angular.IQService, jolokia: Jolokia.IJolokia);
-        getThreads(): angular.IPromise<any[]>;
-    }
-}
-declare namespace Runtime {
-    function ThreadsController($scope: any, $uibModal: any, threadsService: ThreadsService): void;
-}
-declare namespace Runtime {
-    const threadsModule: string;
-}
-declare namespace Runtime {
-    const log: Logging.Logger;
 }
 declare namespace Diagnostics {
     interface JvmFlag {
@@ -1130,6 +1008,15 @@ declare namespace Jmx {
 declare namespace Jmx {
     var DonutChartController: angular.IModule;
 }
+declare namespace Jmx {
+    function findLazyLoadingFunction(workspace: Workspace, folder: any): (workspace: Workspace, folder: Folder, onComplete: (children: NodeSelection[]) => void) => void;
+    function registerLazyLoadHandler(domain: string, lazyLoaderFactory: (folder: Folder) => any): void;
+    function unregisterLazyLoadHandler(domain: string, lazyLoaderFactory: (folder: Folder) => any): void;
+    function updateTreeSelectionFromURL($location: any, treeElement: any, activateIfNoneSelected?: boolean): void;
+    function updateTreeSelectionFromURLAndAutoSelect($location: any, treeElement: any, autoSelect: (Folder) => NodeSelection, activateIfNoneSelected?: boolean): void;
+    function getUniqueTypeNames(children: NodeSelection[]): string[];
+    function enableTree($scope: any, $location: ng.ILocationService, workspace: Workspace, treeElement: any, children: Array<NodeSelection>): void;
+}
 declare namespace JVM {
 }
 declare namespace JVM {
@@ -1206,12 +1093,125 @@ declare namespace RBAC {
     const pluginName: string;
     const log: Logging.Logger;
 }
-declare namespace Jmx {
-    function findLazyLoadingFunction(workspace: Workspace, folder: any): (workspace: Workspace, folder: Folder, onComplete: (children: NodeSelection[]) => void) => void;
-    function registerLazyLoadHandler(domain: string, lazyLoaderFactory: (folder: Folder) => any): void;
-    function unregisterLazyLoadHandler(domain: string, lazyLoaderFactory: (folder: Folder) => any): void;
-    function updateTreeSelectionFromURL($location: any, treeElement: any, activateIfNoneSelected?: boolean): void;
-    function updateTreeSelectionFromURLAndAutoSelect($location: any, treeElement: any, autoSelect: (Folder) => NodeSelection, activateIfNoneSelected?: boolean): void;
-    function getUniqueTypeNames(children: NodeSelection[]): string[];
-    function enableTree($scope: any, $location: ng.ILocationService, workspace: Workspace, treeElement: any, children: Array<NodeSelection>): void;
+declare namespace Runtime {
+    function configureRoutes($routeProvider: angular.route.IRouteProvider): void;
+    function configureRuntime($rootScope: ng.IScope, viewRegistry: any, helpRegistry: Help.HelpRegistry, workspace: Jmx.Workspace): void;
+}
+declare namespace Runtime {
+    interface SystemProperty {
+        name: string;
+        value: string;
+    }
+}
+declare namespace Runtime {
+    class SystemPropertiesService {
+        private jolokiaService;
+        constructor(jolokiaService: JVM.JolokiaService);
+        getSystemProperties(): ng.IPromise<SystemProperty[]>;
+    }
+}
+declare namespace Runtime {
+    class SystemPropertiesController {
+        private $interval;
+        private systemPropertiesService;
+        private toolbarConfig;
+        private tableConfig;
+        private pageConfig;
+        private tableColumns;
+        private tableDtOptions;
+        private sysprops;
+        private tableItems;
+        constructor($interval: ng.IIntervalService, systemPropertiesService: SystemPropertiesService);
+        $onInit(): void;
+        private loadData();
+        private applyFilters(filters);
+    }
+    const systemPropertiesComponent: angular.IComponentOptions;
+}
+declare namespace Runtime {
+    const systemPropertiesModule: string;
+}
+declare namespace Runtime {
+    class MetricsService {
+        private jolokia;
+        private workspace;
+        constructor(jolokia: Jolokia.IJolokia, workspace: Jmx.Workspace);
+        registerJolokiaRequests(scope: ng.IScope, callback: any): void;
+        unregisterJolokiaRequests(scope: ng.IScope): void;
+        createMetric(name: string, value: any, unit?: string): Metric;
+        createUtilizationMetric(name: string, used: any, total: any, unit?: string): UtilizationMetric;
+        private createMBeanRequest(mbean);
+    }
+}
+declare namespace Runtime {
+    enum MetricType {
+        JVM = "JVM",
+        SYSTEM = "System",
+        SPRING_BOOT = "Spring Boot",
+    }
+    class Metric {
+        name: string;
+        value: any;
+        unit: string;
+        constructor(name: string, value: any, unit?: string);
+        getDescription(): string;
+    }
+    class UtilizationMetric extends Metric {
+        name: string;
+        value: any;
+        available: any;
+        unit: string;
+        constructor(name: string, value: any, available: any, unit: string);
+        getDescription(): string;
+    }
+    class MetricGroup {
+        type: MetricType;
+        metrics: Metric[];
+        constructor(type: MetricType, metrics?: Metric[]);
+        updateMetrics(metrics: Metric[]): void;
+    }
+}
+declare namespace Runtime {
+    class MetricsController {
+        private $scope;
+        private metricsService;
+        private $filter;
+        private humanizeService;
+        private loading;
+        private metricGroups;
+        constructor($scope: any, metricsService: MetricsService, $filter: ng.IFilterService, humanizeService: Core.HumanizeService);
+        $onInit(): void;
+        $onDestroy(): void;
+        private loadMetrics(result);
+        private getMetricGroup(type);
+        private formatBytes(bytes);
+    }
+    const metricsComponent: angular.IComponentOptions;
+}
+declare namespace Runtime {
+    const metricsModule: string;
+}
+declare namespace Runtime {
+    function RuntimeLayoutController($location: ng.ILocationService, workspace: Jmx.Workspace): void;
+}
+declare namespace Runtime {
+    const layoutModule: string;
+}
+declare namespace Runtime {
+    class ThreadsService {
+        private $q;
+        private jolokia;
+        private static STATE_LABELS;
+        constructor($q: angular.IQService, jolokia: Jolokia.IJolokia);
+        getThreads(): angular.IPromise<any[]>;
+    }
+}
+declare namespace Runtime {
+    function ThreadsController($scope: any, $uibModal: any, threadsService: ThreadsService): void;
+}
+declare namespace Runtime {
+    const threadsModule: string;
+}
+declare namespace Runtime {
+    const log: Logging.Logger;
 }
