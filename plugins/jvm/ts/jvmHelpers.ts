@@ -176,22 +176,22 @@ namespace JVM {
   /**
    * Creates the Jolokia URL string for the given connection options
    */
-  export function createServerConnectionUrl(options: ConnectOptions) {
-    Logger.get("Core").debug("Connect to server, options: ", StringHelpers.toString(options));
+  export function createServerConnectionUrl(options: ConnectOptions): string {
+    log.debug("Connect to server, options:", StringHelpers.toString(options));
     let answer: string = null;
     if (options.jolokiaUrl) {
-      answer = <string>options.jolokiaUrl;
+      answer = options.jolokiaUrl;
     }
     if (answer === null) {
       const uri = new URI();
-      uri.protocol(<string>options.scheme || 'http')
-        .host(<string>options.host || 'localhost')
-        .port(<string>(options.port || '80'))
-        .path(<string>options.path);
+      uri.protocol(options.scheme || 'http')
+        .host(options.host || 'localhost')
+        .port(String(options.port || 80))
+        .path(options.path);
 
       answer = UrlHelpers.join('proxy', uri.protocol(), uri.hostname(), uri.port(), uri.path());
     }
-    Logger.get(JVM.pluginName).debug("Using URL: ", answer);
+    log.debug("Using URL:", answer);
     return answer;
   }
 

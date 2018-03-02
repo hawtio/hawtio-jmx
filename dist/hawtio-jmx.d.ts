@@ -362,15 +362,15 @@ declare namespace JVM {
         running: boolean;
     }
     interface ConnectOptions {
-        name?: String;
-        scheme?: String;
-        host?: String;
-        port?: Number;
-        path?: String;
+        name?: string;
+        scheme?: string;
+        host?: string;
+        port?: number;
+        path?: string;
         useProxy?: boolean;
-        jolokiaUrl?: String;
-        userName?: String;
-        password?: String;
+        jolokiaUrl?: string;
+        userName?: string;
+        password?: string;
         reachable?: boolean;
     }
     function createConnectOptions(options?: ConnectOptions): ConnectOptions;

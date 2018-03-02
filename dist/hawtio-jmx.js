@@ -4799,7 +4799,7 @@ var JVM;
      * Creates the Jolokia URL string for the given connection options
      */
     function createServerConnectionUrl(options) {
-        Logger.get("Core").debug("Connect to server, options: ", StringHelpers.toString(options));
+        JVM.log.debug("Connect to server, options:", StringHelpers.toString(options));
         var answer = null;
         if (options.jolokiaUrl) {
             answer = options.jolokiaUrl;
@@ -4808,11 +4808,11 @@ var JVM;
             var uri = new URI();
             uri.protocol(options.scheme || 'http')
                 .host(options.host || 'localhost')
-                .port((options.port || '80'))
+                .port(String(options.port || 80))
                 .path(options.path);
             answer = UrlHelpers.join('proxy', uri.protocol(), uri.hostname(), uri.port(), uri.path());
         }
-        Logger.get(JVM.pluginName).debug("Using URL: ", answer);
+        JVM.log.debug("Using URL:", answer);
         return answer;
     }
     JVM.createServerConnectionUrl = createServerConnectionUrl;
