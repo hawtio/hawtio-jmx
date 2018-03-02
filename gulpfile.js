@@ -12,7 +12,7 @@ var gulp = require('gulp'),
 
 var plugins = gulpLoadPlugins({});
 
-var config = {
+const config = {
   proxyPort: argv.port || 8181,
   targetPath: argv.path || '/jolokia',
   logLevel: argv.debug ? logger.DEBUG : logger.INFO,
@@ -24,19 +24,20 @@ var config = {
   js: 'hawtio-jmx.js',
   dts: 'hawtio-jmx.d.ts',
   css: 'hawtio-jmx.css',
-  tsProject: plugins.typescript.createProject('tsconfig.json'),
   sourceMap: argv.sourcemap,
-  vendor: './vendor/'
+  vendor: './vendor/',
 };
+
+const tsProject = plugins.typescript.createProject('tsconfig.json');
 
 gulp.task('clean-defs', function() {
   return del(config.dist + '*.d.ts');
 });
 
 gulp.task('tsc', ['clean-defs'], function() {
-  var tsResult = config.tsProject.src()
+  var tsResult = tsProject.src()
     .pipe(plugins.if(config.sourceMap, plugins.sourcemaps.init()))
-    .pipe(config.tsProject());
+    .pipe(tsProject());
 
   return eventStream.merge(
     tsResult.js
@@ -96,7 +97,10 @@ gulp.task('watch-less', function() {
 
 gulp.task('watch', ['build', 'watch-less'], function() {
   gulp.watch(['index.html', config.dist + '/*'], ['reload']);
-  gulp.watch([config.ts, config.templates], ['tsc', 'template', 'concat', 'clean']);
+
+  const tsconfig = require('./tsconfig.json');
+  gulp.watch([...tsconfig.include, ...(tsconfig.exclude || []).map(e => `!${e}`),config.templates],
+    ['tsc', 'template', 'concat', 'clean']);
 });
 
 gulp.task('connect', ['watch'], function() {
