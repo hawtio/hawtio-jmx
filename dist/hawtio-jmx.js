@@ -4897,11 +4897,14 @@ var JVM;
             if (!jolokiaParams.ajaxError) {
                 jolokiaParams.ajaxError = function (xhr, textStatus, error) {
                     if (xhr.status === 403) {
-                        // if new window opened in Connect > Remote page, then authenticate
-                        if (window.opener && $location.path() === '/') {
-                            jolokia.stop();
-                            var redirectUrl = $location.absUrl();
-                            $location.path('/jvm/connect-login').search('redirect', redirectUrl);
+                        // If window was opened to connect to remote Jolokia endpoint
+                        if (window.opener) {
+                            // ... and not showing the login modal
+                            if ($location.path() !== '/jvm/connect-login') {
+                                jolokia.stop();
+                                var redirectUrl = $location.absUrl();
+                                $location.path('/jvm/connect-login').search('redirect', redirectUrl);
+                            }
                         }
                         else {
                             // just logout
