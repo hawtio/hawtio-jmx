@@ -241,9 +241,25 @@ declare namespace JVM {
         listMethod: JolokiaListMethod;
         listMBean: string;
     }
-    interface DummyJolokia extends Jolokia.IJolokia {
+    /**
+     * Empty jolokia that returns nothing
+     */
+    class DummyJolokia implements Jolokia.IJolokia {
         isDummy: boolean;
         running: boolean;
+        request(...args: any[]): any;
+        getAttribute(mbean: any, attribute: any, path?: any, opts?: any): any;
+        setAttribute(mbean: any, attribute: any, value: any, path?: any, opts?: any): void;
+        execute(mbean: any, operation: any, ...args: any[]): any;
+        search(mBeanPatter: any, opts?: any): any;
+        list(path: any, opts?: any): any;
+        version(opts?: any): any;
+        register(params: any, ...request: any[]): any;
+        unregister(handle: any): void;
+        jobs(): any[];
+        start(period: any): void;
+        stop(): void;
+        isRunning(): boolean;
     }
     interface ConnectOptions {
         name?: string;
@@ -845,7 +861,7 @@ declare namespace Jmx {
     const commonModule: string;
 }
 declare namespace Jmx {
-    function AttributesController($scope: any, $element: any, $location: ng.ILocationService, workspace: Workspace, jmxWidgets: any, jmxWidgetTypes: any, $templateCache: ng.ITemplateCacheService, localStorage: Storage, $browser: any, $timeout: ng.ITimeoutService, attributesService: AttributesService): void;
+    function AttributesController($scope: any, $element: any, $location: ng.ILocationService, workspace: Workspace, jmxWidgets: any, jmxWidgetTypes: any, $templateCache: ng.ITemplateCacheService, localStorage: Storage, $browser: any, $timeout: ng.ITimeoutService, $uibModal: any, attributesService: AttributesService): void;
 }
 /**
  * @namespace RBAC

@@ -49,16 +49,17 @@ namespace Jmx {
     localStorage: Storage,
     $browser,
     $timeout: ng.ITimeoutService,
+    $uibModal,
     attributesService: AttributesService) {
     'ngInject';
+
+    let modalInstance = null;
 
     $scope.searchText = '';
     $scope.nid = 'empty';
     $scope.selectedItems = [];
-
     $scope.lastKey = null;
     $scope.attributesInfoCache = {};
-
     $scope.entity = {};
     $scope.attributeSchema = {};
     $scope.gridData = [];
@@ -158,26 +159,6 @@ namespace Jmx {
 
     updateTable();
 
-    $scope.onCancelAttribute = () => {
-      // clear entity
-      $scope.entity = {};
-    };
-
-    $scope.onUpdateAttribute = () => {
-      let value = $scope.entity["attrValueEdit"];
-      let key = $scope.entity["key"];
-
-      // clear entity
-      $scope.entity = {};
-
-      // update the attribute on the mbean
-      let mbean = workspace.getSelectedMBeanName();
-      if (!mbean) {
-        return;
-      }
-      attributesService.update(mbean, key, value);
-    };
-
     function onViewAttribute(
       row: { summary: string, key: string, attrDesc: string, type: string, rw: boolean }): void {
       if (!row.summary) {
@@ -224,7 +205,24 @@ namespace Jmx {
         initAttributeSchemaEdit($scope, rows);
       }
 
-      $scope.showAttributeDialog = true;
+      modalInstance = $uibModal.open({
+        templateUrl: 'attributeModal.html',
+        scope: $scope,
+        size: 'lg'
+      })
+      .result.then(() => {
+        // update the attribute on the mbean
+        let mbean = workspace.getSelectedMBeanName();
+        if (mbean) {
+          let value = $scope.entity["attrValueEdit"];
+          let key = $scope.entity["key"];
+          attributesService.update(mbean, key, value);
+        }
+        $scope.entity = {};
+      })
+      .catch(() => {
+        $scope.entity = {};
+      });
     }
 
     function numberOfRows(row: { summary: string }): number {
