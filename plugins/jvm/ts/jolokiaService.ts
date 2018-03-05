@@ -131,7 +131,7 @@ namespace JVM {
     return ConnectionName;
   }
 
-  const connectOptions: ConnectOptions = (function() {
+  const connectOptions: ConnectOptions = (function () {
     let name = getConnectionName();
     if (Core.isBlank(name)) {
       // this will fail any if (ConnectOptions) check
@@ -186,9 +186,9 @@ namespace JVM {
     return answer;
   }
 
-  _module.service('ConnectionName', [() => (reset = false) => getConnectionName(reset)]);
+  _module.service('ConnectionName', () => (reset = false) => getConnectionName(reset));
 
-  _module.service('ConnectOptions', [() => connectOptions]);
+  _module.service('ConnectOptions', () => connectOptions);
 
   // the jolokia URL we're connected to
   _module.factory('jolokiaUrl', (): string | boolean => getJolokiaUrl());
@@ -287,27 +287,7 @@ namespace JVM {
       checkJolokiaOptimization(jolokia, jolokiaStatus);
     } else {
       log.debug("Use dummy Jolokia");
-      // empty jolokia that returns nothing
-      jolokia = {
-        isDummy: true,
-        running: false,
-        request: (req: any, opts?: Jolokia.IParams) => null,
-        register: (req: any, opts?: Jolokia.IParams) => null as number,
-        list: (path, opts?) => null,
-        search: (mBeanPatter, opts?) => null,
-        getAttribute: (mbean, attribute, path?, opts?) => null,
-        setAttribute: (mbean, attribute, value, path?, opts?) => { },
-        version: (opts?) => null as Jolokia.IVersion,
-        execute: (mbean, operation, ...args) => null,
-        start: (period) => {
-          (jolokia as DummyJolokia).running = true;
-        },
-        stop: () => {
-          (jolokia as DummyJolokia).running = false;
-        },
-        isRunning: () => (jolokia as DummyJolokia).running,
-        jobs: () => []
-      } as DummyJolokia;
+      jolokia = new DummyJolokia();
     }
 
     return jolokia;
@@ -356,9 +336,29 @@ namespace JVM {
     listMBean: string
   }
 
-  export interface DummyJolokia extends Jolokia.IJolokia {
-    isDummy: boolean;
-    running: boolean;
+  /**
+   * Empty jolokia that returns nothing
+   */
+  export class DummyJolokia implements Jolokia.IJolokia {
+    isDummy: boolean = true;
+    running: boolean = false;
+
+    request(...args) { return null; }
+
+    getAttribute(mbean, attribute, path?, opts?) { return null; }
+    setAttribute(mbean, attribute, value, path?, opts?) { };
+
+    execute(mbean, operation, ...args) { return null; }
+    search(mBeanPatter, opts?) { return null; }
+    list(path, opts?) { return null; }
+    version(opts?) { return null; }
+
+    register(params, ...request) { return null; }
+    unregister(handle) { }
+    jobs() { return []; }
+    start(period) { this.running = true; }
+    stop() { this.running = false; }
+    isRunning() { return this.running; }
   }
 
   export interface ConnectOptions {
