@@ -20,7 +20,7 @@ namespace JVM {
         <h4>Can't connect</h4>
       </div>
       <div class="modal-body">
-        <p>The Jolokia endpoint is unreachable. Please check the connection details and try again.</p>
+        <p>This Jolokia endpoint is unreachable. Please check the connection details and try again.</p>
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-primary" ng-click="$ctrl.ok()">OK</button>

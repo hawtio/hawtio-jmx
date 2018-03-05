@@ -13,6 +13,21 @@ namespace JVM {
       return connectionsJson ? JSON.parse(connectionsJson) : [];
     }
 
+    updateReachabilityFlags(connections: ConnectOptions[]) {
+      const promises = connections.map(connection => this.testConnection(connection));
+      return this.$q.all(promises)
+        .then(reachableFlags => {
+          for (let i = 0; i < connections.length; i++) {
+            connections[i].reachable = reachableFlags[i];
+          }
+          return connections;
+        });
+    }
+
+    updateReachabilityFlag(connection: ConnectOptions) {
+      this.updateReachabilityFlags([connection]);
+    }
+    
     saveConnections(connections: ConnectOptions[]) {
       this.$window.localStorage.setItem(connectionSettingsKey, JSON.stringify(connections));
     }

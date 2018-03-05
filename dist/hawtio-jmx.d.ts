@@ -111,6 +111,8 @@ declare namespace JVM {
         private $window;
         constructor($q: ng.IQService, $window: ng.IWindowService);
         getConnections(): ConnectOptions[];
+        updateReachabilityFlags(connections: ConnectOptions[]): angular.IPromise<ConnectOptions[]>;
+        updateReachabilityFlag(connection: ConnectOptions): void;
         saveConnections(connections: ConnectOptions[]): void;
         testConnection(connection: ConnectOptions): ng.IPromise<boolean>;
         checkCredentials(connection: ConnectOptions, username: string, password: string): ng.IPromise<boolean>;
@@ -119,9 +121,11 @@ declare namespace JVM {
 }
 declare namespace JVM {
     class ConnectController {
+        private $interval;
         private $uibModal;
         private connectService;
         connections: ConnectOptions[];
+        promise: ng.IPromise<any>;
         toolbarConfig: {
             actionsConfig: {
                 primaryActions: {
@@ -143,8 +147,9 @@ declare namespace JVM {
             name: string;
             actionFn: (action: any, connection: any) => void;
         }[];
-        constructor($uibModal: any, connectService: ConnectService);
+        constructor($interval: ng.IIntervalService, $uibModal: any, connectService: ConnectService);
         $onInit(): void;
+        $onDestroy(): void;
         private addConnection();
         private editConnection(connection);
         private deleteConnection(connection);

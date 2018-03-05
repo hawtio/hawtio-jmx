@@ -5,14 +5,24 @@
       <pf-toolbar config="$ctrl.toolbarConfig"></pf-toolbar>
       <pf-list-view class="jvm-connection-list" items="$ctrl.connections" config="$ctrl.listConfig"
         action-buttons="$ctrl.listActionButtons" menu-actions="$ctrl.listActionDropDown">
-        <div class="list-view-pf-description">
-          <div class="list-group-item-heading">
-            {{item.name}}
-          </div>
-          <div class="list-group-item-text">
-            {{item | connectionUrl}}
-          </div>
+        <div class="list-view-pf-left">
+          <span class="pficon list-view-pf-icon-sm"
+                ng-class="{'pficon-plugged': item.reachable,
+                           'list-view-pf-icon-success': item.reachable,
+                           'pficon-unplugged': !item.reachable,
+                           'list-view-pf-icon-danger': !item.reachable}"
+                title="Endpoint {{item.reachable ? 'reachable' : 'unreachable'}}"></span>
         </div>
+        <div class="list-view-pf-body">
+          <div class="list-view-pf-description">
+            <div class="list-group-item-heading">
+              {{item.name}}
+            </div>
+            <div class="list-group-item-text">
+              {{item | connectionUrl}}
+            </div>
+          </div>
+        </div>    
       </pf-list-view>
     </div>
     <div class="col-md-5">
