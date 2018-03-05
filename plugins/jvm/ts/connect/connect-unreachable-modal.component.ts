@@ -4,7 +4,7 @@ namespace JVM {
     modalInstance: any;
 
     ok() {
-      this.modalInstance.dismiss();
+      this.modalInstance.close();
     }
   }
 

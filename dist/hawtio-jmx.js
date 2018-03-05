@@ -4236,7 +4236,7 @@ var JVM;
             var connectionsJson = this.$window.localStorage.getItem(JVM.connectionSettingsKey);
             return connectionsJson ? JSON.parse(connectionsJson) : [];
         };
-        ConnectService.prototype.updateReachabilityFlags = function (connections) {
+        ConnectService.prototype.updateReachableFlags = function (connections) {
             var _this = this;
             var promises = connections.map(function (connection) { return _this.testConnection(connection); });
             return this.$q.all(promises)
@@ -4247,8 +4247,12 @@ var JVM;
                 return connections;
             });
         };
-        ConnectService.prototype.updateReachabilityFlag = function (connection) {
-            this.updateReachabilityFlags([connection]);
+        ConnectService.prototype.updateReachableFlag = function (connection) {
+            return this.testConnection(connection)
+                .then(function (reachable) {
+                connection.reachable = reachable;
+                return connection;
+            });
         };
         ConnectService.prototype.saveConnections = function (connections) {
             this.$window.localStorage.setItem(JVM.connectionSettingsKey, JSON.stringify(connections));
@@ -4317,11 +4321,11 @@ var JVM;
 var JVM;
 (function (JVM) {
     var ConnectController = /** @class */ (function () {
-        ConnectController.$inject = ["$interval", "$uibModal", "connectService"];
-        function ConnectController($interval, $uibModal, connectService) {
+        ConnectController.$inject = ["$timeout", "$uibModal", "connectService"];
+        function ConnectController($timeout, $uibModal, connectService) {
             'ngInject';
             var _this = this;
-            this.$interval = $interval;
+            this.$timeout = $timeout;
             this.$uibModal = $uibModal;
             this.connectService = connectService;
             this.connections = [];
@@ -4346,13 +4350,19 @@ var JVM;
             ];
         }
         ConnectController.prototype.$onInit = function () {
-            var _this = this;
             this.connections = this.connectService.getConnections();
-            this.connectService.updateReachabilityFlags(this.connections);
-            this.promise = this.$interval(function () { return _this.connectService.updateReachabilityFlags(_this.connections); }, 10000);
+            this.connectService.updateReachableFlags(this.connections);
+            this.setTimerToUpdateReachableFlags();
         };
         ConnectController.prototype.$onDestroy = function () {
-            this.$interval.cancel(this.promise);
+            this.$timeout.cancel(this.promise);
+        };
+        ConnectController.prototype.setTimerToUpdateReachableFlags = function () {
+            var _this = this;
+            this.promise = this.$timeout(function () {
+                _this.connectService.updateReachableFlags(_this.connections)
+                    .then(function (connections) { return _this.setTimerToUpdateReachableFlags(); });
+            }, 20000);
         };
         ConnectController.prototype.addConnection = function () {
             var _this = this;
@@ -4363,7 +4373,7 @@ var JVM;
                 .result.then(function (connection) {
                 _this.connections.unshift(connection);
                 _this.connectService.saveConnections(_this.connections);
-                _this.connectService.updateReachabilityFlag(connection);
+                _this.connectService.updateReachableFlag(connection);
             });
         };
         ConnectController.prototype.editConnection = function (connection) {
@@ -4376,7 +4386,7 @@ var JVM;
                 .result.then(function (clone) {
                 angular.extend(connection, clone);
                 _this.connectService.saveConnections(_this.connections);
-                _this.connectService.updateReachabilityFlag(connection);
+                _this.connectService.updateReachableFlag(connection);
             });
         };
         ConnectController.prototype.deleteConnection = function (connection) {
@@ -4557,7 +4567,7 @@ var JVM;
         function ConnectUnreachableModalController() {
         }
         ConnectUnreachableModalController.prototype.ok = function () {
-            this.modalInstance.dismiss();
+            this.modalInstance.close();
         };
         return ConnectUnreachableModalController;
     }());
@@ -9636,11 +9646,10 @@ var Runtime;
 var Runtime;
 (function (Runtime) {
     var SystemPropertiesController = /** @class */ (function () {
-        SystemPropertiesController.$inject = ["$interval", "systemPropertiesService"];
-        function SystemPropertiesController($interval, systemPropertiesService) {
+        SystemPropertiesController.$inject = ["systemPropertiesService"];
+        function SystemPropertiesController(systemPropertiesService) {
             'ngInject';
             var _this = this;
-            this.$interval = $interval;
             this.systemPropertiesService = systemPropertiesService;
             this.toolbarConfig = {
                 filterConfig: {

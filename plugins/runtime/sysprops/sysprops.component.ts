@@ -57,7 +57,7 @@ namespace Runtime {
 
     private tableItems: SystemProperty[] = [];
 
-    constructor(private $interval: ng.IIntervalService, private systemPropertiesService: SystemPropertiesService) {
+    constructor(private systemPropertiesService: SystemPropertiesService) {
       'ngInject';
     }
 

@@ -13,7 +13,7 @@ namespace JVM {
       return connectionsJson ? JSON.parse(connectionsJson) : [];
     }
 
-    updateReachabilityFlags(connections: ConnectOptions[]) {
+    updateReachableFlags(connections: ConnectOptions[]): ng.IPromise<ConnectOptions[]> {
       const promises = connections.map(connection => this.testConnection(connection));
       return this.$q.all(promises)
         .then(reachableFlags => {
@@ -24,8 +24,12 @@ namespace JVM {
         });
     }
 
-    updateReachabilityFlag(connection: ConnectOptions) {
-      this.updateReachabilityFlags([connection]);
+    updateReachableFlag(connection: ConnectOptions): ng.IPromise<ConnectOptions> {
+      return this.testConnection(connection)
+        .then(reachable => {
+          connection.reachable = reachable;
+          return connection;
+        });
     }
     
     saveConnections(connections: ConnectOptions[]) {

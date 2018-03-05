@@ -111,8 +111,8 @@ declare namespace JVM {
         private $window;
         constructor($q: ng.IQService, $window: ng.IWindowService);
         getConnections(): ConnectOptions[];
-        updateReachabilityFlags(connections: ConnectOptions[]): angular.IPromise<ConnectOptions[]>;
-        updateReachabilityFlag(connection: ConnectOptions): void;
+        updateReachableFlags(connections: ConnectOptions[]): ng.IPromise<ConnectOptions[]>;
+        updateReachableFlag(connection: ConnectOptions): ng.IPromise<ConnectOptions>;
         saveConnections(connections: ConnectOptions[]): void;
         testConnection(connection: ConnectOptions): ng.IPromise<boolean>;
         checkCredentials(connection: ConnectOptions, username: string, password: string): ng.IPromise<boolean>;
@@ -121,7 +121,7 @@ declare namespace JVM {
 }
 declare namespace JVM {
     class ConnectController {
-        private $interval;
+        private $timeout;
         private $uibModal;
         private connectService;
         connections: ConnectOptions[];
@@ -147,9 +147,10 @@ declare namespace JVM {
             name: string;
             actionFn: (action: any, connection: any) => void;
         }[];
-        constructor($interval: ng.IIntervalService, $uibModal: any, connectService: ConnectService);
+        constructor($timeout: ng.ITimeoutService, $uibModal: any, connectService: ConnectService);
         $onInit(): void;
         $onDestroy(): void;
+        setTimerToUpdateReachableFlags(): void;
         private addConnection();
         private editConnection(connection);
         private deleteConnection(connection);
@@ -1117,7 +1118,6 @@ declare namespace Runtime {
 }
 declare namespace Runtime {
     class SystemPropertiesController {
-        private $interval;
         private systemPropertiesService;
         private toolbarConfig;
         private tableConfig;
@@ -1126,7 +1126,7 @@ declare namespace Runtime {
         private tableDtOptions;
         private sysprops;
         private tableItems;
-        constructor($interval: ng.IIntervalService, systemPropertiesService: SystemPropertiesService);
+        constructor(systemPropertiesService: SystemPropertiesService);
         $onInit(): void;
         private loadData();
         private applyFilters(filters);

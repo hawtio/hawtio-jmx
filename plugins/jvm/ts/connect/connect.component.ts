@@ -29,18 +29,25 @@ namespace JVM {
       { name: 'Delete', actionFn: (action, connection) => this.deleteConnection(connection) }
     ];
 
-    constructor(private $interval: ng.IIntervalService, private $uibModal, private connectService: ConnectService) {
+    constructor(private $timeout: ng.ITimeoutService, private $uibModal, private connectService: ConnectService) {
       'ngInject';
     }
 
     $onInit() {
       this.connections = this.connectService.getConnections();
-      this.connectService.updateReachabilityFlags(this.connections);
-      this.promise = this.$interval(() => this.connectService.updateReachabilityFlags(this.connections), 10000);
+      this.connectService.updateReachableFlags(this.connections);
+      this.setTimerToUpdateReachableFlags();
     }
 
     $onDestroy() {
-      this.$interval.cancel(this.promise);
+      this.$timeout.cancel(this.promise);
+    }
+
+    setTimerToUpdateReachableFlags() {
+      this.promise = this.$timeout(() => {
+        this.connectService.updateReachableFlags(this.connections)
+          .then(connections => this.setTimerToUpdateReachableFlags());
+      }, 20000);
     }
 
     private addConnection() {
@@ -51,7 +58,7 @@ namespace JVM {
       .result.then(connection => {
         this.connections.unshift(connection);
         this.connectService.saveConnections(this.connections);
-        this.connectService.updateReachabilityFlag(connection);
+        this.connectService.updateReachableFlag(connection);
       });
     }
 
@@ -64,7 +71,7 @@ namespace JVM {
       .result.then(clone => {
         angular.extend(connection, clone);
         this.connectService.saveConnections(this.connections);
-        this.connectService.updateReachabilityFlag(connection);
+        this.connectService.updateReachableFlag(connection);
       });
     }
 
