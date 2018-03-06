@@ -3870,9 +3870,10 @@ var About;
             var _this = this;
             this.title = this.configManager.getBrandingValue('appName');
             this.additionalInfo = this.configManager.getBrandingValue('aboutDescription');
-            if (!this.jolokia.isDummy && this.jolokia.version()) {
+            var version = this.jolokia.version();
+            if (version) {
                 this.productInfo = [
-                    { name: 'Jolokia', value: this.jolokia.version().agent }
+                    { name: 'Jolokia', value: version.agent }
                 ];
                 this.jolokiaService.getAttribute('hawtio:type=About', 'HawtioVersion')
                     .then(function (hawtioVersion) { return _this.productInfo.unshift({ name: 'Hawtio', value: hawtioVersion }); });
@@ -4758,7 +4759,7 @@ var JVM;
                 }
             }
             function checkNext(url) {
-                JVM.log.debug("trying URL: ", url);
+                JVM.log.debug("Trying URL:", url);
                 $.ajax(url).always(function (data, statusText, jqXHR) {
                     // for $.ajax().always(), the xhr is flipped on fail
                     if (statusText !== 'success') {
@@ -4770,7 +4771,7 @@ var JVM;
                             //log.debug("Got response: ", resp);
                             if ('value' in resp && 'agent' in resp.value) {
                                 discoveredUrl = url;
-                                JVM.log.debug("Found jolokia agent at: ", url, " version: ", resp.value.agent);
+                                JVM.log.debug("Found jolokia agent at:", url, "version:", resp.value.agent);
                                 next();
                             }
                             else {
@@ -4784,7 +4785,7 @@ var JVM;
                     else if (jqXHR.status === 401 || jqXHR.status === 403) {
                         // I guess this could be it...
                         discoveredUrl = url;
-                        JVM.log.debug("Using URL: ", url, " assuming it could be an agent but got return code: ", jqXHR.status);
+                        JVM.log.debug("Using URL:", url, "assuming it could be an agent but got return code:", jqXHR.status);
                         next();
                     }
                     else {
@@ -4805,11 +4806,11 @@ var JVM;
         var search = new URI().search(true);
         if ('con' in window) {
             JVM.ConnectionName = window['con'];
-            JVM.log.debug("Using connection name from window: ", JVM.ConnectionName);
+            JVM.log.debug("Using connection name from window:", JVM.ConnectionName);
         }
         else if ('con' in search) {
             JVM.ConnectionName = search['con'];
-            JVM.log.debug("Using connection name from URL: ", JVM.ConnectionName);
+            JVM.log.debug("Using connection name from URL:", JVM.ConnectionName);
         }
         else {
             JVM.log.debug("No connection name found, using direct connection to JVM");
@@ -4915,7 +4916,7 @@ var JVM;
         'ngInject';
         var jolokia = null;
         if (jolokiaUrl) {
-            $.ajaxSetup({ beforeSend: getBeforeSend() });
+            $.ajaxSetup({ beforeSend: getBeforeSend(userDetails) });
             // execute post-login tasks in case they are not yet executed
             // TODO: Where is the right place to execute post-login tasks for unauthenticated hawtio app?
             postLoginTasks.execute();
@@ -4933,9 +4934,11 @@ var JVM;
                         }
                         else {
                             // just logout
+                            /* Logout here prevents keycloak from working
                             if (userDetails.loggedIn) {
-                                userDetails.logout();
+                              userDetails.logout();
                             }
+                            */
                         }
                     }
                     else {
@@ -4959,20 +4962,22 @@ var JVM;
         }
         return jolokia;
     }
-    function getBeforeSend() {
+    function getBeforeSend(userDetails) {
         // Just set Authorization for now...
-        var headers = ['Authorization'];
-        if (connectOptions && connectOptions['token']) {
+        var header = 'Authorization';
+        if (userDetails.loggedIn && userDetails.token) {
             JVM.log.debug("Setting authorization header to token");
-            return function (xhr) { return headers.forEach(function (header) {
-                return xhr.setRequestHeader(header, 'Bearer ' + connectOptions['token']);
-            }); };
+            return function (xhr) {
+                if (userDetails.token) {
+                    xhr.setRequestHeader(header, 'Bearer ' + userDetails.token);
+                }
+            };
         }
         else if (connectOptions && connectOptions.userName && connectOptions.password) {
             JVM.log.debug("Setting authorization header to username/password");
-            return function (xhr) { return headers.forEach(function (header) {
+            return function (xhr) {
                 return xhr.setRequestHeader(header, Core.getBasicAuthHeader(connectOptions.userName, connectOptions.password));
-            }); };
+            };
         }
         else {
             JVM.log.debug("Not setting any authorization header");
@@ -6746,36 +6751,56 @@ var Diagnostics;
 /// <reference path="diagnostics.service.ts"/>
 var Diagnostics;
 (function (Diagnostics) {
-    DiagnosticsLayoutController.$inject = ["$location", "diagnosticsService"];
-    function DiagnosticsLayoutController($location, diagnosticsService) {
-        'ngInject';
-        this.tabs = diagnosticsService.getTabs();
-        this.goto = function (tab) {
-            $location.path(tab.path);
+    var DiagnosticsController = /** @class */ (function () {
+        DiagnosticsController.$inject = ["$scope", "$location", "workspace", "diagnosticsService"];
+        function DiagnosticsController($scope, $location, workspace, diagnosticsService) {
+            'ngInject';
+            this.$scope = $scope;
+            this.$location = $location;
+            this.workspace = workspace;
+            this.diagnosticsService = diagnosticsService;
+        }
+        DiagnosticsController.prototype.$onInit = function () {
+            var _this = this;
+            if (this.workspace.tree.children.length > 0) {
+                this.tabs = this.diagnosticsService.getTabs();
+            }
+            else {
+                this.$scope.$on('jmxTreeUpdated', function () {
+                    _this.tabs = _this.diagnosticsService.getTabs();
+                });
+            }
         };
-    }
-    Diagnostics.DiagnosticsLayoutController = DiagnosticsLayoutController;
+        DiagnosticsController.prototype.goto = function (tab) {
+            this.$location.path(tab.path);
+        };
+        return DiagnosticsController;
+    }());
+    Diagnostics.DiagnosticsController = DiagnosticsController;
+    Diagnostics.diagnosticsComponent = {
+        template: "\n      <div class=\"nav-tabs-main\">\n        <hawtio-tabs tabs=\"$ctrl.tabs\" on-change=\"$ctrl.goto(tab)\"></hawtio-tabs>\n        <div class=\"contents\" ng-view></div>\n      </div>\n    ",
+        controller: DiagnosticsController
+    };
 })(Diagnostics || (Diagnostics = {}));
+/// <reference path="../../jmx/ts/workspace.ts"/>
+/// <reference path="diagnostics.service.ts"/>
 var Diagnostics;
 (function (Diagnostics) {
-    DiagnosticsConfig.$inject = ["configManager"];
-    function DiagnosticsConfig(configManager) {
+    configureRoutes.$inject = ["configManager"];
+    configureDiagnostics.$inject = ["$rootScope", "$templateCache", "viewRegistry", "helpRegistry", "workspace", "diagnosticsService"];
+    function configureRoutes(configManager) {
         'ngInject';
         configManager
             .addRoute('/diagnostics/jfr', { templateUrl: 'plugins/diagnostics/html/jfr.html' })
             .addRoute('/diagnostics/heap', { templateUrl: 'plugins/diagnostics/html/heap.html' })
             .addRoute('/diagnostics/flags', { templateUrl: 'plugins/diagnostics/html/flags.html' });
     }
-    Diagnostics.DiagnosticsConfig = DiagnosticsConfig;
-})(Diagnostics || (Diagnostics = {}));
-/// <reference path="../../jmx/ts/workspace.ts"/>
-/// <reference path="diagnostics.service.ts"/>
-var Diagnostics;
-(function (Diagnostics) {
-    DiagnosticsInit.$inject = ["$rootScope", "viewRegistry", "helpRegistry", "workspace", "diagnosticsService"];
-    function DiagnosticsInit($rootScope, viewRegistry, helpRegistry, workspace, diagnosticsService) {
+    Diagnostics.configureRoutes = configureRoutes;
+    function configureDiagnostics($rootScope, $templateCache, viewRegistry, helpRegistry, workspace, diagnosticsService) {
         'ngInject';
-        viewRegistry['diagnostics'] = 'plugins/diagnostics/html/layout.html';
+        var templateCacheKey = 'diagnostics.html';
+        $templateCache.put(templateCacheKey, '<diagnostics></diagnostics>');
+        viewRegistry['diagnostics'] = templateCacheKey;
         helpRegistry.addUserDoc('diagnostics', 'plugins/diagnostics/doc/help.md');
         var unsubscribe = $rootScope.$on('jmxTreeUpdated', function () {
             unsubscribe();
@@ -6790,11 +6815,10 @@ var Diagnostics;
             });
         });
     }
-    Diagnostics.DiagnosticsInit = DiagnosticsInit;
+    Diagnostics.configureDiagnostics = configureDiagnostics;
 })(Diagnostics || (Diagnostics = {}));
 /// <reference path="diagnostics.config.ts"/>
-/// <reference path="diagnostics.init.ts"/>
-/// <reference path="diagnostics-layout.controller.ts"/>
+/// <reference path="diagnostics.component.ts"/>
 /// <reference path="diagnostics-jfr.controller.ts"/>
 /// <reference path="diagnostics-heap.controller.ts"/>
 /// <reference path="diagnostics-flags.controller.ts"/>
@@ -6805,9 +6829,9 @@ var Diagnostics;
     Diagnostics.log = Logger.get(pluginName);
     Diagnostics._module = angular
         .module(pluginName, [])
-        .config(Diagnostics.DiagnosticsConfig)
-        .run(Diagnostics.DiagnosticsInit)
-        .controller("DiagnosticsLayoutController", Diagnostics.DiagnosticsLayoutController)
+        .config(Diagnostics.configureRoutes)
+        .run(Diagnostics.configureDiagnostics)
+        .component("diagnostics", Diagnostics.diagnosticsComponent)
         .controller("DiagnosticsJfrController", Diagnostics.DiagnosticsJfrController)
         .controller("DiagnosticsHeapController", Diagnostics.DiagnosticsHeapController)
         .controller("DiagnosticsFlagsController", Diagnostics.DiagnosticsFlagsController)
@@ -7817,21 +7841,14 @@ var Jmx;
 var Jmx;
 (function (Jmx) {
     var OperationsController = /** @class */ (function () {
-        OperationsController.$inject = ["$scope", "$location", "workspace", "jolokiaUrl", "operationsService"];
-        function OperationsController($scope, $location, workspace, jolokiaUrl, operationsService) {
+        OperationsController.$inject = ["$scope", "workspace", "jolokiaUrl", "operationsService"];
+        function OperationsController($scope, workspace, jolokiaUrl, operationsService) {
             'ngInject';
+            var _this = this;
             this.$scope = $scope;
-            this.$location = $location;
             this.workspace = workspace;
             this.jolokiaUrl = jolokiaUrl;
             this.operationsService = operationsService;
-        }
-        OperationsController.prototype.$onInit = function () {
-            this.configureListView();
-            this.fetchOperations();
-        };
-        OperationsController.prototype.configureListView = function () {
-            var _this = this;
             this.config = {
                 showSelectBox: false,
                 useExpandingRows: true
@@ -7858,29 +7875,35 @@ var Jmx;
                     }
                 }
             ];
+        }
+        OperationsController.prototype.$onInit = function () {
+            var _this = this;
+            var mbeanName = this.workspace.getSelectedMBeanName();
+            if (mbeanName) {
+                this.loadOperations(mbeanName);
+            }
+            else {
+                this.$scope.$on('jmxTreeClicked', function () {
+                    var mbeanName = _this.workspace.getSelectedMBeanName();
+                    _this.loadOperations(mbeanName);
+                });
+            }
+        };
+        OperationsController.prototype.loadOperations = function (mbeanName) {
+            var _this = this;
+            this.operationsService.getOperations(mbeanName)
+                .then(function (operations) { return _this.operations = operations; });
         };
         OperationsController.prototype.buildJolokiaUrl = function (operation) {
             var mbeanName = Core.escapeMBean(this.workspace.getSelectedMBeanName());
             return this.jolokiaUrl + "/exec/" + mbeanName + "/" + operation.name;
         };
-        OperationsController.prototype.fetchOperations = function () {
-            var _this = this;
-            var objectName = this.workspace.getSelectedMBeanName();
-            if (objectName) {
-                this.operationsService.getOperations(objectName)
-                    .then(function (operations) { return _this.operations = operations; });
-            }
-        };
         return OperationsController;
     }());
     Jmx.OperationsController = OperationsController;
-})(Jmx || (Jmx = {}));
-/// <reference path="operations.controller.ts"/>
-var Jmx;
-(function (Jmx) {
     Jmx.operationsComponent = {
         templateUrl: 'plugins/jmx/html/operations/operations.html',
-        controller: Jmx.OperationsController
+        controller: OperationsController
     };
 })(Jmx || (Jmx = {}));
 /// <reference path="../workspace.ts"/>
@@ -8044,7 +8067,6 @@ var Jmx;
         controller: Jmx.TreeHeaderController
     };
 })(Jmx || (Jmx = {}));
-/// <reference path="tree.module.ts"/>
 var Jmx;
 (function (Jmx) {
     var TreeController = /** @class */ (function () {
@@ -8103,13 +8125,9 @@ var Jmx;
         return TreeController;
     }());
     Jmx.TreeController = TreeController;
-})(Jmx || (Jmx = {}));
-/// <reference path="tree.controller.ts"/>
-var Jmx;
-(function (Jmx) {
     Jmx.treeComponent = {
         templateUrl: 'plugins/jmx/html/tree/content.html',
-        controller: Jmx.TreeController,
+        controller: TreeController,
     };
 })(Jmx || (Jmx = {}));
 /// <reference path="tree-header.component.ts"/>
@@ -9604,8 +9622,65 @@ var RBAC;
 })(RBAC || (RBAC = {}));
 var Runtime;
 (function (Runtime) {
+    var RuntimeService = /** @class */ (function () {
+        RuntimeService.$inject = ["workspace"];
+        function RuntimeService(workspace) {
+            'ngInject';
+            this.workspace = workspace;
+        }
+        RuntimeService.prototype.getTabs = function () {
+            var tabs = [
+                new Nav.HawtioTab('System Properties', '/runtime/sysprops'),
+                new Nav.HawtioTab('Metrics', '/runtime/metrics')
+            ];
+            if (this.workspace.treeContainsDomainAndProperties('java.lang', { type: 'Threading' })) {
+                tabs.push(new Nav.HawtioTab('Threads', '/runtime/threads'));
+            }
+            return tabs;
+        };
+        return RuntimeService;
+    }());
+    Runtime.RuntimeService = RuntimeService;
+})(Runtime || (Runtime = {}));
+/// <reference path="runtime.service.ts"/>
+var Runtime;
+(function (Runtime) {
+    var RuntimeController = /** @class */ (function () {
+        RuntimeController.$inject = ["$scope", "$location", "workspace", "runtimeService"];
+        function RuntimeController($scope, $location, workspace, runtimeService) {
+            'ngInject';
+            this.$scope = $scope;
+            this.$location = $location;
+            this.workspace = workspace;
+            this.runtimeService = runtimeService;
+        }
+        RuntimeController.prototype.$onInit = function () {
+            var _this = this;
+            if (this.workspace.tree.children.length > 0) {
+                this.tabs = this.runtimeService.getTabs();
+            }
+            else {
+                this.$scope.$on('jmxTreeUpdated', function () {
+                    _this.tabs = _this.runtimeService.getTabs();
+                });
+            }
+        };
+        RuntimeController.prototype.goto = function (tab) {
+            this.$location.path(tab.path);
+        };
+        ;
+        return RuntimeController;
+    }());
+    Runtime.RuntimeController = RuntimeController;
+    Runtime.runtimeComponent = {
+        template: "\n      <div class=\"nav-tabs-main\">\n        <hawtio-tabs tabs=\"$ctrl.tabs\" on-change=\"$ctrl.goto(tab)\"></hawtio-tabs>\n        <div class=\"contents\" ng-view></div>\n      </div>\n    ",
+        controller: RuntimeController
+    };
+})(Runtime || (Runtime = {}));
+var Runtime;
+(function (Runtime) {
     configureRoutes.$inject = ["$routeProvider"];
-    configureRuntime.$inject = ["$rootScope", "viewRegistry", "helpRegistry", "workspace"];
+    configureRuntime.$inject = ["$rootScope", "$templateCache", "viewRegistry", "helpRegistry", "workspace"];
     function configureRoutes($routeProvider) {
         'ngInject';
         $routeProvider
@@ -9615,9 +9690,11 @@ var Runtime;
             .when('/runtime/threads', { templateUrl: 'plugins/runtime/threads/threads.html' });
     }
     Runtime.configureRoutes = configureRoutes;
-    function configureRuntime($rootScope, viewRegistry, helpRegistry, workspace) {
+    function configureRuntime($rootScope, $templateCache, viewRegistry, helpRegistry, workspace) {
         'ngInject';
-        viewRegistry['runtime'] = 'plugins/runtime/layout/layout.html';
+        var templateCacheKey = 'runtime.html';
+        $templateCache.put(templateCacheKey, '<runtime></runtime>');
+        viewRegistry['runtime'] = templateCacheKey;
         helpRegistry.addUserDoc('runtime', 'plugins/runtime/doc/help.md');
         var unsubscribe = $rootScope.$on('jmxTreeUpdated', function () {
             unsubscribe();
@@ -9985,32 +10062,6 @@ var Runtime;
 })(Runtime || (Runtime = {}));
 var Runtime;
 (function (Runtime) {
-    RuntimeLayoutController.$inject = ["$location", "workspace"];
-    function RuntimeLayoutController($location, workspace) {
-        'ngInject';
-        this.tabs = [
-            new Nav.HawtioTab('System Properties', '/runtime/sysprops'),
-            new Nav.HawtioTab('Metrics', '/runtime/metrics')
-        ];
-        if (workspace.treeContainsDomainAndProperties('java.lang', { type: 'Threading' })) {
-            this.tabs.push(new Nav.HawtioTab('Threads', '/runtime/threads'));
-        }
-        this.goto = function (tab) {
-            $location.path(tab.path);
-        };
-    }
-    Runtime.RuntimeLayoutController = RuntimeLayoutController;
-})(Runtime || (Runtime = {}));
-/// <reference path="layout.controller.ts"/>
-var Runtime;
-(function (Runtime) {
-    Runtime.layoutModule = angular
-        .module('runtime-layout', [])
-        .controller('RuntimeLayoutController', Runtime.RuntimeLayoutController)
-        .name;
-})(Runtime || (Runtime = {}));
-var Runtime;
-(function (Runtime) {
     var ThreadsService = /** @class */ (function () {
         ThreadsService.$inject = ["$q", "jolokia"];
         function ThreadsService($q, jolokia) {
@@ -10176,22 +10227,24 @@ var Runtime;
         .service('threadsService', Runtime.ThreadsService)
         .name;
 })(Runtime || (Runtime = {}));
-/// <reference path="runtime.config.ts"/>
 /// <reference path="sysprops/sysprops.module.ts"/>
 /// <reference path="metrics/metrics.module.ts"/>
-/// <reference path="layout/layout.module.ts"/>
 /// <reference path="threads/threads.module.ts"/>
+/// <reference path="runtime.config.ts"/>
+/// <reference path="runtime.component.ts"/>
+/// <reference path="runtime.service.ts"/>
 var Runtime;
 (function (Runtime) {
     var runtimeModule = angular
         .module('hawtio-runtime', [
-        Runtime.layoutModule,
         Runtime.systemPropertiesModule,
         Runtime.metricsModule,
         Runtime.threadsModule
     ])
         .config(Runtime.configureRoutes)
         .run(Runtime.configureRuntime)
+        .component('runtime', Runtime.runtimeComponent)
+        .service('runtimeService', Runtime.RuntimeService)
         .name;
     hawtioPluginLoader.addModule(runtimeModule);
     Runtime.log = Logger.get(runtimeModule);
@@ -10200,7 +10253,6 @@ var Runtime;
 angular.module('hawtio-jmx-templates', []).run(['$templateCache', function($templateCache) {$templateCache.put('plugins/diagnostics/html/flags.html','<div ng-controller="DiagnosticsFlagsController">\n  <h1>Hotspot Diagnostics</h1>\n  <table class="table table-striped table-bordered">\n    <thead>\n      <tr>\n        <th>VM Flag</th>\n        <th>Origin</th>\n        <th>Value</th>\n      </tr>\n    </thead>\n    <tbody>\n      <tr ng-repeat="flag in flags track by flag.name">\n        <td>{{flag.name}}</td>\n        <td>{{flag.origin}}</td>\n        <td>\n          <div ng-switch on="flag.dataType">\n            <span ng-switch-when="readonly">{{flag.value}}</span>\n            <input ng-switch-when="boolean" type="checkbox" ng-model="flag.value"></input>\n            <input ng-switch-when="string" type="text" ng-model="flag.value"></input>\n            <input ng-switch-when="number" type="number" ng-model="flag.value"></input>\n          </div>\n        </td>\n      </tr>\n    </tbody>\n  </table>  \n</div>');
 $templateCache.put('plugins/diagnostics/html/heap.html','<div ng-controller="DiagnosticsHeapController" class="table-view">\n  <h1>Class Histogram</h1>\n  <p>\n    <strong>Please note:</strong> Loading class histogram may be very expensive, depending on the size and\n    layout of the heap. Alternatively, use the <samp>jcmd</samp> utility:<br>\n    <samp>jcmd &lt;process id/main class&gt; GC.class_histogram<samp>\n  </p>\n  <p>\n    <button type="button" class="btn btn-primary" ng-click="loadClassStats()" ng-disabled="loading">\n      Load class histogram\n    </button>\n  </p>\n  <p ng-show="loading">\n    Loading...\n  </p>\n  <div ng-show="!loading && items.length > 0">\n    <pf-toolbar config="toolbarConfig">\n      <span ng-show="lastLoaded">\n        Last loaded: {{lastLoaded | date: \'yyyy-MM-dd hh:mm:ss\'}}\n      </span>\n    </pf-toolbar>\n    <pf-table-view class="diagnostics-class-histogram-table" config="tableConfig" dt-options="tableDtOptions"\n                   page-config="pageConfig" columns="tableColumns" items="items"></pf-table-view>\n  </div>\n</div>\n');
 $templateCache.put('plugins/diagnostics/html/jfr.html','<div ng-controller="DiagnosticsJfrController">\n  <h1>Flight Recorder</h1>\n  <div class="row-fluid jfr-column-container"\n       hawtio-auto-columns=".jfr-column">\n\n    <div class="jfr-column">\n      <div class="alert alert-warning alert-dismissable" ng-show="!jfrEnabled && isMessageVisible(\'jfrShowUnlockWarning\')">\n        <button type="button"\n           class="close"\n           data-dismiss="alert"\n           aria-hidden="true" ng-click="closeMessageForGood(\'jfrShowUnlockWarning\')" ><span class="pficon pficon-close"></span></button>\n        <span class="pficon pficon-warning-triangle-o"></span>\n        <strong>Please note:</strong> Running Java Flight Recorder on\n        production systems requires a <a\n        href="http://www.oracle.com/technetwork/java/javaseproducts/overview/index.html"\n        class="alert-link">license</a>.\n      </div>\n      <div class="alert alert-info alert-dismissable" ng-show="isMessageVisible(\'jfrShowJcmd\')">\n        <button type="button"\n                class="close"\n                data-dismiss="alert"\n                aria-hidden="true" ng-click="closeMessageForGood(\'jfrShowJcmd\')"><span class="pficon pficon-close"></span></button>\n        <span class="pficon pficon-info"></span>\n        <strong>Info:</strong>Equivalent command of last action: <code>{{jcmd}}</code>\n      </div>\n      <div class="casettePlayer">\n        <div class="casette">\n          <svg role="img"\n               aria-label="recording indicator"\n               xmlns="http://www.w3.org/2000/svg"\n               version="1.1"\n               viewBox="0 0 24 24"\n               width="25"\n               height="25"\n               id="recordingIndicator">\n            <circle cx="12"\n                    cy="12"\n                    r="11"\n                    fill="red"\n                    ng-show="isRunning">\n              <animate attributeType="XML"\n                       attributeName="fill"\n                       from="#ff0000"\n                       to="#000000"\n                       dur="2s"\n                       repeatCount="indefinite"></animate>\n            </circle>\n          </svg>\n          <div class="cassetteLabelCutCorners"></div>\n          <div class="casetteLabel">\n            {{jfrStatus}}\n            <div class="notLabel">\n              <div class="wrapCog"\n                   ng-class="{\'spinning\': isRunning}">\n                <svg role="img"\n                     aria-label="cassette wheel"\n                     xmlns="http://www.w3.org/2000/svg"\n                     version="1.1"\n                     viewBox="0 0 24 24"\n                     width="50"\n                     height="50"\n                     ng-class="{\'spinning\': isRecording}"\n                     id="leftcog">\n                  <circle cx="12"\n                          cy="12"\n                          r="11"\n                          fill="white"></circle>\n                  <circle cx="12"\n                          cy="12"\n                          r="8"\n                          fill="black"></circle>\n                  <rect x="2"\n                        y="10"\n                        width="20"\n                        height="4"\n                        fill="black"\n                        stroke="none"></rect>\n                  <rect x="2"\n                        y="10"\n                        width="20"\n                        height="4"\n                        fill="black"\n                        stroke="none"\n                        transform="rotate(45,12,12)"></rect>\n                  <rect x="2"\n                        y="10"\n                        width="20"\n                        height="4"\n                        fill="black"\n                        stroke="none"\n                        transform="rotate(90,12,12)"></rect>\n                  <rect x="2"\n                        y="10"\n                        width="20"\n                        height="4"\n                        fill="black"\n                        stroke="none"\n                        transform="rotate(135,12,12)"></rect>\n                </svg>\n              </div>\n              <div class="wrapCog"\n                   ng-class="{\'spinning\': isRunning}"\n                   id="rightCogWrapper">\n                <svg role="img"\n                     aria-label="cassette wheel"\n                     xmlns="http://www.w3.org/2000/svg"\n                     version="1.1"\n                     viewBox="0 0 24 24"\n                     width="50"\n                     height="50"\n                     ng-class="{\'spinning\': isRecording}">\n                  <circle cx="12"\n                          cy="12"\n                          r="11"\n                          fill="white"></circle>\n                  <circle cx="12"\n                          cy="12"\n                          r="8"\n                          fill="black"></circle>\n                  <rect x="2"\n                        y="10"\n                        width="20"\n                        height="4"\n                        fill="black"\n                        stroke="none"></rect>\n                  <rect x="2"\n                        y="10"\n                        width="20"\n                        height="4"\n                        fill="black"\n                        stroke="none"\n                        transform="rotate(45,12,12)"></rect>\n                  <rect x="2"\n                        y="10"\n                        width="20"\n                        height="4"\n                        fill="black"\n                        stroke="none"\n                        transform="rotate(90,12,12)"></rect>\n                  <rect x="2"\n                        y="10"\n                        width="20"\n                        height="4"\n                        fill="black"\n                        stroke="none"\n                        transform="rotate(135,12,12)"></rect>\n                </svg>\n              </div>\n            </div>\n          </div>\n        </div>\n        <div id="casetteButtons">\n\n          <button class="recorderButton btn"\n                  tooltip="Unlock commercial features to be able to record"\n                  ng-click="unlock()"\n                  ng-disabled="jfrEnabled"\n                  ng-class="jfrEnabled ? \'disabledJfrButton\' : \'raisedButton\'">\n            <i class="fa-5x"\n               ng-class="jfrEnabled ? \'pficon-unlocked\' : \'pficon-locked\'"></i>\n          </button>\n          <button class="recorderButton btn"\n                  ng-enabled="!isRunning"\n                  ng-class="!jfrEnabled || isRunning ? \'disabledJfrButton\' : \'raisedButton\'"\n                  tooltip="Start recording"\n                  ng-click="startRecording()"\n                  ng-disabled="isRunning">\n            <div class="recordingSymbol"\n                 id="rec"></div>\n          </button>\n          <button class="recorderButton btn"\n                  title="Dump recording to disk"\n                  ng-class="jfrEnabled && isRecording ? \'raisedButton\' : \'disabledJfrButton\'"\n                  ng-disabled="!isRecording"\n                  tooltip="Dump {{jfrSettings.name}} to disk"\n                  ng-click="dumpRecording()">\n            <i class="pficon-save fa-5x"></i>\n          </button>\n          <button class="recorderButton btn"\n                  ng-disabled="!isRecording"\n                  ng-class="jfrEnabled && isRecording ? \'raisedButton\' : \'disabledJfrButton\'"\n                  tooltip="Stop {{jfrSettings.name}}"\n                  ng-click="stopRecording()">\n            <div class="recordingSymbol"\n                 id="stop"></div>\n          </button>\n          <button class="recorderButton btn"\n                  ng-class="jfrEnabled && !settingsVisible ? \'raisedButton\' : \'disabledJfrButton\'"\n                  tooltip="Show/hide settings"\n                  ng-click="toggleSettingsVisible()">\n            <i class="pficon-settings fa-5x"></i>\n          </button>\n        </div>\n      </div>\n    </div>\n\n    <div class="jfr-column"\n         ng-show="settingsVisible">\n\n\n      <dl>\n        <dt>Recorder Settings</dt>\n        <dd>\n          <div simple-form\n               name="jfrForm"\n               data="formConfig"\n               entity="jfrSettings"></div>\n\n        </dd>\n      </dl>\n\n    </div>\n    <table ng-show="!!recordings.length"\n           class="table table-condensed table-striped">\n      <tr>\n        <th>Rec#</th>\n        <th>Size</th>\n        <th>Time</th>\n        <th>File</th>\n      </tr>\n      <tr ng-repeat="aRecording in recordings">\n        <td>{{aRecording.number}}</td>\n        <td>{{aRecording.size}}</td>\n        <td>{{aRecording.time | date: \'yyyy-MM-dd HH:mm:ss\' }}</td>\n        <td><a href="file://{{aRecording.file}}">{{aRecording.file}}</a></td>\n      </tr>\n    </table>\n\n  </div>\n\n</div>\n');
-$templateCache.put('plugins/diagnostics/html/layout.html','<div class="nav-tabs-main">\n  <div ng-controller="DiagnosticsLayoutController as $ctrl">\n    <hawtio-tabs tabs="$ctrl.tabs" on-change="$ctrl.goto(tab)"></hawtio-tabs>\n  </div>\n  <div class="contents" ng-view></div>\n</div>\n');
 $templateCache.put('plugins/jmx/html/areaChart.html','<div ng-controller="Jmx.AreaChartController">\n  <script type="text/ng-template" id="areaChart">\n    <fs-area bind="data" duration="250" interpolate="false" point-radius="5" width="width" height="height" label=""></fs-area>\n  </script>\n  <div compile="template"></div>\n</div>\n');
 $templateCache.put('plugins/jmx/html/chartEdit.html','<div class="jmx-charts-edit-view" ng-controller="Jmx.ChartEditController">\n  <h2>Chart</h2>\n  <div ng-show="canEditChart()">\n    <p ng-if="showElements() && showAttributes()">\n      Please select the elements and attributes you want to see in the chart.\n    </p>\n    <p ng-if="!showElements() && showAttributes()">\n      Please select the attributes you want to see in the chart.\n    </p>\n    <p ng-if="!showElements() && !showAttributes()">\n      This chart cannot be edited.\n    </p>\n    <form>\n      <div class="row">\n        <div class="form-group col-md-6" ng-show="showElements()">\n          <label for="mbeans">Elements</label>\n          <select id="mbeans" class="form-control" size="20" multiple ng-multiple="true" ng-model="selectedMBeans" ng-options="name for (name, value) in mbeans"></select>\n        </div>\n        <div class="form-group col-md-6" ng-show="showAttributes()">\n          <label for="attributes">Attributes</label>\n          <select id="attributes" class="form-control" size="20" multiple ng-multiple="true" ng-model="selectedAttributes" ng-options="name | humanize for (name, value) in metrics"></select>\n        </div>\n      </div>\n      <div class="form-group">\n        <button type="submit" class="btn btn-primary" ng-click="viewChart()" ng-disabled="!selectedAttributes.length && !selectedMBeans.length">\n          View Chart\n        </button>\n      </div>\n    </form>\n  </div>\n  <p ng-show="!canEditChart()">\n    No numeric metrics available. Please select another item to chart on.\n  </p>\n</div>\n');
 $templateCache.put('plugins/jmx/html/charts.html','<div ng-controller="Jmx.ChartController">\n  <h2>Chart</h2>\n  <div ng-switch="errorMessage()">\n    <div ng-switch-when="metrics">No valid metrics to show for this mbean.</div>\n    <div ng-switch-when="updateRate">Charts aren\'t available when the update rate is set to "No refreshes", go to the <a ng-href="#/preferences{{hash}}">Preferences</a> panel and set a refresh rate to enable charts</div>\n    <div ng-switch-default>\n      <pf-toolbar config="toolbarConfig"></pf-toolbar>\n    </div>\n    <div id="charts"></div>\n  </div>\n</div>\n');
@@ -10215,7 +10267,6 @@ $templateCache.put('plugins/jvm/html/layoutConnect.html','<div class="nav-tabs-m
 $templateCache.put('plugins/jvm/html/local.html','<div ng-controller="JVM.JVMsController">\n  <h1>Local</h1>\n  <p ng-if="!initDone">\n    Please wait, discovering local JVM processes...\n  </p>\n  <div ng-if="initDone">\n    <p ng-if=\'status\'>\n      {{status}}\n    </p>\n    <div ng-if=\'data.length > 0\'>\n      <div class="row toolbar-pf">\n        <div class="col-sm-12">\n          <form class="toolbar-pf-actions">\n            <div class="form-group">\n              <input type="text" class="form-control" ng-model="filter" placeholder="Filter..." autocomplete="off">\n            </div>  \n            <div class="form-group">\n              <button class="btn btn-default" ng-click="fetch()" title="Refresh"><i class="fa fa-refresh"></i> Refresh</button>\n            </div>  \n          </form>  \n        </div>  \n      </div>  \n      <table class=\'centered table table-bordered table-condensed table-striped\'>\n        <thead>\n        <tr>\n          <th style="width: 70px">PID</th>\n          <th>Name</th>\n          <th style="width: 300px">Agent URL</th>\n          <th style="width: 50px"></th>\n        </tr>\n        </thead>\n        <tbody>\n        <tr ng-repeat="jvm in data track by $index" ng-show="filterMatches(jvm)">\n          <td>{{jvm.id}}</td>\n          <td title="{{jvm.displayName}}">{{jvm.alias}}</td>\n          <td><a href=\'\' title="Connect to this agent"\n                 ng-click="connectTo(jvm.url, jvm.scheme, jvm.hostname, jvm.port, jvm.path)">{{jvm.agentUrl}}</a></td>\n          <td>\n            <a class=\'btn control-button\' href="" title="Stop agent" ng-show="jvm.agentUrl"\n             ng-click="stopAgent(jvm.id)"><i class="pficon-close"></i></a>\n            <a class=\'btn control-button\' href="" title="Start agent" ng-hide="jvm.agentUrl"\n             ng-click="startAgent(jvm.id)"><i class="pficon-running"></i></a>\n          </td>\n        </tr>\n        </tbody>\n      </table>\n    </div>\n  </div>\n</div>\n');
 $templateCache.put('plugins/jvm/html/navbarHeaderExtension.html','<style>\n  .navbar-header-hawtio-jvm {\n    float: left;\n    margin: 0;\n  }\n\n  .navbar-header-hawtio-jvm h4 {\n    color: white;\n    margin: 0px;\n  }\n\n  .navbar-header-hawtio-jvm li {\n    list-style-type: none;\n    display: inline-block;\n    margin-right: 10px;\n    margin-top: 4px;\n  }\n</style>\n<ul class="navbar-header-hawtio-jvm" ng-controller="JVM.HeaderController">\n  <li ng-show="containerName"><h4 ng-bind="containerName"></h4></li>\n  <li ng-show="goBack"><strong><a href="" ng-click="goBack()">Back</a></strong></li>\n</ul>\n');
 $templateCache.put('plugins/jvm/html/reset.html','<div ng-controller="JVM.ResetController">\n  <div class="alert alert-success jvm-reset-connections-alert" ng-if="showAlert">\n    <span class="pficon pficon-ok"></span>\n    Connections cleared successfully!\n  </div>\n  <h3>Clear saved connections</h3>\n  <p>\n    Clear all saved connection settings stored in your browser\'s local storage.\n  </p>\n  <p>\n    <button class="btn btn-danger" ng-click="doClearConnectSettings()">Clear saved connections</button>\n  </p>\n</div>');
-$templateCache.put('plugins/runtime/layout/layout.html','<div class="nav-tabs-main">\n  <div ng-controller="RuntimeLayoutController as $ctrl">\n    <hawtio-tabs tabs="$ctrl.tabs" on-change="$ctrl.goto(tab)"></hawtio-tabs>\n  </div>\n  <div class="contents" ng-view></div>\n</div>\n');
 $templateCache.put('plugins/runtime/threads/threads.html','<div id="threads-page" class="table-view" ng-controller="ThreadsController">\n\n  <h1>Threads</h1>\n\n  <pf-toolbar config="toolbarConfig"></pf-toolbar>\n\n  <pf-table-view class="threads-table" config="tableConfig" dt-options="tableDtOptions"\n    columns="tableColumns" items="filteredThreads" action-buttons="tableActionButtons">\n  </pf-table-view>\n\n  <script type="text/ng-template" id="threadModalContent.html">\n    <div class="modal-header">\n      <button type="button" class="close" aria-label="Close" ng-click="$close()">\n        <span class="pficon pficon-close" aria-hidden="true"></span>\n      </button>\n      <h4 class="modal-title">Thread</h4>\n    </div>\n    <div class="modal-body">\n      <div class="row">\n        <div class="col-md-12">\n          <dl class="dl-horizontal">\n            <dt>ID</dt>\n            <dd>{{thread.threadId}}</dd>\n            <dt>Name</dt>\n            <dd>{{thread.threadName}}</dd>\n            <dt>Waited Count</dt>\n            <dd>{{thread.waitedCount}}</dd>\n            <dt>Waited Time</dt>\n            <dd>{{thread.waitedTime}} ms</dd>\n            <dt>Blocked Count</dt>\n            <dd>{{thread.blockedCount}}</dd>\n            <dt>Blocked Time</dt>\n            <dd>{{thread.blockedTime}} ms</dd>\n            <div ng-show="thread.lockInfo != null">\n              <dt>Lock Name</dt>\n              <dd>{{thread.lockName}}</dd>\n              <dt>Lock Class Name</dt>\n              <dd>{{thread.lockInfo.className}}</dd>\n              <dt>Lock Identity Hash Code</dt>\n              <dd>{{thread.lockInfo.identityHashCode}}</dd>\n            </div>\n            <div ng-show="thread.lockOwnerId > 0">\n              <dt>Waiting for lock owned by</dt>\n              <dd><a href="" ng-click="selectThreadById(thread.lockOwnerId)">{{thread.lockOwnerId}} - {{thread.lockOwnerName}}</a></dd>\n            </div>\n            <div ng-show="thread.lockedSynchronizers.length > 0">\n              <dt>Locked Synchronizers</dt>\n              <dd>\n                <ol class="list-unstyled">\n                  <li ng-repeat="synchronizer in thread.lockedSynchronizers">\n                    <span title="Class Name">{{synchronizer.className}}</span> -\n                    <span title="Identity Hash Code">{{synchronizer.identityHashCode}}</span>\n                  </li>\n                </ol>\n              </dd>\n            </div>\n          </dl>\n        </div>\n      </div>\n      <div class="row" ng-show="thread.lockedMonitors.length > 0">\n        <div class="col-md-12">\n          <dl>\n            <dt>Locked Monitors</dt>\n            <dd>\n              <ol class="zebra-list">\n                <li ng-repeat="monitor in thread.lockedMonitors">\n                  Frame: <strong>{{monitor.lockedStackDepth}}</strong>\n                  <span class="green">{{monitor.lockedStackFrame.className}}</span>\n                  <span class="bold">.</span>\n                  <span class="blue bold">{{monitor.lockedStackFrame.methodName}}</span>\n                  &nbsp;({{monitor.lockedStackFrame.fileName}}<span ng-show="frame.lineNumber > 0">:{{monitor.lockedStackFrame.lineNumber}}</span>)\n                  <span class="orange" ng-show="monitor.lockedStackFrame.nativeMethod">(Native)</span>\n                </li>\n              </ol>\n            </dd>\n          </dl>\n        </div>\n      </div>\n      <div class="row">\n        <div class="col-md-12">\n          <dl>\n            <dt>Stack Trace</dt>\n            <dd>\n              <ol class="zebra-list">\n                <li ng-repeat="frame in thread.stackTrace">\n                  <span class="green">{{frame.className}}</span>\n                  <span class="bold">.</span>\n                  <span class="blue bold">{{frame.methodName}}</span>\n                  &nbsp;({{frame.fileName}}<span ng-show="frame.lineNumber > 0">:{{frame.lineNumber}}</span>)\n                  <span class="orange" ng-show="frame.nativeMethod">(Native)</span>\n                </li>\n              </ol>\n            </dd>\n          </dl>\n        </div>\n      </div>\n    </div>\n  </script>\n\n</div>\n');
 $templateCache.put('plugins/jmx/html/attributes/attributes.html','<div class="table-view" ng-controller="Jmx.AttributesController">\n  <h2>Attributes</h2>\n  <div ng-if="gridData.length > 0">\n    <div compile="attributes"></div>\n  </div>\n</div>\n\n<script type="text/ng-template" id="gridTemplate">\n  <table class="table table-striped table-bordered table-hover jmx-attributes-table"\n    ng-class="{\'ht-table-extra-columns\': hasExtraColumns}"\n    hawtio-simple-table="gridOptions">\n  </table>\n</script>\n\n<script type="text/ng-template" id="attributeModal.html">\n  <div class="modal-header">\n    <button type="button" class="close" aria-label="Close" ng-click="$dismiss()">\n      <span class="pficon pficon-close" aria-hidden="true"></span>\n    </button>\n    <h4 class="modal-title">Attribute: {{entity.key}}</h4>\n  </div>\n  <div class="modal-body">\n    <div simple-form ng-hide="!entity.rw" name="attributeEditor" mode="edit" entity=\'entity\' data=\'attributeSchemaEdit\'></div>\n    <div simple-form ng-hide="entity.rw" name="attributeViewer" mode="view" entity=\'entity\' data=\'attributeSchemaView\'></div>\n  </div>\n  <div class="modal-footer">\n    <button type="button" class="btn btn-default" ng-click="$dismiss()">Close</button>\n    <button type="button" class="btn btn-primary" ng-show="entity.rw" ng-click="$close()">Update</button>\n  </div>\n</script>\n');
 $templateCache.put('plugins/jmx/html/operations/operation-form.html','<p ng-hide="$ctrl.operation.args.length">\n  This JMX operation requires no arguments. Click the \'Execute\' button to invoke the operation.\n</p>\n<p ng-show="$ctrl.operation.args.length">\n  This JMX operation requires some parameters. Fill in the fields below and click the \'Execute\' button\n  to invoke the operation.\n</p>\n\n<form class="form-horizontal" ng-submit="$ctrl.execute()">\n  <div class="form-group" ng-repeat="formField in $ctrl.formFields">\n    <label class="col-sm-2 control-label" for="{{formField.label}}">{{formField.label}}</label>\n    <div class="col-sm-10">\n      <input type="{{formField.type}}" id="{{formField.label}}" ng-class="{\'form-control\': formField.type !== \'checkbox\'}"\n        ng-model="formField.value" ng-disabled="!$ctrl.operation.canInvoke">\n      <span class="help-block">{{formField.helpText}}</span>\n    </div>\n  </div>\n  <div class="form-group">\n    <div ng-class="{\'col-sm-offset-2 col-sm-10\': $ctrl.operation.args.length, \'col-sm-12\': !$ctrl.operation.args.length}">\n      <button type="submit" class="btn btn-primary" ng-disabled="!$ctrl.operation.canInvoke || $ctrl.isExecuting">Execute</button>\n    </div>\n  </div>\n</form>\n\n<form ng-show="$ctrl.operationResult">\n  <div class="form-group">\n    <label>Result</label>\n    <div class="hawtio-clipboard-container">\n      <button hawtio-clipboard="#operation-result" class="btn btn-default btn-lg">\n        <i class="fa fa-clipboard" aria-hidden="true"></i>\n      </button>\n      <pre ng-class="{\'jmx-operation-error\': $ctrl.operationFailed}">{{$ctrl.operationResult}}</pre>\n    </div>\n    <textarea id="operation-result" class="hawtio-clipboard-hidden-target">{{$ctrl.operationResult}}</textarea>\n  </div>\n</form>\n');

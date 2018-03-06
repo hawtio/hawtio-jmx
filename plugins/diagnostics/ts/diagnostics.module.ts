@@ -1,6 +1,5 @@
 /// <reference path="diagnostics.config.ts"/>
-/// <reference path="diagnostics.init.ts"/>
-/// <reference path="diagnostics-layout.controller.ts"/>
+/// <reference path="diagnostics.component.ts"/>
 /// <reference path="diagnostics-jfr.controller.ts"/>
 /// <reference path="diagnostics-heap.controller.ts"/>
 /// <reference path="diagnostics-flags.controller.ts"/>
@@ -14,9 +13,9 @@ namespace Diagnostics {
   
   export const _module = angular
     .module(pluginName, [])
-    .config(DiagnosticsConfig)
-    .run(DiagnosticsInit)
-    .controller("DiagnosticsLayoutController", DiagnosticsLayoutController)
+    .config(configureRoutes)
+    .run(configureDiagnostics)
+    .component("diagnostics", diagnosticsComponent)
     .controller("DiagnosticsJfrController", DiagnosticsJfrController)
     .controller("DiagnosticsHeapController", DiagnosticsHeapController)
     .controller("DiagnosticsFlagsController", DiagnosticsFlagsController)

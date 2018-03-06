@@ -11,12 +11,15 @@ namespace Runtime {
   }
 
   export function configureRuntime($rootScope: ng.IScope,
+                                   $templateCache: ng.ITemplateCacheService,
                                    viewRegistry,
                                    helpRegistry: Help.HelpRegistry,
                                    workspace: Jmx.Workspace) {
     'ngInject';
 
-    viewRegistry['runtime'] = 'plugins/runtime/layout/layout.html';
+    const templateCacheKey = 'runtime.html';
+    $templateCache.put(templateCacheKey, '<runtime></runtime>');
+    viewRegistry['runtime'] = templateCacheKey;
 
     helpRegistry.addUserDoc('runtime', 'plugins/runtime/doc/help.md');
 

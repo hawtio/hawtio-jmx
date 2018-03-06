@@ -15,7 +15,7 @@ declare namespace About {
         productInfo: object[];
         additionalInfo: string;
         copyright: string;
-        constructor(configManager: Core.ConfigManager, jolokia: JVM.DummyJolokia, jolokiaService: JVM.JolokiaService);
+        constructor(configManager: Core.ConfigManager, jolokia: Jolokia.IJolokia, jolokiaService: JVM.JolokiaService);
         $onInit(): void;
         onClose(): void;
     }
@@ -246,7 +246,7 @@ declare namespace JVM {
      */
     class DummyJolokia implements Jolokia.IJolokia {
         isDummy: boolean;
-        running: boolean;
+        private running;
         request(...args: any[]): any;
         getAttribute(mbean: any, attribute: any, path?: any, opts?: any): any;
         setAttribute(mbean: any, attribute: any, value: any, path?: any, opts?: any): void;
@@ -784,13 +784,21 @@ declare namespace Diagnostics {
     function DiagnosticsJfrController($scope: JfrControllerScope, $location: ng.ILocationService, workspace: Jmx.Workspace, jolokia: Jolokia.IJolokia, localStorage: Storage, diagnosticsService: DiagnosticsService): void;
 }
 declare namespace Diagnostics {
-    function DiagnosticsLayoutController($location: any, diagnosticsService: any): void;
+    class DiagnosticsController {
+        private $scope;
+        private $location;
+        private workspace;
+        private diagnosticsService;
+        tabs: Nav.HawtioTab[];
+        constructor($scope: ng.IScope, $location: ng.ILocationService, workspace: Jmx.Workspace, diagnosticsService: DiagnosticsService);
+        $onInit(): void;
+        goto(tab: Nav.HawtioTab): void;
+    }
+    const diagnosticsComponent: angular.IComponentOptions;
 }
 declare namespace Diagnostics {
-    function DiagnosticsConfig(configManager: Core.ConfigManager): void;
-}
-declare namespace Diagnostics {
-    function DiagnosticsInit($rootScope: ng.IScope, viewRegistry: any, helpRegistry: any, workspace: Jmx.Workspace, diagnosticsService: DiagnosticsService): void;
+    function configureRoutes(configManager: Core.ConfigManager): void;
+    function configureDiagnostics($rootScope: ng.IScope, $templateCache: ng.ITemplateCacheService, viewRegistry: any, helpRegistry: any, workspace: Jmx.Workspace, diagnosticsService: DiagnosticsService): void;
 }
 declare namespace Diagnostics {
     const log: Logging.Logger;
@@ -931,24 +939,23 @@ declare namespace Jmx {
 declare namespace Jmx {
     class OperationsController {
         private $scope;
-        private $location;
         private workspace;
         private jolokiaUrl;
         private operationsService;
-        config: any;
+        operations: Operation[];
+        config: {
+            showSelectBox: boolean;
+            useExpandingRows: boolean;
+        };
         menuActions: {
             name: string;
-            actionFn: (any, Operation) => void;
+            actionFn: (action: any, item: Operation) => void;
         }[];
-        operations: Operation[];
-        constructor($scope: any, $location: any, workspace: Workspace, jolokiaUrl: string, operationsService: OperationsService);
+        constructor($scope: ng.IScope, workspace: Jmx.Workspace, jolokiaUrl: string, operationsService: OperationsService);
         $onInit(): void;
-        private configureListView();
+        private loadOperations(mbeanName);
         private buildJolokiaUrl(operation);
-        private fetchOperations();
     }
-}
-declare namespace Jmx {
     const operationsComponent: angular.IComponentOptions;
 }
 declare namespace Jmx {
@@ -1009,8 +1016,6 @@ declare namespace Jmx {
         private populateTree();
         private removeTree();
     }
-}
-declare namespace Jmx {
     const treeComponent: angular.IComponentOptions;
 }
 declare namespace Jmx {
@@ -1116,8 +1121,28 @@ declare namespace RBAC {
     const log: Logging.Logger;
 }
 declare namespace Runtime {
+    class RuntimeService {
+        private workspace;
+        constructor(workspace: Jmx.Workspace);
+        getTabs(): Nav.HawtioTab[];
+    }
+}
+declare namespace Runtime {
+    class RuntimeController {
+        private $scope;
+        private $location;
+        private workspace;
+        private runtimeService;
+        tabs: Nav.HawtioTab[];
+        constructor($scope: ng.IScope, $location: ng.ILocationService, workspace: Jmx.Workspace, runtimeService: RuntimeService);
+        $onInit(): void;
+        goto(tab: Nav.HawtioTab): void;
+    }
+    const runtimeComponent: angular.IComponentOptions;
+}
+declare namespace Runtime {
     function configureRoutes($routeProvider: angular.route.IRouteProvider): void;
-    function configureRuntime($rootScope: ng.IScope, viewRegistry: any, helpRegistry: Help.HelpRegistry, workspace: Jmx.Workspace): void;
+    function configureRuntime($rootScope: ng.IScope, $templateCache: ng.ITemplateCacheService, viewRegistry: any, helpRegistry: Help.HelpRegistry, workspace: Jmx.Workspace): void;
 }
 declare namespace Runtime {
     interface SystemProperty {
@@ -1211,12 +1236,6 @@ declare namespace Runtime {
 }
 declare namespace Runtime {
     const metricsModule: string;
-}
-declare namespace Runtime {
-    function RuntimeLayoutController($location: ng.ILocationService, workspace: Jmx.Workspace): void;
-}
-declare namespace Runtime {
-    const layoutModule: string;
 }
 declare namespace Runtime {
     class ThreadsService {
