@@ -76,7 +76,7 @@ namespace JVM {
       }
 
       function checkNext(url) {
-        log.debug("trying URL: ", url);
+        log.debug("Trying URL:", url);
         $.ajax(url).always((data, statusText, jqXHR) => {
           // for $.ajax().always(), the xhr is flipped on fail
           if (statusText !== 'success') {
@@ -88,7 +88,7 @@ namespace JVM {
               //log.debug("Got response: ", resp);
               if ('value' in resp && 'agent' in resp.value) {
                 discoveredUrl = url;
-                log.debug("Found jolokia agent at: ", url, " version: ", resp.value.agent);
+                log.debug("Found jolokia agent at:", url, "version:", resp.value.agent);
                 next();
               } else {
                 maybeCheckNext(urlCandidates);
@@ -99,7 +99,7 @@ namespace JVM {
           } else if (jqXHR.status === 401 || jqXHR.status === 403) {
             // I guess this could be it...
             discoveredUrl = url;
-            log.debug("Using URL: ", url, " assuming it could be an agent but got return code: ", jqXHR.status);
+            log.debug("Using URL:", url, "assuming it could be an agent but got return code:", jqXHR.status);
             next();
           } else {
             maybeCheckNext(urlCandidates);
@@ -121,10 +121,10 @@ namespace JVM {
     let search = new URI().search(true) as any;
     if ('con' in window) {
       ConnectionName = window['con'] as string;
-      log.debug("Using connection name from window: ", ConnectionName);
+      log.debug("Using connection name from window:", ConnectionName);
     } else if ('con' in search) {
       ConnectionName = search['con'];
-      log.debug("Using connection name from URL: ", ConnectionName);
+      log.debug("Using connection name from URL:", ConnectionName);
     } else {
       log.debug("No connection name found, using direct connection to JVM");
     }
@@ -245,7 +245,7 @@ namespace JVM {
     let jolokia: Jolokia.IJolokia = null;
 
     if (jolokiaUrl) {
-      $.ajaxSetup({ beforeSend: getBeforeSend() });
+      $.ajaxSetup({ beforeSend: getBeforeSend(userDetails) });
 
       // execute post-login tasks in case they are not yet executed
       // TODO: Where is the right place to execute post-login tasks for unauthenticated hawtio app?
@@ -264,9 +264,11 @@ namespace JVM {
               }
             } else {
               // just logout
+              /* Logout here prevents keycloak from working
               if (userDetails.loggedIn) {
                 userDetails.logout();
               }
+              */
             }
           } else {
             jolokiaStatus.xhr = xhr;
@@ -293,19 +295,22 @@ namespace JVM {
     return jolokia;
   }
 
-  function getBeforeSend(): (xhr: JQueryXHR) => any {
+  function getBeforeSend(userDetails: Core.AuthService): (xhr: JQueryXHR) => any {
     // Just set Authorization for now...
-    let headers = ['Authorization'];
-    if (connectOptions && connectOptions['token']) {
+    let header = 'Authorization';
+    if (userDetails.loggedIn && userDetails.token) {
       log.debug("Setting authorization header to token");
-      return (xhr: JQueryXHR) => headers.forEach((header) =>
-        xhr.setRequestHeader(header, 'Bearer ' + connectOptions['token']));
+      return (xhr: JQueryXHR) => {
+        if (userDetails.token) {
+          xhr.setRequestHeader(header, 'Bearer ' + userDetails.token);
+        }
+      }
     } else if (connectOptions && connectOptions.userName && connectOptions.password) {
       log.debug("Setting authorization header to username/password");
-      return (xhr: JQueryXHR) => headers.forEach((header) =>
+      return (xhr: JQueryXHR) =>
         xhr.setRequestHeader(
           header,
-          Core.getBasicAuthHeader(connectOptions.userName, connectOptions.password)));
+          Core.getBasicAuthHeader(connectOptions.userName, connectOptions.password));
     } else {
       log.debug("Not setting any authorization header");
       return (xhr: JQueryXHR) => { };
@@ -341,7 +346,7 @@ namespace JVM {
    */
   export class DummyJolokia implements Jolokia.IJolokia {
     isDummy: boolean = true;
-    running: boolean = false;
+    private running: boolean = false;
 
     request(...args) { return null; }
 

@@ -7,7 +7,7 @@ namespace About {
     additionalInfo: string;
     copyright: string;
 
-    constructor(private configManager: Core.ConfigManager, private jolokia: JVM.DummyJolokia,
+    constructor(private configManager: Core.ConfigManager, private jolokia: Jolokia.IJolokia,
       private jolokiaService: JVM.JolokiaService) {
       'ngInject';
     }
@@ -15,9 +15,10 @@ namespace About {
     $onInit() {
       this.title = this.configManager.getBrandingValue('appName');
       this.additionalInfo = this.configManager.getBrandingValue('aboutDescription');
-      if (!this.jolokia.isDummy && this.jolokia.version()) {
+      let version = this.jolokia.version();
+      if (version) {
         this.productInfo = [
-          { name: 'Jolokia', value: this.jolokia.version().agent }
+          { name: 'Jolokia', value: version.agent }
         ];
         this.jolokiaService.getAttribute('hawtio:type=About', 'HawtioVersion')
           .then(hawtioVersion => this.productInfo.unshift({ name: 'Hawtio', value: hawtioVersion }));
