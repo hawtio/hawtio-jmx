@@ -305,7 +305,7 @@ namespace JVM {
       return (xhr: JQueryXHR) => headers.forEach((header) =>
         xhr.setRequestHeader(
           header,
-          Core.getBasicAuthHeader(connectOptions.userName as string, connectOptions.password as string)));
+          Core.getBasicAuthHeader(connectOptions.userName, connectOptions.password)));
     } else {
       log.debug("Not setting any authorization header");
       return (xhr: JQueryXHR) => { };
