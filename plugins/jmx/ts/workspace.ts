@@ -1,4 +1,5 @@
 /// <reference path="../../jvm/ts/jolokiaService.ts"/>
+/// <reference path="tree/tree-event.ts"/>
 /// <reference path="jmxHelpers.ts"/>
 
 namespace Jmx {
@@ -290,7 +291,7 @@ namespace Jmx {
       let rootScope = this.$rootScope;
       if (rootScope) {
         Core.$apply(rootScope);
-        rootScope.$broadcast('jmxTreeUpdated');
+        rootScope.$broadcast(TreeEvent.Updated);
       }
     }
 
@@ -756,7 +757,7 @@ namespace Jmx {
 
     public broadcastSelectionNode(): void {
       if (this.selection) {
-        this.$rootScope.$broadcast('jmxTreeClicked', this.selection);
+        this.$rootScope.$broadcast(TreeEvent.NodeSelected, this.selection);
       }
     }
 

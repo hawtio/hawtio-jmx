@@ -15,7 +15,7 @@ namespace Jmx {
 
     $onInit(): void {
       this.$scope.$on('$destroy', () => this.removeTree());
-      this.$scope.$on('jmxTreeUpdated', () => this.populateTree());
+      this.$scope.$on(TreeEvent.Updated, () => this.populateTree());
       this.$scope.$on('$routeChangeStart', () => this.updateSelectionFromURL());
 
       this.populateTree();

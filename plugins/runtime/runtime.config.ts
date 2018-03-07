@@ -1,3 +1,5 @@
+/// <reference path="../jmx/ts/tree/tree.service.ts"/>
+
 namespace Runtime {
 
   export function configureRoutes($routeProvider: angular.route.IRouteProvider) {
@@ -10,11 +12,8 @@ namespace Runtime {
       .when('/runtime/threads', {templateUrl: 'plugins/runtime/threads/threads.html'})
   }
 
-  export function configureRuntime($rootScope: ng.IScope,
-                                   $templateCache: ng.ITemplateCacheService,
-                                   viewRegistry,
-                                   helpRegistry: Help.HelpRegistry,
-                                   workspace: Jmx.Workspace) {
+  export function configureLayout($templateCache: ng.ITemplateCacheService, viewRegistry,
+    helpRegistry: Help.HelpRegistry, treeService: Jmx.TreeService, workspace: Jmx.Workspace) {
     'ngInject';
 
     const templateCacheKey = 'runtime.html';
@@ -23,8 +22,7 @@ namespace Runtime {
 
     helpRegistry.addUserDoc('runtime', 'plugins/runtime/doc/help.md');
 
-    const unsubscribe = $rootScope.$on('jmxTreeUpdated', () => {
-      unsubscribe();
+    treeService.runWhenTreeReady(() => {
       workspace.topLevelTabs.push({
         id: "runtime",
         content: "Runtime",

@@ -1,34 +1,42 @@
 /// <reference path="../../jmx/ts/workspace.ts"/>
+/// <reference path="../../jmx/ts/tree/tree.service.ts"/>
 
 namespace Diagnostics {
 
   export class DiagnosticsService {
     
-    constructor(private workspace: Jmx.Workspace, private configManager: Core.ConfigManager) {
+    constructor(private $q: ng.IQService, private treeService: Jmx.TreeService,
+      private configManager: Core.ConfigManager) {
       'ngInject';
     }
 
-    getTabs() {
-      const tabs = [];
-      if (this.hasDiagnosticFunction('jfrCheck') && this.configManager.isRouteEnabled('/diagnostics/jfr')) {
-        tabs.push(new Nav.HawtioTab('Flight Recorder', '/diagnostics/jfr'));
-      }
-      if (this.hasDiagnosticFunction('gcClassHistogram') && this.configManager.isRouteEnabled('/diagnostics/heap')) {
-        tabs.push(new Nav.HawtioTab('Class Histogram', '/diagnostics/heap'));
-      }
-      if (this.hasHotspotDiagnostic() && this.configManager.isRouteEnabled('/diagnostics/flags')) {
-        tabs.push(new Nav.HawtioTab('Hotspot Diagnostic', '/diagnostics/flags'));
-      }
-      return tabs;
+    getTabs(): ng.IPromise<Nav.HawtioTab[]> {
+      return this.$q.all([
+        this.hasDiagnosticFunction('jfrCheck'),
+        this.hasDiagnosticFunction('gcClassHistogram'),
+        this.hasHotspotDiagnostic()])
+      .then(results => {
+        const tabs = [];
+        if (results[0] && this.configManager.isRouteEnabled('/diagnostics/jfr')) {
+          tabs.push(new Nav.HawtioTab('Flight Recorder', '/diagnostics/jfr'));
+        }
+        if (results[1] && this.configManager.isRouteEnabled('/diagnostics/heap')) {
+          tabs.push(new Nav.HawtioTab('Class Histogram', '/diagnostics/heap'));
+        }
+        if (results[2] && this.configManager.isRouteEnabled('/diagnostics/flags')) {
+          tabs.push(new Nav.HawtioTab('Hotspot Diagnostic', '/diagnostics/flags'));
+        }
+        return tabs;
+      });
     }
     
-    private hasHotspotDiagnostic() {
-      return this.workspace.treeContainsDomainAndProperties('com.sun.management', {type: 'HotSpotDiagnostic'});
+    private hasHotspotDiagnostic(): ng.IPromise<boolean> {
+      return this.treeService.treeContainsDomainAndProperties('com.sun.management', {type: 'HotSpotDiagnostic'});
     }
   
-    private hasDiagnosticFunction(operation: string) {
-      const diagnostics: Folder = this.workspace.findMBeanWithProperties('com.sun.management', {type: 'DiagnosticCommand'});
-      return diagnostics && diagnostics.mbean && diagnostics.mbean.op && diagnostics.mbean.op[operation];
+    private hasDiagnosticFunction(operation: string): ng.IPromise<boolean> {
+      return this.treeService.findMBeanWithProperties('com.sun.management', {type: 'DiagnosticCommand'})
+        .then((diagnostics: Folder) => diagnostics && diagnostics.mbean && diagnostics.mbean.op && !!diagnostics.mbean.op[operation]);
     }
   
     findMyPid(title) {

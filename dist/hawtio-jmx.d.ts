@@ -276,6 +276,12 @@ declare namespace JVM {
     function createConnectOptions(options?: ConnectOptions): ConnectOptions;
 }
 declare namespace Jmx {
+    enum TreeEvent {
+        Updated = "jmxTreeUpdated",
+        NodeSelected = "jmxTreeClicked",
+    }
+}
+declare namespace Jmx {
     /**
      * a NodeSelection interface so we can expose things like the objectName and the MBean's entries
      *
@@ -713,12 +719,26 @@ declare namespace Jmx {
         isOsgiCompendiumFolder(): boolean;
     }
 }
+declare namespace Jmx {
+    class TreeService {
+        private $rootScope;
+        private $q;
+        private workspace;
+        constructor($rootScope: ng.IRootScopeService, $q: ng.IQService, workspace: Jmx.Workspace);
+        treeContainsDomainAndProperties(domainName: string, properties?: any): ng.IPromise<boolean>;
+        findMBeanWithProperties(domainName: string, properties?: any, propertiesCount?: any): ng.IPromise<any>;
+        getSelectedMBeanName(): ng.IPromise<string>;
+        runWhenTreeReady(fn: () => any): ng.IPromise<any>;
+        private runWhenTreeSelectionReady(fn);
+    }
+}
 declare namespace Diagnostics {
     class DiagnosticsService {
-        private workspace;
+        private $q;
+        private treeService;
         private configManager;
-        constructor(workspace: Jmx.Workspace, configManager: Core.ConfigManager);
-        getTabs(): any[];
+        constructor($q: ng.IQService, treeService: Jmx.TreeService, configManager: Core.ConfigManager);
+        getTabs(): ng.IPromise<Nav.HawtioTab[]>;
         private hasHotspotDiagnostic();
         private hasDiagnosticFunction(operation);
         findMyPid(title: any): string;
@@ -785,12 +805,10 @@ declare namespace Diagnostics {
 }
 declare namespace Diagnostics {
     class DiagnosticsController {
-        private $scope;
         private $location;
-        private workspace;
         private diagnosticsService;
         tabs: Nav.HawtioTab[];
-        constructor($scope: ng.IScope, $location: ng.ILocationService, workspace: Jmx.Workspace, diagnosticsService: DiagnosticsService);
+        constructor($location: ng.ILocationService, diagnosticsService: DiagnosticsService);
         $onInit(): void;
         goto(tab: Nav.HawtioTab): void;
     }
@@ -798,7 +816,7 @@ declare namespace Diagnostics {
 }
 declare namespace Diagnostics {
     function configureRoutes(configManager: Core.ConfigManager): void;
-    function configureDiagnostics($rootScope: ng.IScope, $templateCache: ng.ITemplateCacheService, viewRegistry: any, helpRegistry: any, workspace: Jmx.Workspace, diagnosticsService: DiagnosticsService): void;
+    function configureLayout($rootScope: ng.IScope, $templateCache: ng.ITemplateCacheService, viewRegistry: any, helpRegistry: any, workspace: Jmx.Workspace, diagnosticsService: DiagnosticsService): void;
 }
 declare namespace Diagnostics {
     const log: Logging.Logger;
@@ -926,21 +944,21 @@ declare namespace Jmx {
     class OperationsService {
         private $q;
         private jolokia;
+        private jolokiaUrl;
+        private workspace;
+        private treeService;
         private rbacACLMBean;
-        constructor($q: ng.IQService, jolokia: Jolokia.IJolokia, rbacACLMBean: ng.IPromise<string>);
-        getOperations(mbeanName: string): ng.IPromise<Operation[]>;
-        private loadOperations(mbeanName);
+        constructor($q: ng.IQService, jolokia: Jolokia.IJolokia, jolokiaUrl: string, workspace: Jmx.Workspace, treeService: TreeService, rbacACLMBean: ng.IPromise<string>);
+        getOperations(): ng.IPromise<Operation[]>;
+        private fetchOperations(mbeanName);
         private addOperation(operations, operationMap, opName, op);
         private fetchPermissions(operationMap, mbeanName);
-        getOperation(mbeanName: string, operationName: any): ng.IPromise<Operation>;
         executeOperation(mbeanName: string, operation: Operation, argValues?: any[]): ng.IPromise<string>;
+        buildJolokiaUrl(operation: Operation): string;
     }
 }
 declare namespace Jmx {
     class OperationsController {
-        private $scope;
-        private workspace;
-        private jolokiaUrl;
         private operationsService;
         operations: Operation[];
         config: {
@@ -951,10 +969,8 @@ declare namespace Jmx {
             name: string;
             actionFn: (action: any, item: Operation) => void;
         }[];
-        constructor($scope: ng.IScope, workspace: Jmx.Workspace, jolokiaUrl: string, operationsService: OperationsService);
+        constructor(operationsService: OperationsService);
         $onInit(): void;
-        private loadOperations(mbeanName);
-        private buildJolokiaUrl(operation);
     }
     const operationsComponent: angular.IComponentOptions;
 }
@@ -1122,19 +1138,17 @@ declare namespace RBAC {
 }
 declare namespace Runtime {
     class RuntimeService {
-        private workspace;
-        constructor(workspace: Jmx.Workspace);
-        getTabs(): Nav.HawtioTab[];
+        private treeService;
+        constructor(treeService: Jmx.TreeService);
+        getTabs(): ng.IPromise<Nav.HawtioTab[]>;
     }
 }
 declare namespace Runtime {
     class RuntimeController {
-        private $scope;
         private $location;
-        private workspace;
         private runtimeService;
         tabs: Nav.HawtioTab[];
-        constructor($scope: ng.IScope, $location: ng.ILocationService, workspace: Jmx.Workspace, runtimeService: RuntimeService);
+        constructor($location: ng.ILocationService, runtimeService: RuntimeService);
         $onInit(): void;
         goto(tab: Nav.HawtioTab): void;
     }
@@ -1142,7 +1156,7 @@ declare namespace Runtime {
 }
 declare namespace Runtime {
     function configureRoutes($routeProvider: angular.route.IRouteProvider): void;
-    function configureRuntime($rootScope: ng.IScope, $templateCache: ng.ITemplateCacheService, viewRegistry: any, helpRegistry: Help.HelpRegistry, workspace: Jmx.Workspace): void;
+    function configureLayout($templateCache: ng.ITemplateCacheService, viewRegistry: any, helpRegistry: Help.HelpRegistry, treeService: Jmx.TreeService, workspace: Jmx.Workspace): void;
 }
 declare namespace Runtime {
     interface SystemProperty {

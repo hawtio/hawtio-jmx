@@ -5,17 +5,17 @@ namespace Jmx {
 
   export class OperationsService {
 
-    constructor(private $q: ng.IQService, private jolokia: Jolokia.IJolokia,
-      private rbacACLMBean: ng.IPromise<string>) {
+    constructor(private $q: ng.IQService, private jolokia: Jolokia.IJolokia, private jolokiaUrl: string,
+      private workspace: Jmx.Workspace, private treeService: TreeService, private rbacACLMBean: ng.IPromise<string>) {
       'ngInject';
     }
 
-    getOperations(mbeanName: string): ng.IPromise<Operation[]> {
-      return this.loadOperations(mbeanName)
-        .then(operations => _.sortBy(operations, operation => operation.readableName));
+    getOperations(): ng.IPromise<Operation[]> {
+      return this.treeService.getSelectedMBeanName()
+        .then(mbeanName => mbeanName ? this.fetchOperations(mbeanName) : []);
     }
 
-    private loadOperations(mbeanName: string): ng.IPromise<Operation[]> {
+    private fetchOperations(mbeanName: string): ng.IPromise<Operation[]> {
       return this.$q((resolve, reject) => {
         this.jolokia.request(
           {
@@ -35,6 +35,7 @@ namespace Jmx {
                   this.addOperation(operations, operationMap, opName, op);
                 }
               });
+              operations = _.sortBy(operations, operation => operation.readableName);
               if (!_.isEmpty(operationMap)) {
                 this.fetchPermissions(operationMap, mbeanName)
                   .then(() => resolve(operations));
@@ -88,11 +89,6 @@ namespace Jmx {
         }));
     }
 
-    getOperation(mbeanName: string, operationName): ng.IPromise<Operation> {
-      return this.getOperations(mbeanName)
-        .then(operations => _.find(operations, operation => operation.name === operationName));
-    }
-
     executeOperation(mbeanName: string, operation: Operation, argValues: any[] = []): ng.IPromise<string> {
       return this.$q((resolve, reject) => {
         this.jolokia.execute(mbeanName, operation.name, ...argValues,
@@ -115,6 +111,10 @@ namespace Jmx {
       });
     };
 
+    buildJolokiaUrl(operation: Operation): string {
+      let mbeanName = Core.escapeMBean(this.workspace.getSelectedMBeanName());
+      return `${this.jolokiaUrl}/exec/${mbeanName}/${operation.name}`;
+    }
   }
 
 }

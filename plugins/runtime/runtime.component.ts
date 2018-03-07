@@ -5,19 +5,13 @@ namespace Runtime {
   export class RuntimeController {
     tabs: Nav.HawtioTab[];
 
-    constructor(private $scope: ng.IScope, private $location: ng.ILocationService, private workspace: Jmx.Workspace,
-      private runtimeService: RuntimeService) {
+    constructor(private $location: ng.ILocationService, private runtimeService: RuntimeService) {
       'ngInject';
     }
 
     $onInit() {
-      if (this.workspace.tree.children.length > 0) {
-        this.tabs = this.runtimeService.getTabs();
-      } else {
-        this.$scope.$on('jmxTreeUpdated', () => {
-          this.tabs = this.runtimeService.getTabs();
-        });
-      }
+      this.runtimeService.getTabs()
+        .then(tabs => this.tabs = tabs);
     }
 
     goto(tab: Nav.HawtioTab) {

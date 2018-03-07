@@ -2,19 +2,22 @@ namespace Runtime {
 
   export class RuntimeService {
 
-    constructor(private workspace: Jmx.Workspace) {
+    constructor(private treeService: Jmx.TreeService) {
       'ngInject';
     }
 
-    getTabs(): Nav.HawtioTab[] {
-      const tabs = [
-        new Nav.HawtioTab('System Properties', '/runtime/sysprops'),
-        new Nav.HawtioTab('Metrics', '/runtime/metrics')
-      ];
-      if (this.workspace.treeContainsDomainAndProperties('java.lang', { type: 'Threading' })) {
-        tabs.push(new Nav.HawtioTab('Threads', '/runtime/threads'));
-      }
-      return tabs;
+    getTabs(): ng.IPromise<Nav.HawtioTab[]> {
+      return this.treeService.treeContainsDomainAndProperties('java.lang', { type: 'Threading' })
+        .then(hasThreads => {
+          const tabs = [
+            new Nav.HawtioTab('System Properties', '/runtime/sysprops'),
+            new Nav.HawtioTab('Metrics', '/runtime/metrics')
+          ];
+          if (hasThreads) {
+            tabs.push(new Nav.HawtioTab('Threads', '/runtime/threads'));
+          }
+          return tabs;
+        });
     }
   }
 

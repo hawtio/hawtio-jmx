@@ -149,7 +149,7 @@ namespace Jmx {
 
     let updateTable = _.debounce(updateTableContents, 50, { leading: false, trailing: true });
 
-    $scope.$on('jmxTreeUpdated', updateTable);
+    $scope.$on(TreeEvent.Updated, updateTable);
 
     $scope.$watch('gridOptions.filterOptions.filterText', (newValue, oldValue) => {
       if (newValue !== oldValue) {

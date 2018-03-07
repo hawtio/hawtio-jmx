@@ -5,19 +5,13 @@ namespace Diagnostics {
   export class DiagnosticsController {
     tabs: Nav.HawtioTab[];
 
-    constructor(private $scope: ng.IScope, private $location: ng.ILocationService,
-      private workspace: Jmx.Workspace, private diagnosticsService: DiagnosticsService) {
+    constructor(private $location: ng.ILocationService, private diagnosticsService: DiagnosticsService) {
       'ngInject';
     }
 
     $onInit() {
-      if (this.workspace.tree.children.length > 0) {
-        this.tabs = this.diagnosticsService.getTabs();
-      } else {
-        this.$scope.$on('jmxTreeUpdated', () => {
-          this.tabs = this.diagnosticsService.getTabs();
-        });
-      }
+      this.diagnosticsService.getTabs()
+        .then(tabs => this.tabs = tabs);
     }
 
     goto(tab: Nav.HawtioTab) {

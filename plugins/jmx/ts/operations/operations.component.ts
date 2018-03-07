@@ -27,7 +27,7 @@ namespace Jmx {
         name: 'Copy Jolokia URL',
         actionFn: (action, item: Operation) => {
           let clipboard = new Clipboard('.jmx-operations-list-view .dropdown-menu a', {
-            text: (trigger) => this.buildJolokiaUrl(item)
+            text: (trigger) => this.operationsService.buildJolokiaUrl(item)
           });
           setTimeout(() => clipboard.destroy(), 1000);
           Core.notification('success', 'Jolokia URL copied');
@@ -35,31 +35,13 @@ namespace Jmx {
       }
     ];
 
-    constructor(private $scope: ng.IScope, private workspace: Jmx.Workspace, private jolokiaUrl: string,
-      private operationsService: OperationsService) {
+    constructor(private operationsService: OperationsService) {
       'ngInject';
     }
 
     $onInit() {
-      let mbeanName = this.workspace.getSelectedMBeanName();
-      if (mbeanName) {
-        this.loadOperations(mbeanName);
-      } else {
-        this.$scope.$on('jmxTreeClicked', () => {
-          let mbeanName = this.workspace.getSelectedMBeanName();
-          this.loadOperations(mbeanName);
-        });
-      }
-    }
-
-    private loadOperations(mbeanName: string): void {
-      this.operationsService.getOperations(mbeanName)
-      .then(operations => this.operations = operations);
-    }
-  
-    private buildJolokiaUrl(operation: Operation): string {
-      let mbeanName = Core.escapeMBean(this.workspace.getSelectedMBeanName());
-      return `${this.jolokiaUrl}/exec/${mbeanName}/${operation.name}`;
+      this.operationsService.getOperations()
+        .then(operations => this.operations = operations);
     }
   }
 

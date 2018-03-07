@@ -5072,6 +5072,14 @@ var JVM;
 })(JVM || (JVM = {}));
 var Jmx;
 (function (Jmx) {
+    var TreeEvent;
+    (function (TreeEvent) {
+        TreeEvent["Updated"] = "jmxTreeUpdated";
+        TreeEvent["NodeSelected"] = "jmxTreeClicked";
+    })(TreeEvent = Jmx.TreeEvent || (Jmx.TreeEvent = {}));
+})(Jmx || (Jmx = {}));
+var Jmx;
+(function (Jmx) {
     /**
      * @class Folder
      * @uses NodeSelection
@@ -5370,6 +5378,7 @@ var Jmx;
     Jmx.createRemoteWorkspace = createRemoteWorkspace;
 })(Jmx || (Jmx = {}));
 /// <reference path="../../jvm/ts/jolokiaService.ts"/>
+/// <reference path="tree/tree-event.ts"/>
 /// <reference path="jmxHelpers.ts"/>
 var Jmx;
 (function (Jmx) {
@@ -5620,7 +5629,7 @@ var Jmx;
             var rootScope = this.$rootScope;
             if (rootScope) {
                 Core.$apply(rootScope);
-                rootScope.$broadcast('jmxTreeUpdated');
+                rootScope.$broadcast(Jmx.TreeEvent.Updated);
             }
         };
         Workspace.prototype.initFolder = function (folder, domain, folderNames) {
@@ -6074,7 +6083,7 @@ var Jmx;
         };
         Workspace.prototype.broadcastSelectionNode = function () {
             if (this.selection) {
-                this.$rootScope.$broadcast('jmxTreeClicked', this.selection);
+                this.$rootScope.$broadcast(Jmx.TreeEvent.NodeSelected, this.selection);
             }
         };
         Workspace.prototype.matchesProperties = function (entries, properties) {
@@ -6346,35 +6355,103 @@ var Jmx;
     }());
     Jmx.Workspace = Workspace;
 })(Jmx || (Jmx = {}));
+/// <reference path="../workspace.ts"/>
+var Jmx;
+(function (Jmx) {
+    var TreeService = /** @class */ (function () {
+        TreeService.$inject = ["$rootScope", "$q", "workspace"];
+        function TreeService($rootScope, $q, workspace) {
+            'ngInject';
+            this.$rootScope = $rootScope;
+            this.$q = $q;
+            this.workspace = workspace;
+        }
+        TreeService.prototype.treeContainsDomainAndProperties = function (domainName, properties) {
+            var _this = this;
+            if (properties === void 0) { properties = null; }
+            return this.runWhenTreeReady(function () { return _this.workspace.treeContainsDomainAndProperties('java.lang', { type: 'Threading' }); });
+        };
+        TreeService.prototype.findMBeanWithProperties = function (domainName, properties, propertiesCount) {
+            var _this = this;
+            if (properties === void 0) { properties = null; }
+            if (propertiesCount === void 0) { propertiesCount = null; }
+            return this.runWhenTreeReady(function () { return _this.workspace.findMBeanWithProperties(domainName, properties, propertiesCount); });
+        };
+        TreeService.prototype.getSelectedMBeanName = function () {
+            var _this = this;
+            return this.runWhenTreeSelectionReady(function () { return _this.workspace.getSelectedMBeanName(); });
+        };
+        TreeService.prototype.runWhenTreeReady = function (fn) {
+            var _this = this;
+            return this.$q(function (resolve, reject) {
+                if (_this.workspace.treeFetched) {
+                    resolve(fn());
+                }
+                else {
+                    var unsubscribe_1 = _this.$rootScope.$on(Jmx.TreeEvent.Updated, function () {
+                        unsubscribe_1();
+                        resolve(fn());
+                    });
+                }
+            });
+        };
+        TreeService.prototype.runWhenTreeSelectionReady = function (fn) {
+            var _this = this;
+            return this.$q(function (resolve, reject) {
+                if (_this.workspace.selection) {
+                    resolve(fn());
+                }
+                else {
+                    var unsubscribe_2 = _this.$rootScope.$on(Jmx.TreeEvent.NodeSelected, function () {
+                        unsubscribe_2();
+                        resolve(fn());
+                    });
+                }
+            });
+        };
+        return TreeService;
+    }());
+    Jmx.TreeService = TreeService;
+})(Jmx || (Jmx = {}));
 /// <reference path="../../jmx/ts/workspace.ts"/>
+/// <reference path="../../jmx/ts/tree/tree.service.ts"/>
 var Diagnostics;
 (function (Diagnostics) {
     var DiagnosticsService = /** @class */ (function () {
-        DiagnosticsService.$inject = ["workspace", "configManager"];
-        function DiagnosticsService(workspace, configManager) {
+        DiagnosticsService.$inject = ["$q", "treeService", "configManager"];
+        function DiagnosticsService($q, treeService, configManager) {
             'ngInject';
-            this.workspace = workspace;
+            this.$q = $q;
+            this.treeService = treeService;
             this.configManager = configManager;
         }
         DiagnosticsService.prototype.getTabs = function () {
-            var tabs = [];
-            if (this.hasDiagnosticFunction('jfrCheck') && this.configManager.isRouteEnabled('/diagnostics/jfr')) {
-                tabs.push(new Nav.HawtioTab('Flight Recorder', '/diagnostics/jfr'));
-            }
-            if (this.hasDiagnosticFunction('gcClassHistogram') && this.configManager.isRouteEnabled('/diagnostics/heap')) {
-                tabs.push(new Nav.HawtioTab('Class Histogram', '/diagnostics/heap'));
-            }
-            if (this.hasHotspotDiagnostic() && this.configManager.isRouteEnabled('/diagnostics/flags')) {
-                tabs.push(new Nav.HawtioTab('Hotspot Diagnostic', '/diagnostics/flags'));
-            }
-            return tabs;
+            var _this = this;
+            return this.$q.all([
+                this.hasDiagnosticFunction('jfrCheck'),
+                this.hasDiagnosticFunction('gcClassHistogram'),
+                this.hasHotspotDiagnostic()
+            ])
+                .then(function (results) {
+                var tabs = [];
+                if (results[0] && _this.configManager.isRouteEnabled('/diagnostics/jfr')) {
+                    tabs.push(new Nav.HawtioTab('Flight Recorder', '/diagnostics/jfr'));
+                }
+                if (results[1] && _this.configManager.isRouteEnabled('/diagnostics/heap')) {
+                    tabs.push(new Nav.HawtioTab('Class Histogram', '/diagnostics/heap'));
+                }
+                if (results[2] && _this.configManager.isRouteEnabled('/diagnostics/flags')) {
+                    tabs.push(new Nav.HawtioTab('Hotspot Diagnostic', '/diagnostics/flags'));
+                }
+                return tabs;
+            });
         };
         DiagnosticsService.prototype.hasHotspotDiagnostic = function () {
-            return this.workspace.treeContainsDomainAndProperties('com.sun.management', { type: 'HotSpotDiagnostic' });
+            return this.treeService.treeContainsDomainAndProperties('com.sun.management', { type: 'HotSpotDiagnostic' });
         };
         DiagnosticsService.prototype.hasDiagnosticFunction = function (operation) {
-            var diagnostics = this.workspace.findMBeanWithProperties('com.sun.management', { type: 'DiagnosticCommand' });
-            return diagnostics && diagnostics.mbean && diagnostics.mbean.op && diagnostics.mbean.op[operation];
+            return this.treeService.findMBeanWithProperties('com.sun.management', { type: 'DiagnosticCommand' })
+                .then(function (diagnostics) { return diagnostics && diagnostics.mbean && diagnostics.mbean.op && !!diagnostics.mbean.op[operation]; });
         };
         DiagnosticsService.prototype.findMyPid = function (title) {
             //snatch PID from window title
@@ -6759,24 +6836,16 @@ var Diagnostics;
 var Diagnostics;
 (function (Diagnostics) {
     var DiagnosticsController = /** @class */ (function () {
-        DiagnosticsController.$inject = ["$scope", "$location", "workspace", "diagnosticsService"];
-        function DiagnosticsController($scope, $location, workspace, diagnosticsService) {
+        DiagnosticsController.$inject = ["$location", "diagnosticsService"];
+        function DiagnosticsController($location, diagnosticsService) {
             'ngInject';
-            this.$scope = $scope;
             this.$location = $location;
-            this.workspace = workspace;
             this.diagnosticsService = diagnosticsService;
         }
         DiagnosticsController.prototype.$onInit = function () {
             var _this = this;
-            if (this.workspace.tree.children.length > 0) {
-                this.tabs = this.diagnosticsService.getTabs();
-            }
-            else {
-                this.$scope.$on('jmxTreeUpdated', function () {
-                    _this.tabs = _this.diagnosticsService.getTabs();
-                });
-            }
+            this.diagnosticsService.getTabs()
+                .then(function (tabs) { return _this.tabs = tabs; });
         };
         DiagnosticsController.prototype.goto = function (tab) {
             this.$location.path(tab.path);
@@ -6794,7 +6863,7 @@ var Diagnostics;
 var Diagnostics;
 (function (Diagnostics) {
     configureRoutes.$inject = ["configManager"];
-    configureDiagnostics.$inject = ["$rootScope", "$templateCache", "viewRegistry", "helpRegistry", "workspace", "diagnosticsService"];
+    configureLayout.$inject = ["$rootScope", "$templateCache", "viewRegistry", "helpRegistry", "workspace", "diagnosticsService"];
     function configureRoutes(configManager) {
         'ngInject';
         configManager
@@ -6803,15 +6872,14 @@ var Diagnostics;
             .addRoute('/diagnostics/flags', { templateUrl: 'plugins/diagnostics/html/flags.html' });
     }
     Diagnostics.configureRoutes = configureRoutes;
-    function configureDiagnostics($rootScope, $templateCache, viewRegistry, helpRegistry, workspace, diagnosticsService) {
+    function configureLayout($rootScope, $templateCache, viewRegistry, helpRegistry, workspace, diagnosticsService) {
         'ngInject';
         var templateCacheKey = 'diagnostics.html';
         $templateCache.put(templateCacheKey, '<diagnostics></diagnostics>');
         viewRegistry['diagnostics'] = templateCacheKey;
         helpRegistry.addUserDoc('diagnostics', 'plugins/diagnostics/doc/help.md');
-        var unsubscribe = $rootScope.$on('jmxTreeUpdated', function () {
-            unsubscribe();
-            var tabs = diagnosticsService.getTabs();
+        diagnosticsService.getTabs()
+            .then(function (tabs) {
             workspace.topLevelTabs.push({
                 id: "diagnostics",
                 content: "Diagnostics",
@@ -6822,7 +6890,7 @@ var Diagnostics;
             });
         });
     }
-    Diagnostics.configureDiagnostics = configureDiagnostics;
+    Diagnostics.configureLayout = configureLayout;
 })(Diagnostics || (Diagnostics = {}));
 /// <reference path="diagnostics.config.ts"/>
 /// <reference path="diagnostics.component.ts"/>
@@ -6837,7 +6905,7 @@ var Diagnostics;
     Diagnostics._module = angular
         .module(pluginName, [])
         .config(Diagnostics.configureRoutes)
-        .run(Diagnostics.configureDiagnostics)
+        .run(Diagnostics.configureLayout)
         .component("diagnostics", Diagnostics.diagnosticsComponent)
         .controller("DiagnosticsJfrController", Diagnostics.DiagnosticsJfrController)
         .controller("DiagnosticsHeapController", Diagnostics.DiagnosticsHeapController)
@@ -7110,7 +7178,7 @@ var Jmx;
         $scope.nid = $location.search()['nid'];
         Jmx.log.debug("attribute - nid: ", $scope.nid);
         var updateTable = _.debounce(updateTableContents, 50, { leading: false, trailing: true });
-        $scope.$on('jmxTreeUpdated', updateTable);
+        $scope.$on(Jmx.TreeEvent.Updated, updateTable);
         $scope.$watch('gridOptions.filterOptions.filterText', function (newValue, oldValue) {
             if (newValue !== oldValue) {
                 updateTable();
@@ -7732,18 +7800,22 @@ var Jmx;
 var Jmx;
 (function (Jmx) {
     var OperationsService = /** @class */ (function () {
-        OperationsService.$inject = ["$q", "jolokia", "rbacACLMBean"];
-        function OperationsService($q, jolokia, rbacACLMBean) {
+        OperationsService.$inject = ["$q", "jolokia", "jolokiaUrl", "workspace", "treeService", "rbacACLMBean"];
+        function OperationsService($q, jolokia, jolokiaUrl, workspace, treeService, rbacACLMBean) {
             'ngInject';
             this.$q = $q;
             this.jolokia = jolokia;
+            this.jolokiaUrl = jolokiaUrl;
+            this.workspace = workspace;
+            this.treeService = treeService;
             this.rbacACLMBean = rbacACLMBean;
         }
-        OperationsService.prototype.getOperations = function (mbeanName) {
-            return this.loadOperations(mbeanName)
-                .then(function (operations) { return _.sortBy(operations, function (operation) { return operation.readableName; }); });
+        OperationsService.prototype.getOperations = function () {
+            var _this = this;
+            return this.treeService.getSelectedMBeanName()
+                .then(function (mbeanName) { return mbeanName ? _this.fetchOperations(mbeanName) : []; });
         };
-        OperationsService.prototype.loadOperations = function (mbeanName) {
+        OperationsService.prototype.fetchOperations = function (mbeanName) {
             var _this = this;
             return this.$q(function (resolve, reject) {
                 _this.jolokia.request({
@@ -7762,6 +7834,7 @@ var Jmx;
                             _this.addOperation(operations, operationMap, opName, op);
                         }
                     });
+                    operations = _.sortBy(operations, function (operation) { return operation.readableName; });
                     if (!_.isEmpty(operationMap)) {
                         _this.fetchPermissions(operationMap, mbeanName)
                             .then(function () { return resolve(operations); });
@@ -7807,10 +7880,6 @@ var Jmx;
                 });
             });
         };
-        OperationsService.prototype.getOperation = function (mbeanName, operationName) {
-            return this.getOperations(mbeanName)
-                .then(function (operations) { return _.find(operations, function (operation) { return operation.name === operationName; }); });
-        };
         OperationsService.prototype.executeOperation = function (mbeanName, operation, argValues) {
             var _this = this;
             if (argValues === void 0) { argValues = []; }
@@ -7838,6 +7907,10 @@ var Jmx;
             });
         };
         ;
+        OperationsService.prototype.buildJolokiaUrl = function (operation) {
+            var mbeanName = Core.escapeMBean(this.workspace.getSelectedMBeanName());
+            return this.jolokiaUrl + "/exec/" + mbeanName + "/" + operation.name;
+        };
         return OperationsService;
     }());
     Jmx.OperationsService = OperationsService;
@@ -7848,13 +7921,10 @@ var Jmx;
 var Jmx;
 (function (Jmx) {
     var OperationsController = /** @class */ (function () {
-        OperationsController.$inject = ["$scope", "workspace", "jolokiaUrl", "operationsService"];
-        function OperationsController($scope, workspace, jolokiaUrl, operationsService) {
+        OperationsController.$inject = ["operationsService"];
+        function OperationsController(operationsService) {
             'ngInject';
             var _this = this;
-            this.$scope = $scope;
-            this.workspace = workspace;
-            this.jolokiaUrl = jolokiaUrl;
             this.operationsService = operationsService;
             this.config = {
                 showSelectBox: false,
@@ -7875,7 +7945,7 @@ var Jmx;
                     name: 'Copy Jolokia URL',
                     actionFn: function (action, item) {
                         var clipboard = new Clipboard('.jmx-operations-list-view .dropdown-menu a', {
-                            text: function (trigger) { return _this.buildJolokiaUrl(item); }
+                            text: function (trigger) { return _this.operationsService.buildJolokiaUrl(item); }
                         });
                         setTimeout(function () { return clipboard.destroy(); }, 1000);
                         Core.notification('success', 'Jolokia URL copied');
@@ -7885,25 +7955,8 @@ var Jmx;
         }
         OperationsController.prototype.$onInit = function () {
             var _this = this;
-            var mbeanName = this.workspace.getSelectedMBeanName();
-            if (mbeanName) {
-                this.loadOperations(mbeanName);
-            }
-            else {
-                this.$scope.$on('jmxTreeClicked', function () {
-                    var mbeanName = _this.workspace.getSelectedMBeanName();
-                    _this.loadOperations(mbeanName);
-                });
-            }
-        };
-        OperationsController.prototype.loadOperations = function (mbeanName) {
-            var _this = this;
-            this.operationsService.getOperations(mbeanName)
+            this.operationsService.getOperations()
                 .then(function (operations) { return _this.operations = operations; });
-        };
-        OperationsController.prototype.buildJolokiaUrl = function (operation) {
-            var mbeanName = Core.escapeMBean(this.workspace.getSelectedMBeanName());
-            return this.jolokiaUrl + "/exec/" + mbeanName + "/" + operation.name;
         };
         return OperationsController;
     }());
@@ -8091,7 +8144,7 @@ var Jmx;
         TreeController.prototype.$onInit = function () {
             var _this = this;
             this.$scope.$on('$destroy', function () { return _this.removeTree(); });
-            this.$scope.$on('jmxTreeUpdated', function () { return _this.populateTree(); });
+            this.$scope.$on(Jmx.TreeEvent.Updated, function () { return _this.populateTree(); });
             this.$scope.$on('$routeChangeStart', function () { return _this.updateSelectionFromURL(); });
             this.populateTree();
         };
@@ -8139,12 +8192,14 @@ var Jmx;
 })(Jmx || (Jmx = {}));
 /// <reference path="tree-header.component.ts"/>
 /// <reference path="tree.component.ts"/>
+/// <reference path="tree.service.ts"/>
 var Jmx;
 (function (Jmx) {
     Jmx.treeModule = angular
         .module('hawtio-jmx-tree', [])
         .component('treeHeader', Jmx.treeHeaderComponent)
         .component('tree', Jmx.treeComponent)
+        .service('treeService', Jmx.TreeService)
         .name;
     Jmx.treeElementId = '#jmxtree';
 })(Jmx || (Jmx = {}));
@@ -9628,20 +9683,23 @@ var RBAC;
 var Runtime;
 (function (Runtime) {
     var RuntimeService = /** @class */ (function () {
-        RuntimeService.$inject = ["workspace"];
-        function RuntimeService(workspace) {
+        RuntimeService.$inject = ["treeService"];
+        function RuntimeService(treeService) {
             'ngInject';
-            this.workspace = workspace;
+            this.treeService = treeService;
         }
         RuntimeService.prototype.getTabs = function () {
-            var tabs = [
-                new Nav.HawtioTab('System Properties', '/runtime/sysprops'),
-                new Nav.HawtioTab('Metrics', '/runtime/metrics')
-            ];
-            if (this.workspace.treeContainsDomainAndProperties('java.lang', { type: 'Threading' })) {
-                tabs.push(new Nav.HawtioTab('Threads', '/runtime/threads'));
-            }
-            return tabs;
+            return this.treeService.treeContainsDomainAndProperties('java.lang', { type: 'Threading' })
+                .then(function (hasThreads) {
+                var tabs = [
+                    new Nav.HawtioTab('System Properties', '/runtime/sysprops'),
+                    new Nav.HawtioTab('Metrics', '/runtime/metrics')
+                ];
+                if (hasThreads) {
+                    tabs.push(new Nav.HawtioTab('Threads', '/runtime/threads'));
+                }
+                return tabs;
+            });
         };
         return RuntimeService;
     }());
@@ -9651,24 +9709,16 @@ var Runtime;
 var Runtime;
 (function (Runtime) {
     var RuntimeController = /** @class */ (function () {
-        RuntimeController.$inject = ["$scope", "$location", "workspace", "runtimeService"];
-        function RuntimeController($scope, $location, workspace, runtimeService) {
+        RuntimeController.$inject = ["$location", "runtimeService"];
+        function RuntimeController($location, runtimeService) {
             'ngInject';
-            this.$scope = $scope;
             this.$location = $location;
-            this.workspace = workspace;
             this.runtimeService = runtimeService;
         }
         RuntimeController.prototype.$onInit = function () {
             var _this = this;
-            if (this.workspace.tree.children.length > 0) {
-                this.tabs = this.runtimeService.getTabs();
-            }
-            else {
-                this.$scope.$on('jmxTreeUpdated', function () {
-                    _this.tabs = _this.runtimeService.getTabs();
-                });
-            }
+            this.runtimeService.getTabs()
+                .then(function (tabs) { return _this.tabs = tabs; });
         };
         RuntimeController.prototype.goto = function (tab) {
             this.$location.path(tab.path);
@@ -9682,10 +9732,11 @@ var Runtime;
         controller: RuntimeController
     };
 })(Runtime || (Runtime = {}));
+/// <reference path="../jmx/ts/tree/tree.service.ts"/>
 var Runtime;
 (function (Runtime) {
     configureRoutes.$inject = ["$routeProvider"];
-    configureRuntime.$inject = ["$rootScope", "$templateCache", "viewRegistry", "helpRegistry", "workspace"];
+    configureLayout.$inject = ["$templateCache", "viewRegistry", "helpRegistry", "treeService", "workspace"];
     function configureRoutes($routeProvider) {
         'ngInject';
         $routeProvider
@@ -9695,14 +9746,13 @@ var Runtime;
             .when('/runtime/threads', { templateUrl: 'plugins/runtime/threads/threads.html' });
     }
     Runtime.configureRoutes = configureRoutes;
-    function configureRuntime($rootScope, $templateCache, viewRegistry, helpRegistry, workspace) {
+    function configureLayout($templateCache, viewRegistry, helpRegistry, treeService, workspace) {
         'ngInject';
         var templateCacheKey = 'runtime.html';
         $templateCache.put(templateCacheKey, '<runtime></runtime>');
         viewRegistry['runtime'] = templateCacheKey;
         helpRegistry.addUserDoc('runtime', 'plugins/runtime/doc/help.md');
-        var unsubscribe = $rootScope.$on('jmxTreeUpdated', function () {
-            unsubscribe();
+        treeService.runWhenTreeReady(function () {
             workspace.topLevelTabs.push({
                 id: "runtime",
                 content: "Runtime",
@@ -9713,7 +9763,7 @@ var Runtime;
             });
         });
     }
-    Runtime.configureRuntime = configureRuntime;
+    Runtime.configureLayout = configureLayout;
 })(Runtime || (Runtime = {}));
 /// <reference path="sysprop.ts"/>
 var Runtime;
@@ -10247,7 +10297,7 @@ var Runtime;
         Runtime.threadsModule
     ])
         .config(Runtime.configureRoutes)
-        .run(Runtime.configureRuntime)
+        .run(Runtime.configureLayout)
         .component('runtime', Runtime.runtimeComponent)
         .service('runtimeService', Runtime.RuntimeService)
         .name;
