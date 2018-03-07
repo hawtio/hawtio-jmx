@@ -245,7 +245,11 @@ namespace JVM {
     let jolokia: Jolokia.IJolokia = null;
 
     if (jolokiaUrl) {
-      $.ajaxSetup({ beforeSend: getBeforeSend(userDetails) });
+      // hawtio-oauth may have already set up jQuery beforeSend
+      if (!$.ajaxSettings.beforeSend) {
+        log.debug("Setting up jQuery beforeSend");
+        $.ajaxSetup({ beforeSend: getBeforeSend(userDetails) });
+      }
 
       // execute post-login tasks in case they are not yet executed
       // TODO: Where is the right place to execute post-login tasks for unauthenticated hawtio app?
