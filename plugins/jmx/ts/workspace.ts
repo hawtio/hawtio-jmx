@@ -68,7 +68,7 @@ namespace Jmx {
       let workspace = this;
       this.topLevelTabs = {
         push: (item: NavMenuItem) => {
-          log.debug("Added menu item: ", item);
+          log.debug("Added menu item:", item);
           let tab = {
             id: item.id,
             title: () => item.content,
@@ -141,7 +141,7 @@ namespace Jmx {
           log.debug("Error fetching JMX tree:", response);
         }
       };
-      log.debug("jolokia:", this.jolokia);
+      log.debug("Jolokia:", this.jolokia);
       this.jolokiaList((response) => {
         this.jolokiaStatus.xhr = null;
         workspace.treeFetched = true;
@@ -607,7 +607,7 @@ namespace Jmx {
       if (this.selection) {
         return this.selection;
       }
-      log.debug("Location: ", this.$location);
+      log.debug("Location:", this.$location);
       let nid = this.$location.search()['nid'];
       if (nid && this.tree) {
         let answer = this.tree.findDescendant(node => nid === node.key);
@@ -726,7 +726,7 @@ namespace Jmx {
           if (!defaultPath) {
             defaultPath = "#/jmx/help";
           }
-          log.info("moving the URL to be " + defaultPath);
+          log.info("moving the URL to be", defaultPath);
           if (_.startsWith(defaultPath, "#")) {
             defaultPath = defaultPath.substring(1);
           }
