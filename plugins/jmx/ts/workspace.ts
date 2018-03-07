@@ -289,8 +289,8 @@ namespace Jmx {
     jmxTreeUpdated() {
       let rootScope = this.$rootScope;
       if (rootScope) {
-        rootScope.$broadcast('jmxTreeUpdated');
         Core.$apply(rootScope);
+        rootScope.$broadcast('jmxTreeUpdated');
       }
     }
 
@@ -315,7 +315,7 @@ namespace Jmx {
 
     /**
      * Escape only '<' and '>' as opposed to Core.escapeHtml() and _.escape()
-     * 
+     *
      * @param {string} str string to be escaped
     */
     private escapeTagOnly(str: string): string {

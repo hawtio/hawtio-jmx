@@ -157,6 +157,51 @@ pf-table-view > .container-fluid {
   word-break: break-all;
 }
 
+.runtime-sysprops-main .table {
+  table-layout: fixed;
+  margin-bottom: 0;
+}
+.runtime-sysprops-main .table th:nth-child(1) {
+  width: 300px;
+}
+.runtime-sysprops-main .table td:nth-child(1) {
+  width: 300px;
+  word-break: break-all;
+}
+.runtime-sysprops-main .table td:nth-child(2) {
+  word-break: break-all;
+}
+
+@media screen and (max-width: 767px) {
+}
+@media (min-width: 768px) {
+}
+@media (min-width: 768px) {
+}
+@media (max-width: 767px) {
+}
+@media (min-width: 768px) {
+}
+@media (min-width: 768px) {
+}
+@media (max-width: 767px) {
+}
+@media (max-width: 767px) {
+}
+#threads-page .table tr td:nth-child(1) {
+  text-align: right;
+}
+#threads-page .table tr td:nth-child(2) {
+  white-space: nowrap;
+}
+#threads-page .table tr td:nth-child(3) {
+  max-width: 200px;
+}
+#threads-page .table tr td:nth-child(6),
+#threads-page .table tr td:nth-child(7) {
+  text-align: center;
+}
+
 table.jmx-attributes-table.ht-table-extra-columns {
   table-layout: auto;
 }
@@ -403,49 +448,4 @@ div.tree-nav-layout .sidebar-pf .rg-right {
 }
 .jvm-reset-connections-alert {
   margin-top: 20px;
-}
-
-.runtime-sysprops-main .table {
-  table-layout: fixed;
-  margin-bottom: 0;
-}
-.runtime-sysprops-main .table th:nth-child(1) {
-  width: 300px;
-}
-.runtime-sysprops-main .table td:nth-child(1) {
-  width: 300px;
-  word-break: break-all;
-}
-.runtime-sysprops-main .table td:nth-child(2) {
-  word-break: break-all;
-}
-
-@media screen and (max-width: 767px) {
-}
-@media (min-width: 768px) {
-}
-@media (min-width: 768px) {
-}
-@media (max-width: 767px) {
-}
-@media (min-width: 768px) {
-}
-@media (min-width: 768px) {
-}
-@media (max-width: 767px) {
-}
-@media (max-width: 767px) {
-}
-#threads-page .table tr td:nth-child(1) {
-  text-align: right;
-}
-#threads-page .table tr td:nth-child(2) {
-  white-space: nowrap;
-}
-#threads-page .table tr td:nth-child(3) {
-  max-width: 200px;
-}
-#threads-page .table tr td:nth-child(6),
-#threads-page .table tr td:nth-child(7) {
-  text-align: center;
 }
