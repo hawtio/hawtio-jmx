@@ -309,6 +309,8 @@ namespace JVM {
           xhr.setRequestHeader(header, 'Bearer ' + userDetails.token);
         }
       }
+    } else if (connectOptions && connectOptions['token']) {
+      return (xhr: JQueryXHR) => xhr.setRequestHeader(header, 'Bearer ' + connectOptions['token']);
     } else if (connectOptions && connectOptions.userName && connectOptions.password) {
       log.debug("Setting authorization header to username/password");
       return (xhr: JQueryXHR) =>
