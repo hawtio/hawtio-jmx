@@ -12,7 +12,7 @@ namespace Runtime {
         return threads.filter(thread => re.test(thread.threadName));
       }
     };
-      
+
     let allThreads;
 
     $scope.toolbarConfig = {
@@ -47,33 +47,33 @@ namespace Runtime {
     };
 
     $scope.tableColumns = [
-      { 
+      {
         header: 'ID',
         itemField: 'threadId'
       },
-      { 
+      {
         header: 'State',
         itemField: 'threadState'
       },
-      { 
+      {
         header: 'Name',
         itemField: 'threadName',
         templateFn: value => `<span class="table-cell-truncated" title="${value}">${value}</span>`
       },
-      { 
+      {
         header: 'Waited Time',
         itemField: 'waitedTime'
       },
-      { 
+      {
         header: 'Blocked Time',
         itemField: 'blockedTime'
       },
-      { 
+      {
         header: 'Native',
         itemField: 'inNative',
         templateFn: value => value ? '<span class="fa fa-circle" aria-hidden="true"></span>' : ''
       },
-      { 
+      {
         header: 'Suspended',
         itemField: 'suspended',
         templateFn: value => value ? '<span class="fa fa-circle" aria-hidden="true"></span>' : ''
@@ -98,6 +98,7 @@ namespace Runtime {
       threadsService.getThreads().then(threads => {
         allThreads = threads;
         $scope.filteredThreads = threads;
+        updateResultCount();
       });
     }
 
@@ -113,11 +114,11 @@ namespace Runtime {
       });
       $scope.filteredThreads = filteredThreads;
     }
-    
+
     function updateResultCount() {
       $scope.toolbarConfig.filterConfig.resultsCount = $scope.filteredThreads.length;
     }
-    
+
     function viewDetails(action, item) {
       $scope.thread = _.find($scope.filteredThreads, thread => thread.threadId === item.threadId);
       openModal();

@@ -5366,8 +5366,8 @@ var Jmx;
 /// <reference path="jmxHelpers.ts"/>
 var Jmx;
 (function (Jmx) {
-    var log = Logger.get("workspace");
-    var logTree = Logger.get("workspace-tree");
+    var log = Logger.get("hawtio-jmx-workspace");
+    var logTree = Logger.get("hawtio-jmx-workspace-tree");
     var HAWTIO_REGISTRY_MBEAN = "hawtio:type=Registry";
     var HAWTIO_TREE_WATCHER_MBEAN = "hawtio:type=TreeWatcher";
     /**
@@ -5477,7 +5477,7 @@ var Jmx;
                 ignoreErrors: true,
                 error: function (response) {
                     workspace.treeFetched = true;
-                    log.debug("Error fetching JMX tree: ", response);
+                    log.debug("Error fetching JMX tree:", response);
                 }
             };
             log.debug("jolokia:", this.jolokia);
@@ -10187,6 +10187,7 @@ var Runtime;
             threadsService.getThreads().then(function (threads) {
                 allThreads = threads;
                 $scope.filteredThreads = threads;
+                updateResultCount();
             });
         }
         function filterChange(filters) {
