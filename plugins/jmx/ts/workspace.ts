@@ -3,8 +3,8 @@
 
 namespace Jmx {
 
-  const log: Logging.Logger = Logger.get("workspace");
-  const logTree: Logging.Logger = Logger.get("workspace-tree");
+  const log: Logging.Logger = Logger.get("hawtio-jmx-workspace");
+  const logTree: Logging.Logger = Logger.get("hawtio-jmx-workspace-tree");
 
   const HAWTIO_REGISTRY_MBEAN: string = "hawtio:type=Registry";
   const HAWTIO_TREE_WATCHER_MBEAN: string = "hawtio:type=TreeWatcher";
@@ -138,7 +138,7 @@ namespace Jmx {
         ignoreErrors: true,
         error: (response) => {
           workspace.treeFetched = true;
-          log.debug("Error fetching JMX tree: ", response);
+          log.debug("Error fetching JMX tree:", response);
         }
       };
       log.debug("jolokia:", this.jolokia);
