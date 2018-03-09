@@ -727,6 +727,7 @@ declare namespace Jmx {
         constructor($rootScope: ng.IRootScopeService, $q: ng.IQService, workspace: Jmx.Workspace);
         treeContainsDomainAndProperties(domainName: string, properties?: any): ng.IPromise<boolean>;
         findMBeanWithProperties(domainName: string, properties?: any, propertiesCount?: any): ng.IPromise<any>;
+        getSelectedMBean(): ng.IPromise<NodeSelection>;
         getSelectedMBeanName(): ng.IPromise<string>;
         runWhenTreeReady(fn: () => any): ng.IPromise<any>;
         private runWhenTreeSelectionReady(fn);
@@ -1073,9 +1074,12 @@ declare namespace JVM {
         private $q;
         private jolokia;
         constructor($q: ng.IQService, jolokia: Jolokia.IJolokia);
-        getAttribute(mbean: string, attribute: string): ng.IPromise<any>;
-        execute(mbean: string, operation: string, ...args: any[]): ng.IPromise<any>;
-        readMany(mbeans: string[]): ng.IPromise<any>;
+        getMBean(objectName: string): ng.IPromise<any>;
+        getMBeans(objectNames: string[]): ng.IPromise<any[]>;
+        getAttribute(objectName: string, attribute: string): ng.IPromise<any>;
+        getAttributes(objectName: string, attributes: string[]): ng.IPromise<object>;
+        execute(objectName: string, operation: string, ...args: any[]): ng.IPromise<any>;
+        executeMany(objectNames: string[], operation: string, ...args: any[]): ng.IPromise<any[]>;
     }
 }
 /**

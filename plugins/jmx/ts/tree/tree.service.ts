@@ -15,6 +15,10 @@ namespace Jmx {
     public findMBeanWithProperties(domainName: string, properties = null, propertiesCount = null): ng.IPromise<any> {
       return this.runWhenTreeReady(() => this.workspace.findMBeanWithProperties(domainName, properties, propertiesCount));
     }
+
+    public getSelectedMBean(): ng.IPromise<NodeSelection> {
+      return this.runWhenTreeSelectionReady(() => this.workspace.getSelectedMBean());
+    }
     
     public getSelectedMBeanName(): ng.IPromise<string> {
       return this.runWhenTreeSelectionReady(() => this.workspace.getSelectedMBeanName());

@@ -881,8 +881,19 @@ namespace Jmx {
       if (properties) {
         if (!entries) return false;
         for (let key in properties) {
-          let value = properties[key];
-          if (!value || entries[key] !== value) {
+          const entryValue = entries[key];
+          let propertyValue = properties[key];
+          if (!propertyValue) {
+            return false;
+          } else if (_.startsWith(propertyValue, '*')) {
+            if (!_.endsWith(entryValue, propertyValue.substr(1))) {
+              return false;
+            }
+          } else if (_.endsWith(propertyValue, '*')) {
+            if (!_.startsWith(entryValue, propertyValue.substr(0, propertyValue.length - 1))) {
+              return false;
+            }
+          } else if (entryValue !== propertyValue) {
             return false;
           }
         }

@@ -6213,8 +6213,22 @@ var Jmx;
                 if (!entries)
                     return false;
                 for (var key in properties) {
-                    var value = properties[key];
-                    if (!value || entries[key] !== value) {
+                    var entryValue = entries[key];
+                    var propertyValue = properties[key];
+                    if (!propertyValue) {
+                        return false;
+                    }
+                    else if (_.startsWith(propertyValue, '*')) {
+                        if (!_.endsWith(entryValue, propertyValue.substr(1))) {
+                            return false;
+                        }
+                    }
+                    else if (_.endsWith(propertyValue, '*')) {
+                        if (!_.startsWith(entryValue, propertyValue.substr(0, propertyValue.length - 1))) {
+                            return false;
+                        }
+                    }
+                    else if (entryValue !== propertyValue) {
                         return false;
                     }
                 }
@@ -6376,6 +6390,10 @@ var Jmx;
             if (properties === void 0) { properties = null; }
             if (propertiesCount === void 0) { propertiesCount = null; }
             return this.runWhenTreeReady(function () { return _this.workspace.findMBeanWithProperties(domainName, properties, propertiesCount); });
+        };
+        TreeService.prototype.getSelectedMBean = function () {
+            var _this = this;
+            return this.runWhenTreeSelectionReady(function () { return _this.workspace.getSelectedMBean(); });
         };
         TreeService.prototype.getSelectedMBeanName = function () {
             var _this = this;
@@ -9163,52 +9181,111 @@ var JVM;
             this.$q = $q;
             this.jolokia = jolokia;
         }
-        JolokiaService.prototype.getAttribute = function (mbean, attribute) {
+        JolokiaService.prototype.getMBean = function (objectName) {
             var _this = this;
             return this.$q(function (resolve, reject) {
-                _this.jolokia.request({ type: 'read', mbean: mbean, attribute: attribute }, Core.onSuccess(function (response) {
+                _this.jolokia.request({ type: 'read', mbean: objectName }, Core.onSuccess(function (response) {
                     resolve(response.value);
                 }, {
                     error: function (response) {
-                        JVM.log.error("JolokiaService.getAttribute('" + mbean + "', '" + attribute + "') failed. Error: " + response.error);
+                        JVM.log.error("JolokiaService.getMBean('" + objectName + "') failed. Error: " + response.error);
                         reject(response.error);
                     }
                 }));
             });
         };
-        JolokiaService.prototype.execute = function (mbean, operation) {
+        JolokiaService.prototype.getMBeans = function (objectNames) {
+            var _this = this;
+            return this.$q(function (resolve, reject) {
+                if (objectNames.length === 0) {
+                    return resolve([]);
+                }
+                else {
+                    var requests_1 = objectNames.map(function (mbeanName) { return ({ type: 'read', mbean: mbeanName }); });
+                    var mbeans_1 = [];
+                    _this.jolokia.request(requests_1, Core.onSuccess(function (response) {
+                        mbeans_1.push(response.value);
+                        if (mbeans_1.length === requests_1.length) {
+                            resolve(mbeans_1);
+                        }
+                    }, {
+                        error: function (response) {
+                            JVM.log.error("JolokiaService.getMBeans('" + objectNames + "') failed. Error: " + response.error);
+                            reject(response.error);
+                        }
+                    }));
+                }
+            });
+        };
+        JolokiaService.prototype.getAttribute = function (objectName, attribute) {
+            var _this = this;
+            return this.$q(function (resolve, reject) {
+                _this.jolokia.request({ type: 'read', mbean: objectName, attribute: attribute }, Core.onSuccess(function (response) {
+                    resolve(response.value);
+                }, {
+                    error: function (response) {
+                        JVM.log.error("JolokiaService.getAttribute('" + objectName + "', '" + attribute + "') failed. Error: " + response.error);
+                        reject(response.error);
+                    }
+                }));
+            });
+        };
+        JolokiaService.prototype.getAttributes = function (objectName, attributes) {
+            var _this = this;
+            return this.$q(function (resolve, reject) {
+                _this.jolokia.request({ type: 'read', mbean: objectName, attribute: attributes }, Core.onSuccess(function (response) {
+                    resolve(response.value);
+                }, {
+                    error: function (response) {
+                        JVM.log.error("JolokiaService.getAttributes('" + objectName + "', '" + attributes + "') failed. Error: " + response.error);
+                        reject(response.error);
+                    }
+                }));
+            });
+        };
+        JolokiaService.prototype.execute = function (objectName, operation) {
             var _this = this;
             var args = [];
             for (var _i = 2; _i < arguments.length; _i++) {
                 args[_i - 2] = arguments[_i];
             }
             return this.$q(function (resolve, reject) {
-                _this.jolokia.request({ type: 'exec', mbean: mbean, operation: operation, arguments: args }, Core.onSuccess(function (response) {
+                _this.jolokia.request({ type: 'exec', mbean: objectName, operation: operation, arguments: args }, Core.onSuccess(function (response) {
                     resolve(response.value);
                 }, {
                     error: function (response) {
-                        JVM.log.error("JolokiaService.execute('" + mbean + "', '" + operation + "', '" + args + "') failed. Error: " + response.error);
+                        JVM.log.error("JolokiaService.execute('" + objectName + "', '" + operation + "', '" + args + "') failed. Error: " + response.error);
                         reject(response.error);
                     }
                 }));
             });
         };
-        JolokiaService.prototype.readMany = function (mbeans) {
+        JolokiaService.prototype.executeMany = function (objectNames, operation) {
             var _this = this;
+            var args = [];
+            for (var _i = 2; _i < arguments.length; _i++) {
+                args[_i - 2] = arguments[_i];
+            }
             return this.$q(function (resolve, reject) {
-                var requests = mbeans.map(function (mbean) { return ({ type: "read", mbean: mbean }); });
-                var objects = [];
-                _this.jolokia.request(requests, Core.onSuccess(function (response) {
-                    objects.push(response.value);
-                    if (objects.length === requests.length) {
-                        resolve(objects);
-                    }
-                }, {
-                    error: function (response) {
-                        JVM.log.error("JolokiaService.readMany('" + mbeans + "') failed. Error: " + response.error);
-                        reject(response.error);
-                    }
-                }));
+                if (objectNames.length === 0) {
+                    return resolve([]);
+                }
+                else {
+                    var requests_2 = objectNames.map(function (objectName) { return ({ type: 'exec', mbean: objectName, operation: operation, arguments: args }); });
+                    var results_1 = [];
+                    _this.jolokia.request(requests_2, Core.onSuccess(function (response) {
+                        results_1.push(response.value);
+                        console.log(results_1);
+                        if (results_1.length === requests_2.length) {
+                            resolve(results_1);
+                        }
+                    }, {
+                        error: function (response) {
+                            JVM.log.error("JolokiaService.executeMany('" + objectNames + "', '" + operation + "', '" + args + "') failed. Error: " + response.error);
+                            reject(response.error);
+                        }
+                    }));
+                }
             });
         };
         return JolokiaService;
