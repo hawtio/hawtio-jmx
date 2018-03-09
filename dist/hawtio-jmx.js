@@ -10012,10 +10012,9 @@ var Runtime;
                     break;
                 case 'org.springframework.boot:type=Endpoint,name=metricsEndpoint':
                     updateType = Runtime.MetricType.SPRING_BOOT;
-                    updates.push(this.metricsService.createMetric('Active HTTP sessions', metrics.Data['httpsessions.active']));
-                    // Filter out other metrics which may be of interest
+                    // Filter out metrics that are already shown under JVM & Runtime
                     Object.keys(metrics.Data).filter(function (key) {
-                        return /^(counter|gauge|datasource|cache)/.test(key);
+                        return !/^(mem|processors|instance|uptime|heap|nonheap|threads|classes|gc|systemload)/.test(key);
                     }).forEach(function (metricName) {
                         updates.push(_this.metricsService.createMetric(_this.humanizeService.toSentenceCase(metricName), metrics.Data[metricName]));
                     });
