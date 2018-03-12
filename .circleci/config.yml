@@ -35,3 +35,7 @@ jobs:
         
       # run tests!
       - run: yarn test
+
+    branches:
+      only:
+        - master
