@@ -9,6 +9,7 @@ var __extends = (this && this.__extends) || (function () {
     };
 })();
 /// <reference path="../libs/hawtio-forms/defs.d.ts"/>
+/// <reference path="../libs/hawtio-ui/defs.d.ts"/>
 /// <reference path="../libs/hawtio-utilities/defs.d.ts"/>
 /// <reference path="../../includes.ts"/>
 var JVM;
@@ -2426,8 +2427,8 @@ var Jmx;
             field: 'name',
             displayName: 'Property',
             width: "27%",
-            cellTemplate: '<div class="ngCellText" title="{{row.entity.attrDesc}}" ' +
-                'data-placement="bottom"><div ng-show="!inDashboard" class="inline" compile="row.entity.getDashboardWidgets()"></div><a href="" ng-click="row.entity.onViewAttribute()">{{row.entity.name}}</a></div>'
+            cellTemplate: '<div class="ngCellText" title="{{row.entity.attrDesc}}" data-placement="bottom">' +
+                '<a href="" ng-click="row.entity.onViewAttribute()">{{row.entity.name}}</a></div>'
         },
         {
             field: 'value',

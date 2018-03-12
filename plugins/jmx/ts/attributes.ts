@@ -9,8 +9,8 @@ module Jmx {
       field: 'name',
       displayName: 'Property',
       width: "27%",
-      cellTemplate: '<div class="ngCellText" title="{{row.entity.attrDesc}}" ' +
-        'data-placement="bottom"><div ng-show="!inDashboard" class="inline" compile="row.entity.getDashboardWidgets()"></div><a href="" ng-click="row.entity.onViewAttribute()">{{row.entity.name}}</a></div>'},
+      cellTemplate: '<div class="ngCellText" title="{{row.entity.attrDesc}}" data-placement="bottom">' +
+        '<a href="" ng-click="row.entity.onViewAttribute()">{{row.entity.name}}</a></div>'},
     {
       field: 'value',
       displayName: 'Value',
