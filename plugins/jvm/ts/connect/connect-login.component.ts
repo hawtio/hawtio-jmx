@@ -2,7 +2,8 @@ namespace JVM {
 
   export class ConnectLoginController {
 
-    constructor(private $uibModal, private $location: ng.ILocationService) {
+    constructor(private $location: ng.ILocationService, private $window: ng.IWindowService, private $uibModal,
+      private userDetails: Core.AuthService, private postLoginTasks: Core.Tasks, private postLogoutTasks: Core.Tasks) {
       'ngInject';
     }
 
@@ -12,11 +13,23 @@ namespace JVM {
         component: 'connectLoginModal'
       })
       .result.then(credentials => {
-        window.opener.credentials = credentials;
-        window.location.href = this.$location.search().redirect;
+        this.registerTaskToPersistCredentials(credentials);
+        this.userDetails.login(credentials.username, credentials.password);
+        this.$window.location.href = this.$location.search().redirect;
       })
       .catch(error => {
-        window.close();
+        this.$window.close();
+      });
+    }
+    
+    private registerTaskToPersistCredentials(credentials) {
+      this.postLoginTasks.addTask('set-credentials-in-session-storage', () => {
+        this.$window.sessionStorage.setItem('username', credentials.username);
+        this.$window.sessionStorage.setItem('password', credentials.password);
+      });
+      this.postLogoutTasks.addTask('remove-credentials-from-session-storage', () => {
+        this.$window.sessionStorage.removeItem('username');
+        this.$window.sessionStorage.removeItem('password');
       });
     }
   }

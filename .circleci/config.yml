@@ -5,6 +5,10 @@
 version: 2
 jobs:
   build:
+    branches:
+      only:
+        - master
+
     docker:
       # specify the version you desire here
       - image: circleci/node:8-browsers
@@ -35,7 +39,3 @@ jobs:
         
       # run tests!
       - run: yarn test
-
-    branches:
-      only:
-        - master

@@ -190,10 +190,15 @@ declare namespace JVM {
 }
 declare namespace JVM {
     class ConnectLoginController {
-        private $uibModal;
         private $location;
-        constructor($uibModal: any, $location: ng.ILocationService);
+        private $window;
+        private $uibModal;
+        private userDetails;
+        private postLoginTasks;
+        private postLogoutTasks;
+        constructor($location: ng.ILocationService, $window: ng.IWindowService, $uibModal: any, userDetails: Core.AuthService, postLoginTasks: Core.Tasks, postLogoutTasks: Core.Tasks);
         $onInit(): void;
+        private registerTaskToPersistCredentials(credentials);
     }
     const connectLoginComponent: angular.IComponentOptions;
 }

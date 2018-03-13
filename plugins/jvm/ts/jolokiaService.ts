@@ -138,13 +138,11 @@ namespace JVM {
       return null;
     }
     let answer = getConnectOptions(name);
-    // search for passed credentials when connecting to remote server
-    if (window.opener && window.opener.credentials) {
-      const credentials = window.opener.credentials;
-      answer.userName = credentials.username;
-      answer.password = credentials.password;
-      window.opener.credentials = null;
-    }
+   
+    // load saved credentials when connecting to remote server
+    answer.userName = sessionStorage.getItem('username');
+    answer.password = sessionStorage.getItem('password');
+
     return answer;
   })();
 

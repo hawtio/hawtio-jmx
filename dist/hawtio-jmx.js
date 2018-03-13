@@ -4499,11 +4499,15 @@ var JVM;
 var JVM;
 (function (JVM) {
     var ConnectLoginController = /** @class */ (function () {
-        ConnectLoginController.$inject = ["$uibModal", "$location"];
-        function ConnectLoginController($uibModal, $location) {
+        ConnectLoginController.$inject = ["$location", "$window", "$uibModal", "userDetails", "postLoginTasks", "postLogoutTasks"];
+        function ConnectLoginController($location, $window, $uibModal, userDetails, postLoginTasks, postLogoutTasks) {
             'ngInject';
-            this.$uibModal = $uibModal;
             this.$location = $location;
+            this.$window = $window;
+            this.$uibModal = $uibModal;
+            this.userDetails = userDetails;
+            this.postLoginTasks = postLoginTasks;
+            this.postLogoutTasks = postLogoutTasks;
         }
         ConnectLoginController.prototype.$onInit = function () {
             var _this = this;
@@ -4512,11 +4516,23 @@ var JVM;
                 component: 'connectLoginModal'
             })
                 .result.then(function (credentials) {
-                window.opener.credentials = credentials;
-                window.location.href = _this.$location.search().redirect;
+                _this.registerTaskToPersistCredentials(credentials);
+                _this.userDetails.login(credentials.username, credentials.password);
+                _this.$window.location.href = _this.$location.search().redirect;
             })
                 .catch(function (error) {
-                window.close();
+                _this.$window.close();
+            });
+        };
+        ConnectLoginController.prototype.registerTaskToPersistCredentials = function (credentials) {
+            var _this = this;
+            this.postLoginTasks.addTask('set-credentials-in-session-storage', function () {
+                _this.$window.sessionStorage.setItem('username', credentials.username);
+                _this.$window.sessionStorage.setItem('password', credentials.password);
+            });
+            this.postLogoutTasks.addTask('remove-credentials-from-session-storage', function () {
+                _this.$window.sessionStorage.removeItem('username');
+                _this.$window.sessionStorage.removeItem('password');
             });
         };
         return ConnectLoginController;
@@ -4825,13 +4841,9 @@ var JVM;
             return null;
         }
         var answer = JVM.getConnectOptions(name);
-        // search for passed credentials when connecting to remote server
-        if (window.opener && window.opener.credentials) {
-            var credentials = window.opener.credentials;
-            answer.userName = credentials.username;
-            answer.password = credentials.password;
-            window.opener.credentials = null;
-        }
+        // load saved credentials when connecting to remote server
+        answer.userName = sessionStorage.getItem('username');
+        answer.password = sessionStorage.getItem('password');
         return answer;
     })();
     function getJolokiaUrl() {
