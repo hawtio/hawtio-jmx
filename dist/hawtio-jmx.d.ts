@@ -181,11 +181,6 @@ declare namespace JVM {
     const connectEditModalComponent: angular.IComponentOptions;
 }
 declare namespace JVM {
-    class ConnectDeleteModalController {
-        modalInstance: any;
-        cancel(): void;
-        deleteConnection(): void;
-    }
     const connectDeleteModalComponent: angular.IComponentOptions;
 }
 declare namespace JVM {
@@ -215,10 +210,6 @@ declare namespace JVM {
     const connectLoginModalComponent: angular.IComponentOptions;
 }
 declare namespace JVM {
-    class ConnectUnreachableModalController {
-        modalInstance: any;
-        ok(): void;
-    }
     const connectUnreachableModalComponent: angular.IComponentOptions;
 }
 declare namespace JVM {

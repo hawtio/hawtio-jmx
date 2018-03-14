@@ -4476,24 +4476,12 @@ var JVM;
 })(JVM || (JVM = {}));
 var JVM;
 (function (JVM) {
-    var ConnectDeleteModalController = /** @class */ (function () {
-        function ConnectDeleteModalController() {
-        }
-        ConnectDeleteModalController.prototype.cancel = function () {
-            this.modalInstance.dismiss();
-        };
-        ConnectDeleteModalController.prototype.deleteConnection = function () {
-            this.modalInstance.close();
-        };
-        return ConnectDeleteModalController;
-    }());
-    JVM.ConnectDeleteModalController = ConnectDeleteModalController;
     JVM.connectDeleteModalComponent = {
         bindings: {
-            modalInstance: '<'
+            close: '&',
+            dismiss: '&'
         },
-        template: "\n      <div class=\"modal-header\">\n        <button type=\"button\" class=\"close\" aria-label=\"Close\" ng-click=\"$ctrl.cancel()\">\n          <span class=\"pficon pficon-close\" aria-hidden=\"true\"></span>\n        </button>\n        <h4>Are you sure?</h4>\n      </div>\n      <div class=\"modal-body\">\n        <p>You are about to delete this connection.</p>\n      </div>\n      <div class=\"modal-footer\">\n        <button type=\"button\" class=\"btn btn-default\" ng-click=\"$ctrl.cancel()\">Cancel</button>\n        <button type=\"button\" class=\"btn btn-danger\" ng-click=\"$ctrl.deleteConnection()\">Delete</button>\n      </div>\n    ",
-        controller: ConnectDeleteModalController
+        template: "\n      <div class=\"modal-header\">\n        <button type=\"button\" class=\"close\" aria-label=\"Close\" ng-click=\"$ctrl.dismiss()\">\n          <span class=\"pficon pficon-close\" aria-hidden=\"true\"></span>\n        </button>\n        <h4 class=\"modal-title\">Are you sure?</h4>\n      </div>\n      <div class=\"modal-body\">\n        <p>You are about to delete this connection.</p>\n      </div>\n      <div class=\"modal-footer\">\n        <button type=\"button\" class=\"btn btn-default\" ng-click=\"$ctrl.dismiss()\">Cancel</button>\n        <button type=\"button\" class=\"btn btn-danger\" ng-click=\"$ctrl.close()\">Delete</button>\n      </div>\n    "
     };
 })(JVM || (JVM = {}));
 var JVM;
@@ -4580,21 +4568,11 @@ var JVM;
 })(JVM || (JVM = {}));
 var JVM;
 (function (JVM) {
-    var ConnectUnreachableModalController = /** @class */ (function () {
-        function ConnectUnreachableModalController() {
-        }
-        ConnectUnreachableModalController.prototype.ok = function () {
-            this.modalInstance.close();
-        };
-        return ConnectUnreachableModalController;
-    }());
-    JVM.ConnectUnreachableModalController = ConnectUnreachableModalController;
     JVM.connectUnreachableModalComponent = {
         bindings: {
-            modalInstance: '<'
+            close: '&'
         },
-        template: "\n      <div class=\"modal-header\">\n        <button type=\"button\" class=\"close\" aria-label=\"Close\" ng-click=\"$ctrl.ok()\">\n          <span class=\"pficon pficon-close\" aria-hidden=\"true\"></span>\n        </button>\n        <h4>Can't connect</h4>\n      </div>\n      <div class=\"modal-body\">\n        <p>This Jolokia endpoint is unreachable. Please check the connection details and try again.</p>\n      </div>\n      <div class=\"modal-footer\">\n        <button type=\"button\" class=\"btn btn-primary\" ng-click=\"$ctrl.ok()\">OK</button>\n      </div>\n    ",
-        controller: ConnectUnreachableModalController
+        template: "\n      <div class=\"modal-header\">\n        <button type=\"button\" class=\"close\" aria-label=\"Close\" ng-click=\"$ctrl.close()\">\n          <span class=\"pficon pficon-close\" aria-hidden=\"true\"></span>\n        </button>\n        <h4 class=\"modal-title\">Endpoint Unreachable</h4>\n      </div>\n      <div class=\"modal-body\">\n        <p>This Jolokia endpoint is unreachable. Please check the connection details and try again.</p>\n      </div>\n      <div class=\"modal-footer\">\n        <button type=\"button\" class=\"btn btn-primary\" ng-click=\"$ctrl.close()\">OK</button>\n      </div>\n    "
     };
 })(JVM || (JVM = {}));
 var JVM;
