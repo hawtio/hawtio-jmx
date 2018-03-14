@@ -266,11 +266,9 @@ namespace JVM {
               }
             } else {
               // just logout
-              /* Logout here prevents keycloak from working
               if (userDetails.loggedIn) {
                 userDetails.logout();
               }
-              */
             }
           } else {
             jolokiaStatus.xhr = xhr;
