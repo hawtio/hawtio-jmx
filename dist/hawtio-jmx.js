@@ -4016,7 +4016,7 @@ var JVM;
 (function (JVM) {
     JVM.rootPath = 'plugins/jvm';
     JVM.templatePath = UrlHelpers.join(JVM.rootPath, '/html');
-    JVM.pluginName = 'hawtio-jvm';
+    JVM.pluginName = 'hawtio-jmx-jvm';
     JVM.log = Logger.get(JVM.pluginName);
     JVM.connectControllerKey = "jvmConnectSettings";
     JVM.connectionSettingsKey = 'jvmConnect';
@@ -4928,11 +4928,9 @@ var JVM;
                         }
                         else {
                             // just logout
-                            /* Logout here prevents keycloak from working
                             if (userDetails.loggedIn) {
-                              userDetails.logout();
+                                userDetails.logout();
                             }
-                            */
                         }
                     }
                     else {
@@ -6908,7 +6906,7 @@ var Diagnostics;
 /// <reference path="diagnostics.service.ts"/>
 var Diagnostics;
 (function (Diagnostics) {
-    var pluginName = 'hawtio-diagnostics';
+    var pluginName = 'hawtio-jmx-diagnostics';
     Diagnostics.log = Logger.get(pluginName);
     Diagnostics._module = angular
         .module(pluginName, [])
@@ -8487,7 +8485,6 @@ var Jmx;
 var Jmx;
 (function (Jmx) {
     Jmx._module.controller("Jmx.ChartController", ["$scope", "$element", "$location", "workspace", "localStorage", "jolokiaUrl", "jolokiaParams", function ($scope, $element, $location, workspace, localStorage, jolokiaUrl, jolokiaParams) {
-            var log = Logger.get("JMX");
             $scope.title = workspace.selection ? workspace.selection.text : '';
             $scope.metrics = [];
             $scope.updateRate = 1000; //parseInt(localStorage['updateRate']);
@@ -8705,7 +8702,7 @@ var Jmx;
                         }
                         catch (error) {
                             // still rendering at not the right time...
-                            // log.debug("error: ", error);
+                            Jmx.log.debug("error:", error);
                             if (!bail) {
                                 bail = true;
                             }
@@ -8725,7 +8722,7 @@ var Jmx;
                             d3Selection.selectAll(".value").style("right", i === null ? null : context.size() - i + "px");
                         }
                         catch (error) {
-                            log.info("error: ", error);
+                            Jmx.log.info("error:", error);
                         }
                     });
                     $scope.metrics.forEach(function (metric) {
@@ -9725,7 +9722,7 @@ var RBAC;
 var RBAC;
 (function (RBAC) {
     addTreePostProcessor.$inject = ["jolokia", "jolokiaStatus", "rbacTasks", "preLogoutTasks", "workspace"];
-    RBAC.pluginName = "hawtio-rbac";
+    RBAC.pluginName = "hawtio-jmx-rbac";
     RBAC.log = Logger.get(RBAC.pluginName);
     angular
         .module(RBAC.pluginName, [])
@@ -10358,7 +10355,7 @@ var Runtime;
 var Runtime;
 (function (Runtime) {
     var runtimeModule = angular
-        .module('hawtio-runtime', [
+        .module('hawtio-jmx-runtime', [
         Runtime.systemPropertiesModule,
         Runtime.metricsModule,
         Runtime.threadsModule

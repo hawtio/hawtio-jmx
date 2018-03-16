@@ -44,7 +44,7 @@ declare namespace Diagnostics {
 declare namespace JVM {
     const rootPath = "plugins/jvm";
     const templatePath: string;
-    const pluginName = "hawtio-jvm";
+    const pluginName = "hawtio-jmx-jvm";
     const log: Logging.Logger;
     const connectControllerKey = "jvmConnectSettings";
     const connectionSettingsKey = "jvmConnect";
