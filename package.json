@@ -208,6 +208,6 @@
     "@types/jquery": "2.0.49",
     "@types/angular": "1.6.43",
     "angular-route": "1.6.9",
-    "@hawtio/core": "3.2.20"
+    "@hawtio/core": "3.2.22"
   }
 }
