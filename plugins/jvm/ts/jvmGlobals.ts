@@ -2,7 +2,7 @@ namespace JVM {
 
   export const rootPath = 'plugins/jvm';
   export const templatePath = UrlHelpers.join(rootPath, '/html');
-  export const pluginName = 'hawtio-jvm';
+  export const pluginName = 'hawtio-jmx-jvm';
   export const log: Logging.Logger = Logger.get(pluginName);
   export const connectControllerKey = "jvmConnectSettings";
   export const connectionSettingsKey = 'jvmConnect';

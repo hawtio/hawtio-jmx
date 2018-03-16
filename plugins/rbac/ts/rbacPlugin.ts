@@ -11,7 +11,7 @@
 
 namespace RBAC {
 
-  export const pluginName: string = "hawtio-rbac";
+  export const pluginName: string = "hawtio-jmx-rbac";
   export const log: Logging.Logger = Logger.get(pluginName);
 
   angular

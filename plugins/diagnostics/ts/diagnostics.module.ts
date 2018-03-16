@@ -7,7 +7,7 @@
 
 namespace Diagnostics {
 
-  let pluginName = 'hawtio-diagnostics';
+  const pluginName: string = 'hawtio-jmx-diagnostics';
 
   export const log: Logging.Logger = Logger.get(pluginName);
   

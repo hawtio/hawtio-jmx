@@ -8,7 +8,7 @@
 namespace Runtime {
 
   const runtimeModule = angular
-    .module('hawtio-runtime', [
+    .module('hawtio-jmx-runtime', [
       systemPropertiesModule,
       metricsModule,
       threadsModule

@@ -4,8 +4,6 @@ namespace Jmx {
 
   _module.controller("Jmx.ChartController", ["$scope", "$element", "$location", "workspace", "localStorage", "jolokiaUrl", "jolokiaParams", ($scope, $element, $location, workspace:Workspace, localStorage, jolokiaUrl, jolokiaParams) => {
 
-    var log:Logging.Logger = Logger.get("JMX");
-
     $scope.title = workspace.selection ? workspace.selection.text : '';
     $scope.metrics = [];
     $scope.updateRate = 1000; //parseInt(localStorage['updateRate']);
@@ -249,7 +247,7 @@ namespace Jmx {
                     d3.select(this).call(context.axis().ticks(12).orient(d));
                   } catch (error) {
                     // still rendering at not the right time...
-                    // log.debug("error: ", error);
+                    log.debug("error:", error);
                     if (!bail) {
                       bail = true;
                     }
@@ -271,7 +269,7 @@ namespace Jmx {
           try {
             d3Selection.selectAll(".value").style("right", i === null ? null : context.size() - i + "px");
           } catch (error) {
-            log.info("error: ", error);
+            log.info("error:", error);
           }
         });
 
