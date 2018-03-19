@@ -6371,7 +6371,7 @@ var Jmx;
         TreeService.prototype.treeContainsDomainAndProperties = function (domainName, properties) {
             var _this = this;
             if (properties === void 0) { properties = null; }
-            return this.runWhenTreeReady(function () { return _this.workspace.treeContainsDomainAndProperties('java.lang', { type: 'Threading' }); });
+            return this.runWhenTreeReady(function () { return _this.workspace.treeContainsDomainAndProperties(domainName, properties); });
         };
         TreeService.prototype.findMBeanWithProperties = function (domainName, properties, propertiesCount) {
             var _this = this;

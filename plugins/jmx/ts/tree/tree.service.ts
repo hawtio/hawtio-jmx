@@ -9,7 +9,7 @@ namespace Jmx {
     }
 
     public treeContainsDomainAndProperties(domainName: string, properties = null): ng.IPromise<boolean> {
-      return this.runWhenTreeReady(() => this.workspace.treeContainsDomainAndProperties('java.lang', { type: 'Threading' }));
+      return this.runWhenTreeReady(() => this.workspace.treeContainsDomainAndProperties(domainName, properties));
     }
 
     public findMBeanWithProperties(domainName: string, properties = null, propertiesCount = null): ng.IPromise<any> {
