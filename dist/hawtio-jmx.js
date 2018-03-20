@@ -8578,6 +8578,9 @@ var Jmx;
                     .clientDelay($scope.updateRate)
                     .step($scope.updateRate)
                     .size(width);
+                var horizon = context.horizon();
+                horizon.height(40);
+                horizon.colors(["#6a96c3", "#83b4d7", "#a6cee6", "#d7e7f0", "#d5eed1", "#abdbac", "#83c798", "#66a780"]);
                 $scope.context = context;
                 $scope.jolokiaContext = context.jolokia($scope.jolokia);
                 var search = $location.search();
@@ -8730,7 +8733,7 @@ var Jmx;
                             div.append("div")
                                 .data([metric])
                                 .attr("class", "horizon")
-                                .call(context.horizon());
+                                .call(horizon);
                         });
                     });
                 }

@@ -40,13 +40,16 @@
 .horizon {
   overflow: hidden;
   position: relative;
+  border-top: solid 1px #d4d4d4;
   .title,
   .value {
     bottom: 0;
-    line-height: 30px;
+    line-height: 40px;
     margin: 0 6px;
     position: absolute;
     white-space: nowrap;
+    font-weight: 600;
+    text-shadow: 0 0 5px white;
   }
   .title {
     left: 0;
@@ -57,12 +60,10 @@
   canvas {
     display: block;
   }
-  &:last-child {
-    border-bottom: none;
-  }
-  & + .horizon {
-    border-top: none;
-  }
+}
+
+.horizon:last-of-type {
+  border-bottom: solid 1px #d4d4d4;
 }
 
 .line {

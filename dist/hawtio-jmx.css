@@ -205,14 +205,17 @@ table.jmx-attributes-table th:nth-child(2) {
 .horizon {
   overflow: hidden;
   position: relative;
+  border-top: solid 1px #d4d4d4;
 }
 .horizon .title,
 .horizon .value {
   bottom: 0;
-  line-height: 30px;
+  line-height: 40px;
   margin: 0 6px;
   position: absolute;
   white-space: nowrap;
+  font-weight: 600;
+  text-shadow: 0 0 5px white;
 }
 .horizon .title {
   left: 0;
@@ -223,11 +226,8 @@ table.jmx-attributes-table th:nth-child(2) {
 .horizon canvas {
   display: block;
 }
-.horizon:last-child {
-  border-bottom: none;
-}
-.horizon + .horizon {
-  border-top: none;
+.horizon:last-of-type {
+  border-bottom: solid 1px #d4d4d4;
 }
 .line {
   opacity: .2;
