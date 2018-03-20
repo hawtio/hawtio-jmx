@@ -7721,6 +7721,10 @@ var Jmx;
                     return;
                 }
                 _this.rbacACLMBean.then(function (rbacACLMBean) {
+                    if (!rbacACLMBean) {
+                        // Client-side RBAC is not available
+                        resolve(true);
+                    }
                     _this.jolokia.request({
                         type: 'exec',
                         mbean: rbacACLMBean,
@@ -7864,6 +7868,10 @@ var Jmx;
             var _this = this;
             return this.$q(function (resolve, reject) {
                 return _this.rbacACLMBean.then(function (rbacACLMBean) {
+                    if (!rbacACLMBean) {
+                        // Client-side RBAC is not available
+                        resolve();
+                    }
                     _this.jolokia.request({
                         type: 'exec',
                         mbean: rbacACLMBean,
@@ -9672,7 +9680,6 @@ var RBAC;
                 var chosen = "";
                 if (mbeans.length === 0) {
                     RBAC.log.info("Didn't discover any JMXSecurity mbeans, client-side role based access control is disabled");
-                    return;
                 }
                 else if (mbeans.length === 1) {
                     chosen = mbeans[0];
@@ -9694,11 +9701,11 @@ var RBAC;
                 }
                 if (chosen != null && chosen != "") {
                     RBAC.log.info("Using mbean", chosen, "for client-side role based access control");
-                    _this.initialize(chosen);
                 }
                 else {
                     RBAC.log.info("Didn't discover any effective JMXSecurity mbeans, client-side role based access control is disabled");
                 }
+                _this.initialize(chosen);
             }));
         };
         RBACTasksImpl.prototype.initialize = function (mbean) {

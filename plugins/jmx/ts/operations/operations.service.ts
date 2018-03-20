@@ -63,6 +63,10 @@ namespace Jmx {
     private fetchPermissions(operationMap: { [name: string]: Operation }, mbeanName: string): ng.IPromise<void> {
       return this.$q((resolve, reject) =>
         this.rbacACLMBean.then((rbacACLMBean) => {
+          if (!rbacACLMBean) {
+            // Client-side RBAC is not available
+            resolve();
+          }
           this.jolokia.request(
             {
               type: 'exec',

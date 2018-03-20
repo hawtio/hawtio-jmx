@@ -38,6 +38,10 @@ namespace Jmx {
           return;
         }
         this.rbacACLMBean.then((rbacACLMBean) => {
+          if (!rbacACLMBean) {
+            // Client-side RBAC is not available
+            resolve(true);
+          }
           this.jolokia.request(
             {
               type: 'exec',

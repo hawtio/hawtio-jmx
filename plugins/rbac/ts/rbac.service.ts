@@ -35,7 +35,6 @@ namespace RBAC {
           let chosen = "";
           if (mbeans.length === 0) {
             log.info("Didn't discover any JMXSecurity mbeans, client-side role based access control is disabled");
-            return;
           } else if (mbeans.length === 1) {
             chosen = mbeans[0];
           } else if (mbeans.length > 1) {
@@ -55,10 +54,10 @@ namespace RBAC {
           }
           if (chosen != null && chosen != "") {
             log.info("Using mbean", chosen, "for client-side role based access control");
-            this.initialize(chosen);
           } else {
             log.info("Didn't discover any effective JMXSecurity mbeans, client-side role based access control is disabled");
           }
+          this.initialize(chosen);
         }));
     }
 
