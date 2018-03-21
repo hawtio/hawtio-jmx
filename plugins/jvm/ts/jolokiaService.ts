@@ -237,7 +237,9 @@ namespace JVM {
     jolokiaParams: Jolokia.IParams,
     jolokiaUrl: string,
     userDetails: Core.AuthService,
-    postLoginTasks: Core.Tasks): Jolokia.IJolokia {
+    postLoginTasks: Core.Tasks,
+    $timeout: ng.ITimeoutService,
+    $uibModal): Jolokia.IJolokia {
     'ngInject';
 
     let jolokia: Jolokia.IJolokia = null;
@@ -254,7 +256,8 @@ namespace JVM {
       postLoginTasks.execute();
 
       if (!jolokiaParams.ajaxError) {
-        jolokiaParams.ajaxError = (xhr: JQueryXHR, textStatus: string, error: string) => {
+        let modal = null;
+        jolokiaParams.ajaxError = (xhr: JQueryXHR, textStatus: string, error: any) => {
           if (xhr.status === 403) {
             // If window was opened to connect to remote Jolokia endpoint
             if (window.opener) {
@@ -272,8 +275,32 @@ namespace JVM {
             }
           } else {
             jolokiaStatus.xhr = xhr;
+            $timeout(() => {
+              if (!modal) {
+                modal = $uibModal.open({
+                  templateUrl: UrlHelpers.join(templatePath, 'jolokiaError.html'),
+                  controller: function ($scope, $uibModalInstance, ConnectOptions, jolokia) {
+                    'ngInject';
+                    jolokia.stop();
+                    $scope.responseText = xhr.responseText;
+                    $scope.responseText = xhr.responseText || error.stack;
+                    $scope.ConnectOptions = ConnectOptions;
+                    $scope.retry = () => {
+                      modal = null;
+                      $uibModalInstance.close();
+                      jolokia.start();
+                    }
+                    $scope.goBack = () => {
+                      if (ConnectOptions.returnTo) {
+                        window.location.href = ConnectOptions.returnTo;
+                      }
+                    }
+                  }
+                });
+              }
+            });
           }
-        };
+        }
       }
 
       jolokia = new Jolokia(jolokiaParams);

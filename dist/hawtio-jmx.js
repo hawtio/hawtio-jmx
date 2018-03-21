@@ -4684,7 +4684,7 @@ var JVM;
 var JVM;
 (function (JVM) {
     createJolokiaParams.$inject = ["jolokiaUrl", "localStorage"];
-    createJolokia.$inject = ["$location", "localStorage", "jolokiaStatus", "jolokiaParams", "jolokiaUrl", "userDetails", "postLoginTasks"];
+    createJolokia.$inject = ["$location", "localStorage", "jolokiaStatus", "jolokiaParams", "jolokiaUrl", "userDetails", "postLoginTasks", "$timeout", "$uibModal"];
     var JolokiaListMethod;
     (function (JolokiaListMethod) {
         // constant meaning that general LIST+EXEC Jolokia operations should be used
@@ -4902,7 +4902,7 @@ var JVM;
         answer['url'] = jolokiaUrl;
         return answer;
     }
-    function createJolokia($location, localStorage, jolokiaStatus, jolokiaParams, jolokiaUrl, userDetails, postLoginTasks) {
+    function createJolokia($location, localStorage, jolokiaStatus, jolokiaParams, jolokiaUrl, userDetails, postLoginTasks, $timeout, $uibModal) {
         'ngInject';
         var jolokia = null;
         if (jolokiaUrl) {
@@ -4915,6 +4915,7 @@ var JVM;
             // TODO: Where is the right place to execute post-login tasks for unauthenticated hawtio app?
             postLoginTasks.execute();
             if (!jolokiaParams.ajaxError) {
+                var modal_1 = null;
                 jolokiaParams.ajaxError = function (xhr, textStatus, error) {
                     if (xhr.status === 403) {
                         // If window was opened to connect to remote Jolokia endpoint
@@ -4935,6 +4936,30 @@ var JVM;
                     }
                     else {
                         jolokiaStatus.xhr = xhr;
+                        $timeout(function () {
+                            if (!modal_1) {
+                                modal_1 = $uibModal.open({
+                                    templateUrl: UrlHelpers.join(JVM.templatePath, 'jolokiaError.html'),
+                                    controller: ["$scope", "$uibModalInstance", "ConnectOptions", "jolokia", function ($scope, $uibModalInstance, ConnectOptions, jolokia) {
+                                        'ngInject';
+                                        jolokia.stop();
+                                        $scope.responseText = xhr.responseText;
+                                        $scope.responseText = xhr.responseText || error.stack;
+                                        $scope.ConnectOptions = ConnectOptions;
+                                        $scope.retry = function () {
+                                            modal_1 = null;
+                                            $uibModalInstance.close();
+                                            jolokia.start();
+                                        };
+                                        $scope.goBack = function () {
+                                            if (ConnectOptions.returnTo) {
+                                                window.location.href = ConnectOptions.returnTo;
+                                            }
+                                        };
+                                    }]
+                                });
+                            }
+                        });
                     }
                 };
             }
