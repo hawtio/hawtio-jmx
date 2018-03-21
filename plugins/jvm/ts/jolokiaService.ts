@@ -279,10 +279,12 @@ namespace JVM {
               if (!modal) {
                 modal = $uibModal.open({
                   templateUrl: UrlHelpers.join(templatePath, 'jolokiaError.html'),
-                  controller: function ($scope, $uibModalInstance, ConnectOptions, jolokia: Jolokia.IJolokia) {
+                  controller: function ($scope,
+                    $uibModalInstance: angular.ui.bootstrap.IModalInstanceService,
+                    ConnectOptions: ConnectOptions,
+                    jolokia: Jolokia.IJolokia) {
                     'ngInject';
                     jolokia.stop();
-                    $scope.responseText = xhr.responseText;
                     $scope.responseText = xhr.responseText || error.stack;
                     $scope.ConnectOptions = ConnectOptions;
                     $scope.retry = () => {
@@ -406,6 +408,7 @@ namespace JVM {
     userName?: string;
     password?: string;
     reachable?: boolean;
+    returnTo?: string;
   }
 
   export function createConnectOptions(options: ConnectOptions = {}): ConnectOptions {

@@ -269,6 +269,7 @@ declare namespace JVM {
         userName?: string;
         password?: string;
         reachable?: boolean;
+        returnTo?: string;
     }
     function createConnectOptions(options?: ConnectOptions): ConnectOptions;
 }

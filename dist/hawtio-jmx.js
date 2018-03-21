@@ -4943,7 +4943,6 @@ var JVM;
                                     controller: ["$scope", "$uibModalInstance", "ConnectOptions", "jolokia", function ($scope, $uibModalInstance, ConnectOptions, jolokia) {
                                         'ngInject';
                                         jolokia.stop();
-                                        $scope.responseText = xhr.responseText;
                                         $scope.responseText = xhr.responseText || error.stack;
                                         $scope.ConnectOptions = ConnectOptions;
                                         $scope.retry = function () {
