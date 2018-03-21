@@ -85,6 +85,24 @@ namespace JVM {
         );
       });
     }
+
+    setAttribute(objectName: string, attribute: string, value: any): ng.IPromise<any> {
+      return this.$q((resolve, reject) => {
+        this.jolokia.request(
+          { type: 'write', mbean: objectName, attribute: attribute, value },
+          Core.onSuccess(
+            response => {
+              resolve(response.value)
+            }, {
+              error: response => {
+                log.error(`JolokiaService.setAttribute('${objectName}', '${attribute}', '${value}') failed. Error: ${response.error}`);
+                reject(response.error);
+              }
+            }
+          )
+        );
+      });
+    }
     
     execute(objectName: string, operation: string, ...args: any[]): ng.IPromise<any> {
       return this.$q((resolve, reject) => {

@@ -1076,6 +1076,7 @@ declare namespace JVM {
         getMBeans(objectNames: string[]): ng.IPromise<any[]>;
         getAttribute(objectName: string, attribute: string): ng.IPromise<any>;
         getAttributes(objectName: string, attributes: string[]): ng.IPromise<object>;
+        setAttribute(objectName: string, attribute: string, value: any): ng.IPromise<any>;
         execute(objectName: string, operation: string, ...args: any[]): ng.IPromise<any>;
         executeMany(objectNames: string[], operation: string, ...args: any[]): ng.IPromise<any[]>;
     }
