@@ -1,5 +1,6 @@
 /// <reference types="core" />
 /// <reference types="angular" />
+/// <reference types="angular-ui-bootstrap" />
 /// <reference types="jquery" />
 /// <reference types="forms" />
 /// <reference types="angular-route" />
@@ -147,7 +148,7 @@ declare namespace JVM {
             name: string;
             actionFn: (action: any, connection: any) => void;
         }[];
-        constructor($timeout: ng.ITimeoutService, $uibModal: any, connectService: ConnectService);
+        constructor($timeout: ng.ITimeoutService, $uibModal: angular.ui.bootstrap.IModalService, connectService: ConnectService);
         $onInit(): void;
         $onDestroy(): void;
         setTimerToUpdateReachableFlags(): void;
@@ -191,7 +192,7 @@ declare namespace JVM {
         private userDetails;
         private postLoginTasks;
         private postLogoutTasks;
-        constructor($location: ng.ILocationService, $window: ng.IWindowService, $uibModal: any, userDetails: Core.AuthService, postLoginTasks: Core.Tasks, postLogoutTasks: Core.Tasks);
+        constructor($location: ng.ILocationService, $window: ng.IWindowService, $uibModal: angular.ui.bootstrap.IModalService, userDetails: Core.AuthService, postLoginTasks: Core.Tasks, postLogoutTasks: Core.Tasks);
         $onInit(): void;
         private registerTaskToPersistCredentials(credentials);
     }
@@ -884,7 +885,7 @@ declare namespace Jmx {
     const commonModule: string;
 }
 declare namespace Jmx {
-    function AttributesController($scope: any, $element: any, $location: ng.ILocationService, workspace: Workspace, jmxWidgets: any, jmxWidgetTypes: any, $templateCache: ng.ITemplateCacheService, localStorage: Storage, $browser: any, $timeout: ng.ITimeoutService, $uibModal: any, attributesService: AttributesService): void;
+    function AttributesController($scope: any, $element: any, $location: ng.ILocationService, workspace: Workspace, jmxWidgets: any, jmxWidgetTypes: any, $templateCache: ng.ITemplateCacheService, localStorage: Storage, $browser: any, $timeout: ng.ITimeoutService, $uibModal: angular.ui.bootstrap.IModalService, attributesService: AttributesService): void;
 }
 /**
  * @namespace RBAC
@@ -1261,7 +1262,7 @@ declare namespace Runtime {
     }
 }
 declare namespace Runtime {
-    function ThreadsController($scope: any, $uibModal: any, threadsService: ThreadsService): void;
+    function ThreadsController($scope: any, $uibModal: angular.ui.bootstrap.IModalService, threadsService: ThreadsService): void;
 }
 declare namespace Runtime {
     const threadsModule: string;

@@ -2,7 +2,10 @@
 
 namespace Runtime {
 
-  export function ThreadsController($scope, $uibModal, threadsService: ThreadsService) {
+  export function ThreadsController(
+    $scope,
+    $uibModal: angular.ui.bootstrap.IModalService,
+    threadsService: ThreadsService) {
     'ngInject';
 
     const FILTER_FUNCTIONS = {

@@ -49,7 +49,7 @@ namespace Jmx {
     localStorage: Storage,
     $browser,
     $timeout: ng.ITimeoutService,
-    $uibModal,
+    $uibModal: angular.ui.bootstrap.IModalService,
     attributesService: AttributesService) {
     'ngInject';
 

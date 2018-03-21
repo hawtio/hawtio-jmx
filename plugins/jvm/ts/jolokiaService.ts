@@ -239,7 +239,7 @@ namespace JVM {
     userDetails: Core.AuthService,
     postLoginTasks: Core.Tasks,
     $timeout: ng.ITimeoutService,
-    $uibModal): Jolokia.IJolokia {
+    $uibModal: angular.ui.bootstrap.IModalService): Jolokia.IJolokia {
     'ngInject';
 
     let jolokia: Jolokia.IJolokia = null;

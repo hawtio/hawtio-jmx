@@ -2,8 +2,13 @@ namespace JVM {
 
   export class ConnectLoginController {
 
-    constructor(private $location: ng.ILocationService, private $window: ng.IWindowService, private $uibModal,
-      private userDetails: Core.AuthService, private postLoginTasks: Core.Tasks, private postLogoutTasks: Core.Tasks) {
+    constructor(
+      private $location: ng.ILocationService,
+      private $window: ng.IWindowService,
+      private $uibModal: angular.ui.bootstrap.IModalService,
+      private userDetails: Core.AuthService,
+      private postLoginTasks: Core.Tasks,
+      private postLogoutTasks: Core.Tasks) {
       'ngInject';
     }
 

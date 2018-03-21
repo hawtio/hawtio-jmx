@@ -29,7 +29,9 @@ namespace JVM {
       { name: 'Delete', actionFn: (action, connection) => this.deleteConnection(connection) }
     ];
 
-    constructor(private $timeout: ng.ITimeoutService, private $uibModal, private connectService: ConnectService) {
+    constructor(private $timeout: ng.ITimeoutService,
+      private $uibModal: angular.ui.bootstrap.IModalService,
+      private connectService: ConnectService) {
       'ngInject';
     }
 
