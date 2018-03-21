@@ -4949,7 +4949,7 @@ var JVM;
                                         $scope.retry = function () {
                                             modal_1 = null;
                                             $uibModalInstance.close();
-                                            jolokia.start();
+                                            jolokia.start(localStorage['updateRate']);
                                         };
                                         $scope.goBack = function () {
                                             if (ConnectOptions.returnTo) {

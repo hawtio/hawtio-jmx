@@ -279,7 +279,7 @@ namespace JVM {
               if (!modal) {
                 modal = $uibModal.open({
                   templateUrl: UrlHelpers.join(templatePath, 'jolokiaError.html'),
-                  controller: function ($scope, $uibModalInstance, ConnectOptions, jolokia) {
+                  controller: function ($scope, $uibModalInstance, ConnectOptions, jolokia: Jolokia.IJolokia) {
                     'ngInject';
                     jolokia.stop();
                     $scope.responseText = xhr.responseText;
@@ -288,7 +288,7 @@ namespace JVM {
                     $scope.retry = () => {
                       modal = null;
                       $uibModalInstance.close();
-                      jolokia.start();
+                      jolokia.start(localStorage['updateRate']);
                     }
                     $scope.goBack = () => {
                       if (ConnectOptions.returnTo) {
