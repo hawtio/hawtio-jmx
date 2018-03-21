@@ -1,6 +1,6 @@
 {
   "name": "@hawtio/jmx",
-  "version": "3.2.24",
+  "version": "3.2.25",
   "main": "dist/hawtio-jmx.js",
   "types": "dist/hawtio-jmx.d.ts",
   "files": [
