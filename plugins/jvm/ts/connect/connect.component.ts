@@ -2,7 +2,7 @@
 
 namespace JVM {
 
-  export class ConnectController {
+  class ConnectController {
     connections: ConnectOptions[] = [];
     promise: ng.IPromise<any>;
     

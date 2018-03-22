@@ -121,42 +121,6 @@ declare namespace JVM {
     }
 }
 declare namespace JVM {
-    class ConnectController {
-        private $timeout;
-        private $uibModal;
-        private connectService;
-        connections: ConnectOptions[];
-        promise: ng.IPromise<any>;
-        toolbarConfig: {
-            actionsConfig: {
-                primaryActions: {
-                    name: string;
-                    actionFn: () => void;
-                }[];
-            };
-        };
-        listConfig: {
-            selectionMatchProp: string;
-            selectItems: boolean;
-            showSelectBox: boolean;
-        };
-        listActionButtons: {
-            name: string;
-            actionFn: (action: any, connection: any) => void;
-        }[];
-        listActionDropDown: {
-            name: string;
-            actionFn: (action: any, connection: any) => void;
-        }[];
-        constructor($timeout: ng.ITimeoutService, $uibModal: angular.ui.bootstrap.IModalService, connectService: ConnectService);
-        $onInit(): void;
-        $onDestroy(): void;
-        setTimerToUpdateReachableFlags(): void;
-        private addConnection();
-        private editConnection(connection);
-        private deleteConnection(connection);
-        private connect(connection);
-    }
     const connectComponent: angular.IComponentOptions;
 }
 declare namespace JVM {
