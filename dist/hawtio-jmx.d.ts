@@ -1,32 +1,9 @@
-/// <reference types="core" />
 /// <reference types="angular" />
 /// <reference types="angular-ui-bootstrap" />
+/// <reference types="core" />
 /// <reference types="jquery" />
 /// <reference types="forms" />
 /// <reference types="angular-route" />
-declare namespace About {
-    class AboutController {
-        private configManager;
-        private jolokia;
-        private jolokiaService;
-        flags: {
-            open: boolean;
-        };
-        title: string;
-        productInfo: object[];
-        additionalInfo: string;
-        copyright: string;
-        constructor(configManager: Core.ConfigManager, jolokia: Jolokia.IJolokia, jolokiaService: JVM.JolokiaService);
-        $onInit(): void;
-        onClose(): void;
-    }
-    const aboutComponent: angular.IComponentOptions;
-}
-declare namespace About {
-    function configureMenu(HawtioExtension: Core.HawtioExtension, $compile: ng.ICompileService): void;
-}
-declare namespace About {
-}
 declare namespace Diagnostics {
     interface JvmFlag {
         name: string;

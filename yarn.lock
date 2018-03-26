@@ -25,9 +25,9 @@
   dependencies:
     "@types/jquery" "~2.0.46"
 
-"@hawtio/core@3.2.22", "@hawtio/core@~3.2.0":
-  version "3.2.22"
-  resolved "https://registry.yarnpkg.com/@hawtio/core/-/core-3.2.22.tgz#ce649f914d9563b59982821ac60497b036b03082"
+"@hawtio/core@3.2.22", "@hawtio/core@3.2.23", "@hawtio/core@~3.2.0":
+  version "3.2.23"
+  resolved "https://registry.yarnpkg.com/@hawtio/core/-/core-3.2.23.tgz#4f9fa333a1df56fd1bc387796c009308d3704f0b"
   dependencies:
     "@hawtio/core-dts" "3.0.18"
     "@types/angular" "~1.6.0"
@@ -185,7 +185,7 @@ accord@^0.28.0:
     uglify-js "^2.8.22"
     when "^3.7.8"
 
-acorn@4.0.13, acorn@4.X, acorn@^5.0.3, acorn@~2.6.4:
+acorn@4.0.13, acorn@4.X, acorn@5.X, acorn@^5.0.3, acorn@~2.6.4:
   version "4.0.13"
   resolved "https://registry.yarnpkg.com/acorn/-/acorn-4.0.13.tgz#105495ae5361d697bd195c825192e1ad7f253787"
 
@@ -235,8 +235,8 @@ angular-drag-and-drop-lists@2.0.0:
   resolved "https://registry.yarnpkg.com/angular-drag-and-drop-lists/-/angular-drag-and-drop-lists-2.0.0.tgz#a01d44b94cf233c9c2d45a31842cb35a9d0882ca"
 
 angular-patternfly@^4.0.0:
-  version "4.15.0"
-  resolved "https://registry.yarnpkg.com/angular-patternfly/-/angular-patternfly-4.15.0.tgz#17fd980f7ce84217e4bbbe7d773fcf655b7e912c"
+  version "4.15.1"
+  resolved "https://registry.yarnpkg.com/angular-patternfly/-/angular-patternfly-4.15.1.tgz#ed02c2724a0d11624346c7e9cf044b3f895412a8"
   dependencies:
     angular "1.5.*"
     angular-animate "1.5.*"
@@ -607,8 +607,8 @@ bytes@1, bytes@2.2.0, bytes@2.4.0, bytes@3.0.0:
   resolved "https://registry.yarnpkg.com/bytes/-/bytes-2.4.0.tgz#7d97196f9d5baf7f6935e25985549edd2a6c2339"
 
 c3@~0.4.11:
-  version "0.4.21"
-  resolved "https://registry.yarnpkg.com/c3/-/c3-0.4.21.tgz#61a2dc5a31c6a64e011d15b136c160c44fbb9631"
+  version "0.4.22"
+  resolved "https://registry.yarnpkg.com/c3/-/c3-0.4.22.tgz#88b895f06fb6b44314e94b2d7331c3dc98b64d2d"
   dependencies:
     d3 "~3.5.0"
 
@@ -921,7 +921,7 @@ dateformat@2.0.0, dateformat@^2.0.0:
   version "2.0.0"
   resolved "https://registry.yarnpkg.com/dateformat/-/dateformat-2.0.0.tgz#2743e3abb5c3fc2462e527dca445e04e9f4dee17"
 
-debug-fabulous@>=0.1.1:
+debug-fabulous@1.X, debug-fabulous@>=0.1.1:
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/debug-fabulous/-/debug-fabulous-1.0.0.tgz#57f6648646097b1b0849dcda0017362c1ec00f8b"
   dependencies:
@@ -2948,8 +2948,8 @@ patternfly-bootstrap-treeview@2.1.5, patternfly-bootstrap-treeview@~2.1.0:
     jquery ">= 2.1.x"
 
 patternfly@^3.37.1:
-  version "3.41.6"
-  resolved "https://registry.yarnpkg.com/patternfly/-/patternfly-3.41.6.tgz#e060cf75ad118bc51859a05d8e73061c880447ef"
+  version "3.42.0"
+  resolved "https://registry.yarnpkg.com/patternfly/-/patternfly-3.42.0.tgz#bdf9b1171ff7e2f4395094c4a7cb58e44122232e"
   dependencies:
     bootstrap "~3.3.7"
     font-awesome "^4.7.0"
@@ -3413,7 +3413,7 @@ source-map-url@~0.3.0:
   version "0.3.0"
   resolved "https://registry.yarnpkg.com/source-map-url/-/source-map-url-0.3.0.tgz#7ecaf13b57bcd09da8a40c5d269db33799d4aaf9"
 
-source-map@0.5.7, source-map@0.X, source-map@^0.1.38, source-map@^0.5.1, source-map@^0.5.3, source-map@^0.5.6, source-map@^0.6.1, source-map@~0.5.1, source-map@~0.5.3:
+source-map@0.5.7, source-map@0.X, source-map@^0.1.38, source-map@^0.5.1, source-map@^0.5.3, source-map@^0.5.6, source-map@^0.6.1, source-map@~0.5.1, source-map@~0.5.3, source-map@~0.6.0:
   version "0.5.7"
   resolved "https://registry.yarnpkg.com/source-map/-/source-map-0.5.7.tgz#8a039d2d1021d22d1ea14c80d8ea468ba2ef3fcc"
 

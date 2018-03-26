@@ -3856,66 +3856,6 @@ var __extends = (this && this.__extends) || (function () {
         d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
     };
 })();
-var About;
-(function (About) {
-    var AboutController = /** @class */ (function () {
-        AboutController.$inject = ["configManager", "jolokia", "jolokiaService"];
-        function AboutController(configManager, jolokia, jolokiaService) {
-            'ngInject';
-            this.configManager = configManager;
-            this.jolokia = jolokia;
-            this.jolokiaService = jolokiaService;
-        }
-        AboutController.prototype.$onInit = function () {
-            var _this = this;
-            this.title = this.configManager.getBrandingValue('appName');
-            this.additionalInfo = this.configManager.getBrandingValue('aboutDescription');
-            var version = this.jolokia.version();
-            if (version) {
-                this.productInfo = [
-                    { name: 'Jolokia', value: version.agent }
-                ];
-                this.jolokiaService.getAttribute('hawtio:type=About', 'HawtioVersion')
-                    .then(function (hawtioVersion) { return _this.productInfo.unshift({ name: 'Hawtio', value: hawtioVersion }); });
-            }
-        };
-        AboutController.prototype.onClose = function () {
-            this.flags.open = false;
-        };
-        return AboutController;
-    }());
-    About.AboutController = AboutController;
-    About.aboutComponent = {
-        bindings: {
-            flags: '<'
-        },
-        template: "\n      <pf-about-modal is-open=\"$ctrl.flags.open\" on-close=\"$ctrl.onClose()\" title=\"$ctrl.title\"\n          product-info=\"$ctrl.productInfo\" additional-info=\"$ctrl.additionalInfo\"></pf-about-modal>\n    ",
-        controller: AboutController
-    };
-})(About || (About = {}));
-var About;
-(function (About) {
-    configureMenu.$inject = ["HawtioExtension", "$compile"];
-    function configureMenu(HawtioExtension, $compile) {
-        'ngInject';
-        HawtioExtension.add('hawtio-about', function ($scope) {
-            var template = "\n        <a ng-init=\"flags = {open: false}\" ng-click=\"flags.open = true\">About</a>\n        <about flags=\"flags\"></about>\n      ";
-            return $compile(template)($scope);
-        });
-    }
-    About.configureMenu = configureMenu;
-})(About || (About = {}));
-/// <reference path="about.component.ts"/>
-/// <reference path="about.config.ts"/>
-var About;
-(function (About) {
-    var aboutModule = angular
-        .module('hawtio-about', [])
-        .run(About.configureMenu)
-        .component('about', About.aboutComponent)
-        .name;
-    hawtioPluginLoader.addModule(aboutModule);
-})(About || (About = {}));
 var Diagnostics;
 (function (Diagnostics) {
     DiagnosticsFlagsController.$inject = ["$scope", "jolokia"];
