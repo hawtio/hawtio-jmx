@@ -100,6 +100,11 @@ namespace Jmx {
 
   }]);
 
+  _module.run((aboutService: About.AboutService) => {
+    'ngInject';
+    aboutService.addProductInfo('Hawtio JMX', 'PACKAGE_VERSION_PLACEHOLDER');
+  });
+
   hawtioPluginLoader.addModule(pluginName);
   hawtioPluginLoader.addModule('dangle');
 }

@@ -9,6 +9,7 @@ var gulp = require('gulp'),
     logger = require('js-logger'),
     hawtio = require('@hawtio/node-backend'),
     Server = require('karma').Server;
+    packageJson = require('./package.json');
 
 var plugins = gulpLoadPlugins({});
 
@@ -103,7 +104,7 @@ gulp.task('watch', ['build', 'watch-less'], function() {
     ['tsc', 'template', 'concat', 'clean']);
 });
 
-gulp.task('connect', ['watch'], function() {
+gulp.task('connect', function() {
   hawtio.setConfig({
     logLevel: config.logLevel,
     port: 2772,
@@ -155,6 +156,12 @@ gulp.task('test', ['build'], function (done) {
   }, done).start();
 });
 
+gulp.task('version', function() {
+  gulp.src(config.dist + config.js)
+    .pipe(plugins.replace('PACKAGE_VERSION_PLACEHOLDER', packageJson.version))
+    .pipe(gulp.dest(config.dist));
+});
+
 gulp.task('build', ['tsc', 'less', 'template', 'concat', 'clean']);
 
-gulp.task('default', ['connect']);
+gulp.task('default', ['build', 'connect', 'watch']);

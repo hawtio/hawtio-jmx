@@ -8248,6 +8248,10 @@ var Jmx;
                 .build();
             nav.add(tab);
         }]);
+    Jmx._module.run(["aboutService", function (aboutService) {
+        'ngInject';
+        aboutService.addProductInfo('Hawtio JMX', 'PACKAGE_VERSION_PLACEHOLDER');
+    }]);
     hawtioPluginLoader.addModule(Jmx.pluginName);
     hawtioPluginLoader.addModule('dangle');
 })(Jmx || (Jmx = {}));
