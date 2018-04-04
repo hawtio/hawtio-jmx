@@ -217,7 +217,8 @@
     "arr-diff": "2.0.0",
     "concat-with-sourcemaps": "1.0.5",
     "extend-shallow": "2.0.1",
-    "@hawtio/core": "3.2.25",
-    "readable-stream": "2.3.5"
+    "@hawtio/core": "3.2.26",
+    "readable-stream": "2.3.5",
+    "angular-animate": "1.6.9"
   }
 }
