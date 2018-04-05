@@ -8,7 +8,6 @@ namespace Jmx {
       displayName: 'Attribute',
       cellTemplate: `
         <div class="ngCellText" title="{{row.entity.attrDesc}}" data-placement="bottom">
-          <div ng-show="!inDashboard" class="inline" compile="row.entity.getDashboardWidgets()"></div>
           <a href="" ng-click="row.entity.onViewAttribute()">{{row.entity.name}}</a>
         </div>
       `
@@ -537,62 +536,11 @@ namespace Jmx {
         return;
       }
       data.forEach((item) => {
-        item['inDashboard'] = $scope.inDashboard;
-        item['getDashboardWidgets'] = () => getDashboardWidgets(item);
         item['onViewAttribute'] = () => onViewAttribute(item);
         item['folderIconClass'] = (row) => folderIconClass(row);
         item['gotoFolder'] = (row) => gotoFolder(row);
       });
     }
-
-    function getDashboardWidgets(row: any): string {
-      let mbean = workspace.getSelectedMBeanName();
-      if (!mbean) {
-        return '';
-      }
-      let potentialCandidates = _.filter(jmxWidgets, (widget: any) => {
-        return mbean === widget.mbean;
-      });
-
-      if (potentialCandidates.length === 0) {
-        return '';
-      }
-
-      potentialCandidates = _.filter(potentialCandidates, (widget: any) => {
-        return widget.attribute === row.key || widget.total === row.key;
-      });
-
-      if (potentialCandidates.length === 0) {
-        return '';
-      }
-
-      row.addChartToDashboard = (type) => $scope.addChartToDashboard(row, type);
-
-      let rc = [];
-      potentialCandidates.forEach((widget) => {
-        let widgetType = Jmx.getWidgetType(widget);
-        rc.push(`
-              <i class="${widgetType['icon']} clickable"
-                 title="${widgetType['title']}"
-                 ng-click="row.entity.addChartToDashboard('${widgetType['type']}')"></i>
-            `);
-      });
-      return rc.join() + "&nbsp;";
-    }
-
-    $scope.addChartToDashboard = (row, widgetType) => {
-      let mbean = workspace.getSelectedMBeanName();
-      let candidates = jmxWidgets
-        .filter((widget: any) => mbean === widget.mbean)
-        .filter((widget: any) => widget.attribute === row.key || widget.total === row.key)
-        .filter((widget: any) => widget.type === widgetType);
-
-      // hmmm, we really should only have one result...
-      let widget = _.first(candidates);
-      let type = getWidgetType(widget);
-
-      $location.url(Jmx.createDashboardLink(type, widget));
-    };
 
     function folderIconClass(row: any): string {
       if (!row.getProperty) {
