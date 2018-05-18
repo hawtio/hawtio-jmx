@@ -48,12 +48,7 @@ namespace Jmx {
     $scope.viewChart = () => {
       // lets add the attributes and mbeans into the URL so we can navigate back to the charts view
       var search = $location.search();
-      // if we have selected all attributes, then lets just remove the attribute
-      if ($scope.selectedAttributes.length === $scope.size($scope.metrics)) {
-        delete search["att"];
-      } else {
-        search["att"] = $scope.selectedAttributes;
-      }
+      search["att"] = $scope.selectedAttributes;
       // if we are on an mbean with no children lets discard an unnecessary parameter
       if (!workspace.selection.isFolder() && $scope.selectedMBeans.length === $scope.size($scope.mbeans) && $scope.size($scope.mbeans) === 1) {
         delete search["el"];
