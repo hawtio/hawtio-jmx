@@ -161,6 +161,9 @@ declare namespace JVM {
     const ConnectModule: string;
 }
 declare namespace JVM {
+    function NavController($scope: any, $location: ng.ILocationService, workspace: Jmx.Workspace, configManager: Core.ConfigManager): void;
+}
+declare namespace JVM {
     const _module: angular.IModule;
 }
 declare namespace JVM {
@@ -1025,8 +1028,6 @@ declare namespace JVM {
 /**
  * @module JVM
  */
-declare namespace JVM {
-}
 declare namespace JVM {
 }
 declare namespace JVM {

@@ -1,4 +1,5 @@
 /// <reference path="connect/connect.module.ts"/>
+/// <reference path="nav.controller.ts"/>
 
 namespace JVM {
 
@@ -6,17 +7,19 @@ namespace JVM {
     .module(pluginName, [ConnectModule])
     .config(defineRoutes)
     .constant('mbeanName', 'hawtio:type=JVMList')
-    .run(configurePlugin);
+    .run(configurePlugin)
+    .controller("JVM.NavController", NavController);
 
-  function defineRoutes($provide: ng.auto.IProvideService, $routeProvider: ng.route.IRouteProvider): void {
+  function defineRoutes(configManager: Core.ConfigManager) {
     'ngInject';
-    $routeProvider
-      .when('/jvm', { redirectTo: '/jvm/connect' })
-      .when('/jvm/welcome', { templateUrl: UrlHelpers.join(templatePath, 'welcome.html') })
-      .when('/jvm/discover', { templateUrl: UrlHelpers.join(templatePath, 'discover.html') })
-      .when('/jvm/connect', { template: '<connect></connect>' })
-      .when('/jvm/connect-login', { template: '<connect-login></connect-login>' })
-      .when('/jvm/local', { templateUrl: UrlHelpers.join(templatePath, 'local.html') });
+
+    configManager
+      .addRoute('/jvm', { redirectTo: '/jvm/connect' })
+      .addRoute('/jvm/welcome', { templateUrl: UrlHelpers.join(templatePath, 'welcome.html') })
+      .addRoute('/jvm/discover', { templateUrl: UrlHelpers.join(templatePath, 'discover.html') })
+      .addRoute('/jvm/connect', { template: '<connect></connect>' })
+      .addRoute('/jvm/connect-login', { template: '<connect-login></connect-login>' })
+      .addRoute('/jvm/local', { templateUrl: UrlHelpers.join(templatePath, 'local.html') });
   }
 
   function configurePlugin(
