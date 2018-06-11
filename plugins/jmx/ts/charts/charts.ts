@@ -1,8 +1,8 @@
-/// <reference path="./jmxPlugin.ts"/>
+/// <reference path="../jmx.module.ts"/>
 
 namespace Jmx {
 
-  _module.controller("Jmx.ChartController", ["$scope", "$element", "$location", "workspace", "localStorage", "jolokiaUrl", "jolokiaParams", ($scope, $element, $location, workspace:Workspace, localStorage, jolokiaUrl, jolokiaParams) => {
+  jmxModule.controller("Jmx.ChartController", ["$scope", "$element", "$location", "workspace", "localStorage", "jolokiaUrl", "jolokiaParams", ($scope, $element, $location, workspace:Workspace, localStorage, jolokiaUrl, jolokiaParams) => {
 
     $scope.title = workspace.selection ? workspace.selection.text : '';
     $scope.metrics = [];
@@ -17,7 +17,7 @@ namespace Jmx {
         primaryActions: [
           {
             name: 'Edit',
-            actionFn: () => $location.path('/jmx/chartEdit')
+            actionFn: () => $location.path($location.path().replace('/charts', '/chartEdit'))
           }
         ]
       }
@@ -227,7 +227,7 @@ namespace Jmx {
         if (node.children.length && !$scope.metrics.length) {
           // lets forward to the chart selection UI if we have some children; they may have
           // chartable attributes
-          $location.path("jmx/chartEdit");
+          $location.path($location.path().replace('/charts', '/chartEdit'));
         }
       }
 

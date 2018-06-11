@@ -1,8 +1,8 @@
-/// <reference path="jmxPlugin.ts"/>
+/// <reference path="../jmx.module.ts"/>
 
 namespace Jmx {
 
-  _module.controller("Jmx.ChartEditController", ["$scope", "$location", "workspace", "jolokia", ($scope, $location, workspace:Workspace, jolokia) => {
+  jmxModule.controller("Jmx.ChartEditController", ["$scope", "$location", "workspace", "jolokia", ($scope, $location, workspace:Workspace, jolokia) => {
     $scope.selectedAttributes = [];
     $scope.selectedMBeans = [];
     $scope.metrics = {};
@@ -57,7 +57,7 @@ namespace Jmx {
       }
       search['sub-tab'] = 'jmx-chart';
       $location.search(search);
-      $location.path("jmx/charts");
+      $location.path($location.path().replace('/chartEdit', '/charts'));
     };
 
     $scope.$on("$routeChangeSuccess", function (event, current, previous) {

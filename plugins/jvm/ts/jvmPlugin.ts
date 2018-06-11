@@ -1,5 +1,5 @@
 /// <reference path="connect/connect.module.ts"/>
-/// <reference path="nav.controller.ts"/>
+/// <reference path="jvm.component.ts"/>
 
 namespace JVM {
 
@@ -8,22 +8,21 @@ namespace JVM {
     .config(defineRoutes)
     .constant('mbeanName', 'hawtio:type=JVMList')
     .run(configurePlugin)
-    .controller("JVM.NavController", NavController);
+    .component("jvm", jvmComponent);
 
   function defineRoutes(configManager: Core.ConfigManager) {
     'ngInject';
 
     configManager
-      .addRoute('/jvm', { redirectTo: '/jvm/connect' })
-      .addRoute('/jvm/welcome', { templateUrl: UrlHelpers.join(templatePath, 'welcome.html') })
-      .addRoute('/jvm/discover', { templateUrl: UrlHelpers.join(templatePath, 'discover.html') })
       .addRoute('/jvm/connect', { template: '<connect></connect>' })
       .addRoute('/jvm/connect-login', { template: '<connect-login></connect-login>' })
+      .addRoute('/jvm/welcome', { templateUrl: UrlHelpers.join(templatePath, 'welcome.html') })
+      .addRoute('/jvm/discover', { templateUrl: UrlHelpers.join(templatePath, 'discover.html') })
       .addRoute('/jvm/local', { templateUrl: UrlHelpers.join(templatePath, 'local.html') });
   }
 
   function configurePlugin(
-    HawtioNav: Nav.Registry,
+    mainNavService: Nav.MainNavService,
     $location: ng.ILocationService,
     viewRegistry,
     helpRegistry: Help.HelpRegistry,
@@ -73,16 +72,16 @@ namespace JVM {
       saveConnections(connections);
     });
 
-    let builder = HawtioNav.builder();
-    let tab = builder.id('jvm')
-      .href(() => '/jvm')
-      .title(() => 'Connect')
-      .isValid(() => ConnectOptions == null || ConnectOptions.name == null)
-      .build();
-    HawtioNav.add(tab);
     helpRegistry.addUserDoc('jvm', 'plugins/jvm/doc/help.md');
     preferencesRegistry.addTab("Connect", 'plugins/jvm/html/reset.html');
     preferencesRegistry.addTab("Jolokia", "plugins/jvm/html/jolokia-preferences.html");
+
+    mainNavService.addItem({
+      title: 'Connect',
+      href: '/jvm',
+      template: '<jvm></jvm>',
+      isValid: () => ConnectOptions == null || ConnectOptions.name == null
+    });    
   }
 
   hawtioPluginLoader.addModule(pluginName);

@@ -5,27 +5,17 @@ namespace Runtime {
   export class RuntimeController {
     tabs: Nav.HawtioTab[];
 
-    constructor(private $location: ng.ILocationService, private runtimeService: RuntimeService) {
+    constructor(private runtimeService: RuntimeService) {
       'ngInject';
     }
 
     $onInit() {
-      this.runtimeService.getTabs()
-        .then(tabs => this.tabs = tabs);
+      this.tabs = this.runtimeService.getTabs();
     }
-
-    goto(tab: Nav.HawtioTab) {
-      this.$location.path(tab.path);
-    };
   }
 
   export const runtimeComponent: angular.IComponentOptions = {
-    template: `
-      <div class="nav-tabs-main">
-        <hawtio-tabs tabs="$ctrl.tabs" on-change="$ctrl.goto(tab)"></hawtio-tabs>
-        <div class="contents" ng-view></div>
-      </div>
-    `,
+    template: '<hawtio-tabs-layout tabs="$ctrl.tabs"></hawtio-tabs-layout>',
     controller: RuntimeController
   };
 

@@ -1,6 +1,5 @@
 /// <reference path="../../jvm/ts/jolokiaService.ts"/>
 /// <reference path="tree/tree-event.ts"/>
-/// <reference path="jmxHelpers.ts"/>
 
 namespace Jmx {
 
@@ -56,8 +55,7 @@ namespace Jmx {
       public $compile: ng.ICompileService,
       public $templateCache: ng.ITemplateCacheService,
       public localStorage: Storage,
-      public $rootScope: ng.IRootScopeService,
-      public HawtioNav: Nav.Registry) {
+      public $rootScope: ng.IRootScopeService) {
 
       // set defaults
       if (!('autoRefresh' in localStorage)) {
@@ -66,23 +64,6 @@ namespace Jmx {
       if (!('updateRate' in localStorage)) {
         localStorage['updateRate'] = 5000;
       }
-      let workspace = this;
-      this.topLevelTabs = {
-        push: (item: NavMenuItem) => {
-          log.debug("Added menu item:", item);
-          let tab = {
-            id: item.id,
-            title: () => item.content,
-            isValid: () => item.isValid(workspace),
-            href: () => UrlHelpers.noHash(item.href()),
-          }
-          if (item.isActive) {
-            tab['isSelected'] = () => item.isActive(workspace);
-          }
-          workspace.HawtioNav.add(tab);
-        },
-        find: (search: (NavMenuItem) => void) => { }
-      };
     }
 
     /**
@@ -93,7 +74,7 @@ namespace Jmx {
      */
     public createChildWorkspace(location): Workspace {
       const child = new Workspace(this.jolokia, this.jolokiaStatus, this.jmxTreeLazyLoadRegistry,
-        this.$location, this.$compile, this.$templateCache, this.localStorage, this.$rootScope, this.HawtioNav);
+        this.$location, this.$compile, this.$templateCache, this.localStorage, this.$rootScope);
       // lets copy across all the properties just in case
       _.forEach(this, (value, key) => child[key] = value);
       child.$location = location;
@@ -129,7 +110,7 @@ namespace Jmx {
       let workspace = this;
       if (this.jolokia['isDummy']) {
         setTimeout(() => {
-          workspace.treeFetched = true;
+          workspace.setTreeFetched();
           workspace.populateTree({ value: {} });
         }, 10);
         return;
@@ -138,14 +119,18 @@ namespace Jmx {
       let flags = {
         ignoreErrors: true,
         error: (response) => {
-          workspace.treeFetched = true;
+          workspace.setTreeFetched();
           log.debug("Error fetching JMX tree:", response);
-        }
+        },
+        ajaxError: (response) => {
+          workspace.setTreeFetched();
+          log.debug("Error fetching JMX tree:", response);
+        }        
       };
       log.debug("Jolokia:", this.jolokia);
       this.jolokiaList((response) => {
         this.jolokiaStatus.xhr = null;
-        workspace.treeFetched = true;
+        workspace.setTreeFetched();
         workspace.populateTree({ value: this.unwindResponseWithRBACCache(response) });
       }, flags);
     }
@@ -287,6 +272,15 @@ namespace Jmx {
       this.jmxTreeUpdated();
     }
 
+    setTreeFetched() {
+      this.treeFetched = true;
+      let rootScope = this.$rootScope;
+      if (rootScope) {
+        Core.$apply(rootScope);
+        rootScope.$broadcast(TreeEvent.Fetched);
+      }
+    }
+    
     jmxTreeUpdated() {
       let rootScope = this.$rootScope;
       if (rootScope) {
@@ -597,7 +591,7 @@ namespace Jmx {
      * @return {String}
      */
     public getSelectedMBeanName(): string {
-      let selection = this.selection;
+      let selection = this.getSelectedMBean();
       if (selection) {
         return selection.objectName;
       }
@@ -931,7 +925,10 @@ namespace Jmx {
           if (answer) {
             return answer;
           }
-          return _.find(children.map(node => workspace.findChildMBeanWithProperties(node, properties, propertiesCount)), node => node);
+          answer = _.find(children.map(node => workspace.findChildMBeanWithProperties(node, properties, propertiesCount)), node => node);
+          if (answer) {
+            return answer;
+          }
         }
       }
       return null;

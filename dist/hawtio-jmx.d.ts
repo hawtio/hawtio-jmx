@@ -161,7 +161,12 @@ declare namespace JVM {
     const ConnectModule: string;
 }
 declare namespace JVM {
-    function NavController($scope: any, $location: ng.ILocationService, workspace: Jmx.Workspace, configManager: Core.ConfigManager): void;
+    class JvmController {
+        private workspace;
+        tabs: Nav.HawtioTab[];
+        constructor(workspace: Jmx.Workspace, configManager: Core.ConfigManager);
+    }
+    const jvmComponent: angular.IComponentOptions;
 }
 declare namespace JVM {
     const _module: angular.IModule;
@@ -219,9 +224,512 @@ declare namespace JVM {
 }
 declare namespace Jmx {
     enum TreeEvent {
+        Fetched = "jmxTreeFetched",
         Updated = "jmxTreeUpdated",
         NodeSelected = "jmxTreeClicked",
     }
+}
+declare namespace Jmx {
+    /**
+     * @class NavMenuItem
+     */
+    interface NavMenuItem {
+        id: string;
+        content: string;
+        title?: string;
+        isValid?(workspace: Workspace, perspectiveId?: string): any;
+        isActive?(worksace: Workspace): boolean;
+        href(): any;
+    }
+    /**
+     * @class Workspace
+     */
+    class Workspace {
+        jolokia: Jolokia.IJolokia;
+        jolokiaStatus: JVM.JolokiaStatus;
+        jmxTreeLazyLoadRegistry: any;
+        $location: ng.ILocationService;
+        $compile: ng.ICompileService;
+        $templateCache: ng.ITemplateCacheService;
+        localStorage: Storage;
+        $rootScope: ng.IRootScopeService;
+        operationCounter: number;
+        selection: NodeSelection;
+        tree: Folder;
+        mbeanTypesToDomain: {};
+        mbeanServicesToDomain: {};
+        attributeColumnDefs: {};
+        onClickRowHandlers: {};
+        treePostProcessors: {
+            [name: string]: (tree: Folder) => void;
+        };
+        topLevelTabs: any;
+        subLevelTabs: any[];
+        keyToNodeMap: {};
+        pluginRegisterHandle: any;
+        pluginUpdateCounter: any;
+        treeWatchRegisterHandle: any;
+        treeWatcherCounter: any;
+        treeFetched: boolean;
+        mapData: {};
+        private rootId;
+        private separator;
+        constructor(jolokia: Jolokia.IJolokia, jolokiaStatus: JVM.JolokiaStatus, jmxTreeLazyLoadRegistry: any, $location: ng.ILocationService, $compile: ng.ICompileService, $templateCache: ng.ITemplateCacheService, localStorage: Storage, $rootScope: ng.IRootScopeService);
+        /**
+         * Creates a shallow copy child workspace with its own selection and location
+         * @method createChildWorkspace
+         * @param {ng.ILocationService} location
+         * @return {Workspace}
+         */
+        createChildWorkspace(location: any): Workspace;
+        getLocalStorage(key: string): any;
+        setLocalStorage(key: string, value: any): void;
+        private jolokiaList(callback, flags);
+        loadTree(): void;
+        /**
+         * Adds a post processor of the tree to swizzle the tree metadata after loading
+         * such as correcting any typeName values or CSS styles by hand
+         * @method addTreePostProcessor
+         * @param {Function} processor
+         */
+        addTreePostProcessor(processor: (tree: Folder) => void): string;
+        addNamedTreePostProcessor(name: string, processor: (tree: Folder) => void): string;
+        removeNamedTreePostProcessor(name: string): void;
+        maybeMonitorPlugins(): void;
+        maybeUpdatePlugins(response: Jolokia.IResponse): void;
+        maybeReloadTree(response: Jolokia.IResponse): void;
+        /**
+         * Processes response from jolokia list - if it contains "domains" and "cache" properties
+         * @param response
+         */
+        unwindResponseWithRBACCache(response: any): Core.JMXDomains;
+        populateTree(response: {
+            value: Core.JMXDomains;
+        }): void;
+        setTreeFetched(): void;
+        jmxTreeUpdated(): void;
+        private initFolder(folder, domain, folderNames);
+        private populateDomainFolder(tree, domainName, domain);
+        /**
+         * Escape only '<' and '>' as opposed to Core.escapeHtml() and _.escape()
+         *
+         * @param {string} str string to be escaped
+        */
+        private escapeTagOnly(str);
+        private populateMBeanFolder(domainFolder, domainClass, mbeanName, mbean);
+        private folderGetOrElse(folder, name);
+        private splitMBeanProperty(property);
+        configureFolder(folder: Folder, domainName: string, domainClass: string, folderNames: string[], path: string): Folder;
+        private addFolderByDomain(folder, domainName, typeName, owner);
+        private enableLazyLoading(folder);
+        /**
+         * Returns the hash query argument to append to URL links
+         * @method hash
+         * @return {String}
+         */
+        hash(): string;
+        /**
+         * Returns the currently active tab
+         * @method getActiveTab
+         * @return {Boolean}
+         */
+        getActiveTab(): any;
+        private getStrippedPathName();
+        linkContains(...words: String[]): boolean;
+        /**
+         * Returns true if the given link is active. The link can omit the leading # or / if necessary.
+         * The query parameters of the URL are ignored in the comparison.
+         * @method isLinkActive
+         * @param {String} href
+         * @return {Boolean} true if the given link is active
+         */
+        isLinkActive(href: string): boolean;
+        /**
+         * Returns true if the given link is active. The link can omit the leading # or / if necessary.
+         * The query parameters of the URL are ignored in the comparison.
+         * @method isLinkActive
+         * @param {String} href
+         * @return {Boolean} true if the given link is active
+         */
+        isLinkPrefixActive(href: string): boolean;
+        /**
+         * Returns true if the tab query parameter is active or the URL starts with the given path
+         * @method isTopTabActive
+         * @param {String} path
+         * @return {Boolean}
+         */
+        isTopTabActive(path: string): boolean;
+        isMainTabActive(path: string): boolean;
+        /**
+         * Returns the selected mbean name if there is one
+         * @method getSelectedMBeanName
+         * @return {String}
+         */
+        getSelectedMBeanName(): string;
+        getSelectedMBean(): NodeSelection;
+        /**
+         * Returns true if the path is valid for the current selection
+         * @method validSelection
+         * @param {String} uri
+         * @return {Boolean}
+         */
+        validSelection(uri: string): boolean;
+        /**
+         * In cases where we have just deleted something we typically want to change
+         * the selection to the parent node
+         * @method removeAndSelectParentNode
+         */
+        removeAndSelectParentNode(): void;
+        selectParentNode(): void;
+        /**
+         * Returns the view configuration key for the kind of selection
+         * for example based on the domain and the node type
+         * @method selectionViewConfigKey
+         * @return {String}
+         */
+        selectionViewConfigKey(): string;
+        /**
+         * Returns a configuration key for a node which is usually of the form
+         * domain/typeName or for folders with no type, domain/name/folder
+         * @method selectionConfigKey
+         * @param {String} prefix
+         * @return {String}
+         */
+        selectionConfigKey(prefix?: string): string;
+        moveIfViewInvalid(): boolean;
+        updateSelectionNode(node: NodeSelection): void;
+        broadcastSelectionNode(): void;
+        private matchesProperties(entries, properties);
+        hasInvokeRightsForName(objectName: string, ...methods: string[]): boolean;
+        hasInvokeRights(selection: NodeSelection, ...methods: string[]): boolean;
+        private resolveCanInvoke(op);
+        treeContainsDomainAndProperties(domainName: string, properties?: any): boolean;
+        private matches(folder, properties, propertiesCount);
+        hasDomainAndProperties(domainName: string, properties?: any, propertiesCount?: any): boolean;
+        findMBeanWithProperties(domainName: string, properties?: any, propertiesCount?: any): any;
+        findChildMBeanWithProperties(folder: any, properties?: any, propertiesCount?: any): any;
+        selectionHasDomainAndLastFolderName(objectName: string, lastName: string): boolean;
+        selectionHasDomain(domainName: string): boolean;
+        selectionHasDomainAndType(objectName: string, typeName: string): boolean;
+        /**
+         * Returns true if this workspace has any mbeans at all
+         */
+        hasMBeans(): boolean;
+        hasFabricMBean(): boolean;
+        isFabricFolder(): boolean;
+        isCamelContext(): boolean;
+        isCamelFolder(): boolean;
+        isEndpointsFolder(): boolean;
+        isEndpoint(): boolean;
+        isRoutesFolder(): boolean;
+        isRoute(): boolean;
+        isComponentsFolder(): boolean;
+        isComponent(): boolean;
+        isDataformatsFolder(): boolean;
+        isDataformat(): boolean;
+        isOsgiFolder(): boolean;
+        isKarafFolder(): boolean;
+        isOsgiCompendiumFolder(): boolean;
+    }
+}
+declare namespace Jmx {
+    class TreeService {
+        private $rootScope;
+        private $q;
+        private workspace;
+        constructor($rootScope: ng.IRootScopeService, $q: ng.IQService, workspace: Jmx.Workspace);
+        treeContainsDomainAndProperties(domainName: string, properties?: any): ng.IPromise<boolean>;
+        findMBeanWithProperties(domainName: string, properties?: any, propertiesCount?: any): ng.IPromise<any>;
+        getSelectedMBean(): ng.IPromise<NodeSelection>;
+        getSelectedMBeanName(): ng.IPromise<string>;
+        runWhenTreeReady(fn: () => any): ng.IPromise<any>;
+        private runWhenTreeSelectionReady(fn);
+    }
+}
+declare namespace Diagnostics {
+    class DiagnosticsService {
+        private workspace;
+        private configManager;
+        constructor(workspace: Jmx.Workspace, configManager: Core.ConfigManager);
+        getTabs(): Nav.HawtioTab[];
+        private hasHotspotDiagnostic();
+        private hasDiagnosticFunction(operation);
+        findMyPid(title: any): string;
+    }
+}
+declare namespace Diagnostics {
+    interface ClassStats {
+        count: string;
+        bytes: string;
+        name: string;
+        deltaCount: string;
+        deltaBytes: string;
+    }
+    interface HeapControllerScope extends ng.IScope {
+        items: Array<ClassStats>;
+        loading: boolean;
+        lastLoaded: any;
+        toolbarConfig: any;
+        tableConfig: any;
+        tableDtOptions: any;
+        tableColumns: Array<any>;
+        pageConfig: object;
+        loadClassStats: () => void;
+    }
+    function DiagnosticsHeapController($scope: HeapControllerScope, jolokia: Jolokia.IJolokia, diagnosticsService: DiagnosticsService): void;
+}
+declare namespace Diagnostics {
+    interface JfrSettings {
+        limitType: string;
+        limitValue: string;
+        recordingNumber: string;
+        dumpOnExit: boolean;
+        name: string;
+        filename: string;
+    }
+    interface Recording {
+        number: string;
+        size: string;
+        file: string;
+        time: number;
+    }
+    interface JfrControllerScope extends ng.IScope {
+        forms: any;
+        jfrEnabled: boolean;
+        isRecording: boolean;
+        isRunning: boolean;
+        jfrSettings: JfrSettings;
+        unlock: () => void;
+        startRecording: () => void;
+        stopRecording: () => void;
+        dumpRecording: () => void;
+        formConfig: Forms.FormConfiguration;
+        recordings: Array<Recording>;
+        pid: string;
+        jfrStatus: string;
+        pageTitle: string;
+        settingsVisible: boolean;
+        toggleSettingsVisible: () => void;
+        jcmd: string;
+        closeMessageForGood: (key: string) => void;
+        isMessageVisible: (key: string) => boolean;
+    }
+    function DiagnosticsJfrController($scope: JfrControllerScope, $location: ng.ILocationService, workspace: Jmx.Workspace, jolokia: Jolokia.IJolokia, localStorage: Storage, diagnosticsService: DiagnosticsService): void;
+}
+declare namespace Diagnostics {
+    class DiagnosticsController {
+        private diagnosticsService;
+        tabs: Nav.HawtioTab[];
+        constructor(diagnosticsService: DiagnosticsService);
+        $onInit(): void;
+    }
+    const diagnosticsComponent: angular.IComponentOptions;
+}
+declare namespace Diagnostics {
+    function configureRoutes(configManager: Core.ConfigManager): void;
+    function configureHelp(helpRegistry: Help.HelpRegistry): void;
+    function configureMainNav(mainNavService: Nav.MainNavService, diagnosticsService: DiagnosticsService): void;
+}
+declare namespace Diagnostics {
+    const log: Logging.Logger;
+    const _module: angular.IModule;
+}
+declare namespace Jmx {
+    const jmxComponent: angular.IComponentOptions;
+}
+declare namespace Jmx {
+    let currentProcessId: string;
+    function configureRoutes($routeProvider: any): void;
+    function configureAbout(aboutService: About.AboutService): void;
+    function configureHelp(helpRegistry: any): void;
+    function configureMainNav(mainNavService: Nav.MainNavService, workspace: Workspace): void;
+    function configurePageTitle(pageTitle: any, jolokia: any): void;
+    function initializeTree($q: ng.IQService, $rootScope: ng.IRootScopeService, initService: Init.InitService, workspace: Workspace): void;
+}
+declare namespace Jmx {
+    function AttributesController($scope: any, $element: any, $location: ng.ILocationService, workspace: Workspace, $templateCache: ng.ITemplateCacheService, localStorage: Storage, $browser: any, $timeout: ng.ITimeoutService, $uibModal: angular.ui.bootstrap.IModalService, attributesService: AttributesService): void;
+}
+/**
+ * @namespace RBAC
+ */
+declare namespace RBAC {
+    interface RBACTasks extends Core.Tasks {
+        initialize(mbean: string): void;
+        getACLMBean(): ng.IPromise<string>;
+    }
+    interface OperationCanInvoke {
+        CanInvoke: boolean;
+        Method: string;
+        ObjectName: string;
+    }
+}
+declare namespace Jmx {
+    class AttributesService {
+        private $q;
+        private jolokia;
+        private jolokiaUrl;
+        private rbacACLMBean;
+        constructor($q: ng.IQService, jolokia: Jolokia.IJolokia, jolokiaUrl: string, rbacACLMBean: ng.IPromise<string>);
+        registerJolokia(scope: any, request: any, callback: any): void;
+        unregisterJolokia(scope: any): void;
+        listMBean(mbeanName: string, callback: any): void;
+        canInvoke(mbeanName: string, attribute: string, type: string): ng.IPromise<boolean>;
+        buildJolokiaUrl(mbeanName: string, attribute: string): string;
+        update(mbeanName: string, attribute: string, value: any): void;
+    }
+}
+declare namespace Jmx {
+    const attributesModule: string;
+}
+declare namespace Jmx {
+    class HeaderController {
+        title: string;
+        objectName: string;
+        constructor($scope: any);
+    }
+    const headerComponent: angular.IComponentOptions;
+}
+declare namespace Jmx {
+    class NavigationController {
+        private $location;
+        private workspace;
+        tabs: Nav.HawtioTab[];
+        constructor($scope: ng.IScope, $location: ng.ILocationService, workspace: Jmx.Workspace);
+        $onInit(): void;
+        private getTabs();
+        goto(tab: Nav.HawtioTab): void;
+    }
+    const navigationComponent: angular.IComponentOptions;
+}
+declare namespace Jmx {
+    const commonModule: string;
+}
+declare namespace Jmx {
+    class Operation {
+        args: OperationArgument[];
+        description: string;
+        name: string;
+        readableName: string;
+        canInvoke: boolean;
+        constructor(method: string, args: OperationArgument[], description: string);
+        private static buildName(method, args);
+        private static buildReadableName(method, args);
+    }
+    class OperationArgument {
+        name: string;
+        type: string;
+        desc: string;
+        constructor();
+        readableType(): string;
+    }
+}
+declare namespace Jmx {
+    class OperationsService {
+        private $q;
+        private jolokia;
+        private jolokiaUrl;
+        private workspace;
+        private treeService;
+        private rbacACLMBean;
+        constructor($q: ng.IQService, jolokia: Jolokia.IJolokia, jolokiaUrl: string, workspace: Jmx.Workspace, treeService: TreeService, rbacACLMBean: ng.IPromise<string>);
+        getOperations(): ng.IPromise<Operation[]>;
+        private fetchOperations(mbeanName);
+        private addOperation(operations, operationMap, opName, op);
+        private fetchPermissions(operationMap, mbeanName);
+        executeOperation(mbeanName: string, operation: Operation, argValues?: any[]): ng.IPromise<string>;
+        buildJolokiaUrl(operation: Operation): string;
+    }
+}
+declare namespace Jmx {
+    class OperationsController {
+        private operationsService;
+        operations: Operation[];
+        config: {
+            showSelectBox: boolean;
+            useExpandingRows: boolean;
+        };
+        menuActions: {
+            name: string;
+            actionFn: (action: any, item: Operation) => void;
+        }[];
+        constructor(operationsService: OperationsService);
+        $onInit(): void;
+    }
+    const operationsComponent: angular.IComponentOptions;
+}
+declare namespace Jmx {
+    class OperationFormController {
+        private workspace;
+        private operationsService;
+        operation: Operation;
+        formFields: {
+            label: string;
+            type: string;
+            helpText: string;
+            value: any;
+        }[];
+        editorMode: string;
+        operationFailed: boolean;
+        operationResult: string;
+        isExecuting: boolean;
+        constructor(workspace: Workspace, operationsService: OperationsService);
+        $onInit(): void;
+        private static buildHelpText(arg);
+        private static convertToHtmlInputType(javaType);
+        private static getDefaultValue(javaType);
+        execute(): void;
+    }
+    const operationFormComponent: angular.IComponentOptions;
+}
+declare namespace Jmx {
+    const operationsModule: string;
+}
+declare namespace Jmx {
+    class TreeHeaderController {
+        private $scope;
+        private $element;
+        filter: string;
+        result: any[];
+        constructor($scope: any, $element: JQuery);
+        $onInit(): void;
+        private search(filter);
+        private tree();
+        expandAll(): any;
+        contractAll(): any;
+    }
+}
+declare namespace Jmx {
+    const treeHeaderComponent: angular.IComponentOptions;
+}
+declare namespace Jmx {
+    class TreeController {
+        private $scope;
+        private $location;
+        private workspace;
+        private $element;
+        private $timeout;
+        constructor($scope: any, $location: ng.ILocationService, workspace: Workspace, $element: JQuery, $timeout: ng.ITimeoutService);
+        $onInit(): void;
+        updateSelectionFromURL(): void;
+        private populateTree();
+        private removeTree();
+    }
+    const treeComponent: angular.IComponentOptions;
+}
+declare namespace Jmx {
+    const treeModule: string;
+    const treeElementId = "#jmxtree";
+}
+declare namespace Jmx {
+    function createWorkspace($location: ng.ILocationService, jmxTreeLazyLoadRegistry: any, $compile: ng.ICompileService, $templateCache: ng.ITemplateCacheService, localStorage: Storage, jolokia: Jolokia.IJolokia, jolokiaStatus: JVM.JolokiaStatus, $rootScope: any, userDetails: any): Workspace;
+}
+declare namespace Jmx {
+    var jmxModule: angular.IModule;
+    const log: Logging.Logger;
+}
+declare namespace Jmx {
+}
+declare namespace Jmx {
 }
 declare namespace Jmx {
     /**
@@ -422,579 +930,6 @@ declare namespace Jmx {
     }
 }
 declare namespace Jmx {
-    const pluginName = "hawtio-jmx";
-    const log: Logging.Logger;
-    let currentProcessId: string;
-    const templatePath = "plugins/jmx/html";
-    /**
-     * Returns the Folder object for the given domain name and type name or null if it can not be found
-     * @method getMBeanTypeFolder
-     * @for Core
-     * @static
-     * @param {Workspace} workspace
-     * @param {String} domain
-     * @param {String} typeName}
-     * @return {Folder}
-     */
-    function getMBeanTypeFolder(workspace: Workspace, domain: string, typeName: string): Folder;
-    /**
-     * Returns the JMX objectName for the given jmx domain and type name
-     * @method getMBeanTypeObjectName
-     * @for Core
-     * @static
-     * @param {Workspace} workspace
-     * @param {String} domain
-     * @param {String} typeName
-     * @return {String}
-     */
-    function getMBeanTypeObjectName(workspace: Workspace, domain: string, typeName: string): string;
-    /**
-     * Creates a remote workspace given a remote jolokia for querying the JMX MBeans inside the jolokia
-     * @param remoteJolokia
-     * @param remoteJolokiaStatus
-     * @param $location
-     * @param localStorage
-     * @return {Workspace}
-     */
-    function createRemoteWorkspace(remoteJolokia: Jolokia.IJolokia, remoteJolokiaStatus: JVM.JolokiaStatus, $location: ng.ILocationService, localStorage: Storage, $rootScope?: ng.IRootScopeService, $compile?: ng.ICompileService, $templateCache?: ng.ITemplateCacheService, HawtioNav?: Nav.Registry): Workspace;
-}
-declare namespace Jmx {
-    /**
-     * @class NavMenuItem
-     */
-    interface NavMenuItem {
-        id: string;
-        content: string;
-        title?: string;
-        isValid?(workspace: Workspace, perspectiveId?: string): any;
-        isActive?(worksace: Workspace): boolean;
-        href(): any;
-    }
-    /**
-     * @class Workspace
-     */
-    class Workspace {
-        jolokia: Jolokia.IJolokia;
-        jolokiaStatus: JVM.JolokiaStatus;
-        jmxTreeLazyLoadRegistry: any;
-        $location: ng.ILocationService;
-        $compile: ng.ICompileService;
-        $templateCache: ng.ITemplateCacheService;
-        localStorage: Storage;
-        $rootScope: ng.IRootScopeService;
-        HawtioNav: Nav.Registry;
-        operationCounter: number;
-        selection: NodeSelection;
-        tree: Folder;
-        mbeanTypesToDomain: {};
-        mbeanServicesToDomain: {};
-        attributeColumnDefs: {};
-        onClickRowHandlers: {};
-        treePostProcessors: {
-            [name: string]: (tree: Folder) => void;
-        };
-        topLevelTabs: any;
-        subLevelTabs: any[];
-        keyToNodeMap: {};
-        pluginRegisterHandle: any;
-        pluginUpdateCounter: any;
-        treeWatchRegisterHandle: any;
-        treeWatcherCounter: any;
-        treeFetched: boolean;
-        mapData: {};
-        private rootId;
-        private separator;
-        constructor(jolokia: Jolokia.IJolokia, jolokiaStatus: JVM.JolokiaStatus, jmxTreeLazyLoadRegistry: any, $location: ng.ILocationService, $compile: ng.ICompileService, $templateCache: ng.ITemplateCacheService, localStorage: Storage, $rootScope: ng.IRootScopeService, HawtioNav: Nav.Registry);
-        /**
-         * Creates a shallow copy child workspace with its own selection and location
-         * @method createChildWorkspace
-         * @param {ng.ILocationService} location
-         * @return {Workspace}
-         */
-        createChildWorkspace(location: any): Workspace;
-        getLocalStorage(key: string): any;
-        setLocalStorage(key: string, value: any): void;
-        private jolokiaList(callback, flags);
-        loadTree(): void;
-        /**
-         * Adds a post processor of the tree to swizzle the tree metadata after loading
-         * such as correcting any typeName values or CSS styles by hand
-         * @method addTreePostProcessor
-         * @param {Function} processor
-         */
-        addTreePostProcessor(processor: (tree: Folder) => void): string;
-        addNamedTreePostProcessor(name: string, processor: (tree: Folder) => void): string;
-        removeNamedTreePostProcessor(name: string): void;
-        maybeMonitorPlugins(): void;
-        maybeUpdatePlugins(response: Jolokia.IResponse): void;
-        maybeReloadTree(response: Jolokia.IResponse): void;
-        /**
-         * Processes response from jolokia list - if it contains "domains" and "cache" properties
-         * @param response
-         */
-        unwindResponseWithRBACCache(response: any): Core.JMXDomains;
-        populateTree(response: {
-            value: Core.JMXDomains;
-        }): void;
-        jmxTreeUpdated(): void;
-        private initFolder(folder, domain, folderNames);
-        private populateDomainFolder(tree, domainName, domain);
-        /**
-         * Escape only '<' and '>' as opposed to Core.escapeHtml() and _.escape()
-         *
-         * @param {string} str string to be escaped
-        */
-        private escapeTagOnly(str);
-        private populateMBeanFolder(domainFolder, domainClass, mbeanName, mbean);
-        private folderGetOrElse(folder, name);
-        private splitMBeanProperty(property);
-        configureFolder(folder: Folder, domainName: string, domainClass: string, folderNames: string[], path: string): Folder;
-        private addFolderByDomain(folder, domainName, typeName, owner);
-        private enableLazyLoading(folder);
-        /**
-         * Returns the hash query argument to append to URL links
-         * @method hash
-         * @return {String}
-         */
-        hash(): string;
-        /**
-         * Returns the currently active tab
-         * @method getActiveTab
-         * @return {Boolean}
-         */
-        getActiveTab(): any;
-        private getStrippedPathName();
-        linkContains(...words: String[]): boolean;
-        /**
-         * Returns true if the given link is active. The link can omit the leading # or / if necessary.
-         * The query parameters of the URL are ignored in the comparison.
-         * @method isLinkActive
-         * @param {String} href
-         * @return {Boolean} true if the given link is active
-         */
-        isLinkActive(href: string): boolean;
-        /**
-         * Returns true if the given link is active. The link can omit the leading # or / if necessary.
-         * The query parameters of the URL are ignored in the comparison.
-         * @method isLinkActive
-         * @param {String} href
-         * @return {Boolean} true if the given link is active
-         */
-        isLinkPrefixActive(href: string): boolean;
-        /**
-         * Returns true if the tab query parameter is active or the URL starts with the given path
-         * @method isTopTabActive
-         * @param {String} path
-         * @return {Boolean}
-         */
-        isTopTabActive(path: string): boolean;
-        isMainTabActive(path: string): boolean;
-        /**
-         * Returns the selected mbean name if there is one
-         * @method getSelectedMBeanName
-         * @return {String}
-         */
-        getSelectedMBeanName(): string;
-        getSelectedMBean(): NodeSelection;
-        /**
-         * Returns true if the path is valid for the current selection
-         * @method validSelection
-         * @param {String} uri
-         * @return {Boolean}
-         */
-        validSelection(uri: string): boolean;
-        /**
-         * In cases where we have just deleted something we typically want to change
-         * the selection to the parent node
-         * @method removeAndSelectParentNode
-         */
-        removeAndSelectParentNode(): void;
-        selectParentNode(): void;
-        /**
-         * Returns the view configuration key for the kind of selection
-         * for example based on the domain and the node type
-         * @method selectionViewConfigKey
-         * @return {String}
-         */
-        selectionViewConfigKey(): string;
-        /**
-         * Returns a configuration key for a node which is usually of the form
-         * domain/typeName or for folders with no type, domain/name/folder
-         * @method selectionConfigKey
-         * @param {String} prefix
-         * @return {String}
-         */
-        selectionConfigKey(prefix?: string): string;
-        moveIfViewInvalid(): boolean;
-        updateSelectionNode(node: NodeSelection): void;
-        broadcastSelectionNode(): void;
-        private matchesProperties(entries, properties);
-        hasInvokeRightsForName(objectName: string, ...methods: string[]): boolean;
-        hasInvokeRights(selection: NodeSelection, ...methods: string[]): boolean;
-        private resolveCanInvoke(op);
-        treeContainsDomainAndProperties(domainName: string, properties?: any): boolean;
-        private matches(folder, properties, propertiesCount);
-        hasDomainAndProperties(domainName: string, properties?: any, propertiesCount?: any): boolean;
-        findMBeanWithProperties(domainName: string, properties?: any, propertiesCount?: any): any;
-        findChildMBeanWithProperties(folder: any, properties?: any, propertiesCount?: any): any;
-        selectionHasDomainAndLastFolderName(objectName: string, lastName: string): boolean;
-        selectionHasDomain(domainName: string): boolean;
-        selectionHasDomainAndType(objectName: string, typeName: string): boolean;
-        /**
-         * Returns true if this workspace has any mbeans at all
-         */
-        hasMBeans(): boolean;
-        hasFabricMBean(): boolean;
-        isFabricFolder(): boolean;
-        isCamelContext(): boolean;
-        isCamelFolder(): boolean;
-        isEndpointsFolder(): boolean;
-        isEndpoint(): boolean;
-        isRoutesFolder(): boolean;
-        isRoute(): boolean;
-        isComponentsFolder(): boolean;
-        isComponent(): boolean;
-        isDataformatsFolder(): boolean;
-        isDataformat(): boolean;
-        isOsgiFolder(): boolean;
-        isKarafFolder(): boolean;
-        isOsgiCompendiumFolder(): boolean;
-    }
-}
-declare namespace Jmx {
-    class TreeService {
-        private $rootScope;
-        private $q;
-        private workspace;
-        constructor($rootScope: ng.IRootScopeService, $q: ng.IQService, workspace: Jmx.Workspace);
-        treeContainsDomainAndProperties(domainName: string, properties?: any): ng.IPromise<boolean>;
-        findMBeanWithProperties(domainName: string, properties?: any, propertiesCount?: any): ng.IPromise<any>;
-        getSelectedMBean(): ng.IPromise<NodeSelection>;
-        getSelectedMBeanName(): ng.IPromise<string>;
-        runWhenTreeReady(fn: () => any): ng.IPromise<any>;
-        private runWhenTreeSelectionReady(fn);
-    }
-}
-declare namespace Diagnostics {
-    class DiagnosticsService {
-        private $q;
-        private treeService;
-        private configManager;
-        constructor($q: ng.IQService, treeService: Jmx.TreeService, configManager: Core.ConfigManager);
-        getTabs(): ng.IPromise<Nav.HawtioTab[]>;
-        private hasHotspotDiagnostic();
-        private hasDiagnosticFunction(operation);
-        findMyPid(title: any): string;
-    }
-}
-declare namespace Diagnostics {
-    interface ClassStats {
-        count: string;
-        bytes: string;
-        name: string;
-        deltaCount: string;
-        deltaBytes: string;
-    }
-    interface HeapControllerScope extends ng.IScope {
-        items: Array<ClassStats>;
-        loading: boolean;
-        lastLoaded: any;
-        toolbarConfig: any;
-        tableConfig: any;
-        tableDtOptions: any;
-        tableColumns: Array<any>;
-        pageConfig: object;
-        loadClassStats: () => void;
-    }
-    function DiagnosticsHeapController($scope: HeapControllerScope, jolokia: Jolokia.IJolokia, diagnosticsService: DiagnosticsService): void;
-}
-declare namespace Diagnostics {
-    interface JfrSettings {
-        limitType: string;
-        limitValue: string;
-        recordingNumber: string;
-        dumpOnExit: boolean;
-        name: string;
-        filename: string;
-    }
-    interface Recording {
-        number: string;
-        size: string;
-        file: string;
-        time: number;
-    }
-    interface JfrControllerScope extends ng.IScope {
-        forms: any;
-        jfrEnabled: boolean;
-        isRecording: boolean;
-        isRunning: boolean;
-        jfrSettings: JfrSettings;
-        unlock: () => void;
-        startRecording: () => void;
-        stopRecording: () => void;
-        dumpRecording: () => void;
-        formConfig: Forms.FormConfiguration;
-        recordings: Array<Recording>;
-        pid: string;
-        jfrStatus: string;
-        pageTitle: string;
-        settingsVisible: boolean;
-        toggleSettingsVisible: () => void;
-        jcmd: string;
-        closeMessageForGood: (key: string) => void;
-        isMessageVisible: (key: string) => boolean;
-    }
-    function DiagnosticsJfrController($scope: JfrControllerScope, $location: ng.ILocationService, workspace: Jmx.Workspace, jolokia: Jolokia.IJolokia, localStorage: Storage, diagnosticsService: DiagnosticsService): void;
-}
-declare namespace Diagnostics {
-    class DiagnosticsController {
-        private $location;
-        private diagnosticsService;
-        tabs: Nav.HawtioTab[];
-        constructor($location: ng.ILocationService, diagnosticsService: DiagnosticsService);
-        $onInit(): void;
-        goto(tab: Nav.HawtioTab): void;
-    }
-    const diagnosticsComponent: angular.IComponentOptions;
-}
-declare namespace Diagnostics {
-    function configureRoutes(configManager: Core.ConfigManager): void;
-    function configureLayout($rootScope: ng.IScope, $templateCache: ng.ITemplateCacheService, viewRegistry: any, helpRegistry: any, workspace: Jmx.Workspace, diagnosticsService: DiagnosticsService): void;
-}
-declare namespace Diagnostics {
-    const log: Logging.Logger;
-    const _module: angular.IModule;
-}
-declare namespace Jmx {
-    function createDashboardLink(widgetType: any, widget: any): string;
-    function getWidgetType(widget: any): {
-        type: string;
-        icon: string;
-        route: string;
-        size_x: number;
-        size_y: number;
-        title: string;
-    };
-    var jmxWidgetTypes: {
-        type: string;
-        icon: string;
-        route: string;
-        size_x: number;
-        size_y: number;
-        title: string;
-    }[];
-    var jmxWidgets: ({
-        type: string;
-        title: string;
-        mbean: string;
-        attribute: string;
-        total: string;
-        terms: string;
-        remaining: string;
-    } | {
-        type: string;
-        title: string;
-        mbean: string;
-        total: string;
-        terms: string;
-        remaining: string;
-        attribute?: undefined;
-    } | {
-        type: string;
-        title: string;
-        mbean: string;
-        attribute: string;
-        total?: undefined;
-        terms?: undefined;
-        remaining?: undefined;
-    })[];
-}
-declare namespace Jmx {
-    class HeaderController {
-        title: string;
-        objectName: string;
-        constructor($scope: any);
-    }
-    const headerComponent: angular.IComponentOptions;
-}
-declare namespace Jmx {
-    class NavigationController {
-        private $location;
-        constructor($location: ng.ILocationService);
-        tabs: Nav.HawtioTab[];
-        goto(tab: Nav.HawtioTab): void;
-    }
-    const navigationComponent: angular.IComponentOptions;
-}
-declare namespace Jmx {
-    const commonModule: string;
-}
-declare namespace Jmx {
-    function AttributesController($scope: any, $element: any, $location: ng.ILocationService, workspace: Workspace, jmxWidgets: any, jmxWidgetTypes: any, $templateCache: ng.ITemplateCacheService, localStorage: Storage, $browser: any, $timeout: ng.ITimeoutService, $uibModal: angular.ui.bootstrap.IModalService, attributesService: AttributesService): void;
-}
-/**
- * @namespace RBAC
- */
-declare namespace RBAC {
-    interface RBACTasks extends Core.Tasks {
-        initialize(mbean: string): void;
-        getACLMBean(): ng.IPromise<string>;
-    }
-    interface OperationCanInvoke {
-        CanInvoke: boolean;
-        Method: string;
-        ObjectName: string;
-    }
-}
-declare namespace Jmx {
-    class AttributesService {
-        private $q;
-        private jolokia;
-        private jolokiaUrl;
-        private rbacACLMBean;
-        constructor($q: ng.IQService, jolokia: Jolokia.IJolokia, jolokiaUrl: string, rbacACLMBean: ng.IPromise<string>);
-        registerJolokia(scope: any, request: any, callback: any): void;
-        unregisterJolokia(scope: any): void;
-        listMBean(mbeanName: string, callback: any): void;
-        canInvoke(mbeanName: string, attribute: string, type: string): ng.IPromise<boolean>;
-        buildJolokiaUrl(mbeanName: string, attribute: string): string;
-        update(mbeanName: string, attribute: string, value: any): void;
-    }
-}
-declare namespace Jmx {
-    const attributesModule: string;
-}
-declare namespace Jmx {
-    class Operation {
-        args: OperationArgument[];
-        description: string;
-        name: string;
-        readableName: string;
-        canInvoke: boolean;
-        constructor(method: string, args: OperationArgument[], description: string);
-        private static buildName(method, args);
-        private static buildReadableName(method, args);
-    }
-    class OperationArgument {
-        name: string;
-        type: string;
-        desc: string;
-        constructor();
-        readableType(): string;
-    }
-}
-declare namespace Jmx {
-    class OperationsService {
-        private $q;
-        private jolokia;
-        private jolokiaUrl;
-        private workspace;
-        private treeService;
-        private rbacACLMBean;
-        constructor($q: ng.IQService, jolokia: Jolokia.IJolokia, jolokiaUrl: string, workspace: Jmx.Workspace, treeService: TreeService, rbacACLMBean: ng.IPromise<string>);
-        getOperations(): ng.IPromise<Operation[]>;
-        private fetchOperations(mbeanName);
-        private addOperation(operations, operationMap, opName, op);
-        private fetchPermissions(operationMap, mbeanName);
-        executeOperation(mbeanName: string, operation: Operation, argValues?: any[]): ng.IPromise<string>;
-        buildJolokiaUrl(operation: Operation): string;
-    }
-}
-declare namespace Jmx {
-    class OperationsController {
-        private operationsService;
-        operations: Operation[];
-        config: {
-            showSelectBox: boolean;
-            useExpandingRows: boolean;
-        };
-        menuActions: {
-            name: string;
-            actionFn: (action: any, item: Operation) => void;
-        }[];
-        constructor(operationsService: OperationsService);
-        $onInit(): void;
-    }
-    const operationsComponent: angular.IComponentOptions;
-}
-declare namespace Jmx {
-    class OperationFormController {
-        private workspace;
-        private operationsService;
-        operation: Operation;
-        formFields: {
-            label: string;
-            type: string;
-            helpText: string;
-            value: any;
-        }[];
-        editorMode: string;
-        operationFailed: boolean;
-        operationResult: string;
-        isExecuting: boolean;
-        constructor(workspace: Workspace, operationsService: OperationsService);
-        $onInit(): void;
-        private static buildHelpText(arg);
-        private static convertToHtmlInputType(javaType);
-        private static getDefaultValue(javaType);
-        execute(): void;
-    }
-    const operationFormComponent: angular.IComponentOptions;
-}
-declare namespace Jmx {
-    const operationsModule: string;
-}
-declare namespace Jmx {
-    class TreeHeaderController {
-        private $scope;
-        private $element;
-        filter: string;
-        result: any[];
-        constructor($scope: any, $element: JQuery);
-        $onInit(): void;
-        private search(filter);
-        private tree();
-        expandAll(): any;
-        contractAll(): any;
-    }
-}
-declare namespace Jmx {
-    const treeHeaderComponent: angular.IComponentOptions;
-}
-declare namespace Jmx {
-    class TreeController {
-        private $scope;
-        private $location;
-        private workspace;
-        private $element;
-        private $timeout;
-        constructor($scope: any, $location: ng.ILocationService, workspace: Workspace, $element: JQuery, $timeout: ng.ITimeoutService);
-        $onInit(): void;
-        treeFetched(): boolean;
-        updateSelectionFromURL(): void;
-        private populateTree();
-        private removeTree();
-    }
-    const treeComponent: angular.IComponentOptions;
-}
-declare namespace Jmx {
-    const treeModule: string;
-    const treeElementId = "#jmxtree";
-}
-declare namespace Jmx {
-    var _module: angular.IModule;
-}
-declare namespace Jmx {
-    var AreaChartController: angular.IModule;
-}
-declare namespace Jmx {
-}
-declare namespace Jmx {
-}
-declare namespace Jmx {
-    var DonutChartController: angular.IModule;
-}
-declare namespace Jmx {
     function findLazyLoadingFunction(workspace: Workspace, folder: any): (workspace: Workspace, folder: Folder, onComplete: (children: NodeSelection[]) => void) => void;
     function registerLazyLoadHandler(domain: string, lazyLoaderFactory: (folder: Folder) => any): void;
     function unregisterLazyLoadHandler(domain: string, lazyLoaderFactory: (folder: Folder) => any): void;
@@ -1031,6 +966,137 @@ declare namespace JVM {
 declare namespace JVM {
 }
 declare namespace JVM {
+}
+declare namespace Logs {
+    class LogEntry {
+        className: string;
+        containerName: string;
+        exception: string;
+        fileName: string;
+        hasOSGiProps: boolean;
+        hasLogSourceHref: boolean;
+        hasLogSourceLineHref: boolean;
+        host: string;
+        level: string;
+        levelClass: string;
+        lineNumber: string;
+        logger: string;
+        logSourceUrl: string;
+        methodName: string;
+        properties: {};
+        sanitizedMessage: string;
+        seq: string;
+        thread: string;
+        timestamp: string;
+        constructor(event: any);
+        private static getLevelClass(level);
+        private static hasOSGiProps(properties);
+        private static hasLogSourceHref(properties);
+        private static hasLogSourceLineHref(lineNumber);
+        private static getLogSourceUrl(event);
+        private static removeQuestion(text);
+    }
+}
+declare namespace Logs {
+    class LogsService {
+        private $q;
+        private jolokiaService;
+        private localStorage;
+        private workspace;
+        constructor($q: ng.IQService, jolokiaService: JVM.JolokiaService, localStorage: Storage, workspace: Jmx.Workspace);
+        getLogQueryMBean(): Jmx.Folder;
+        hasLogQueryMBean(): boolean;
+        getInitialLogs(): ng.IPromise<any>;
+        getMoreLogs(fromTimestamp: number): ng.IPromise<LogEntry[]>;
+        private getLogs(operation, arg1);
+        appendLogs(logs: LogEntry[], logEntries: LogEntry[]): LogEntry[];
+        filterLogs(logs: LogEntry[], filterConfig: any): LogEntry[];
+        isLogSortAsc(): boolean;
+        isLogAutoScroll(): boolean;
+        getLogCacheSize(): number;
+        getLogBatchSize(): number;
+    }
+}
+declare namespace Logs {
+    function configureLogsPreferences(preferencesRegistry: any, logsService: LogsService): void;
+}
+declare namespace Logs {
+    function LogsPreferencesController($scope: any, localStorage: any): void;
+}
+declare namespace Logs {
+    const logsPreferencesModule: string;
+}
+declare namespace Logs {
+    class LogModalController {
+        resolve: {
+            logEntry: LogEntry;
+        };
+        readonly logEntry: LogEntry;
+    }
+    const logModalComponent: angular.IComponentOptions;
+}
+declare namespace Logs {
+    class LogsController {
+        private $timeout;
+        private $uibModal;
+        private logsService;
+        logs: any[];
+        filteredLogs: any[];
+        messageSearchText: any[];
+        toolbarConfig: {
+            filterConfig: {
+                fields: ({
+                    id: string;
+                    title: string;
+                    placeholder: string;
+                    filterType: string;
+                    filterValues: string[];
+                } | {
+                    id: string;
+                    title: string;
+                    placeholder: string;
+                    filterType: string;
+                    filterValues?: undefined;
+                })[];
+                totalCount: number;
+                resultsCount: number;
+                appliedFilters: any[];
+                onFilterChange: (filters: any) => void;
+            };
+            isTableView: boolean;
+        };
+        scrollableTable: any;
+        constructor($timeout: any, $uibModal: any, logsService: LogsService);
+        $onInit(): void;
+        onFilterChange(filters: any): void;
+        removePreviousLevelFilter(filters: any[]): void;
+        getMessageFilterValues(filters: any[]): any[];
+        openLogModal(logEntry: LogEntry): void;
+        processLogEntries(response: any): void;
+        scheduleNextRequest(fromTimestamp: number): void;
+        isTableScrolled(): boolean;
+        scrollTable(): void;
+    }
+    const logsComponent: angular.IComponentOptions;
+}
+declare namespace Logs {
+    function configureLogsRoutes($routeProvider: any): void;
+    function configureLogsHelp(helpRegistry: any, logsService: LogsService): void;
+    function configureLogsMainNav(mainNavService: Nav.MainNavService, logsService: LogsService): void;
+}
+declare namespace Logs {
+    function logDateFilter($filter: any): (log: any) => any;
+    /**
+     * @param text {string} haystack to search through
+     * @param search {string} needle to search for
+     * @param [caseSensitive] {boolean} optional boolean to use case-sensitive searching
+     */
+    function highlight(): (text: string, searches: string[], caseSensitive: boolean) => string;
+}
+declare namespace Logs {
+    const logsModule: string;
+}
+declare namespace Logs {
 }
 declare namespace RBAC {
     class JmxTreeProcessor {
@@ -1083,25 +1149,24 @@ declare namespace RBAC {
 }
 declare namespace Runtime {
     class RuntimeService {
-        private treeService;
-        constructor(treeService: Jmx.TreeService);
-        getTabs(): ng.IPromise<Nav.HawtioTab[]>;
+        private workspace;
+        constructor(workspace: Jmx.Workspace);
+        getTabs(): Nav.HawtioTab[];
     }
 }
 declare namespace Runtime {
     class RuntimeController {
-        private $location;
         private runtimeService;
         tabs: Nav.HawtioTab[];
-        constructor($location: ng.ILocationService, runtimeService: RuntimeService);
+        constructor(runtimeService: RuntimeService);
         $onInit(): void;
-        goto(tab: Nav.HawtioTab): void;
     }
     const runtimeComponent: angular.IComponentOptions;
 }
 declare namespace Runtime {
     function configureRoutes($routeProvider: angular.route.IRouteProvider): void;
-    function configureLayout($templateCache: ng.ITemplateCacheService, viewRegistry: any, helpRegistry: Help.HelpRegistry, treeService: Jmx.TreeService, workspace: Jmx.Workspace): void;
+    function configureHelp(helpRegistry: Help.HelpRegistry): void;
+    function configureMainNav(mainNavService: Nav.MainNavService, workspace: Jmx.Workspace): void;
 }
 declare namespace Runtime {
     interface SystemProperty {

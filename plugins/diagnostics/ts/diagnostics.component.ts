@@ -5,27 +5,17 @@ namespace Diagnostics {
   export class DiagnosticsController {
     tabs: Nav.HawtioTab[];
 
-    constructor(private $location: ng.ILocationService, private diagnosticsService: DiagnosticsService) {
+    constructor(private diagnosticsService: DiagnosticsService) {
       'ngInject';
     }
 
     $onInit() {
-      this.diagnosticsService.getTabs()
-        .then(tabs => this.tabs = tabs);
-    }
-
-    goto(tab: Nav.HawtioTab) {
-      this.$location.path(tab.path);
+      this.tabs = this.diagnosticsService.getTabs();
     }
   }
 
   export const diagnosticsComponent: angular.IComponentOptions = {
-    template: `
-      <div class="nav-tabs-main">
-        <hawtio-tabs tabs="$ctrl.tabs" on-change="$ctrl.goto(tab)"></hawtio-tabs>
-        <div class="contents" ng-view></div>
-      </div>
-    `,
+    template: '<hawtio-tabs-layout tabs="$ctrl.tabs"></hawtio-tabs-layout>',
     controller: DiagnosticsController
   };
 

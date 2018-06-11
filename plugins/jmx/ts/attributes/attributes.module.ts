@@ -1,4 +1,3 @@
-/// <reference path="../jmxPlugin.ts"/>
 /// <reference path="attributes.controller.ts"/>
 /// <reference path="attributes.service.ts"/>
 

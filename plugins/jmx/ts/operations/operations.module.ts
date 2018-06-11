@@ -1,4 +1,3 @@
-/// <reference path="../jmxPlugin.ts"/>
 /// <reference path="operations.component.ts"/>
 /// <reference path="operation-form.component.ts"/>
 /// <reference path="operations.service.ts"/>

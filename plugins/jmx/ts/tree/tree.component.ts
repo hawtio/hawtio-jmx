@@ -21,10 +21,6 @@ namespace Jmx {
       this.populateTree();
     }
 
-    treeFetched(): boolean {
-      return this.workspace.treeFetched;
-    }
-
     updateSelectionFromURL(): void {
       updateTreeSelectionFromURL(this.$location, $(treeElementId));
     }

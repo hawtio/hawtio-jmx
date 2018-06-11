@@ -14,7 +14,8 @@ namespace Runtime {
       threadsModule
     ])
     .config(configureRoutes)
-    .run(configureLayout)
+    .run(configureHelp)
+    .run(configureMainNav)
     .component('runtime', runtimeComponent)
     .service('runtimeService', RuntimeService)
     .name;

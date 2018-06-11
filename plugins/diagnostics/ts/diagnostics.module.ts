@@ -14,7 +14,8 @@ namespace Diagnostics {
   export const _module = angular
     .module(pluginName, [])
     .config(configureRoutes)
-    .run(configureLayout)
+    .run(configureHelp)
+    .run(configureMainNav)
     .component("diagnostics", diagnosticsComponent)
     .controller("DiagnosticsJfrController", DiagnosticsJfrController)
     .controller("DiagnosticsHeapController", DiagnosticsHeapController)

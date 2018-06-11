@@ -1,5 +1,3 @@
-/// <reference path="../jmxPlugin.ts"/>
-
 namespace Jmx {
 
   const PROPERTIES_COLUMN_DEFS = [
@@ -42,8 +40,6 @@ namespace Jmx {
     $element,
     $location: ng.ILocationService,
     workspace: Workspace,
-    jmxWidgets,
-    jmxWidgetTypes,
     $templateCache: ng.ITemplateCacheService,
     localStorage: Storage,
     $browser,
