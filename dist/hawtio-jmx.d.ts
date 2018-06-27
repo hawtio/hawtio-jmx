@@ -956,6 +956,7 @@ declare namespace JVM {
         getAttribute(objectName: string, attribute: string): ng.IPromise<any>;
         getAttributes(objectName: string, attributes: string[]): ng.IPromise<object>;
         setAttribute(objectName: string, attribute: string, value: any): ng.IPromise<any>;
+        setAttributes(objectName: string, attributes: string[], values: any[]): ng.IPromise<any[]>;
         execute(objectName: string, operation: string, ...args: any[]): ng.IPromise<any>;
         executeMany(objectNames: string[], operation: string, ...args: any[]): ng.IPromise<any[]>;
     }
@@ -966,137 +967,6 @@ declare namespace JVM {
 declare namespace JVM {
 }
 declare namespace JVM {
-}
-declare namespace Logs {
-    class LogEntry {
-        className: string;
-        containerName: string;
-        exception: string;
-        fileName: string;
-        hasOSGiProps: boolean;
-        hasLogSourceHref: boolean;
-        hasLogSourceLineHref: boolean;
-        host: string;
-        level: string;
-        levelClass: string;
-        lineNumber: string;
-        logger: string;
-        logSourceUrl: string;
-        methodName: string;
-        properties: {};
-        sanitizedMessage: string;
-        seq: string;
-        thread: string;
-        timestamp: string;
-        constructor(event: any);
-        private static getLevelClass(level);
-        private static hasOSGiProps(properties);
-        private static hasLogSourceHref(properties);
-        private static hasLogSourceLineHref(lineNumber);
-        private static getLogSourceUrl(event);
-        private static removeQuestion(text);
-    }
-}
-declare namespace Logs {
-    class LogsService {
-        private $q;
-        private jolokiaService;
-        private localStorage;
-        private workspace;
-        constructor($q: ng.IQService, jolokiaService: JVM.JolokiaService, localStorage: Storage, workspace: Jmx.Workspace);
-        getLogQueryMBean(): Jmx.Folder;
-        hasLogQueryMBean(): boolean;
-        getInitialLogs(): ng.IPromise<any>;
-        getMoreLogs(fromTimestamp: number): ng.IPromise<LogEntry[]>;
-        private getLogs(operation, arg1);
-        appendLogs(logs: LogEntry[], logEntries: LogEntry[]): LogEntry[];
-        filterLogs(logs: LogEntry[], filterConfig: any): LogEntry[];
-        isLogSortAsc(): boolean;
-        isLogAutoScroll(): boolean;
-        getLogCacheSize(): number;
-        getLogBatchSize(): number;
-    }
-}
-declare namespace Logs {
-    function configureLogsPreferences(preferencesRegistry: any, logsService: LogsService): void;
-}
-declare namespace Logs {
-    function LogsPreferencesController($scope: any, localStorage: any): void;
-}
-declare namespace Logs {
-    const logsPreferencesModule: string;
-}
-declare namespace Logs {
-    class LogModalController {
-        resolve: {
-            logEntry: LogEntry;
-        };
-        readonly logEntry: LogEntry;
-    }
-    const logModalComponent: angular.IComponentOptions;
-}
-declare namespace Logs {
-    class LogsController {
-        private $timeout;
-        private $uibModal;
-        private logsService;
-        logs: any[];
-        filteredLogs: any[];
-        messageSearchText: any[];
-        toolbarConfig: {
-            filterConfig: {
-                fields: ({
-                    id: string;
-                    title: string;
-                    placeholder: string;
-                    filterType: string;
-                    filterValues: string[];
-                } | {
-                    id: string;
-                    title: string;
-                    placeholder: string;
-                    filterType: string;
-                    filterValues?: undefined;
-                })[];
-                totalCount: number;
-                resultsCount: number;
-                appliedFilters: any[];
-                onFilterChange: (filters: any) => void;
-            };
-            isTableView: boolean;
-        };
-        scrollableTable: any;
-        constructor($timeout: any, $uibModal: any, logsService: LogsService);
-        $onInit(): void;
-        onFilterChange(filters: any): void;
-        removePreviousLevelFilter(filters: any[]): void;
-        getMessageFilterValues(filters: any[]): any[];
-        openLogModal(logEntry: LogEntry): void;
-        processLogEntries(response: any): void;
-        scheduleNextRequest(fromTimestamp: number): void;
-        isTableScrolled(): boolean;
-        scrollTable(): void;
-    }
-    const logsComponent: angular.IComponentOptions;
-}
-declare namespace Logs {
-    function configureLogsRoutes($routeProvider: any): void;
-    function configureLogsHelp(helpRegistry: any, logsService: LogsService): void;
-    function configureLogsMainNav(mainNavService: Nav.MainNavService, logsService: LogsService): void;
-}
-declare namespace Logs {
-    function logDateFilter($filter: any): (log: any) => any;
-    /**
-     * @param text {string} haystack to search through
-     * @param search {string} needle to search for
-     * @param [caseSensitive] {boolean} optional boolean to use case-sensitive searching
-     */
-    function highlight(): (text: string, searches: string[], caseSensitive: boolean) => string;
-}
-declare namespace Logs {
-    const logsModule: string;
-}
-declare namespace Logs {
 }
 declare namespace RBAC {
     class JmxTreeProcessor {
