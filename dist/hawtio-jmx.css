@@ -405,6 +405,80 @@ div.tree-nav-layout .sidebar-pf .rg-right {
   margin-top: 20px;
 }
 
+.logs-preferences-form {
+  margin-top: 20px;
+}
+
+logs {
+  height: 100%;
+}
+.log-jmx-main {
+  height: inherit;
+  padding-bottom: 20px;
+}
+.log-jmx-main .log-jmx-flex-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+.log-jmx-main .log-jmx-flex-container .log-jmx-fixed-toolbar {
+  flex: 0 0 auto;
+}
+.log-jmx-main .log-jmx-flex-container .log-jmx-scrollable-table {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  position: relative;
+  border-left: 1px solid #d1d1d1;
+  border-right: 1px solid #d1d1d1;
+  border-bottom: 1px solid #d1d1d1;
+}
+.log-jmx-main .log-jmx-flex-container .log-jmx-scrollable-table tr:first-child td {
+  border-top-width: 0;
+}
+.log-jmx-main .log-jmx-header-table {
+  border: 1px solid #d1d1d1;
+}
+.log-jmx-main .log-jmx-header-table th {
+  border-bottom-width: 0;
+}
+.log-jmx-main .table {
+  table-layout: fixed;
+  margin-bottom: 0;
+}
+.log-jmx-main .table th:nth-child(1) {
+  width: 150px;
+}
+.log-jmx-main .table th:nth-child(2) {
+  width: 60px;
+}
+.log-jmx-main .table th:nth-child(3) {
+  width: 30%;
+}
+.log-jmx-main .table th:nth-child(4) {
+  width: auto;
+}
+.log-jmx-main .table td:nth-child(1) {
+  width: 150px;
+}
+.log-jmx-main .table td:nth-child(2) {
+  width: 60px;
+}
+.log-jmx-main .table td:nth-child(3) {
+  width: 30%;
+  word-break: break-all;
+}
+.log-jmx-main .table td:nth-child(4) {
+  width: auto;
+  word-break: break-all;
+}
+.log-jmx-main .pf-table-view-selected-label {
+  display: none;
+}
+.log-jmx-main .log-jmx-stacktrace-list-item:not(:first-child) {
+  padding-left: 14px;
+}
+
 .runtime-sysprops-main .table {
   table-layout: fixed;
   margin-bottom: 0;

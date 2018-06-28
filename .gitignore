@@ -9,7 +9,6 @@ node_modules/
 libs/
 
 # Logs
-logs
 *.log
 npm-debug.log*
 *.iml
