@@ -4309,7 +4309,7 @@ var JVM;
             var _this = this;
             this.$uibModal.open({
                 component: 'connectEditModal',
-                resolve: { connection: function () { return JVM.createConnectOptions({ host: 'localhost', path: 'jolokia', port: 8181 }); } }
+                resolve: { connection: function () { return JVM.createConnectOptions(); } }
             })
                 .result.then(function (connection) {
                 _this.connections.unshift(connection);

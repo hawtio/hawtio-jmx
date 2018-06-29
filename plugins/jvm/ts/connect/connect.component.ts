@@ -55,7 +55,7 @@ namespace JVM {
     private addConnection() {
       this.$uibModal.open({
         component: 'connectEditModal',
-        resolve: { connection: () => createConnectOptions({ host: 'localhost', path: 'jolokia', port: 8181 }) }
+        resolve: { connection: () => createConnectOptions() }
       })
       .result.then(connection => {
         this.connections.unshift(connection);
