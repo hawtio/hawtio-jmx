@@ -54,12 +54,12 @@ namespace Jmx {
     initService: Init.InitService, workspace: Workspace) {
     'ngInject';
     initService.registerInitFunction(() => {
-      console.log('Jmx.registerInitFunction: initializing...');
-      return $q((resolve, reject) => {
+      log.info('Jmx.initializeTree: initializing...');
+      return $q(resolve => {
         workspace.loadTree();
         const unsubscribe = $rootScope.$on(TreeEvent.Fetched, () => {
           unsubscribe();
-          console.log('Jmx.registerInitFunction: initialized');
+          log.info('Jmx.initializeTree: initialized');
           resolve();
         });
       });

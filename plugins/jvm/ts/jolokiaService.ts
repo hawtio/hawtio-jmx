@@ -308,12 +308,6 @@ namespace JVM {
       jolokia = new Jolokia(jolokiaParams);
       jolokia.stop();
 
-      if ('updateRate' in localStorage) {
-        if (localStorage['updateRate'] > 0) {
-          jolokia.start(localStorage['updateRate']);
-        }
-      }
-
       // let's check if we can call faster jolokia.list()
       checkJolokiaOptimization(jolokia, jolokiaStatus);
     } else {

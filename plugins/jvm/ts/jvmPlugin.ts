@@ -8,6 +8,7 @@ namespace JVM {
     .config(defineRoutes)
     .constant('mbeanName', 'hawtio:type=JVMList')
     .run(configurePlugin)
+    .run(startJolokia)
     .component("jvm", jvmComponent);
 
   function defineRoutes(configManager: Core.ConfigManager) {
@@ -82,6 +83,20 @@ namespace JVM {
       template: '<jvm></jvm>',
       isValid: () => ConnectOptions == null || ConnectOptions.name == null
     });    
+  }
+
+  function startJolokia($q: ng.IQService, initService: Init.InitService, jolokia: Jolokia.IJolokia, localStorage: Storage) {
+    'ngInject';
+    initService.registerInitFunction(() => {
+      return $q(resolve => {
+        const updateRate = localStorage['updateRate'];
+        if (updateRate && updateRate > 0) {
+          jolokia.start(updateRate);
+          log.info('JVM.startJolokia: started');
+        }
+        resolve();
+      });
+    });
   }
 
   hawtioPluginLoader.addModule(pluginName);

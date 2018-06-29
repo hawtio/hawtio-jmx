@@ -4581,11 +4581,13 @@ var JVM;
 (function (JVM) {
     defineRoutes.$inject = ["configManager"];
     configurePlugin.$inject = ["mainNavService", "$location", "viewRegistry", "helpRegistry", "preferencesRegistry", "ConnectOptions", "preLogoutTasks", "locationChangeStartTasks", "HawtioDashboard", "HawtioExtension", "$templateCache", "$compile"];
+    startJolokia.$inject = ["$q", "initService", "jolokia", "localStorage"];
     JVM._module = angular
         .module(JVM.pluginName, [JVM.ConnectModule])
         .config(defineRoutes)
         .constant('mbeanName', 'hawtio:type=JVMList')
         .run(configurePlugin)
+        .run(startJolokia)
         .component("jvm", JVM.jvmComponent);
     function defineRoutes(configManager) {
         'ngInject';
@@ -4638,6 +4640,19 @@ var JVM;
             href: '/jvm',
             template: '<jvm></jvm>',
             isValid: function () { return ConnectOptions == null || ConnectOptions.name == null; }
+        });
+    }
+    function startJolokia($q, initService, jolokia, localStorage) {
+        'ngInject';
+        initService.registerInitFunction(function () {
+            return $q(function (resolve) {
+                var updateRate = localStorage['updateRate'];
+                if (updateRate && updateRate > 0) {
+                    jolokia.start(updateRate);
+                    JVM.log.info('JVM.startJolokia: started');
+                }
+                resolve();
+            });
         });
     }
     hawtioPluginLoader.addModule(JVM.pluginName);
@@ -4926,11 +4941,6 @@ var JVM;
             }
             jolokia = new Jolokia(jolokiaParams);
             jolokia.stop();
-            if ('updateRate' in localStorage) {
-                if (localStorage['updateRate'] > 0) {
-                    jolokia.start(localStorage['updateRate']);
-                }
-            }
             // let's check if we can call faster jolokia.list()
             checkJolokiaOptimization(jolokia, jolokiaStatus);
         }
@@ -6653,12 +6663,12 @@ var Jmx;
     function initializeTree($q, $rootScope, initService, workspace) {
         'ngInject';
         initService.registerInitFunction(function () {
-            console.log('Jmx.registerInitFunction: initializing...');
-            return $q(function (resolve, reject) {
+            Jmx.log.info('Jmx.initializeTree: initializing...');
+            return $q(function (resolve) {
                 workspace.loadTree();
                 var unsubscribe = $rootScope.$on(Jmx.TreeEvent.Fetched, function () {
                     unsubscribe();
-                    console.log('Jmx.registerInitFunction: initialized');
+                    Jmx.log.info('Jmx.initializeTree: initialized');
                     resolve();
                 });
             });
