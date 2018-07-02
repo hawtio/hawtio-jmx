@@ -420,32 +420,16 @@ div.tree-nav-layout .sidebar-pf .rg-right {
   word-break: break-all;
 }
 
-@media screen and (max-width: 767px) {
-}
-@media (min-width: 768px) {
-}
-@media (min-width: 768px) {
-}
-@media (max-width: 767px) {
-}
-@media (min-width: 768px) {
-}
-@media (min-width: 768px) {
-}
-@media (max-width: 767px) {
-}
-@media (max-width: 767px) {
-}
-#threads-page .table tr td:nth-child(1) {
+.runtime-threads-table tr td:nth-child(1) {
   text-align: right;
 }
-#threads-page .table tr td:nth-child(2) {
+.runtime-threads-table tr td:nth-child(2) {
   white-space: nowrap;
 }
-#threads-page .table tr td:nth-child(3) {
+.runtime-threads-table tr td:nth-child(3) {
   max-width: 200px;
 }
-#threads-page .table tr td:nth-child(6),
-#threads-page .table tr td:nth-child(7) {
+.runtime-threads-table tr td:nth-child(6),
+.runtime-threads-table tr td:nth-child(7) {
   text-align: center;
 }

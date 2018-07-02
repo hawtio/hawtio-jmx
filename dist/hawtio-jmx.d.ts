@@ -1197,16 +1197,97 @@ declare namespace Runtime {
     const metricsModule: string;
 }
 declare namespace Runtime {
-    class ThreadsService {
-        private $q;
-        private jolokia;
-        private static STATE_LABELS;
-        constructor($q: angular.IQService, jolokia: Jolokia.IJolokia);
-        getThreads(): angular.IPromise<any[]>;
+    class Thread {
+        blockedCount: number;
+        blockedTime: string;
+        inNative: boolean;
+        lockInfo: object;
+        lockOwnerId: number;
+        lockOwnerName: string;
+        lockedMonitors: any[];
+        lockedSynchronizers: any[];
+        suspended: boolean;
+        threadId: number;
+        threadName: string;
+        threadState: string;
+        waitedCount: number;
+        waitedTime: string;
     }
 }
 declare namespace Runtime {
-    function ThreadsController($scope: any, $uibModal: angular.ui.bootstrap.IModalService, threadsService: ThreadsService): void;
+    class ThreadsService {
+        private jolokiaService;
+        private static STATE_LABELS;
+        constructor(jolokiaService: JVM.JolokiaService);
+        getThreads(): angular.IPromise<Thread[]>;
+    }
+}
+declare namespace Runtime {
+    class ThreadsController {
+        private $uibModal;
+        private threadsService;
+        FILTER_FUNCTIONS: {
+            state: (threads: any, state: any) => any;
+            name: (threads: any, name: any) => any;
+        };
+        allThreads: Thread[];
+        filteredThreads: Thread[];
+        toolbarConfig: {
+            filterConfig: {
+                fields: ({
+                    id: string;
+                    title: string;
+                    placeholder: string;
+                    filterType: string;
+                    filterValues: string[];
+                } | {
+                    id: string;
+                    title: string;
+                    placeholder: string;
+                    filterType: string;
+                    filterValues?: undefined;
+                })[];
+                onFilterChange: (filters: any[]) => void;
+                resultsCount: number;
+            };
+            isTableView: boolean;
+        };
+        tableConfig: {
+            selectionMatchProp: string;
+            showCheckboxes: boolean;
+        };
+        tableDtOptions: {
+            order: (string | number)[][];
+        };
+        tableColumns: ({
+            header: string;
+            itemField: string;
+            templateFn?: undefined;
+        } | {
+            header: string;
+            itemField: string;
+            templateFn: (value: any) => string;
+        })[];
+        tableActionButtons: {
+            name: string;
+            title: string;
+            actionFn: (action: any, thread: any) => void;
+        }[];
+        constructor($uibModal: angular.ui.bootstrap.IModalService, threadsService: ThreadsService);
+        $onInit(): void;
+        loadThreads(): void;
+        applyFilters(filters: any[]): void;
+    }
+    const threadsComponent: angular.IComponentOptions;
+}
+declare namespace Runtime {
+    class ThreadModalController {
+        resolve: {
+            thread: Thread;
+        };
+        readonly thread: Thread;
+    }
+    const threadModalComponent: angular.IComponentOptions;
 }
 declare namespace Runtime {
     const threadsModule: string;

@@ -9,7 +9,7 @@ namespace Runtime {
       .when('/runtime', {redirectTo: '/runtime/sysprops'})
       .when('/runtime/sysprops', {template: '<runtime-system-properties></runtime-system-properties>'})
       .when('/runtime/metrics', {template: '<runtime-metrics></runtime-metrics>'})
-      .when('/runtime/threads', {templateUrl: 'plugins/runtime/threads/threads.html'})
+      .when('/runtime/threads', {template: '<runtime-threads></runtime-threads>'})
   }
 
   export function configureLayout($templateCache: ng.ITemplateCacheService, viewRegistry,
