@@ -6624,7 +6624,7 @@ var Jmx;
     Jmx.configureRoutes = configureRoutes;
     function configureAbout(aboutService) {
         'ngInject';
-        aboutService.addProductInfo('Hawtio JMX', '4.0.1');
+        aboutService.addProductInfo('Hawtio JMX', 'PACKAGE_VERSION_PLACEHOLDER');
     }
     Jmx.configureAbout = configureAbout;
     function configureHelp(helpRegistry) {
@@ -8970,6 +8970,19 @@ var JVM;
                         }
                     }));
                 }
+            });
+        };
+        JolokiaService.prototype.search = function (mbeanPattern) {
+            var _this = this;
+            return this.$q(function (resolve, reject) {
+                _this.jolokia.request({ type: 'search', mbean: mbeanPattern }, Core.onSuccess(function (response) {
+                    resolve(response.value);
+                }, {
+                    error: function (response) {
+                        JVM.log.error("JolokiaService.search('" + mbeanPattern + "') failed. Error: " + response.error);
+                        reject(response.error);
+                    }
+                }));
             });
         };
         return JolokiaService;
