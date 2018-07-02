@@ -9934,7 +9934,7 @@ var Runtime;
         $routeProvider
             .when('/runtime/sysprops', { template: '<runtime-system-properties></runtime-system-properties>' })
             .when('/runtime/metrics', { template: '<runtime-metrics></runtime-metrics>' })
-            .when('/runtime/threads', { templateUrl: 'plugins/runtime/threads/threads.html' });
+            .when('/runtime/threads', { template: '<runtime-threads></runtime-threads>' });
     }
     Runtime.configureRoutes = configureRoutes;
     function configureHelp(helpRegistry) {
@@ -10304,27 +10304,32 @@ var Runtime;
 })(Runtime || (Runtime = {}));
 var Runtime;
 (function (Runtime) {
+    var Thread = /** @class */ (function () {
+        function Thread() {
+        }
+        return Thread;
+    }());
+    Runtime.Thread = Thread;
+})(Runtime || (Runtime = {}));
+/// <reference path="./thread.ts"/>
+var Runtime;
+(function (Runtime) {
     var ThreadsService = /** @class */ (function () {
-        ThreadsService.$inject = ["$q", "jolokia"];
-        function ThreadsService($q, jolokia) {
+        ThreadsService.$inject = ["jolokiaService"];
+        function ThreadsService(jolokiaService) {
             'ngInject';
-            this.$q = $q;
-            this.jolokia = jolokia;
+            this.jolokiaService = jolokiaService;
         }
         ThreadsService.prototype.getThreads = function () {
-            var _this = this;
-            return this.$q(function (resolve, reject) {
-                _this.jolokia.execute("java.lang:type=Threading", "dumpAllThreads", false, false, {
-                    success: function (threads) {
-                        threads.forEach(function (thread) {
-                            thread.threadState = ThreadsService.STATE_LABELS[thread.threadState];
-                            thread.waitedTime = thread.waitedTime > 0 ? Core.humanizeMilliseconds(thread.waitedTime) : '';
-                            thread.blockedTime = thread.blockedTime > 0 ? Core.humanizeMilliseconds(thread.blockedTime) : '';
-                            delete thread.lockMonitors;
-                        });
-                        resolve(threads);
-                    }
+            return this.jolokiaService.execute('java.lang:type=Threading', 'dumpAllThreads', false, false)
+                .then(function (threads) {
+                threads.forEach(function (thread) {
+                    thread.threadState = ThreadsService.STATE_LABELS[thread.threadState];
+                    thread.waitedTime = thread.waitedTime > 0 ? Core.humanizeMilliseconds(thread.waitedTime) : '';
+                    thread.blockedTime = thread.blockedTime > 0 ? Core.humanizeMilliseconds(thread.blockedTime) : '';
+                    delete thread.lockMonitors;
                 });
+                return threads;
             });
         };
         ThreadsService.STATE_LABELS = {
@@ -10339,134 +10344,164 @@ var Runtime;
     }());
     Runtime.ThreadsService = ThreadsService;
 })(Runtime || (Runtime = {}));
+/// <reference path="./thread.ts"/>
 /// <reference path="./threads.service.ts"/>
 var Runtime;
 (function (Runtime) {
-    ThreadsController.$inject = ["$scope", "$uibModal", "threadsService"];
-    function ThreadsController($scope, $uibModal, threadsService) {
-        'ngInject';
-        var FILTER_FUNCTIONS = {
-            state: function (threads, state) { return threads.filter(function (thread) { return thread.threadState === state; }); },
-            name: function (threads, name) {
-                var re = new RegExp(name, 'i');
-                return threads.filter(function (thread) { return re.test(thread.threadName); });
-            }
-        };
-        var allThreads;
-        $scope.toolbarConfig = {
-            filterConfig: {
-                fields: [
-                    {
-                        id: 'state',
-                        title: 'State',
-                        placeholder: 'Filter by state...',
-                        filterType: 'select',
-                        filterValues: ['Blocked', 'New', 'Runnable', 'Terminated', 'Timed waiting', 'Waiting']
+    var ThreadsController = /** @class */ (function () {
+        ThreadsController.$inject = ["$uibModal", "threadsService"];
+        function ThreadsController($uibModal, threadsService) {
+            'ngInject';
+            var _this = this;
+            this.$uibModal = $uibModal;
+            this.threadsService = threadsService;
+            this.FILTER_FUNCTIONS = {
+                state: function (threads, state) { return threads.filter(function (thread) { return thread.threadState === state; }); },
+                name: function (threads, name) {
+                    var re = new RegExp(name, 'i');
+                    return threads.filter(function (thread) { return re.test(thread.threadName); });
+                }
+            };
+            this.toolbarConfig = {
+                filterConfig: {
+                    fields: [
+                        {
+                            id: 'state',
+                            title: 'State',
+                            placeholder: 'Filter by state...',
+                            filterType: 'select',
+                            filterValues: ['Blocked', 'New', 'Runnable', 'Terminated', 'Timed waiting', 'Waiting']
+                        },
+                        {
+                            id: 'name',
+                            title: 'Name',
+                            placeholder: 'Filter by name...',
+                            filterType: 'text'
+                        }
+                    ],
+                    onFilterChange: function (filters) {
+                        _this.applyFilters(filters);
                     },
-                    {
-                        id: 'name',
-                        title: 'Name',
-                        placeholder: 'Filter by name...',
-                        filterType: 'text'
+                    resultsCount: 0
+                },
+                isTableView: true
+            };
+            this.tableConfig = {
+                selectionMatchProp: 'threadId',
+                showCheckboxes: false
+            };
+            this.tableDtOptions = {
+                order: [[0, "desc"]]
+            };
+            this.tableColumns = [
+                {
+                    header: 'ID',
+                    itemField: 'threadId'
+                },
+                {
+                    header: 'State',
+                    itemField: 'threadState'
+                },
+                {
+                    header: 'Name',
+                    itemField: 'threadName',
+                    templateFn: function (value) { return "<span class=\"table-cell-truncated\" title=\"" + value + "\">" + value + "</span>"; }
+                },
+                {
+                    header: 'Waited Time',
+                    itemField: 'waitedTime'
+                },
+                {
+                    header: 'Blocked Time',
+                    itemField: 'blockedTime'
+                },
+                {
+                    header: 'Native',
+                    itemField: 'inNative',
+                    templateFn: function (value) { return value ? '<span class="fa fa-circle" aria-hidden="true"></span><span class="hidden">b</span>' : '<span class="hidden">a</span>'; }
+                },
+                {
+                    header: 'Suspended',
+                    itemField: 'suspended',
+                    templateFn: function (value) { return value ? '<span class="fa fa-circle" aria-hidden="true"></span><span class="hidden">b</span>' : '<span class="hidden">a</span>'; }
+                }
+            ];
+            this.tableActionButtons = [
+                {
+                    name: 'More',
+                    title: 'View more information about this thread',
+                    actionFn: function (action, thread) {
+                        console.log(thread);
+                        _this.$uibModal.open({
+                            component: 'threadModal',
+                            size: 'lg',
+                            resolve: { thread: thread }
+                        });
                     }
-                ],
-                onFilterChange: filterChange
-            },
-            isTableView: true
+                }
+            ];
+        }
+        ThreadsController.prototype.$onInit = function () {
+            this.loadThreads();
         };
-        $scope.tableConfig = {
-            selectionMatchProp: 'threadId',
-            showCheckboxes: false
-        };
-        $scope.tableDtOptions = {
-            order: [[0, "desc"]]
-        };
-        $scope.tableColumns = [
-            {
-                header: 'ID',
-                itemField: 'threadId'
-            },
-            {
-                header: 'State',
-                itemField: 'threadState'
-            },
-            {
-                header: 'Name',
-                itemField: 'threadName',
-                templateFn: function (value) { return "<span class=\"table-cell-truncated\" title=\"" + value + "\">" + value + "</span>"; }
-            },
-            {
-                header: 'Waited Time',
-                itemField: 'waitedTime'
-            },
-            {
-                header: 'Blocked Time',
-                itemField: 'blockedTime'
-            },
-            {
-                header: 'Native',
-                itemField: 'inNative',
-                templateFn: function (value) { return value ? '<span class="fa fa-circle" aria-hidden="true"></span>' : ''; }
-            },
-            {
-                header: 'Suspended',
-                itemField: 'suspended',
-                templateFn: function (value) { return value ? '<span class="fa fa-circle" aria-hidden="true"></span>' : ''; }
-            }
-        ];
-        $scope.tableItems = null;
-        $scope.tableActionButtons = [
-            {
-                name: 'More',
-                title: 'View more information about this thread',
-                actionFn: viewDetails
-            }
-        ];
-        (function init() {
-            loadThreads();
-        })();
-        function loadThreads() {
-            threadsService.getThreads().then(function (threads) {
-                allThreads = threads;
-                $scope.filteredThreads = threads;
-                updateResultCount();
+        ThreadsController.prototype.loadThreads = function () {
+            var _this = this;
+            this.threadsService.getThreads().then(function (threads) {
+                _this.allThreads = threads;
+                _this.applyFilters([]);
             });
-        }
-        function filterChange(filters) {
-            applyFilters(filters);
-            updateResultCount();
-        }
-        function applyFilters(filters) {
-            var filteredThreads = allThreads;
+        };
+        ThreadsController.prototype.applyFilters = function (filters) {
+            var _this = this;
+            var filteredThreads = this.allThreads;
             filters.forEach(function (filter) {
-                filteredThreads = FILTER_FUNCTIONS[filter.id](filteredThreads, filter.value);
+                filteredThreads = _this.FILTER_FUNCTIONS[filter.id](filteredThreads, filter.value);
             });
-            $scope.filteredThreads = filteredThreads;
-        }
-        function updateResultCount() {
-            $scope.toolbarConfig.filterConfig.resultsCount = $scope.filteredThreads.length;
-        }
-        function viewDetails(action, item) {
-            $scope.thread = _.find($scope.filteredThreads, function (thread) { return thread.threadId === item.threadId; });
-            openModal();
-        }
-        function openModal() {
-            $uibModal.open({
-                templateUrl: 'threadModalContent.html',
-                scope: $scope,
-                size: 'lg'
-            });
-        }
-    }
+            this.filteredThreads = filteredThreads;
+            this.toolbarConfig.filterConfig.resultsCount = filteredThreads.length;
+        };
+        return ThreadsController;
+    }());
     Runtime.ThreadsController = ThreadsController;
+    Runtime.threadsComponent = {
+        template: "\n      <div class=\"table-view\">\n        <h1>Threads</h1>\n        <pf-toolbar config=\"$ctrl.toolbarConfig\"></pf-toolbar>\n        <pf-table-view class=\"runtime-threads-table\"\n                       config=\"$ctrl.tableConfig\"\n                       dt-options=\"$ctrl.tableDtOptions\"\n                       columns=\"$ctrl.tableColumns\"\n                       items=\"$ctrl.filteredThreads\"\n                       action-buttons=\"$ctrl.tableActionButtons\">\n        </pf-table-view>\n      </div>\n    ",
+        controller: ThreadsController
+    };
 })(Runtime || (Runtime = {}));
-/// <reference path="threads.controller.ts"/>
+/// <reference path="./thread.ts"/>
+var Runtime;
+(function (Runtime) {
+    var ThreadModalController = /** @class */ (function () {
+        function ThreadModalController() {
+        }
+        Object.defineProperty(ThreadModalController.prototype, "thread", {
+            get: function () {
+                return this.resolve.thread;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        return ThreadModalController;
+    }());
+    Runtime.ThreadModalController = ThreadModalController;
+    Runtime.threadModalComponent = {
+        bindings: {
+            resolve: '<',
+            close: '&'
+        },
+        template: "\n      <div class=\"modal-header\">\n        <button type=\"button\" class=\"close\" aria-label=\"Close\" ng-click=\"$ctrl.close()\">\n          <span class=\"pficon pficon-close\" aria-hidden=\"true\"></span>\n        </button>\n        <h4 class=\"modal-title\">Thread</h4>\n      </div>\n      <div class=\"modal-body\">\n        <div class=\"row\">\n          <div class=\"col-md-12\">\n            <dl class=\"dl-horizontal\">\n              <dt>ID</dt>\n              <dd>{{$ctrl.thread.threadId}}</dd>\n              <dt>Name</dt>\n              <dd>{{$ctrl.thread.threadName}}</dd>\n              <dt>Waited Count</dt>\n              <dd>{{$ctrl.thread.waitedCount}}</dd>\n              <dt>Waited Time</dt>\n              <dd>{{$ctrl.thread.waitedTime}}</dd>\n              <dt>Blocked Count</dt>\n              <dd>{{$ctrl.thread.blockedCount}}</dd>\n              <dt>Blocked Time</dt>\n              <dd>{{$ctrl.thread.blockedTime}}</dd>\n              <div ng-show=\"$ctrl.thread.lockInfo != null\">\n                <dt>Lock Name</dt>\n                <dd>{{$ctrl.thread.lockName}}</dd>\n                <dt>Lock Class Name</dt>\n                <dd>{{$ctrl.thread.lockInfo.className}}</dd>\n                <dt>Lock Identity Hash Code</dt>\n                <dd>{{$ctrl.thread.lockInfo.identityHashCode}}</dd>\n              </div>\n              <div ng-show=\"$ctrl.thread.lockOwnerId > 0\">\n                <dt>Waiting for lock owned by</dt>\n                <dd><a href=\"\" ng-click=\"selectThreadById($ctrl.thread.lockOwnerId)\">{{$ctrl.thread.lockOwnerId}} - {{$ctrl.thread.lockOwnerName}}</a></dd>\n              </div>\n              <div ng-show=\"$ctrl.thread.lockedSynchronizers.length > 0\">\n                <dt>Locked Synchronizers</dt>\n                <dd>\n                  <ol class=\"list-unstyled\">\n                    <li ng-repeat=\"synchronizer in $ctrl.thread.lockedSynchronizers\">\n                      <span title=\"Class Name\">{{synchronizer.className}}</span> -\n                      <span title=\"Identity Hash Code\">{{synchronizer.identityHashCode}}</span>\n                    </li>\n                  </ol>\n                </dd>\n              </div>\n            </dl>\n          </div>\n        </div>\n        <div class=\"row\" ng-show=\"$ctrl.thread.lockedMonitors.length > 0\">\n          <div class=\"col-md-12\">\n            <dl>\n              <dt>Locked Monitors</dt>\n              <dd>\n                <ol class=\"zebra-list\">\n                  <li ng-repeat=\"monitor in $ctrl.thread.lockedMonitors\">\n                    Frame: <strong>{{monitor.lockedStackDepth}}</strong>\n                    <span class=\"green\">{{monitor.lockedStackFrame.className}}</span>\n                    <span class=\"bold\">.</span>\n                    <span class=\"blue bold\">{{monitor.lockedStackFrame.methodName}}</span>\n                    &nbsp;({{monitor.lockedStackFrame.fileName}}<span ng-show=\"frame.lineNumber > 0\">:{{monitor.lockedStackFrame.lineNumber}}</span>)\n                    <span class=\"orange\" ng-show=\"monitor.lockedStackFrame.nativeMethod\">(Native)</span>\n                  </li>\n                </ol>\n              </dd>\n            </dl>\n          </div>\n        </div>\n        <div class=\"row\">\n          <div class=\"col-md-12\">\n            <dl>\n              <dt>Stack Trace</dt>\n              <dd>\n                <ol class=\"zebra-list\">\n                  <li ng-repeat=\"frame in $ctrl.thread.stackTrace\">\n                    <span class=\"green\">{{frame.className}}</span>\n                    <span class=\"bold\">.</span>\n                    <span class=\"blue bold\">{{frame.methodName}}</span>\n                    &nbsp;({{frame.fileName}}<span ng-show=\"frame.lineNumber > 0\">:{{frame.lineNumber}}</span>)\n                    <span class=\"orange\" ng-show=\"frame.nativeMethod\">(Native)</span>\n                  </li>\n                </ol>\n              </dd>\n            </dl>\n          </div>\n        </div>\n      </div>\n    ",
+        controller: ThreadModalController
+    };
+})(Runtime || (Runtime = {}));
+/// <reference path="threads.component.ts"/>
+/// <reference path="thread-modal.component.ts"/>
 /// <reference path="threads.service.ts"/>
 var Runtime;
 (function (Runtime) {
     Runtime.threadsModule = angular
         .module('runtime-threads', [])
-        .controller('ThreadsController', Runtime.ThreadsController)
+        .component('runtimeThreads', Runtime.threadsComponent)
+        .component('threadModal', Runtime.threadModalComponent)
         .service('threadsService', Runtime.ThreadsService)
         .name;
 })(Runtime || (Runtime = {}));
@@ -10508,7 +10543,6 @@ $templateCache.put('plugins/jvm/html/local.html','<div ng-controller="JVM.JVMsCo
 $templateCache.put('plugins/jvm/html/navbarHeaderExtension.html','<style>\n  .navbar-header-hawtio-jvm {\n    float: left;\n    margin: 0;\n  }\n\n  .navbar-header-hawtio-jvm h4 {\n    color: white;\n    margin: 0px;\n  }\n\n  .navbar-header-hawtio-jvm li {\n    list-style-type: none;\n    display: inline-block;\n    margin-right: 10px;\n    margin-top: 4px;\n  }\n</style>\n<ul class="navbar-header-hawtio-jvm" ng-controller="JVM.HeaderController">\n  <li ng-show="containerName"><h4 ng-bind="containerName"></h4></li>\n  <li ng-show="goBack"><strong><a href="" ng-click="goBack()">Back</a></strong></li>\n</ul>\n');
 $templateCache.put('plugins/jvm/html/reset.html','<div ng-controller="JVM.ResetController">\n  <div class="alert alert-success jvm-reset-connections-alert" ng-if="showAlert">\n    <span class="pficon pficon-ok"></span>\n    Connections cleared successfully!\n  </div>\n  <h3>Clear saved connections</h3>\n  <p>\n    Clear all saved connection settings stored in your browser\'s local storage.\n  </p>\n  <p>\n    <button class="btn btn-danger" ng-click="doClearConnectSettings()">Clear saved connections</button>\n  </p>\n</div>');
 $templateCache.put('plugins/logs/html/logs-preferences.html','<form class="form-horizontal logs-preferences-form" ng-controller="LogsPreferencesController">\n\n  <div class="form-group">\n    <label class="col-md-2 control-label" for="logSortAsc">\n      Sort ascending\n      <span class="pficon pficon-info" data-toggle="tooltip" data-placement="top" title="Sort log entries by timestamp ascending"></span>\n    </label>\n    <div class="col-md-6">\n      <input type="checkbox" id="logSortAsc" ng-model="logSortAsc">\n    </div>\n  </div>\n\n  <div class="form-group">\n    <label class="col-md-2 control-label" for="logAutoScroll">\n      Auto scroll\n      <span class="pficon pficon-info" data-toggle="tooltip" data-placement="top" title="Automatically scroll when new log entries are added"></span>\n    </label>\n    <div class="col-md-6">\n      <input type="checkbox" id="logAutoScroll" ng-model="logAutoScroll">\n    </div>\n  </div>\n\n  <div class="form-group">\n    <label class="col-md-2 control-label" for="logCacheSize">\n      Log cache size\n      <span class="pficon pficon-info" data-toggle="tooltip" data-placement="top" title="The number of log messages to keep in the browser"></span>\n    </label>\n    <div class="col-md-6">\n      <input id="logCacheSize" type="number" class="form-control" ng-model="logCacheSize" min="0"/>\n    </div>\n  </div>\n\n  <div class="form-group">\n    <label class="col-md-2 control-label" for="logBatchSize">\n      Log batch size\n      <span class="pficon pficon-info" data-toggle="tooltip" data-placement="top" title="The maximum number of log messages to retrieve when loading new log lines"></span>\n    </label>\n    <div class="col-md-6">\n      <input id="logBatchSize" type="number" class="form-control" ng-model="logBatchSize" min="1" max="1000"/>\n    </div>\n  </div>\n\n</form>\n');
-$templateCache.put('plugins/runtime/threads/threads.html','<div id="threads-page" class="table-view" ng-controller="ThreadsController">\n\n  <h1>Threads</h1>\n\n  <pf-toolbar config="toolbarConfig"></pf-toolbar>\n\n  <pf-table-view class="threads-table" config="tableConfig" dt-options="tableDtOptions"\n    columns="tableColumns" items="filteredThreads" action-buttons="tableActionButtons">\n  </pf-table-view>\n\n  <script type="text/ng-template" id="threadModalContent.html">\n    <div class="modal-header">\n      <button type="button" class="close" aria-label="Close" ng-click="$close()">\n        <span class="pficon pficon-close" aria-hidden="true"></span>\n      </button>\n      <h4 class="modal-title">Thread</h4>\n    </div>\n    <div class="modal-body">\n      <div class="row">\n        <div class="col-md-12">\n          <dl class="dl-horizontal">\n            <dt>ID</dt>\n            <dd>{{thread.threadId}}</dd>\n            <dt>Name</dt>\n            <dd>{{thread.threadName}}</dd>\n            <dt>Waited Count</dt>\n            <dd>{{thread.waitedCount}}</dd>\n            <dt>Waited Time</dt>\n            <dd>{{thread.waitedTime}} ms</dd>\n            <dt>Blocked Count</dt>\n            <dd>{{thread.blockedCount}}</dd>\n            <dt>Blocked Time</dt>\n            <dd>{{thread.blockedTime}} ms</dd>\n            <div ng-show="thread.lockInfo != null">\n              <dt>Lock Name</dt>\n              <dd>{{thread.lockName}}</dd>\n              <dt>Lock Class Name</dt>\n              <dd>{{thread.lockInfo.className}}</dd>\n              <dt>Lock Identity Hash Code</dt>\n              <dd>{{thread.lockInfo.identityHashCode}}</dd>\n            </div>\n            <div ng-show="thread.lockOwnerId > 0">\n              <dt>Waiting for lock owned by</dt>\n              <dd><a href="" ng-click="selectThreadById(thread.lockOwnerId)">{{thread.lockOwnerId}} - {{thread.lockOwnerName}}</a></dd>\n            </div>\n            <div ng-show="thread.lockedSynchronizers.length > 0">\n              <dt>Locked Synchronizers</dt>\n              <dd>\n                <ol class="list-unstyled">\n                  <li ng-repeat="synchronizer in thread.lockedSynchronizers">\n                    <span title="Class Name">{{synchronizer.className}}</span> -\n                    <span title="Identity Hash Code">{{synchronizer.identityHashCode}}</span>\n                  </li>\n                </ol>\n              </dd>\n            </div>\n          </dl>\n        </div>\n      </div>\n      <div class="row" ng-show="thread.lockedMonitors.length > 0">\n        <div class="col-md-12">\n          <dl>\n            <dt>Locked Monitors</dt>\n            <dd>\n              <ol class="zebra-list">\n                <li ng-repeat="monitor in thread.lockedMonitors">\n                  Frame: <strong>{{monitor.lockedStackDepth}}</strong>\n                  <span class="green">{{monitor.lockedStackFrame.className}}</span>\n                  <span class="bold">.</span>\n                  <span class="blue bold">{{monitor.lockedStackFrame.methodName}}</span>\n                  &nbsp;({{monitor.lockedStackFrame.fileName}}<span ng-show="frame.lineNumber > 0">:{{monitor.lockedStackFrame.lineNumber}}</span>)\n                  <span class="orange" ng-show="monitor.lockedStackFrame.nativeMethod">(Native)</span>\n                </li>\n              </ol>\n            </dd>\n          </dl>\n        </div>\n      </div>\n      <div class="row">\n        <div class="col-md-12">\n          <dl>\n            <dt>Stack Trace</dt>\n            <dd>\n              <ol class="zebra-list">\n                <li ng-repeat="frame in thread.stackTrace">\n                  <span class="green">{{frame.className}}</span>\n                  <span class="bold">.</span>\n                  <span class="blue bold">{{frame.methodName}}</span>\n                  &nbsp;({{frame.fileName}}<span ng-show="frame.lineNumber > 0">:{{frame.lineNumber}}</span>)\n                  <span class="orange" ng-show="frame.nativeMethod">(Native)</span>\n                </li>\n              </ol>\n            </dd>\n          </dl>\n        </div>\n      </div>\n    </div>\n  </script>\n\n</div>\n');
 $templateCache.put('plugins/jmx/html/attributes/attributes.html','<div class="table-view" ng-controller="Jmx.AttributesController">\n  <h2>Attributes</h2>\n  <div ng-if="gridData.length > 0">\n    <div compile="attributes"></div>\n  </div>\n</div>\n\n<script type="text/ng-template" id="gridTemplate">\n  <table class="table table-striped table-bordered table-hover jmx-attributes-table"\n    ng-class="{\'ht-table-extra-columns\': hasExtraColumns}"\n    hawtio-simple-table="gridOptions">\n  </table>\n</script>\n\n<script type="text/ng-template" id="attributeModal.html">\n  <div class="modal-header">\n    <button type="button" class="close" aria-label="Close" ng-click="$dismiss()">\n      <span class="pficon pficon-close" aria-hidden="true"></span>\n    </button>\n    <h4 class="modal-title">Attribute: {{entity.key}}</h4>\n  </div>\n  <div class="modal-body">\n    <div simple-form ng-hide="!entity.rw" name="attributeEditor" mode="edit" entity=\'entity\' data=\'attributeSchemaEdit\'></div>\n    <div simple-form ng-hide="entity.rw" name="attributeViewer" mode="view" entity=\'entity\' data=\'attributeSchemaView\'></div>\n  </div>\n  <div class="modal-footer">\n    <button type="button" class="btn btn-default" ng-click="$dismiss()">Close</button>\n    <button type="button" class="btn btn-primary" ng-show="entity.rw" ng-click="$close()">Update</button>\n  </div>\n</script>\n');
 $templateCache.put('plugins/jmx/html/operations/operation-form.html','<p ng-hide="$ctrl.operation.args.length">\n  This JMX operation requires no arguments. Click the \'Execute\' button to invoke the operation.\n</p>\n<p ng-show="$ctrl.operation.args.length">\n  This JMX operation requires some parameters. Fill in the fields below and click the \'Execute\' button\n  to invoke the operation.\n</p>\n\n<form class="form-horizontal" ng-submit="$ctrl.execute()">\n  <div class="form-group" ng-repeat="formField in $ctrl.formFields">\n    <label class="col-sm-2 control-label" for="{{formField.label}}">{{formField.label}}</label>\n    <div class="col-sm-10">\n      <input type="{{formField.type}}" id="{{formField.label}}" ng-class="{\'form-control\': formField.type !== \'checkbox\'}"\n        ng-model="formField.value" ng-disabled="!$ctrl.operation.canInvoke">\n      <span class="help-block">{{formField.helpText}}</span>\n    </div>\n  </div>\n  <div class="form-group">\n    <div ng-class="{\'col-sm-offset-2 col-sm-10\': $ctrl.operation.args.length, \'col-sm-12\': !$ctrl.operation.args.length}">\n      <button type="submit" class="btn btn-primary" ng-disabled="!$ctrl.operation.canInvoke || $ctrl.isExecuting">Execute</button>\n    </div>\n  </div>\n</form>\n\n<form ng-show="$ctrl.operationResult">\n  <div class="form-group">\n    <label>Result</label>\n    <div class="hawtio-clipboard-container">\n      <button hawtio-clipboard="#operation-result" class="btn btn-default btn-lg">\n        <i class="fa fa-clipboard" aria-hidden="true"></i>\n      </button>\n      <pre ng-class="{\'jmx-operation-error\': $ctrl.operationFailed}">{{$ctrl.operationResult}}</pre>\n    </div>\n    <textarea id="operation-result" class="hawtio-clipboard-hidden-target">{{$ctrl.operationResult}}</textarea>\n  </div>\n</form>\n');
 $templateCache.put('plugins/jmx/html/operations/operations.html','<h2>Operations</h2>\n<p ng-if="$ctrl.operations.length === 0">\n  This MBean has no JMX operations.\n</p>\n<div ng-if="$ctrl.operations.length > 0">\n  <p>\n    This MBean supports the following JMX operations. Expand an item in the list to invoke that operation.\n  </p>\n  <pf-list-view class="jmx-operations-list-view" items="$ctrl.operations" config="$ctrl.config"\n    menu-actions="$ctrl.menuActions">\n    <div class="list-view-pf-stacked">\n      <div class="list-group-item-heading">\n        <span class="pficon pficon-locked" ng-if="!item.canInvoke"></span>\n        {{item.readableName}}\n      </div>\n      <div class="list-group-item-text">\n        {{item.description}}\n      </div>\n    </div>\n    <list-expanded-content>\n      <operation-form operation="$parent.item"></operation-form>\n    </list-expanded-content>\n  </pf-list-view>\n</div>\n');

@@ -1,3 +1,5 @@
+/// <reference path="./thread.ts"/>
+
 namespace Runtime {
 
   export class ThreadsService {
@@ -11,26 +13,22 @@ namespace Runtime {
       WAITING: 'Waiting'
     };
     
-    constructor(private $q: angular.IQService, private jolokia: Jolokia.IJolokia) {
+    constructor(private jolokiaService: JVM.JolokiaService) {
       'ngInject';
     }
 
-    getThreads(): angular.IPromise<any[]> {
-      return this.$q((resolve, reject) => {
-        this.jolokia.execute("java.lang:type=Threading","dumpAllThreads", false, false, {
-          success: threads => {
-            threads.forEach(thread => {
-              thread.threadState = ThreadsService.STATE_LABELS[thread.threadState];
-              thread.waitedTime = thread.waitedTime > 0 ? Core.humanizeMilliseconds(thread.waitedTime) : '';
-              thread.blockedTime = thread.blockedTime > 0 ? Core.humanizeMilliseconds(thread.blockedTime) : '';
-              delete thread.lockMonitors;
-            });
-            resolve(threads);
-          }
-        });
+    getThreads(): angular.IPromise<Thread[]> {
+      return this.jolokiaService.execute('java.lang:type=Threading', 'dumpAllThreads', false, false)
+        .then(threads => {
+          threads.forEach(thread => {
+            thread.threadState = ThreadsService.STATE_LABELS[thread.threadState];
+            thread.waitedTime = thread.waitedTime > 0 ? Core.humanizeMilliseconds(thread.waitedTime) : '';
+            thread.blockedTime = thread.blockedTime > 0 ? Core.humanizeMilliseconds(thread.blockedTime) : '';
+            delete thread.lockMonitors;
+          });
+          return threads;
       });
     }
-
   }
 
 }

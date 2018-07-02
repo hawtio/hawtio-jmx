@@ -7,7 +7,7 @@ namespace Runtime {
     $routeProvider
       .when('/runtime/sysprops', {template: '<runtime-system-properties></runtime-system-properties>'})
       .when('/runtime/metrics', {template: '<runtime-metrics></runtime-metrics>'})
-      .when('/runtime/threads', {templateUrl: 'plugins/runtime/threads/threads.html'})
+      .when('/runtime/threads', {template: '<runtime-threads></runtime-threads>'})
   }
 
   export function configureHelp(helpRegistry: Help.HelpRegistry) {
