@@ -24,10 +24,21 @@ namespace Runtime {
             thread.threadState = ThreadsService.STATE_LABELS[thread.threadState];
             thread.waitedTime = thread.waitedTime > 0 ? Core.humanizeMilliseconds(thread.waitedTime) : '';
             thread.blockedTime = thread.blockedTime > 0 ? Core.humanizeMilliseconds(thread.blockedTime) : '';
-            delete thread.lockMonitors;
           });
           return threads;
       });
+    }
+
+    isThreadContentionMonitoringEnabled(): angular.IPromise<boolean> {
+      return this.jolokiaService.getAttribute('java.lang:type=Threading', 'ThreadContentionMonitoringEnabled');
+    }
+
+    enableThreadContentionMonitoring(): angular.IPromise<void> {
+      return this.jolokiaService.setAttribute('java.lang:type=Threading', 'ThreadContentionMonitoringEnabled', true);
+    }
+
+    disableThreadContentionMonitoring(): angular.IPromise<void> {
+      return this.jolokiaService.setAttribute('java.lang:type=Threading', 'ThreadContentionMonitoringEnabled', false);
     }
   }
 

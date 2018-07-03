@@ -159,7 +159,6 @@ namespace JVM {
             Core.onSuccess(
               response => {
                 results.push(response.value);
-                console.log(results)
                 if (results.length === requests.length) {
                   resolve(results);
                 }

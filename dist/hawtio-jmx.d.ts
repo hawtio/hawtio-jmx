@@ -1222,10 +1222,14 @@ declare namespace Runtime {
         private static STATE_LABELS;
         constructor(jolokiaService: JVM.JolokiaService);
         getThreads(): angular.IPromise<Thread[]>;
+        isThreadContentionMonitoringEnabled(): angular.IPromise<boolean>;
+        enableThreadContentionMonitoring(): angular.IPromise<void>;
+        disableThreadContentionMonitoring(): angular.IPromise<void>;
     }
 }
 declare namespace Runtime {
     class ThreadsController {
+        private $interval;
         private $uibModal;
         private threadsService;
         FILTER_FUNCTIONS: {
@@ -1234,6 +1238,17 @@ declare namespace Runtime {
         };
         allThreads: Thread[];
         filteredThreads: Thread[];
+        threadContentionMonitoringEnabled: boolean;
+        intervalId: any;
+        toolbarActions: any[];
+        enableThreadContentionMonitoringAction: {
+            name: string;
+            actionFn: () => void;
+        };
+        disableThreadContentionMonitoringAction: {
+            name: string;
+            actionFn: () => void;
+        };
         toolbarConfig: {
             filterConfig: {
                 fields: ({
@@ -1251,6 +1266,10 @@ declare namespace Runtime {
                 })[];
                 onFilterChange: (filters: any[]) => void;
                 resultsCount: number;
+                appliedFilters: any[];
+            };
+            actionsConfig: {
+                primaryActions: any[];
             };
             isTableView: boolean;
         };
@@ -1275,10 +1294,16 @@ declare namespace Runtime {
             title: string;
             actionFn: (action: any, thread: any) => void;
         }[];
-        constructor($uibModal: angular.ui.bootstrap.IModalService, threadsService: ThreadsService);
+        constructor($interval: ng.IIntervalService, $uibModal: angular.ui.bootstrap.IModalService, threadsService: ThreadsService);
         $onInit(): void;
+        $onDestroy(): void;
+        showThreadContentionMonitoringView(): void;
         loadThreads(): void;
         applyFilters(filters: any[]): void;
+        enableThreadContentionMonitoring(): void;
+        showThreadContentionMonitoringEnabledView(): void;
+        disableThreadContentionMonitoring(): void;
+        showThreadContentionMonitoringDisabledView(): void;
     }
     const threadsComponent: angular.IComponentOptions;
 }
