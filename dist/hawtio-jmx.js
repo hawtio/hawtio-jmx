@@ -6624,7 +6624,7 @@ var Jmx;
     Jmx.configureRoutes = configureRoutes;
     function configureAbout(aboutService) {
         'ngInject';
-        aboutService.addProductInfo('Hawtio JMX', 'PACKAGE_VERSION_PLACEHOLDER');
+        aboutService.addProductInfo('Hawtio JMX', '4.0.2');
     }
     Jmx.configureAbout = configureAbout;
     function configureHelp(helpRegistry) {
