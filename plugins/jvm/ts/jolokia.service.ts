@@ -49,7 +49,7 @@ namespace JVM {
         }
       });
     }
-    
+
     getAttribute(objectName: string, attribute: string): ng.IPromise<any> {
       return this.$q((resolve, reject) => {
         this.jolokia.request(
@@ -103,7 +103,33 @@ namespace JVM {
         );
       });
     }
-    
+
+    setAttributes(objectName: string, attributes: string[], values: any[]): ng.IPromise<any[]> {
+      return this.$q((resolve, reject) => {
+        if (attributes.length != values.length) {
+          return resolve([]);
+        } else {
+          const requests = attributes.map((attribute: string, index: number) => ({type: 'write', mbean: objectName, attribute: attribute, value: values[index]}))
+          const results = [];
+          this.jolokia.request(requests,
+            Core.onSuccess(
+              response => {
+                results.push(response.value);
+                if (results.length === requests.length) {
+                  resolve(results);
+                }
+              }, {
+                error: response => {
+                  log.error(`JolokiaService.setAttributes('${objectName}', '${attributes}', '${values}') failed. Error: ${response.error}`);
+                  reject(response.error);
+                }
+              }
+            )
+          );
+        }
+      });
+    }
+
     execute(objectName: string, operation: string, ...args: any[]): ng.IPromise<any> {
       return this.$q((resolve, reject) => {
         this.jolokia.request(
