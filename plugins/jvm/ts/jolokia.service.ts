@@ -174,6 +174,24 @@ namespace JVM {
         }
       });
     }
+
+    search(mbeanPattern: string): ng.IPromise<any> {
+      return this.$q((resolve, reject) => {
+        this.jolokia.request(
+          { type: 'search', mbean: mbeanPattern },
+          Core.onSuccess(
+            response => {
+              resolve(response.value)
+            }, {
+              error: response => {
+                log.error(`JolokiaService.search('${mbeanPattern}') failed. Error: ${response.error}`);
+                reject(response.error);
+              }
+            }
+          )
+        );
+      });
+    }
   }
 
   _module.service("jolokiaService", JolokiaService);

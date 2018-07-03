@@ -9259,6 +9259,19 @@ var JVM;
                 }
             });
         };
+        JolokiaService.prototype.search = function (mbeanPattern) {
+            var _this = this;
+            return this.$q(function (resolve, reject) {
+                _this.jolokia.request({ type: 'search', mbean: mbeanPattern }, Core.onSuccess(function (response) {
+                    resolve(response.value);
+                }, {
+                    error: function (response) {
+                        JVM.log.error("JolokiaService.search('" + mbeanPattern + "') failed. Error: " + response.error);
+                        reject(response.error);
+                    }
+                }));
+            });
+        };
         return JolokiaService;
     }());
     JVM.JolokiaService = JolokiaService;
