@@ -14,6 +14,19 @@ namespace Runtime {
 
     allThreads: Thread[];
     filteredThreads: Thread[];
+    threadContentionMonitoringEnabled: boolean;
+    intervalId;
+    toolbarActions = [];
+
+    enableThreadContentionMonitoringAction = {
+      name: 'Enable thread contention monitoring',
+      actionFn: () => this.enableThreadContentionMonitoring()
+    }
+
+    disableThreadContentionMonitoringAction = {
+      name: 'Disable thread contention monitoring',
+      actionFn: () => this.disableThreadContentionMonitoring()
+    }
 
     toolbarConfig = {
       filterConfig: {
@@ -35,7 +48,11 @@ namespace Runtime {
         onFilterChange: (filters: any[]) => {
           this.applyFilters(filters);
         },
-        resultsCount: 0
+        resultsCount: 0,
+        appliedFilters: []
+      },
+      actionsConfig: {
+        primaryActions: this.toolbarActions
       },
       isTableView: true
     };
@@ -88,7 +105,6 @@ namespace Runtime {
         name: 'More',
         title: 'View more information about this thread',
         actionFn: (action, thread) => {
-          console.log(thread);
           this.$uibModal.open({
             component: 'threadModal',
             size: 'lg',
@@ -98,18 +114,33 @@ namespace Runtime {
       }
     ];
 
-    constructor(private $uibModal: angular.ui.bootstrap.IModalService, private threadsService: ThreadsService) {
+    constructor(private $interval: ng.IIntervalService, private $uibModal: angular.ui.bootstrap.IModalService,
+      private threadsService: ThreadsService) {
       'ngInject';
-    }    
+    }   
 
     $onInit() {
+      this.showThreadContentionMonitoringView();
       this.loadThreads();
+    }
+
+    $onDestroy() {
+      if (this.threadContentionMonitoringEnabled) {
+        this.disableThreadContentionMonitoring();
+      }
+    }
+
+    showThreadContentionMonitoringView() {
+      this.threadsService.isThreadContentionMonitoringEnabled()
+        .then(enabled => enabled 
+          ? this.showThreadContentionMonitoringEnabledView()
+          : this.showThreadContentionMonitoringDisabledView());
     }
 
     loadThreads() {
       this.threadsService.getThreads().then(threads => {
         this.allThreads = threads;
-        this.applyFilters([]);
+        this.applyFilters(this.toolbarConfig.filterConfig.appliedFilters);
       });
     }
 
@@ -120,6 +151,28 @@ namespace Runtime {
       });
       this.filteredThreads = filteredThreads;
       this.toolbarConfig.filterConfig.resultsCount = filteredThreads.length;
+    }
+
+    enableThreadContentionMonitoring(): void {
+      this.threadsService.enableThreadContentionMonitoring()
+        .then(() => this.showThreadContentionMonitoringEnabledView());
+    }
+    
+    showThreadContentionMonitoringEnabledView() {
+      this.threadContentionMonitoringEnabled = true;
+      this.toolbarActions[0] = this.disableThreadContentionMonitoringAction;
+      this.intervalId = this.$interval(() => this.loadThreads(), 5000);
+    }
+
+    disableThreadContentionMonitoring(): void {
+      this.threadsService.disableThreadContentionMonitoring()
+        .then(() => this.showThreadContentionMonitoringDisabledView());
+      }
+      
+    showThreadContentionMonitoringDisabledView() {
+      this.threadContentionMonitoringEnabled = false;
+      this.toolbarActions[0] = this.enableThreadContentionMonitoringAction;
+      this.$interval.cancel(this.intervalId);
     }
   }
 

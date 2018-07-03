@@ -6624,7 +6624,7 @@ var Jmx;
     Jmx.configureRoutes = configureRoutes;
     function configureAbout(aboutService) {
         'ngInject';
-        aboutService.addProductInfo('Hawtio JMX', '4.0.2');
+        aboutService.addProductInfo('Hawtio JMX', 'PACKAGE_VERSION_PLACEHOLDER');
     }
     Jmx.configureAbout = configureAbout;
     function configureHelp(helpRegistry) {
@@ -10340,10 +10340,18 @@ var Runtime;
                     thread.threadState = ThreadsService.STATE_LABELS[thread.threadState];
                     thread.waitedTime = thread.waitedTime > 0 ? Core.humanizeMilliseconds(thread.waitedTime) : '';
                     thread.blockedTime = thread.blockedTime > 0 ? Core.humanizeMilliseconds(thread.blockedTime) : '';
-                    delete thread.lockMonitors;
                 });
                 return threads;
             });
+        };
+        ThreadsService.prototype.isThreadContentionMonitoringEnabled = function () {
+            return this.jolokiaService.getAttribute('java.lang:type=Threading', 'ThreadContentionMonitoringEnabled');
+        };
+        ThreadsService.prototype.enableThreadContentionMonitoring = function () {
+            return this.jolokiaService.setAttribute('java.lang:type=Threading', 'ThreadContentionMonitoringEnabled', true);
+        };
+        ThreadsService.prototype.disableThreadContentionMonitoring = function () {
+            return this.jolokiaService.setAttribute('java.lang:type=Threading', 'ThreadContentionMonitoringEnabled', false);
         };
         ThreadsService.STATE_LABELS = {
             BLOCKED: 'Blocked',
@@ -10362,10 +10370,11 @@ var Runtime;
 var Runtime;
 (function (Runtime) {
     var ThreadsController = /** @class */ (function () {
-        ThreadsController.$inject = ["$uibModal", "threadsService"];
-        function ThreadsController($uibModal, threadsService) {
+        ThreadsController.$inject = ["$interval", "$uibModal", "threadsService"];
+        function ThreadsController($interval, $uibModal, threadsService) {
             'ngInject';
             var _this = this;
+            this.$interval = $interval;
             this.$uibModal = $uibModal;
             this.threadsService = threadsService;
             this.FILTER_FUNCTIONS = {
@@ -10374,6 +10383,15 @@ var Runtime;
                     var re = new RegExp(name, 'i');
                     return threads.filter(function (thread) { return re.test(thread.threadName); });
                 }
+            };
+            this.toolbarActions = [];
+            this.enableThreadContentionMonitoringAction = {
+                name: 'Enable thread contention monitoring',
+                actionFn: function () { return _this.enableThreadContentionMonitoring(); }
+            };
+            this.disableThreadContentionMonitoringAction = {
+                name: 'Disable thread contention monitoring',
+                actionFn: function () { return _this.disableThreadContentionMonitoring(); }
             };
             this.toolbarConfig = {
                 filterConfig: {
@@ -10395,7 +10413,11 @@ var Runtime;
                     onFilterChange: function (filters) {
                         _this.applyFilters(filters);
                     },
-                    resultsCount: 0
+                    resultsCount: 0,
+                    appliedFilters: []
+                },
+                actionsConfig: {
+                    primaryActions: this.toolbarActions
                 },
                 isTableView: true
             };
@@ -10444,7 +10466,6 @@ var Runtime;
                     name: 'More',
                     title: 'View more information about this thread',
                     actionFn: function (action, thread) {
-                        console.log(thread);
                         _this.$uibModal.open({
                             component: 'threadModal',
                             size: 'lg',
@@ -10455,13 +10476,26 @@ var Runtime;
             ];
         }
         ThreadsController.prototype.$onInit = function () {
+            this.showThreadContentionMonitoringView();
             this.loadThreads();
+        };
+        ThreadsController.prototype.$onDestroy = function () {
+            if (this.threadContentionMonitoringEnabled) {
+                this.disableThreadContentionMonitoring();
+            }
+        };
+        ThreadsController.prototype.showThreadContentionMonitoringView = function () {
+            var _this = this;
+            this.threadsService.isThreadContentionMonitoringEnabled()
+                .then(function (enabled) { return enabled
+                ? _this.showThreadContentionMonitoringEnabledView()
+                : _this.showThreadContentionMonitoringDisabledView(); });
         };
         ThreadsController.prototype.loadThreads = function () {
             var _this = this;
             this.threadsService.getThreads().then(function (threads) {
                 _this.allThreads = threads;
-                _this.applyFilters([]);
+                _this.applyFilters(_this.toolbarConfig.filterConfig.appliedFilters);
             });
         };
         ThreadsController.prototype.applyFilters = function (filters) {
@@ -10472,6 +10506,27 @@ var Runtime;
             });
             this.filteredThreads = filteredThreads;
             this.toolbarConfig.filterConfig.resultsCount = filteredThreads.length;
+        };
+        ThreadsController.prototype.enableThreadContentionMonitoring = function () {
+            var _this = this;
+            this.threadsService.enableThreadContentionMonitoring()
+                .then(function () { return _this.showThreadContentionMonitoringEnabledView(); });
+        };
+        ThreadsController.prototype.showThreadContentionMonitoringEnabledView = function () {
+            var _this = this;
+            this.threadContentionMonitoringEnabled = true;
+            this.toolbarActions[0] = this.disableThreadContentionMonitoringAction;
+            this.intervalId = this.$interval(function () { return _this.loadThreads(); }, 5000);
+        };
+        ThreadsController.prototype.disableThreadContentionMonitoring = function () {
+            var _this = this;
+            this.threadsService.disableThreadContentionMonitoring()
+                .then(function () { return _this.showThreadContentionMonitoringDisabledView(); });
+        };
+        ThreadsController.prototype.showThreadContentionMonitoringDisabledView = function () {
+            this.threadContentionMonitoringEnabled = false;
+            this.toolbarActions[0] = this.enableThreadContentionMonitoringAction;
+            this.$interval.cancel(this.intervalId);
         };
         return ThreadsController;
     }());
@@ -10502,7 +10557,7 @@ var Runtime;
             resolve: '<',
             close: '&'
         },
-        template: "\n      <div class=\"modal-header\">\n        <button type=\"button\" class=\"close\" aria-label=\"Close\" ng-click=\"$ctrl.close()\">\n          <span class=\"pficon pficon-close\" aria-hidden=\"true\"></span>\n        </button>\n        <h4 class=\"modal-title\">Thread</h4>\n      </div>\n      <div class=\"modal-body\">\n        <div class=\"row\">\n          <div class=\"col-md-12\">\n            <dl class=\"dl-horizontal\">\n              <dt>ID</dt>\n              <dd>{{$ctrl.thread.threadId}}</dd>\n              <dt>Name</dt>\n              <dd>{{$ctrl.thread.threadName}}</dd>\n              <dt>Waited Count</dt>\n              <dd>{{$ctrl.thread.waitedCount}}</dd>\n              <dt>Waited Time</dt>\n              <dd>{{$ctrl.thread.waitedTime}}</dd>\n              <dt>Blocked Count</dt>\n              <dd>{{$ctrl.thread.blockedCount}}</dd>\n              <dt>Blocked Time</dt>\n              <dd>{{$ctrl.thread.blockedTime}}</dd>\n              <div ng-show=\"$ctrl.thread.lockInfo != null\">\n                <dt>Lock Name</dt>\n                <dd>{{$ctrl.thread.lockName}}</dd>\n                <dt>Lock Class Name</dt>\n                <dd>{{$ctrl.thread.lockInfo.className}}</dd>\n                <dt>Lock Identity Hash Code</dt>\n                <dd>{{$ctrl.thread.lockInfo.identityHashCode}}</dd>\n              </div>\n              <div ng-show=\"$ctrl.thread.lockOwnerId > 0\">\n                <dt>Waiting for lock owned by</dt>\n                <dd><a href=\"\" ng-click=\"selectThreadById($ctrl.thread.lockOwnerId)\">{{$ctrl.thread.lockOwnerId}} - {{$ctrl.thread.lockOwnerName}}</a></dd>\n              </div>\n              <div ng-show=\"$ctrl.thread.lockedSynchronizers.length > 0\">\n                <dt>Locked Synchronizers</dt>\n                <dd>\n                  <ol class=\"list-unstyled\">\n                    <li ng-repeat=\"synchronizer in $ctrl.thread.lockedSynchronizers\">\n                      <span title=\"Class Name\">{{synchronizer.className}}</span> -\n                      <span title=\"Identity Hash Code\">{{synchronizer.identityHashCode}}</span>\n                    </li>\n                  </ol>\n                </dd>\n              </div>\n            </dl>\n          </div>\n        </div>\n        <div class=\"row\" ng-show=\"$ctrl.thread.lockedMonitors.length > 0\">\n          <div class=\"col-md-12\">\n            <dl>\n              <dt>Locked Monitors</dt>\n              <dd>\n                <ol class=\"zebra-list\">\n                  <li ng-repeat=\"monitor in $ctrl.thread.lockedMonitors\">\n                    Frame: <strong>{{monitor.lockedStackDepth}}</strong>\n                    <span class=\"green\">{{monitor.lockedStackFrame.className}}</span>\n                    <span class=\"bold\">.</span>\n                    <span class=\"blue bold\">{{monitor.lockedStackFrame.methodName}}</span>\n                    &nbsp;({{monitor.lockedStackFrame.fileName}}<span ng-show=\"frame.lineNumber > 0\">:{{monitor.lockedStackFrame.lineNumber}}</span>)\n                    <span class=\"orange\" ng-show=\"monitor.lockedStackFrame.nativeMethod\">(Native)</span>\n                  </li>\n                </ol>\n              </dd>\n            </dl>\n          </div>\n        </div>\n        <div class=\"row\">\n          <div class=\"col-md-12\">\n            <dl>\n              <dt>Stack Trace</dt>\n              <dd>\n                <ol class=\"zebra-list\">\n                  <li ng-repeat=\"frame in $ctrl.thread.stackTrace\">\n                    <span class=\"green\">{{frame.className}}</span>\n                    <span class=\"bold\">.</span>\n                    <span class=\"blue bold\">{{frame.methodName}}</span>\n                    &nbsp;({{frame.fileName}}<span ng-show=\"frame.lineNumber > 0\">:{{frame.lineNumber}}</span>)\n                    <span class=\"orange\" ng-show=\"frame.nativeMethod\">(Native)</span>\n                  </li>\n                </ol>\n              </dd>\n            </dl>\n          </div>\n        </div>\n      </div>\n    ",
+        template: "\n      <div class=\"modal-header\">\n        <button type=\"button\" class=\"close\" aria-label=\"Close\" ng-click=\"$ctrl.close()\">\n          <span class=\"pficon pficon-close\" aria-hidden=\"true\"></span>\n        </button>\n        <h4 class=\"modal-title\">Thread</h4>\n      </div>\n      <div class=\"modal-body\">\n        <div class=\"row\">\n          <div class=\"col-md-12\">\n            <dl class=\"dl-horizontal\">\n              <dt>ID</dt>\n              <dd>{{$ctrl.thread.threadId}}</dd>\n              <dt>State</dt>\n              <dd>{{$ctrl.thread.threadState}}</dd>\n              <dt>Name</dt>\n              <dd>{{$ctrl.thread.threadName}}</dd>\n              <dt>Native</dt>\n              <dd>{{$ctrl.thread.inNative ? 'yes' : 'no'}}</dd>\n              <dt>Suspended</dt>\n              <dd>{{$ctrl.thread.suspended ? 'yes' : 'no'}}</dd>\n              <dt>Waited Count</dt>\n              <dd>{{$ctrl.thread.waitedCount}}</dd>\n              <dt ng-show=\"$ctrl.thread.waitedTime\">Waited Time</dt>\n              <dd ng-show=\"$ctrl.thread.waitedTime\">{{$ctrl.thread.waitedTime}}</dd>\n              <dt>Blocked Count</dt>\n              <dd>{{$ctrl.thread.blockedCount}}</dd>\n              <dt ng-show=\"$ctrl.thread.blockedTime\">Blocked Time</dt>\n              <dd ng-show=\"$ctrl.thread.blockedTime\">{{$ctrl.thread.blockedTime}}</dd>\n              <div ng-show=\"$ctrl.thread.lockInfo != null\">\n                <dt>Lock Name</dt>\n                <dd>{{$ctrl.thread.lockName}}</dd>\n                <dt>Lock Class Name</dt>\n                <dd>{{$ctrl.thread.lockInfo.className}}</dd>\n                <dt>Lock Identity Hash Code</dt>\n                <dd>{{$ctrl.thread.lockInfo.identityHashCode}}</dd>\n              </div>\n              <div ng-show=\"$ctrl.thread.lockOwnerId > 0\">\n                <dt>Waiting for lock owned by</dt>\n                <dd><a href=\"\" ng-click=\"selectThreadById($ctrl.thread.lockOwnerId)\">{{$ctrl.thread.lockOwnerId}} - {{$ctrl.thread.lockOwnerName}}</a></dd>\n              </div>\n              <div ng-show=\"$ctrl.thread.lockedSynchronizers.length > 0\">\n                <dt>Locked Synchronizers</dt>\n                <dd>\n                  <ol class=\"list-unstyled\">\n                    <li ng-repeat=\"synchronizer in $ctrl.thread.lockedSynchronizers\">\n                      <span title=\"Class Name\">{{synchronizer.className}}</span> -\n                      <span title=\"Identity Hash Code\">{{synchronizer.identityHashCode}}</span>\n                    </li>\n                  </ol>\n                </dd>\n              </div>\n            </dl>\n          </div>\n        </div>\n        <div class=\"row\" ng-if=\"$ctrl.thread.lockedMonitors.length > 0\">\n          <div class=\"col-md-12\">\n            <dl>\n              <dt>Locked Monitors</dt>\n              <dd>\n                <ol>\n                  <li ng-repeat=\"monitor in $ctrl.thread.lockedMonitors\">\n                    Frame: <strong>{{monitor.lockedStackDepth}}</strong>\n                    <span class=\"green\">{{monitor.lockedStackFrame.className}}</span>\n                    <span class=\"bold\">.</span>\n                    <span class=\"blue bold\">{{monitor.lockedStackFrame.methodName}}</span>\n                    ({{monitor.lockedStackFrame.fileName}}<span ng-show=\"frame.lineNumber > 0\">:{{monitor.lockedStackFrame.lineNumber}}</span>)\n                    <span class=\"orange\" ng-show=\"monitor.lockedStackFrame.nativeMethod\">(Native)</span>\n                  </li>\n                </ol>\n              </dd>\n            </dl>\n          </div>\n        </div>\n        <div class=\"row\" ng-if=\"$ctrl.thread.stackTrace.length > 0\">\n          <div class=\"col-md-12\">\n            <dl>\n              <dt>Stack Trace</dt>\n              <dd>\n                <ol>\n                  <li ng-repeat=\"frame in $ctrl.thread.stackTrace\">\n                    <span class=\"green\">{{frame.className}}</span>\n                    <span class=\"bold\">.</span>\n                    <span class=\"blue bold\">{{frame.methodName}}</span>\n                    ({{frame.fileName}}<span ng-show=\"frame.lineNumber > 0\">:{{frame.lineNumber}}</span>)\n                    <span class=\"orange\" ng-show=\"frame.nativeMethod\">(Native)</span>\n                  </li>\n                </ol>\n              </dd>\n            </dl>\n          </div>\n        </div>\n      </div>\n    ",
         controller: ThreadModalController
     };
 })(Runtime || (Runtime = {}));

@@ -28,16 +28,22 @@ namespace Runtime {
             <dl class="dl-horizontal">
               <dt>ID</dt>
               <dd>{{$ctrl.thread.threadId}}</dd>
+              <dt>State</dt>
+              <dd>{{$ctrl.thread.threadState}}</dd>
               <dt>Name</dt>
               <dd>{{$ctrl.thread.threadName}}</dd>
+              <dt>Native</dt>
+              <dd>{{$ctrl.thread.inNative ? 'yes' : 'no'}}</dd>
+              <dt>Suspended</dt>
+              <dd>{{$ctrl.thread.suspended ? 'yes' : 'no'}}</dd>
               <dt>Waited Count</dt>
               <dd>{{$ctrl.thread.waitedCount}}</dd>
-              <dt>Waited Time</dt>
-              <dd>{{$ctrl.thread.waitedTime}}</dd>
+              <dt ng-show="$ctrl.thread.waitedTime">Waited Time</dt>
+              <dd ng-show="$ctrl.thread.waitedTime">{{$ctrl.thread.waitedTime}}</dd>
               <dt>Blocked Count</dt>
               <dd>{{$ctrl.thread.blockedCount}}</dd>
-              <dt>Blocked Time</dt>
-              <dd>{{$ctrl.thread.blockedTime}}</dd>
+              <dt ng-show="$ctrl.thread.blockedTime">Blocked Time</dt>
+              <dd ng-show="$ctrl.thread.blockedTime">{{$ctrl.thread.blockedTime}}</dd>
               <div ng-show="$ctrl.thread.lockInfo != null">
                 <dt>Lock Name</dt>
                 <dd>{{$ctrl.thread.lockName}}</dd>
@@ -64,18 +70,18 @@ namespace Runtime {
             </dl>
           </div>
         </div>
-        <div class="row" ng-show="$ctrl.thread.lockedMonitors.length > 0">
+        <div class="row" ng-if="$ctrl.thread.lockedMonitors.length > 0">
           <div class="col-md-12">
             <dl>
               <dt>Locked Monitors</dt>
               <dd>
-                <ol class="zebra-list">
+                <ol>
                   <li ng-repeat="monitor in $ctrl.thread.lockedMonitors">
                     Frame: <strong>{{monitor.lockedStackDepth}}</strong>
                     <span class="green">{{monitor.lockedStackFrame.className}}</span>
                     <span class="bold">.</span>
                     <span class="blue bold">{{monitor.lockedStackFrame.methodName}}</span>
-                    &nbsp;({{monitor.lockedStackFrame.fileName}}<span ng-show="frame.lineNumber > 0">:{{monitor.lockedStackFrame.lineNumber}}</span>)
+                    ({{monitor.lockedStackFrame.fileName}}<span ng-show="frame.lineNumber > 0">:{{monitor.lockedStackFrame.lineNumber}}</span>)
                     <span class="orange" ng-show="monitor.lockedStackFrame.nativeMethod">(Native)</span>
                   </li>
                 </ol>
@@ -83,17 +89,17 @@ namespace Runtime {
             </dl>
           </div>
         </div>
-        <div class="row">
+        <div class="row" ng-if="$ctrl.thread.stackTrace.length > 0">
           <div class="col-md-12">
             <dl>
               <dt>Stack Trace</dt>
               <dd>
-                <ol class="zebra-list">
+                <ol>
                   <li ng-repeat="frame in $ctrl.thread.stackTrace">
                     <span class="green">{{frame.className}}</span>
                     <span class="bold">.</span>
                     <span class="blue bold">{{frame.methodName}}</span>
-                    &nbsp;({{frame.fileName}}<span ng-show="frame.lineNumber > 0">:{{frame.lineNumber}}</span>)
+                    ({{frame.fileName}}<span ng-show="frame.lineNumber > 0">:{{frame.lineNumber}}</span>)
                     <span class="orange" ng-show="frame.nativeMethod">(Native)</span>
                   </li>
                 </ol>

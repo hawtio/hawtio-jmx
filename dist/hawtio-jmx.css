@@ -500,9 +500,6 @@ logs {
 .runtime-threads-table tr td:nth-child(2) {
   white-space: nowrap;
 }
-.runtime-threads-table tr td:nth-child(3) {
-  max-width: 200px;
-}
 .runtime-threads-table tr td:nth-child(6),
 .runtime-threads-table tr td:nth-child(7) {
   text-align: center;
