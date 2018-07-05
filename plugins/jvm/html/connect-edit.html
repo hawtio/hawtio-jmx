@@ -2,8 +2,8 @@
   <button type="button" class="close" aria-label="Close" ng-click="$ctrl.cancel()">
     <span class="pficon pficon-close" aria-hidden="true"></span>
   </button>
-  <h4 class="modal-title" ng-show="!$ctrl.connection.name">Add Connection</h4>
-  <h4 class="modal-title" ng-show="$ctrl.connection.name">Edit Connection</h4>
+  <h4 class="modal-title" ng-show="$ctrl.operation === 'add'">Add Connection</h4>
+  <h4 class="modal-title" ng-show="$ctrl.operation === 'edit'">Edit Connection</h4>
 </div>
 <form name="connectForm" class="form-horizontal jvm-connection-form" ng-submit="$ctrl.saveConnection($ctrl.connection)">
   <div class="modal-body">
@@ -59,7 +59,7 @@
   </div>
   <div class="modal-footer">
     <button type="button" class="btn btn-default" ng-click="$ctrl.cancel()">Cancel</button>
-    <button type="submit" class="btn btn-primary" ng-show="!$ctrl.connection.name">Add</button>
-    <button type="submit" class="btn btn-primary" ng-show="$ctrl.connection.name">Save</button>
+    <button type="submit" class="btn btn-primary" ng-show="$ctrl.operation === 'add'">Add</button>
+    <button type="submit" class="btn btn-primary" ng-show="$ctrl.operation === 'edit'">Save</button>
   </div>
 </form>

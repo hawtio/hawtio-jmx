@@ -3,6 +3,7 @@ namespace JVM {
   export class ConnectEditModalController {
 
     modalInstance: any;
+    operation: 'add' | 'edit';
     resolve: { connection:ConnectOptions };
     connection: ConnectOptions;
     errors = {};
@@ -14,6 +15,7 @@ namespace JVM {
 
     $onInit() {
       this.connection = this.resolve.connection;
+      this.operation = this.connection.name ? 'edit' : 'add';
     }
 
     testConnection(connection: ConnectOptions) {
