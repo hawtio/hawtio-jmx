@@ -157,6 +157,37 @@ pf-table-view > .container-fluid {
   word-break: break-all;
 }
 
+.jvm-jolokia-preferences-alert {
+  margin-top: 20px;
+  margin-bottom: 0;
+}
+.jvm-jolokia-preferences-form {
+  margin-top: 20px;
+}
+
+.jvm-connection-list div.list-group-item-text {
+  overflow-wrap: break-word;
+}
+.jvm-connection-test-msg {
+  margin-left: 10px;
+  vertical-align: middle;
+}
+.jvm-connection-test-msg .pficon {
+  vertical-align: text-top;
+  font-size: medium;
+}
+.jvm-connection-form label.required-pf:after {
+  margin-right: -9px;
+}
+.discovery > li > div:first-child > img {
+  vertical-align: middle;
+  width: 128px;
+  max-height: 128px;
+}
+.jvm-reset-connections-alert {
+  margin-top: 20px;
+}
+
 table.jmx-attributes-table.ht-table-extra-columns {
   table-layout: auto;
 }
@@ -374,35 +405,30 @@ div.tree-nav-layout .sidebar-pf .rg-right {
   background-color: #ffe6e6;
 }
 
-.jvm-jolokia-preferences-alert {
-  margin-top: 20px;
+.runtime-sysprops-main .table {
+  table-layout: fixed;
   margin-bottom: 0;
 }
-.jvm-jolokia-preferences-form {
-  margin-top: 20px;
+.runtime-sysprops-main .table th:nth-child(1) {
+  width: 300px;
+}
+.runtime-sysprops-main .table td:nth-child(1) {
+  width: 300px;
+  word-break: break-all;
+}
+.runtime-sysprops-main .table td:nth-child(2) {
+  word-break: break-all;
 }
 
-.jvm-connection-list div.list-group-item-text {
-  overflow-wrap: break-word;
+.runtime-threads-table tr td:nth-child(1) {
+  text-align: right;
 }
-.jvm-connection-test-msg {
-  margin-left: 10px;
-  vertical-align: middle;
+.runtime-threads-table tr td:nth-child(2) {
+  white-space: nowrap;
 }
-.jvm-connection-test-msg .pficon {
-  vertical-align: text-top;
-  font-size: medium;
-}
-.jvm-connection-form label.required-pf:after {
-  margin-right: -9px;
-}
-.discovery > li > div:first-child > img {
-  vertical-align: middle;
-  width: 128px;
-  max-height: 128px;
-}
-.jvm-reset-connections-alert {
-  margin-top: 20px;
+.runtime-threads-table tr td:nth-child(6),
+.runtime-threads-table tr td:nth-child(7) {
+  text-align: center;
 }
 
 .logs-preferences-form {
@@ -477,30 +503,4 @@ logs {
 }
 .log-jmx-main .log-jmx-stacktrace-list-item:not(:first-child) {
   padding-left: 14px;
-}
-
-.runtime-sysprops-main .table {
-  table-layout: fixed;
-  margin-bottom: 0;
-}
-.runtime-sysprops-main .table th:nth-child(1) {
-  width: 300px;
-}
-.runtime-sysprops-main .table td:nth-child(1) {
-  width: 300px;
-  word-break: break-all;
-}
-.runtime-sysprops-main .table td:nth-child(2) {
-  word-break: break-all;
-}
-
-.runtime-threads-table tr td:nth-child(1) {
-  text-align: right;
-}
-.runtime-threads-table tr td:nth-child(2) {
-  white-space: nowrap;
-}
-.runtime-threads-table tr td:nth-child(6),
-.runtime-threads-table tr td:nth-child(7) {
-  text-align: center;
 }

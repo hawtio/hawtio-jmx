@@ -104,6 +104,7 @@ declare namespace JVM {
     class ConnectEditModalController {
         private connectService;
         modalInstance: any;
+        operation: 'add' | 'edit';
         resolve: {
             connection: ConnectOptions;
         };
