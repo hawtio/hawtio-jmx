@@ -104,7 +104,7 @@ gulp.task('watch', ['build', 'watch-less'], function() {
     ['tsc', 'template', 'concat', 'clean']);
 });
 
-gulp.task('connect', function() {
+gulp.task('connect', ['build'], function() {
   hawtio.setConfig({
     logLevel: config.logLevel,
     port: 2772,
@@ -164,4 +164,4 @@ gulp.task('version', function() {
 
 gulp.task('build', ['tsc', 'less', 'template', 'concat', 'clean']);
 
-gulp.task('default', ['build', 'connect', 'watch']);
+gulp.task('default', ['connect', 'watch']);
