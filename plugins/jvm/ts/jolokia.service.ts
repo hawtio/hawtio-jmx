@@ -15,8 +15,12 @@ namespace JVM {
               resolve(response.value)
             }, {
               error: response => {
-                log.error(`JolokiaService.getMBean('${objectName}') failed. Error: ${response.error}`);
+                log.error(`JolokiaService.getMBean('${objectName}') failed: ${response.error}`);
                 reject(response.error);
+              },
+              ajaxError: jqXHR => {
+                log.error(`JolokiaService.getMBean('${objectName}') failed: ${jqXHR.responseText}`);
+                reject(jqXHR.responseText);
               }
             }
           )
@@ -40,8 +44,12 @@ namespace JVM {
                 }
               }, {
                 error: response => {
-                  log.error(`JolokiaService.getMBeans('${objectNames}') failed. Error: ${response.error}`);
+                  log.error(`JolokiaService.getMBeans('${objectNames}') failed: ${response.error}`);
                   reject(response.error);
+                },
+                ajaxError: jqXHR => {
+                  log.error(`JolokiaService.getMBeans('${objectNames}') failed: ${jqXHR.responseText}`);
+                  reject(jqXHR.responseText);
                 }
               }
             )
@@ -59,8 +67,12 @@ namespace JVM {
               resolve(response.value)
             }, {
               error: response => {
-                log.error(`JolokiaService.getAttribute('${objectName}', '${attribute}') failed. Error: ${response.error}`);
+                log.error(`JolokiaService.getAttribute('${objectName}', '${attribute}') failed: ${response.error}`);
                 reject(response.error);
+              },
+              ajaxError: jqXHR => {
+                log.error(`JolokiaService.getAttribute('${objectName}', '${attribute}') failed: ${jqXHR.responseText}`);
+                reject(jqXHR.responseText);
               }
             }
           )
@@ -77,8 +89,12 @@ namespace JVM {
               resolve(response.value)
             }, {
               error: response => {
-                log.error(`JolokiaService.getAttributes('${objectName}', '${attributes}') failed. Error: ${response.error}`);
+                log.error(`JolokiaService.getAttributes('${objectName}', '${attributes}') failed: ${response.error}`);
                 reject(response.error);
+              },
+              ajaxError: jqXHR => {
+                log.error(`JolokiaService.getAttributes('${objectName}', '${attributes}') failed: ${jqXHR.responseText}`);
+                reject(jqXHR.responseText);
               }
             }
           )
@@ -95,8 +111,12 @@ namespace JVM {
               resolve(response.value)
             }, {
               error: response => {
-                log.error(`JolokiaService.setAttribute('${objectName}', '${attribute}', '${value}') failed. Error: ${response.error}`);
+                log.error(`JolokiaService.setAttribute('${objectName}', '${attribute}', '${value}') failed: ${response.error}`);
                 reject(response.error);
+              },
+              ajaxError: jqXHR => {
+                log.error(`JolokiaService.setAttribute('${objectName}', '${attribute}', '${value}') failed: ${jqXHR.responseText}`);
+                reject(jqXHR.responseText);
               }
             }
           )
@@ -120,8 +140,12 @@ namespace JVM {
                 }
               }, {
                 error: response => {
-                  log.error(`JolokiaService.setAttributes('${objectName}', '${attributes}', '${values}') failed. Error: ${response.error}`);
+                  log.error(`JolokiaService.setAttributes('${objectName}', '${attributes}', '${values}') failed: ${response.error}`);
                   reject(response.error);
+                },
+                ajaxError: jqXHR => {
+                  log.error(`JolokiaService.setAttributes('${objectName}', '${attributes}', '${values}') failed: ${jqXHR.responseText}`);
+                  reject(jqXHR.responseText);
                 }
               }
             )
@@ -139,8 +163,12 @@ namespace JVM {
               resolve(response.value)
             }, {
               error: response => {
-                log.error(`JolokiaService.execute('${objectName}', '${operation}', '${args}') failed. Error: ${response.error}`);
+                log.error(`JolokiaService.execute('${objectName}', '${operation}', '${args}') failed: ${response.error}`);
                 reject(response.error);
+              },
+              ajaxError: (jqXHR) => {
+                log.error(`JolokiaService.execute('${objectName}', '${operation}', '${args}') failed: ${jqXHR.responseText}`);
+                reject(jqXHR.responseText);
               }
             }
           )
@@ -164,8 +192,12 @@ namespace JVM {
                 }
               }, {
                 error: response => {
-                  log.error(`JolokiaService.executeMany('${objectNames}', '${operation}', '${args}') failed. Error: ${response.error}`);
+                  log.error(`JolokiaService.executeMany('${objectNames}', '${operation}', '${args}') failed: ${response.error}`);
                   reject(response.error);
+                },
+                ajaxError: jqXHR => {
+                  log.error(`JolokiaService.executeMany('${objectNames}', '${operation}', '${args}') failed: ${jqXHR.responseText}`);
+                  reject(jqXHR.responseText);
                 }
               }
             )
@@ -183,8 +215,12 @@ namespace JVM {
               resolve(response.value)
             }, {
               error: response => {
-                log.error(`JolokiaService.search('${mbeanPattern}') failed. Error: ${response.error}`);
+                log.error(`JolokiaService.search('${mbeanPattern}') failed: ${response.error}`);
                 reject(response.error);
+              },
+              ajaxError: jqXHR => {
+                log.error(`JolokiaService.search('${mbeanPattern}') failed: ${jqXHR.responseText}`);
+                reject(jqXHR.responseText);
               }
             }
           )
