@@ -4649,8 +4649,12 @@ var JVM;
                     resolve(response.value);
                 }, {
                     error: function (response) {
-                        JVM.log.error("JolokiaService.getMBean('" + objectName + "') failed. Error: " + response.error);
+                        JVM.log.error("JolokiaService.getMBean('" + objectName + "') failed: " + response.error);
                         reject(response.error);
+                    },
+                    ajaxError: function (jqXHR) {
+                        JVM.log.error("JolokiaService.getMBean('" + objectName + "') failed: " + jqXHR.responseText);
+                        reject(jqXHR.responseText);
                     }
                 }));
             });
@@ -4671,8 +4675,12 @@ var JVM;
                         }
                     }, {
                         error: function (response) {
-                            JVM.log.error("JolokiaService.getMBeans('" + objectNames + "') failed. Error: " + response.error);
+                            JVM.log.error("JolokiaService.getMBeans('" + objectNames + "') failed: " + response.error);
                             reject(response.error);
+                        },
+                        ajaxError: function (jqXHR) {
+                            JVM.log.error("JolokiaService.getMBeans('" + objectNames + "') failed: " + jqXHR.responseText);
+                            reject(jqXHR.responseText);
                         }
                     }));
                 }
@@ -4685,8 +4693,12 @@ var JVM;
                     resolve(response.value);
                 }, {
                     error: function (response) {
-                        JVM.log.error("JolokiaService.getAttribute('" + objectName + "', '" + attribute + "') failed. Error: " + response.error);
+                        JVM.log.error("JolokiaService.getAttribute('" + objectName + "', '" + attribute + "') failed: " + response.error);
                         reject(response.error);
+                    },
+                    ajaxError: function (jqXHR) {
+                        JVM.log.error("JolokiaService.getAttribute('" + objectName + "', '" + attribute + "') failed: " + jqXHR.responseText);
+                        reject(jqXHR.responseText);
                     }
                 }));
             });
@@ -4698,8 +4710,12 @@ var JVM;
                     resolve(response.value);
                 }, {
                     error: function (response) {
-                        JVM.log.error("JolokiaService.getAttributes('" + objectName + "', '" + attributes + "') failed. Error: " + response.error);
+                        JVM.log.error("JolokiaService.getAttributes('" + objectName + "', '" + attributes + "') failed: " + response.error);
                         reject(response.error);
+                    },
+                    ajaxError: function (jqXHR) {
+                        JVM.log.error("JolokiaService.getAttributes('" + objectName + "', '" + attributes + "') failed: " + jqXHR.responseText);
+                        reject(jqXHR.responseText);
                     }
                 }));
             });
@@ -4711,8 +4727,12 @@ var JVM;
                     resolve(response.value);
                 }, {
                     error: function (response) {
-                        JVM.log.error("JolokiaService.setAttribute('" + objectName + "', '" + attribute + "', '" + value + "') failed. Error: " + response.error);
+                        JVM.log.error("JolokiaService.setAttribute('" + objectName + "', '" + attribute + "', '" + value + "') failed: " + response.error);
                         reject(response.error);
+                    },
+                    ajaxError: function (jqXHR) {
+                        JVM.log.error("JolokiaService.setAttribute('" + objectName + "', '" + attribute + "', '" + value + "') failed: " + jqXHR.responseText);
+                        reject(jqXHR.responseText);
                     }
                 }));
             });
@@ -4733,8 +4753,12 @@ var JVM;
                         }
                     }, {
                         error: function (response) {
-                            JVM.log.error("JolokiaService.setAttributes('" + objectName + "', '" + attributes + "', '" + values + "') failed. Error: " + response.error);
+                            JVM.log.error("JolokiaService.setAttributes('" + objectName + "', '" + attributes + "', '" + values + "') failed: " + response.error);
                             reject(response.error);
+                        },
+                        ajaxError: function (jqXHR) {
+                            JVM.log.error("JolokiaService.setAttributes('" + objectName + "', '" + attributes + "', '" + values + "') failed: " + jqXHR.responseText);
+                            reject(jqXHR.responseText);
                         }
                     }));
                 }
@@ -4751,8 +4775,12 @@ var JVM;
                     resolve(response.value);
                 }, {
                     error: function (response) {
-                        JVM.log.error("JolokiaService.execute('" + objectName + "', '" + operation + "', '" + args + "') failed. Error: " + response.error);
+                        JVM.log.error("JolokiaService.execute('" + objectName + "', '" + operation + "', '" + args + "') failed: " + response.error);
                         reject(response.error);
+                    },
+                    ajaxError: function (jqXHR) {
+                        JVM.log.error("JolokiaService.execute('" + objectName + "', '" + operation + "', '" + args + "') failed: " + jqXHR.responseText);
+                        reject(jqXHR.responseText);
                     }
                 }));
             });
@@ -4777,8 +4805,12 @@ var JVM;
                         }
                     }, {
                         error: function (response) {
-                            JVM.log.error("JolokiaService.executeMany('" + objectNames + "', '" + operation + "', '" + args + "') failed. Error: " + response.error);
+                            JVM.log.error("JolokiaService.executeMany('" + objectNames + "', '" + operation + "', '" + args + "') failed: " + response.error);
                             reject(response.error);
+                        },
+                        ajaxError: function (jqXHR) {
+                            JVM.log.error("JolokiaService.executeMany('" + objectNames + "', '" + operation + "', '" + args + "') failed: " + jqXHR.responseText);
+                            reject(jqXHR.responseText);
                         }
                     }));
                 }
@@ -4791,8 +4823,12 @@ var JVM;
                     resolve(response.value);
                 }, {
                     error: function (response) {
-                        JVM.log.error("JolokiaService.search('" + mbeanPattern + "') failed. Error: " + response.error);
+                        JVM.log.error("JolokiaService.search('" + mbeanPattern + "') failed: " + response.error);
                         reject(response.error);
+                    },
+                    ajaxError: function (jqXHR) {
+                        JVM.log.error("JolokiaService.search('" + mbeanPattern + "') failed: " + jqXHR.responseText);
+                        reject(jqXHR.responseText);
                     }
                 }));
             });
@@ -8431,7 +8467,7 @@ var Jmx;
         }]);
     Jmx._module.run(["aboutService", function (aboutService) {
         'ngInject';
-        aboutService.addProductInfo('Hawtio JMX', '3.2.32');
+        aboutService.addProductInfo('Hawtio JMX', 'PACKAGE_VERSION_PLACEHOLDER');
     }]);
     hawtioPluginLoader.addModule(Jmx.pluginName);
     hawtioPluginLoader.addModule('dangle');
