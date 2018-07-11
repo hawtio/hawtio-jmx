@@ -1,4 +1,4 @@
-/// <reference path="jvmPlugin.ts"/>
+/// <reference path="../jvmPlugin.ts"/>
 
 namespace JVM {
 
@@ -194,8 +194,6 @@ namespace JVM {
   // holds the status returned from the last jolokia call and hints for jolokia.list optimization
   _module.factory('jolokiaStatus', createJolokiaStatus);
 
-  _module.factory('jolokiaParams', createJolokiaParams);
-
   _module.factory('jolokia', createJolokia);
 
   function createJolokiaStatus(): JolokiaStatus {
@@ -208,28 +206,6 @@ namespace JVM {
     };
   }
 
-  function createJolokiaParams(
-    jolokiaUrl: string,
-    localStorage: Storage): Jolokia.IParams {
-    'ngInject';
-
-    let answer: Jolokia.IParams = {
-      canonicalNaming: false,
-      ignoreErrors: true,
-      maxCollectionSize: DEFAULT_MAX_COLLECTION_SIZE,
-      maxDepth: DEFAULT_MAX_DEPTH,
-      method: 'post',
-      mimeType: 'application/json'
-    };
-    if ('jolokiaParams' in localStorage) {
-      answer = angular.fromJson(localStorage['jolokiaParams']);
-    } else {
-      localStorage['jolokiaParams'] = angular.toJson(answer);
-    }
-    answer['url'] = jolokiaUrl;
-    return answer;
-  }
-
   function createJolokia(
     $location: ng.ILocationService,
     localStorage: Storage,
@@ -238,8 +214,7 @@ namespace JVM {
     jolokiaUrl: string,
     userDetails: Core.AuthService,
     postLoginTasks: Core.Tasks,
-    $timeout: ng.ITimeoutService,
-    $uibModal: angular.ui.bootstrap.IModalService): Jolokia.IJolokia {
+    $timeout: ng.ITimeoutService): Jolokia.IJolokia {
     'ngInject';
 
     let jolokia: Jolokia.IJolokia = null;
@@ -256,7 +231,8 @@ namespace JVM {
       postLoginTasks.execute();
 
       if (!jolokiaParams.ajaxError) {
-        let modal = null;
+        const errorThreshold = 2;
+        let errorCount = 0;
         jolokiaParams.ajaxError = (xhr: JQueryXHR, textStatus: string, error: any) => {
           if (xhr.status === 403) {
             // If window was opened to connect to remote Jolokia endpoint
@@ -274,33 +250,14 @@ namespace JVM {
               }
             }
           } else {
-            jolokiaStatus.xhr = xhr;
-            $timeout(() => {
-              if (!modal) {
-                modal = $uibModal.open({
-                  templateUrl: UrlHelpers.join(templatePath, 'jolokiaError.html'),
-                  controller: function ($scope,
-                    $uibModalInstance: angular.ui.bootstrap.IModalInstanceService,
-                    ConnectOptions: ConnectOptions,
-                    jolokia: Jolokia.IJolokia) {
-                    'ngInject';
-                    jolokia.stop();
-                    $scope.responseText = xhr.responseText || error.stack;
-                    $scope.ConnectOptions = ConnectOptions;
-                    $scope.retry = () => {
-                      modal = null;
-                      $uibModalInstance.close();
-                      jolokia.start(localStorage['updateRate']);
-                    }
-                    $scope.goBack = () => {
-                      if (ConnectOptions.returnTo) {
-                        window.location.href = ConnectOptions.returnTo;
-                      }
-                    }
-                  }
-                });
-              }
-            });
+            errorCount++;
+            
+            const validityPeriod = localStorage['updateRate'] * (errorThreshold + 1);
+            $timeout(() => errorCount--, validityPeriod);
+            
+            if (errorCount > errorThreshold) {
+              Core.notification('danger', 'Connection lost. Retrying...', localStorage['updateRate']);
+            }
           }
         }
       }

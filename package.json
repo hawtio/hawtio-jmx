@@ -10,7 +10,7 @@
     "start": "gulp",
     "build": "gulp build",
     "test": "gulp test",
-    "version": "gulp version && git add -A dist"
+    "version": "gulp version"
   },
   "dependencies": {
     "@hawtio/core": "~3.2.0",
@@ -217,8 +217,9 @@
     "arr-diff": "2.0.0",
     "concat-with-sourcemaps": "1.0.5",
     "extend-shallow": "2.0.1",
-    "@hawtio/core": "3.2.26",
     "readable-stream": "2.3.5",
-    "angular-animate": "1.6.9"
+    "angular-animate": "1.6.9",
+    "@hawtio/core-dts": "3.1.0",
+    "bootstrap-select": "1.12.4"
   }
 }

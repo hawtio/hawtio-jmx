@@ -1,10 +1,14 @@
 /// <reference path="connect/connect.module.ts"/>
 /// <reference path="nav.controller.ts"/>
+/// <reference path="jolokia/jolokia.module.ts"/>
 
 namespace JVM {
 
   export const _module = angular
-    .module(pluginName, [ConnectModule])
+    .module(pluginName, [
+      connectModule,
+      jolokiaModule
+    ])
     .config(defineRoutes)
     .constant('mbeanName', 'hawtio:type=JVMList')
     .run(configurePlugin)

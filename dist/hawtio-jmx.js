@@ -4541,7 +4541,7 @@ var JVM;
 /// <reference path="connection-url.filter.ts"/>
 var JVM;
 (function (JVM) {
-    JVM.ConnectModule = angular
+    JVM.connectModule = angular
         .module('hawtio-jvm-connect', [])
         .component('connect', JVM.connectComponent)
         .component('connectEditModal', JVM.connectEditModalComponent)
@@ -4565,14 +4565,266 @@ var JVM;
     }
     JVM.NavController = NavController;
 })(JVM || (JVM = {}));
+var JVM;
+(function (JVM) {
+    createJolokiaParams.$inject = ["jolokiaUrl", "localStorage"];
+    function createJolokiaParams(jolokiaUrl, localStorage) {
+        'ngInject';
+        var answer = {
+            canonicalNaming: false,
+            ignoreErrors: true,
+            maxCollectionSize: JVM.DEFAULT_MAX_COLLECTION_SIZE,
+            maxDepth: JVM.DEFAULT_MAX_DEPTH,
+            method: 'post',
+            mimeType: 'application/json'
+        };
+        if ('jolokiaParams' in localStorage) {
+            answer = angular.fromJson(localStorage['jolokiaParams']);
+        }
+        else {
+            localStorage['jolokiaParams'] = angular.toJson(answer);
+        }
+        answer['url'] = jolokiaUrl;
+        return answer;
+    }
+    JVM.createJolokiaParams = createJolokiaParams;
+})(JVM || (JVM = {}));
+/// <reference path="../jvmPlugin.ts"/>
+var JVM;
+(function (JVM) {
+    JolokiaPreferences.$inject = ["$scope", "localStorage", "jolokiaParams", "$window"];
+    var SHOW_ALERT = 'showJolokiaPreferencesAlert';
+    function JolokiaPreferences($scope, localStorage, jolokiaParams, $window) {
+        'ngInject';
+        // Initialize tooltips
+        $('[data-toggle="tooltip"]').tooltip();
+        Core.initPreferenceScope($scope, localStorage, {
+            'updateRate': {
+                'value': 5000,
+                'post': function (newValue) {
+                    $scope.$emit('UpdateRate', newValue);
+                }
+            },
+            'maxDepth': {
+                'value': JVM.DEFAULT_MAX_DEPTH,
+                'converter': parseInt,
+                'formatter': parseInt,
+                'post': function (newValue) {
+                    jolokiaParams.maxDepth = newValue;
+                    localStorage['jolokiaParams'] = angular.toJson(jolokiaParams);
+                }
+            },
+            'maxCollectionSize': {
+                'value': JVM.DEFAULT_MAX_COLLECTION_SIZE,
+                'converter': parseInt,
+                'formatter': parseInt,
+                'post': function (newValue) {
+                    jolokiaParams.maxCollectionSize = newValue;
+                    localStorage['jolokiaParams'] = angular.toJson(jolokiaParams);
+                }
+            }
+        });
+        $scope.showAlert = !!$window.sessionStorage.getItem(SHOW_ALERT);
+        $window.sessionStorage.removeItem(SHOW_ALERT);
+        $scope.reboot = function () {
+            $window.sessionStorage.setItem(SHOW_ALERT, 'true');
+            $window.location.reload();
+        };
+    }
+    JVM.JolokiaPreferences = JolokiaPreferences;
+})(JVM || (JVM = {}));
+var JVM;
+(function (JVM) {
+    var JolokiaService = /** @class */ (function () {
+        JolokiaService.$inject = ["$q", "jolokia"];
+        function JolokiaService($q, jolokia) {
+            'ngInject';
+            this.$q = $q;
+            this.jolokia = jolokia;
+        }
+        JolokiaService.prototype.getMBean = function (objectName) {
+            var _this = this;
+            return this.$q(function (resolve, reject) {
+                _this.jolokia.request({ type: 'read', mbean: objectName }, Core.onSuccess(function (response) {
+                    resolve(response.value);
+                }, {
+                    error: function (response) {
+                        JVM.log.error("JolokiaService.getMBean('" + objectName + "') failed. Error: " + response.error);
+                        reject(response.error);
+                    }
+                }));
+            });
+        };
+        JolokiaService.prototype.getMBeans = function (objectNames) {
+            var _this = this;
+            return this.$q(function (resolve, reject) {
+                if (objectNames.length === 0) {
+                    return resolve([]);
+                }
+                else {
+                    var requests_1 = objectNames.map(function (mbeanName) { return ({ type: 'read', mbean: mbeanName }); });
+                    var mbeans_1 = [];
+                    _this.jolokia.request(requests_1, Core.onSuccess(function (response) {
+                        mbeans_1.push(response.value);
+                        if (mbeans_1.length === requests_1.length) {
+                            resolve(mbeans_1);
+                        }
+                    }, {
+                        error: function (response) {
+                            JVM.log.error("JolokiaService.getMBeans('" + objectNames + "') failed. Error: " + response.error);
+                            reject(response.error);
+                        }
+                    }));
+                }
+            });
+        };
+        JolokiaService.prototype.getAttribute = function (objectName, attribute) {
+            var _this = this;
+            return this.$q(function (resolve, reject) {
+                _this.jolokia.request({ type: 'read', mbean: objectName, attribute: attribute }, Core.onSuccess(function (response) {
+                    resolve(response.value);
+                }, {
+                    error: function (response) {
+                        JVM.log.error("JolokiaService.getAttribute('" + objectName + "', '" + attribute + "') failed. Error: " + response.error);
+                        reject(response.error);
+                    }
+                }));
+            });
+        };
+        JolokiaService.prototype.getAttributes = function (objectName, attributes) {
+            var _this = this;
+            return this.$q(function (resolve, reject) {
+                _this.jolokia.request({ type: 'read', mbean: objectName, attribute: attributes }, Core.onSuccess(function (response) {
+                    resolve(response.value);
+                }, {
+                    error: function (response) {
+                        JVM.log.error("JolokiaService.getAttributes('" + objectName + "', '" + attributes + "') failed. Error: " + response.error);
+                        reject(response.error);
+                    }
+                }));
+            });
+        };
+        JolokiaService.prototype.setAttribute = function (objectName, attribute, value) {
+            var _this = this;
+            return this.$q(function (resolve, reject) {
+                _this.jolokia.request({ type: 'write', mbean: objectName, attribute: attribute, value: value }, Core.onSuccess(function (response) {
+                    resolve(response.value);
+                }, {
+                    error: function (response) {
+                        JVM.log.error("JolokiaService.setAttribute('" + objectName + "', '" + attribute + "', '" + value + "') failed. Error: " + response.error);
+                        reject(response.error);
+                    }
+                }));
+            });
+        };
+        JolokiaService.prototype.setAttributes = function (objectName, attributes, values) {
+            var _this = this;
+            return this.$q(function (resolve, reject) {
+                if (attributes.length != values.length) {
+                    return resolve([]);
+                }
+                else {
+                    var requests_2 = attributes.map(function (attribute, index) { return ({ type: 'write', mbean: objectName, attribute: attribute, value: values[index] }); });
+                    var results_1 = [];
+                    _this.jolokia.request(requests_2, Core.onSuccess(function (response) {
+                        results_1.push(response.value);
+                        if (results_1.length === requests_2.length) {
+                            resolve(results_1);
+                        }
+                    }, {
+                        error: function (response) {
+                            JVM.log.error("JolokiaService.setAttributes('" + objectName + "', '" + attributes + "', '" + values + "') failed. Error: " + response.error);
+                            reject(response.error);
+                        }
+                    }));
+                }
+            });
+        };
+        JolokiaService.prototype.execute = function (objectName, operation) {
+            var _this = this;
+            var args = [];
+            for (var _i = 2; _i < arguments.length; _i++) {
+                args[_i - 2] = arguments[_i];
+            }
+            return this.$q(function (resolve, reject) {
+                _this.jolokia.request({ type: 'exec', mbean: objectName, operation: operation, arguments: args }, Core.onSuccess(function (response) {
+                    resolve(response.value);
+                }, {
+                    error: function (response) {
+                        JVM.log.error("JolokiaService.execute('" + objectName + "', '" + operation + "', '" + args + "') failed. Error: " + response.error);
+                        reject(response.error);
+                    }
+                }));
+            });
+        };
+        JolokiaService.prototype.executeMany = function (objectNames, operation) {
+            var _this = this;
+            var args = [];
+            for (var _i = 2; _i < arguments.length; _i++) {
+                args[_i - 2] = arguments[_i];
+            }
+            return this.$q(function (resolve, reject) {
+                if (objectNames.length === 0) {
+                    return resolve([]);
+                }
+                else {
+                    var requests_3 = objectNames.map(function (objectName) { return ({ type: 'exec', mbean: objectName, operation: operation, arguments: args }); });
+                    var results_2 = [];
+                    _this.jolokia.request(requests_3, Core.onSuccess(function (response) {
+                        results_2.push(response.value);
+                        if (results_2.length === requests_3.length) {
+                            resolve(results_2);
+                        }
+                    }, {
+                        error: function (response) {
+                            JVM.log.error("JolokiaService.executeMany('" + objectNames + "', '" + operation + "', '" + args + "') failed. Error: " + response.error);
+                            reject(response.error);
+                        }
+                    }));
+                }
+            });
+        };
+        JolokiaService.prototype.search = function (mbeanPattern) {
+            var _this = this;
+            return this.$q(function (resolve, reject) {
+                _this.jolokia.request({ type: 'search', mbean: mbeanPattern }, Core.onSuccess(function (response) {
+                    resolve(response.value);
+                }, {
+                    error: function (response) {
+                        JVM.log.error("JolokiaService.search('" + mbeanPattern + "') failed. Error: " + response.error);
+                        reject(response.error);
+                    }
+                }));
+            });
+        };
+        return JolokiaService;
+    }());
+    JVM.JolokiaService = JolokiaService;
+})(JVM || (JVM = {}));
+/// <reference path="jolokia-params.factory.ts"/>
+/// <reference path="jolokia-preferences.controller.ts"/>
+/// <reference path="jolokia.service.ts"/>
+var JVM;
+(function (JVM) {
+    JVM.jolokiaModule = angular
+        .module('hawtio-jvm-jolokia', [])
+        .controller("JVM.JolokiaPreferences", JVM.JolokiaPreferences)
+        .service("jolokiaService", JVM.JolokiaService)
+        .factory('jolokiaParams', JVM.createJolokiaParams)
+        .name;
+})(JVM || (JVM = {}));
 /// <reference path="connect/connect.module.ts"/>
 /// <reference path="nav.controller.ts"/>
+/// <reference path="jolokia/jolokia.module.ts"/>
 var JVM;
 (function (JVM) {
     defineRoutes.$inject = ["configManager"];
     configurePlugin.$inject = ["HawtioNav", "$location", "viewRegistry", "helpRegistry", "preferencesRegistry", "ConnectOptions", "preLogoutTasks", "locationChangeStartTasks", "HawtioDashboard", "HawtioExtension", "$templateCache", "$compile"];
     JVM._module = angular
-        .module(JVM.pluginName, [JVM.ConnectModule])
+        .module(JVM.pluginName, [
+        JVM.connectModule,
+        JVM.jolokiaModule
+    ])
         .config(defineRoutes)
         .constant('mbeanName', 'hawtio:type=JVMList')
         .run(configurePlugin)
@@ -4634,11 +4886,10 @@ var JVM;
     }
     hawtioPluginLoader.addModule(JVM.pluginName);
 })(JVM || (JVM = {}));
-/// <reference path="jvmPlugin.ts"/>
+/// <reference path="../jvmPlugin.ts"/>
 var JVM;
 (function (JVM) {
-    createJolokiaParams.$inject = ["jolokiaUrl", "localStorage"];
-    createJolokia.$inject = ["$location", "localStorage", "jolokiaStatus", "jolokiaParams", "jolokiaUrl", "userDetails", "postLoginTasks", "$timeout", "$uibModal"];
+    createJolokia.$inject = ["$location", "localStorage", "jolokiaStatus", "jolokiaParams", "jolokiaUrl", "userDetails", "postLoginTasks", "$timeout"];
     var JolokiaListMethod;
     (function (JolokiaListMethod) {
         // constant meaning that general LIST+EXEC Jolokia operations should be used
@@ -4827,7 +5078,6 @@ var JVM;
     JVM._module.factory('jolokiaUrl', function () { return getJolokiaUrl(); });
     // holds the status returned from the last jolokia call and hints for jolokia.list optimization
     JVM._module.factory('jolokiaStatus', createJolokiaStatus);
-    JVM._module.factory('jolokiaParams', createJolokiaParams);
     JVM._module.factory('jolokia', createJolokia);
     function createJolokiaStatus() {
         'ngInject';
@@ -4837,26 +5087,7 @@ var JVM;
             listMBean: JOLOKIA_RBAC_LIST_MBEAN
         };
     }
-    function createJolokiaParams(jolokiaUrl, localStorage) {
-        'ngInject';
-        var answer = {
-            canonicalNaming: false,
-            ignoreErrors: true,
-            maxCollectionSize: JVM.DEFAULT_MAX_COLLECTION_SIZE,
-            maxDepth: JVM.DEFAULT_MAX_DEPTH,
-            method: 'post',
-            mimeType: 'application/json'
-        };
-        if ('jolokiaParams' in localStorage) {
-            answer = angular.fromJson(localStorage['jolokiaParams']);
-        }
-        else {
-            localStorage['jolokiaParams'] = angular.toJson(answer);
-        }
-        answer['url'] = jolokiaUrl;
-        return answer;
-    }
-    function createJolokia($location, localStorage, jolokiaStatus, jolokiaParams, jolokiaUrl, userDetails, postLoginTasks, $timeout, $uibModal) {
+    function createJolokia($location, localStorage, jolokiaStatus, jolokiaParams, jolokiaUrl, userDetails, postLoginTasks, $timeout) {
         'ngInject';
         var jolokia = null;
         if (jolokiaUrl) {
@@ -4869,7 +5100,8 @@ var JVM;
             // TODO: Where is the right place to execute post-login tasks for unauthenticated hawtio app?
             postLoginTasks.execute();
             if (!jolokiaParams.ajaxError) {
-                var modal_1 = null;
+                var errorThreshold_1 = 2;
+                var errorCount_1 = 0;
                 jolokiaParams.ajaxError = function (xhr, textStatus, error) {
                     if (xhr.status === 403) {
                         // If window was opened to connect to remote Jolokia endpoint
@@ -4889,30 +5121,12 @@ var JVM;
                         }
                     }
                     else {
-                        jolokiaStatus.xhr = xhr;
-                        $timeout(function () {
-                            if (!modal_1) {
-                                modal_1 = $uibModal.open({
-                                    templateUrl: UrlHelpers.join(JVM.templatePath, 'jolokiaError.html'),
-                                    controller: ["$scope", "$uibModalInstance", "ConnectOptions", "jolokia", function ($scope, $uibModalInstance, ConnectOptions, jolokia) {
-                                        'ngInject';
-                                        jolokia.stop();
-                                        $scope.responseText = xhr.responseText || error.stack;
-                                        $scope.ConnectOptions = ConnectOptions;
-                                        $scope.retry = function () {
-                                            modal_1 = null;
-                                            $uibModalInstance.close();
-                                            jolokia.start(localStorage['updateRate']);
-                                        };
-                                        $scope.goBack = function () {
-                                            if (ConnectOptions.returnTo) {
-                                                window.location.href = ConnectOptions.returnTo;
-                                            }
-                                        };
-                                    }]
-                                });
-                            }
-                        });
+                        errorCount_1++;
+                        var validityPeriod = localStorage['updateRate'] * (errorThreshold_1 + 1);
+                        $timeout(function () { return errorCount_1--; }, validityPeriod);
+                        if (errorCount_1 > errorThreshold_1) {
+                            Core.notification('danger', 'Connection lost. Retrying...', localStorage['updateRate']);
+                        }
                     }
                 };
             }
@@ -5343,7 +5557,7 @@ var Jmx;
     }
     Jmx.createRemoteWorkspace = createRemoteWorkspace;
 })(Jmx || (Jmx = {}));
-/// <reference path="../../jvm/ts/jolokiaService.ts"/>
+/// <reference path="../../jvm/ts/jolokia/jolokiaService.ts"/>
 /// <reference path="tree/tree-event.ts"/>
 /// <reference path="jmxHelpers.ts"/>
 var Jmx;
@@ -9054,220 +9268,6 @@ var JVM;
         }]);
 })(JVM || (JVM = {}));
 /// <reference path="jvmPlugin.ts"/>
-var JVM;
-(function (JVM) {
-    JolokiaPreferences.$inject = ["$scope", "localStorage", "jolokiaParams", "$window"];
-    var SHOW_ALERT = 'showJolokiaPreferencesAlert';
-    function JolokiaPreferences($scope, localStorage, jolokiaParams, $window) {
-        'ngInject';
-        // Initialize tooltips
-        $('[data-toggle="tooltip"]').tooltip();
-        Core.initPreferenceScope($scope, localStorage, {
-            'updateRate': {
-                'value': 5000,
-                'post': function (newValue) {
-                    $scope.$emit('UpdateRate', newValue);
-                }
-            },
-            'maxDepth': {
-                'value': JVM.DEFAULT_MAX_DEPTH,
-                'converter': parseInt,
-                'formatter': parseInt,
-                'post': function (newValue) {
-                    jolokiaParams.maxDepth = newValue;
-                    localStorage['jolokiaParams'] = angular.toJson(jolokiaParams);
-                }
-            },
-            'maxCollectionSize': {
-                'value': JVM.DEFAULT_MAX_COLLECTION_SIZE,
-                'converter': parseInt,
-                'formatter': parseInt,
-                'post': function (newValue) {
-                    jolokiaParams.maxCollectionSize = newValue;
-                    localStorage['jolokiaParams'] = angular.toJson(jolokiaParams);
-                }
-            }
-        });
-        $scope.showAlert = !!$window.sessionStorage.getItem(SHOW_ALERT);
-        $window.sessionStorage.removeItem(SHOW_ALERT);
-        $scope.reboot = function () {
-            $window.sessionStorage.setItem(SHOW_ALERT, 'true');
-            $window.location.reload();
-        };
-    }
-    JVM.JolokiaPreferences = JolokiaPreferences;
-    JVM._module.controller("JVM.JolokiaPreferences", JolokiaPreferences);
-})(JVM || (JVM = {}));
-var JVM;
-(function (JVM) {
-    var JolokiaService = /** @class */ (function () {
-        JolokiaService.$inject = ["$q", "jolokia"];
-        function JolokiaService($q, jolokia) {
-            'ngInject';
-            this.$q = $q;
-            this.jolokia = jolokia;
-        }
-        JolokiaService.prototype.getMBean = function (objectName) {
-            var _this = this;
-            return this.$q(function (resolve, reject) {
-                _this.jolokia.request({ type: 'read', mbean: objectName }, Core.onSuccess(function (response) {
-                    resolve(response.value);
-                }, {
-                    error: function (response) {
-                        JVM.log.error("JolokiaService.getMBean('" + objectName + "') failed. Error: " + response.error);
-                        reject(response.error);
-                    }
-                }));
-            });
-        };
-        JolokiaService.prototype.getMBeans = function (objectNames) {
-            var _this = this;
-            return this.$q(function (resolve, reject) {
-                if (objectNames.length === 0) {
-                    return resolve([]);
-                }
-                else {
-                    var requests_1 = objectNames.map(function (mbeanName) { return ({ type: 'read', mbean: mbeanName }); });
-                    var mbeans_1 = [];
-                    _this.jolokia.request(requests_1, Core.onSuccess(function (response) {
-                        mbeans_1.push(response.value);
-                        if (mbeans_1.length === requests_1.length) {
-                            resolve(mbeans_1);
-                        }
-                    }, {
-                        error: function (response) {
-                            JVM.log.error("JolokiaService.getMBeans('" + objectNames + "') failed. Error: " + response.error);
-                            reject(response.error);
-                        }
-                    }));
-                }
-            });
-        };
-        JolokiaService.prototype.getAttribute = function (objectName, attribute) {
-            var _this = this;
-            return this.$q(function (resolve, reject) {
-                _this.jolokia.request({ type: 'read', mbean: objectName, attribute: attribute }, Core.onSuccess(function (response) {
-                    resolve(response.value);
-                }, {
-                    error: function (response) {
-                        JVM.log.error("JolokiaService.getAttribute('" + objectName + "', '" + attribute + "') failed. Error: " + response.error);
-                        reject(response.error);
-                    }
-                }));
-            });
-        };
-        JolokiaService.prototype.getAttributes = function (objectName, attributes) {
-            var _this = this;
-            return this.$q(function (resolve, reject) {
-                _this.jolokia.request({ type: 'read', mbean: objectName, attribute: attributes }, Core.onSuccess(function (response) {
-                    resolve(response.value);
-                }, {
-                    error: function (response) {
-                        JVM.log.error("JolokiaService.getAttributes('" + objectName + "', '" + attributes + "') failed. Error: " + response.error);
-                        reject(response.error);
-                    }
-                }));
-            });
-        };
-        JolokiaService.prototype.setAttribute = function (objectName, attribute, value) {
-            var _this = this;
-            return this.$q(function (resolve, reject) {
-                _this.jolokia.request({ type: 'write', mbean: objectName, attribute: attribute, value: value }, Core.onSuccess(function (response) {
-                    resolve(response.value);
-                }, {
-                    error: function (response) {
-                        JVM.log.error("JolokiaService.setAttribute('" + objectName + "', '" + attribute + "', '" + value + "') failed. Error: " + response.error);
-                        reject(response.error);
-                    }
-                }));
-            });
-        };
-        JolokiaService.prototype.setAttributes = function (objectName, attributes, values) {
-            var _this = this;
-            return this.$q(function (resolve, reject) {
-                if (attributes.length != values.length) {
-                    return resolve([]);
-                }
-                else {
-                    var requests_2 = attributes.map(function (attribute, index) { return ({ type: 'write', mbean: objectName, attribute: attribute, value: values[index] }); });
-                    var results_1 = [];
-                    _this.jolokia.request(requests_2, Core.onSuccess(function (response) {
-                        results_1.push(response.value);
-                        if (results_1.length === requests_2.length) {
-                            resolve(results_1);
-                        }
-                    }, {
-                        error: function (response) {
-                            JVM.log.error("JolokiaService.setAttributes('" + objectName + "', '" + attributes + "', '" + values + "') failed. Error: " + response.error);
-                            reject(response.error);
-                        }
-                    }));
-                }
-            });
-        };
-        JolokiaService.prototype.execute = function (objectName, operation) {
-            var _this = this;
-            var args = [];
-            for (var _i = 2; _i < arguments.length; _i++) {
-                args[_i - 2] = arguments[_i];
-            }
-            return this.$q(function (resolve, reject) {
-                _this.jolokia.request({ type: 'exec', mbean: objectName, operation: operation, arguments: args }, Core.onSuccess(function (response) {
-                    resolve(response.value);
-                }, {
-                    error: function (response) {
-                        JVM.log.error("JolokiaService.execute('" + objectName + "', '" + operation + "', '" + args + "') failed. Error: " + response.error);
-                        reject(response.error);
-                    }
-                }));
-            });
-        };
-        JolokiaService.prototype.executeMany = function (objectNames, operation) {
-            var _this = this;
-            var args = [];
-            for (var _i = 2; _i < arguments.length; _i++) {
-                args[_i - 2] = arguments[_i];
-            }
-            return this.$q(function (resolve, reject) {
-                if (objectNames.length === 0) {
-                    return resolve([]);
-                }
-                else {
-                    var requests_3 = objectNames.map(function (objectName) { return ({ type: 'exec', mbean: objectName, operation: operation, arguments: args }); });
-                    var results_2 = [];
-                    _this.jolokia.request(requests_3, Core.onSuccess(function (response) {
-                        results_2.push(response.value);
-                        if (results_2.length === requests_3.length) {
-                            resolve(results_2);
-                        }
-                    }, {
-                        error: function (response) {
-                            JVM.log.error("JolokiaService.executeMany('" + objectNames + "', '" + operation + "', '" + args + "') failed. Error: " + response.error);
-                            reject(response.error);
-                        }
-                    }));
-                }
-            });
-        };
-        JolokiaService.prototype.search = function (mbeanPattern) {
-            var _this = this;
-            return this.$q(function (resolve, reject) {
-                _this.jolokia.request({ type: 'search', mbean: mbeanPattern }, Core.onSuccess(function (response) {
-                    resolve(response.value);
-                }, {
-                    error: function (response) {
-                        JVM.log.error("JolokiaService.search('" + mbeanPattern + "') failed. Error: " + response.error);
-                        reject(response.error);
-                    }
-                }));
-            });
-        };
-        return JolokiaService;
-    }());
-    JVM.JolokiaService = JolokiaService;
-    JVM._module.service("jolokiaService", JolokiaService);
-})(JVM || (JVM = {}));
-/// <reference path="jvmPlugin.ts"/>
 /**
  * @module JVM
  */
@@ -9691,7 +9691,7 @@ var RBAC;
  * @main RBAC
  */
 /// <reference path="../../jmx/ts/workspace.ts"/>
-/// <reference path="../../jvm/ts/jolokiaService.ts"/>
+/// <reference path="../../jvm/ts/jolokia/jolokiaService.ts"/>
 /// <reference path="models.ts"/>
 /// <reference path="rbac.directive.ts"/>
 /// <reference path="rbac.service.ts"/>
@@ -10448,7 +10448,6 @@ $templateCache.put('plugins/jvm/html/connect-edit.html','<div class="modal-heade
 $templateCache.put('plugins/jvm/html/connect.html','<div>\n  <h1>Remote</h1>\n  <div class="row">\n    <div class="col-md-7">\n      <pf-toolbar config="$ctrl.toolbarConfig"></pf-toolbar>\n      <pf-list-view class="jvm-connection-list" items="$ctrl.connections" config="$ctrl.listConfig"\n        action-buttons="$ctrl.listActionButtons" menu-actions="$ctrl.listActionDropDown">\n        <div class="list-view-pf-left">\n          <span class="pficon list-view-pf-icon-sm"\n                ng-class="{\'pficon-plugged\': item.reachable,\n                           \'list-view-pf-icon-success\': item.reachable,\n                           \'pficon-unplugged\': !item.reachable,\n                           \'list-view-pf-icon-danger\': !item.reachable}"\n                title="Endpoint {{item.reachable ? \'reachable\' : \'unreachable\'}}"></span>\n        </div>\n        <div class="list-view-pf-body">\n          <div class="list-view-pf-description">\n            <div class="list-group-item-heading">\n              {{item.name}}\n            </div>\n            <div class="list-group-item-text">\n              {{item | connectionUrl}}\n            </div>\n          </div>\n        </div>    \n      </pf-list-view>\n    </div>\n    <div class="col-md-5">\n      <div class="panel panel-default">\n        <div class="panel-heading">\n          <h3 class="panel-title">Instructions</h3>\n        </div>\n        <div class="panel-body">\n          <p>\n            This page allows you to connect to remote processes which <strong>already have a\n            <a href="https://jolokia.org/agent.html" target="_blank">Jolokia agent</a> running inside them</strong>.\n            You will need to know the host name, port and path of the Jolokia agent to be able to connect.\n          </p>\n          <p>\n            If the process you wish to connect to does not have a Jolokia agent inside, please refer to the\n            <a href="http://jolokia.org/agent.html" target="_blank">Jolokia documentation</a> for how to add a JVM,\n            servlet or OSGi based agent inside it.\n          </p>\n          <p>\n            If you are using <a href="http://fabric8.io/" target="_blank">Fabric8</a>,\n            <a href="https://developers.redhat.com/products/fuse/overview/" target="_blank">Red Hat Fuse</a>,\n            or <a href="http://activemq.apache.org/" target="_blank">Apache ActiveMQ</a>;\n            then a Jolokia agent is included by default (use context path of Jolokia agent, usually\n            <code>jolokia</code>). Or you can always just deploy hawtio inside the process (which includes the Jolokia agent,\n            use Jolokia servlet mapping inside hawtio context path, usually <code>hawtio/jolokia</code>).\n          </p>\n        </div>\n      </div>\n    </div>\n  </div>\n</div>\n');
 $templateCache.put('plugins/jvm/html/discover.html','<div ng-controller="JVM.DiscoveryController">\n\n  <h1>Discover</h1>\n\n  <p ng-if="discovering">Please wait, discovering agents...</p>\n  \n  <div ng-if="!discovering">\n    <p ng-show="agents.length === 0">\n      No agents discovered.\n    </p>\n    <div ng-show="agents.length > 0">\n      <div class="row toolbar-pf">\n        <div class="col-sm-12">\n          <form class="toolbar-pf-actions">\n            <div class="form-group">\n              <input type="text" class="form-control" ng-model="filter" placeholder="Filter..." autocomplete="off">\n            </div>\n            <div class="form-group">\n              <button class="btn btn-default" ng-click="fetch()" title="Refresh"><i class="fa fa-refresh"></i> Refresh</button>\n            </div>\n          </form>\n        </div>\n      </div>\n      <ul class="discovery zebra-list">\n        <li ng-repeat="agent in agents track by $index" ng-show="filterMatches(agent)">\n\n          <div class="inline-block">\n            <img ng-src="{{getLogo(agent)}}">\n          </div>\n\n          <div class="inline-block">\n            <p ng-hide="!hasName(agent)">\n            <span class="strong"\n                  ng-show="agent.server_vendor">\n              {{agent.server_vendor}} {{_.startCase(agent.server_product)}} {{agent.server_version}}\n            </span>\n            </p>\n          <span ng-class="getAgentIdClass(agent)">\n            <strong ng-show="hasName(agent)">Agent ID: </strong>{{agent.agent_id}}<br/>\n            <strong ng-show="hasName(agent)">Agent Version: </strong><span ng-hide="hasName(agent)"> Version: </span>{{agent.agent_version}}</span><br/>\n            <strong ng-show="hasName(agent)">Agent Description: </strong><span\n              ng-hide="hasName(agent)"> Description: {{agent.agent_description}}</span><br/>\n                <div ng-hide="!agent.startTime"><strong>JVM Started: </strong>{{agent.startTime | date: \'yyyy-MM-dd HH:mm:ss\'}}</div>\n                <div ng-hide="!agent.command"><strong>Java Command: </strong>{{agent.command}}</div>\n\n            <p ng-hide="!agent.url"><strong>Agent URL: </strong><a ng-href="{{agent.url}}"\n                                                                  target="_blank">{{agent.url}}</a>\n            </p>\n          </div>\n\n          <div class="inline-block lock" ng-show="agent.secured">\n            <i class="fa-4x pficon-locked" title="A valid username and password will be required to connect"></i>\n          </div>\n\n          <div class="inline-block" ng-hide="!agent.url">\n            <div class="connect-button"\n                ng-click="gotoServer($event, agent)"\n                hawtio-template-popover\n                content="authPrompt"\n                trigger="manual"\n                placement="auto"\n                data-title="Please enter your username and password">\n              <i ng-show="agent.url" class="fa-4x pficon-running" tooltip="Connect to process"></i>\n            </div>\n          </div>\n\n        </li>\n      </ul>\n    </div>\n  </div>\n\n  <script type="text/ng-template" id="authPrompt">\n    <div class="auth-form">\n      <form name="authForm">\n        <input type="text"\n                class="input-sm"\n                placeholder="Username..."\n                ng-model="agent.username"\n                required>\n        <input type="password"\n                class="input-sm"\n                placeholder="Password..."\n                ng-model="agent.password"\n                required>\n        <button ng-disabled="!authForm.$valid"\n                ng-click="connectWithCredentials($event, agent)"\n                class="btn btn-success">\n          <i class="fa fa-share"></i> Connect\n        </button>\n        <button class="btn" ng-click="closePopover($event)"><i class="fa fa-remove"></i></button>\n      </form>\n    </div>\n  </script>\n\n</div>\n');
 $templateCache.put('plugins/jvm/html/jolokia-preferences.html','<div ng-controller="JVM.JolokiaPreferences">\n  <div class="alert alert-success jvm-jolokia-preferences-alert" ng-if="showAlert">\n    <span class="pficon pficon-ok"></span>\n    Settings applied successfully!\n  </div>\n  <form class="form-horizontal jvm-jolokia-preferences-form">\n    <div class="form-group">\n      <label class="col-md-2 control-label" for="updateRate">\n        Update rate\n        <span class="pficon pficon-info" data-toggle="tooltip" data-placement="top" title="The period between polls to jolokia to fetch JMX data"></span>\n      </label>\n      <div class="col-md-6">\n        <select id="updateRate" class="form-control" ng-model="updateRate">\n          <option value="0">Off</option>\n          <option value="5000">5 Seconds</option>\n          <option value="10000">10 Seconds</option>\n          <option value="30000">30 Seconds</option>\n          <option value="60000">60 seconds</option>\n        </select>\n      </div>\n    </div>\n    <div class="form-group">\n      <label class="col-md-2 control-label" for="maxDepth">\n        Max depth\n        <span class="pficon pficon-info" data-toggle="tooltip" data-placement="top" title="The number of levels jolokia will marshal an object to json on the server side before returning"></span>\n      </label>\n      <div class="col-sm-6">\n        <input type="number" id="maxDepth" class="form-control" ng-model="maxDepth">\n      </div>\n    </div>\n    <div class="form-group">\n      <label class="col-md-2 control-label" for="maxCollectionSize">\n        Max collection size\n        <span class="pficon pficon-info" data-toggle="tooltip" data-placement="top" title="The maximum number of elements in an array that jolokia will marshal in a response"></span>\n      </label>\n      <div class="col-sm-6">\n        <input type="number" id="maxCollectionSize" class="form-control" ng-model="maxCollectionSize">\n      </div>\n    </div>\n    <div class="form-group">\n      <label class="col-md-2">\n      </label>\n      <div class="col-md-6">\n        <button type="button" class="btn btn-primary" ng-click="reboot()">Apply</button>\n        <span class="help-block">Restart hawtio with the new values in effect</span>\n      </div>\n    </div>\n  </form>\n</div>');
-$templateCache.put('plugins/jvm/html/jolokiaError.html','<div class="modal-header">\n  <h3 class="modal-title">The connection to jolokia failed!</h3>\n</div>\n<div class="modal-body">\n  <div ng-show="responseText">\n    <p>The connection to jolokia has failed with the following error, also check the javascript console for more details.</p>\n    <div hawtio-editor="responseText" readonly="true"></div>\n  </div>\n  <div ng-hide="responseText">\n    <p>The connection to jolokia has failed for an unknown reason, check the javascript console for more details.</p>\n  </div>\n</div>\n<div class="modal-footer">\n  <button ng-show="ConnectOptions.returnTo" class="btn" ng-click="goBack()">Back</button>\n  <button class="btn btn-primary" ng-click="retry()">Retry</button>\n</div>\n');
 $templateCache.put('plugins/jvm/html/layoutConnect.html','<div class="nav-tabs-main">\n  <ul class="nav nav-tabs" ng-controller="JVM.NavController">\n    <li ng-class=\'{active : isActive("/jvm/connect")}\'>\n        <a ng-href="#" ng-click="goto(\'/jvm/connect\')">Remote</a>\n    </li>\n    <li ng-class=\'{active : isActive("/jvm/local")}\' ng-show="isLocalEnabled">\n      <a ng-href="#" ng-click="goto(\'/jvm/local\')">Local</a>\n    </li>\n    <li ng-class=\'{active : isActive("/jvm/discover")}\' ng-show="isDiscoveryEnabled">\n        <a ng-href="#" ng-click="goto(\'/jvm/discover\')">Discover</a>\n    </li>\n  </ul>\n  <div class="contents" ng-view></div>\n</div>\n');
 $templateCache.put('plugins/jvm/html/local.html','<div ng-controller="JVM.JVMsController">\n  <h1>Local</h1>\n  <p ng-if="!initDone">\n    Please wait, discovering local JVM processes...\n  </p>\n  <div ng-if="initDone">\n    <p ng-if=\'status\'>\n      {{status}}\n    </p>\n    <div ng-if=\'data.length > 0\'>\n      <div class="row toolbar-pf">\n        <div class="col-sm-12">\n          <form class="toolbar-pf-actions">\n            <div class="form-group">\n              <input type="text" class="form-control" ng-model="filter" placeholder="Filter..." autocomplete="off">\n            </div>  \n            <div class="form-group">\n              <button class="btn btn-default" ng-click="fetch()" title="Refresh"><i class="fa fa-refresh"></i> Refresh</button>\n            </div>  \n          </form>  \n        </div>  \n      </div>  \n      <table class=\'centered table table-bordered table-condensed table-striped\'>\n        <thead>\n        <tr>\n          <th style="width: 70px">PID</th>\n          <th>Name</th>\n          <th style="width: 300px">Agent URL</th>\n          <th style="width: 50px"></th>\n        </tr>\n        </thead>\n        <tbody>\n        <tr ng-repeat="jvm in data track by $index" ng-show="filterMatches(jvm)">\n          <td>{{jvm.id}}</td>\n          <td title="{{jvm.displayName}}">{{jvm.alias}}</td>\n          <td><a href=\'\' title="Connect to this agent"\n                 ng-click="connectTo(jvm.url, jvm.scheme, jvm.hostname, jvm.port, jvm.path)">{{jvm.agentUrl}}</a></td>\n          <td>\n            <a class=\'btn control-button\' href="" title="Stop agent" ng-show="jvm.agentUrl"\n             ng-click="stopAgent(jvm.id)"><i class="pficon-close"></i></a>\n            <a class=\'btn control-button\' href="" title="Start agent" ng-hide="jvm.agentUrl"\n             ng-click="startAgent(jvm.id)"><i class="pficon-running"></i></a>\n          </td>\n        </tr>\n        </tbody>\n      </table>\n    </div>\n  </div>\n</div>\n');
 $templateCache.put('plugins/jvm/html/navbarHeaderExtension.html','<style>\n  .navbar-header-hawtio-jvm {\n    float: left;\n    margin: 0;\n  }\n\n  .navbar-header-hawtio-jvm h4 {\n    color: white;\n    margin: 0px;\n  }\n\n  .navbar-header-hawtio-jvm li {\n    list-style-type: none;\n    display: inline-block;\n    margin-right: 10px;\n    margin-top: 4px;\n  }\n</style>\n<ul class="navbar-header-hawtio-jvm" ng-controller="JVM.HeaderController">\n  <li ng-show="containerName"><h4 ng-bind="containerName"></h4></li>\n  <li ng-show="goBack"><strong><a href="" ng-click="goBack()">Back</a></strong></li>\n</ul>\n');

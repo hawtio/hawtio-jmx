@@ -159,10 +159,35 @@ declare namespace JVM {
     function ConnectionUrlFilter(): (connection: ConnectOptions) => string;
 }
 declare namespace JVM {
-    const ConnectModule: string;
+    const connectModule: string;
 }
 declare namespace JVM {
     function NavController($scope: any, $location: ng.ILocationService, workspace: Jmx.Workspace, configManager: Core.ConfigManager): void;
+}
+declare namespace JVM {
+    function createJolokiaParams(jolokiaUrl: string, localStorage: Storage): Jolokia.IParams;
+}
+declare namespace JVM {
+    function JolokiaPreferences($scope: any, localStorage: any, jolokiaParams: any, $window: any): void;
+}
+declare namespace JVM {
+    class JolokiaService {
+        private $q;
+        private jolokia;
+        constructor($q: ng.IQService, jolokia: Jolokia.IJolokia);
+        getMBean(objectName: string): ng.IPromise<any>;
+        getMBeans(objectNames: string[]): ng.IPromise<any[]>;
+        getAttribute(objectName: string, attribute: string): ng.IPromise<any>;
+        getAttributes(objectName: string, attributes: string[]): ng.IPromise<object>;
+        setAttribute(objectName: string, attribute: string, value: any): ng.IPromise<any>;
+        setAttributes(objectName: string, attributes: string[], values: any[]): ng.IPromise<any[]>;
+        execute(objectName: string, operation: string, ...args: any[]): ng.IPromise<any>;
+        executeMany(objectNames: string[], operation: string, ...args: any[]): ng.IPromise<any[]>;
+        search(mbeanPattern: string): ng.IPromise<any>;
+    }
+}
+declare namespace JVM {
+    const jolokiaModule: string;
 }
 declare namespace JVM {
     const _module: angular.IModule;
@@ -1008,25 +1033,6 @@ declare namespace JVM {
 }
 declare namespace JVM {
     var HeaderController: angular.IModule;
-}
-declare namespace JVM {
-    function JolokiaPreferences($scope: any, localStorage: any, jolokiaParams: any, $window: any): void;
-}
-declare namespace JVM {
-    class JolokiaService {
-        private $q;
-        private jolokia;
-        constructor($q: ng.IQService, jolokia: Jolokia.IJolokia);
-        getMBean(objectName: string): ng.IPromise<any>;
-        getMBeans(objectNames: string[]): ng.IPromise<any[]>;
-        getAttribute(objectName: string, attribute: string): ng.IPromise<any>;
-        getAttributes(objectName: string, attributes: string[]): ng.IPromise<object>;
-        setAttribute(objectName: string, attribute: string, value: any): ng.IPromise<any>;
-        setAttributes(objectName: string, attributes: string[], values: any[]): ng.IPromise<any[]>;
-        execute(objectName: string, operation: string, ...args: any[]): ng.IPromise<any>;
-        executeMany(objectNames: string[], operation: string, ...args: any[]): ng.IPromise<any[]>;
-        search(mbeanPattern: string): ng.IPromise<any>;
-    }
 }
 /**
  * @module JVM
