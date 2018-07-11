@@ -831,7 +831,7 @@ declare namespace Jmx {
     const commonModule: string;
 }
 declare namespace Jmx {
-    function AttributesController($scope: any, $element: any, $location: ng.ILocationService, workspace: Workspace, jmxWidgets: any, jmxWidgetTypes: any, $templateCache: ng.ITemplateCacheService, localStorage: Storage, $browser: any, $timeout: ng.ITimeoutService, $uibModal: angular.ui.bootstrap.IModalService, attributesService: AttributesService): void;
+    function AttributesController($scope: any, $location: ng.ILocationService, workspace: Workspace, jmxWidgets: any, jmxWidgetTypes: any, $templateCache: ng.ITemplateCacheService, localStorage: Storage, $uibModal: angular.ui.bootstrap.IModalService, attributesService: AttributesService): void;
 }
 /**
  * @namespace RBAC
