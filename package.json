@@ -10,6 +10,7 @@
     "start": "gulp",
     "build": "gulp build",
     "test": "gulp test",
+    "prepublishOnly": "gulp test",
     "version": "gulp version"
   },
   "dependencies": {
