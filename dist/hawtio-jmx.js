@@ -8431,7 +8431,7 @@ var Jmx;
         }]);
     Jmx._module.run(["aboutService", function (aboutService) {
         'ngInject';
-        aboutService.addProductInfo('Hawtio JMX', 'PACKAGE_VERSION_PLACEHOLDER');
+        aboutService.addProductInfo('Hawtio JMX', '3.2.32');
     }]);
     hawtioPluginLoader.addModule(Jmx.pluginName);
     hawtioPluginLoader.addModule('dangle');

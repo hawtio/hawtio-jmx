@@ -1,6 +1,6 @@
 {
   "name": "@hawtio/jmx",
-  "version": "3.2.30",
+  "version": "3.2.32",
   "main": "dist/hawtio-jmx.js",
   "types": "dist/hawtio-jmx.d.ts",
   "files": [
@@ -10,7 +10,7 @@
     "start": "gulp",
     "build": "gulp build",
     "test": "gulp test",
-    "version": "gulp version"
+    "version": "gulp version && git add -A dist"
   },
   "dependencies": {
     "@hawtio/core": "~3.2.0",
