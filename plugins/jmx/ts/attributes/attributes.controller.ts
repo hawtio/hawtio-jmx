@@ -37,18 +37,15 @@ namespace Jmx {
 
   export function AttributesController(
     $scope,
-    $element,
     $location: ng.ILocationService,
     workspace: Workspace,
     $templateCache: ng.ITemplateCacheService,
     localStorage: Storage,
-    $browser,
-    $timeout: ng.ITimeoutService,
     $uibModal: angular.ui.bootstrap.IModalService,
     attributesService: AttributesService) {
     'ngInject';
 
-    let modalInstance = null;
+    let gridData = [];
 
     $scope.searchText = '';
     $scope.nid = 'empty';
@@ -108,14 +105,12 @@ namespace Jmx {
       enableRowSelection: false,
       enableRowClickSelection: false,
       keepLastSelected: false,
-      multiSelect: true,
+      multiSelect: false,
       showColumnMenu: true,
       displaySelectionCheckbox: false,
       filterOptions: {
         filterText: ''
       },
-      // TODO disabled for now as it causes https://github.com/hawtio/hawtio/issues/262
-      //sortInfo: { field: 'name', direction: 'asc'},
       data: 'gridData',
       columnDefs: PROPERTIES_COLUMN_DEFS
     };
@@ -145,12 +140,6 @@ namespace Jmx {
     let updateTable = _.debounce(updateTableContents, 50, { leading: false, trailing: true });
 
     $scope.$on(TreeEvent.Updated, updateTable);
-
-    $scope.$watch('gridOptions.filterOptions.filterText', (newValue, oldValue) => {
-      if (newValue !== oldValue) {
-        updateTable();
-      }
-    });
 
     updateTable();
 
@@ -200,7 +189,7 @@ namespace Jmx {
         initAttributeSchemaEdit($scope, rows);
       }
 
-      modalInstance = $uibModal.open({
+      $uibModal.open({
         templateUrl: 'attributeModal.html',
         scope: $scope,
         size: 'lg'
@@ -312,12 +301,10 @@ namespace Jmx {
         request = { type: 'read', mbean: mbean };
         if (_.isNil(node) || node.key !== $scope.lastKey) {
           $scope.gridOptions.columnDefs = PROPERTIES_COLUMN_DEFS;
-          $scope.gridOptions.enableRowClickSelection = false;
         }
       } else if (node) {
         if (node.key !== $scope.lastKey) {
           $scope.gridOptions.columnDefs = [];
-          $scope.gridOptions.enableRowClickSelection = true;
         }
         // lets query each child's details
         let children = node.children;
@@ -352,7 +339,6 @@ namespace Jmx {
       } else if (node) {
         if (node.key !== $scope.lastKey) {
           $scope.gridOptions.columnDefs = FOLDERS_COLUMN_DEFS;
-          $scope.gridOptions.enableRowClickSelection = true;
         }
         $scope.gridData = node.children;
         addHandlerFunctions($scope.gridData);
@@ -385,7 +371,7 @@ namespace Jmx {
           if (idx === 0) {
             // this is to force the table to repaint
             $scope.selectedIndices = $scope.selectedItems.map((item) => $scope.gridData.indexOf(item));
-            $scope.gridData = [];
+            gridData = [];
 
             if (!$scope.gridOptions.columnDefs.length) {
               // lets update the column definitions based on any configured defaults
@@ -434,7 +420,6 @@ namespace Jmx {
               }
 
               $scope.gridOptions.columnDefs = defaultDefs;
-              $scope.gridOptions.enableRowClickSelection = true;
             }
           }
           // mask attribute read error
@@ -444,8 +429,8 @@ namespace Jmx {
             }
           });
           // assume 1 row of data per mbean
-          $scope.gridData[idx] = data;
-          addHandlerFunctions($scope.gridData);
+          gridData[idx] = data;
+          addHandlerFunctions(gridData);
 
           let count = $scope.mbeanCount;
           if (!count || idx + 1 >= count) {
@@ -453,6 +438,7 @@ namespace Jmx {
             let newSelections = $scope.selectedIndices.map((idx) => $scope.gridData[idx]).filter((row) => row);
             $scope.selectedItems.splice(0, $scope.selectedItems.length);
             $scope.selectedItems.push.apply($scope.selectedItems, newSelections);
+            $scope.gridData = gridData;
             Core.$apply($scope);
           }
           // if the last row, then fire an event
