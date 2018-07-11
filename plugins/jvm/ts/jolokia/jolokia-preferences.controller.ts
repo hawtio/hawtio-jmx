@@ -1,4 +1,4 @@
-/// <reference path="jvmPlugin.ts"/>
+/// <reference path="../jvmPlugin.ts"/>
 
 namespace JVM {
 
@@ -44,9 +44,6 @@ namespace JVM {
       $window.sessionStorage.setItem(SHOW_ALERT, 'true');
       $window.location.reload();
     }
-
   }
-
-  _module.controller("JVM.JolokiaPreferences", JolokiaPreferences);
 
 }

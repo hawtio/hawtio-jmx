@@ -31,11 +31,11 @@ const config = {
 
 const tsProject = plugins.typescript.createProject('tsconfig.json');
 
-gulp.task('clean-defs', function() {
-  return del(config.dist + '*.d.ts');
+gulp.task('clean', function() {
+  return del(config.dist );
 });
 
-gulp.task('tsc', ['clean-defs'], function() {
+gulp.task('tsc', ['clean'], function() {
   var tsResult = tsProject.src()
     .pipe(plugins.if(config.sourceMap, plugins.sourcemaps.init()))
     .pipe(tsProject());
@@ -50,7 +50,7 @@ gulp.task('tsc', ['clean-defs'], function() {
       .pipe(gulp.dest(config.dist)));
 });
 
-gulp.task('less', function () {
+gulp.task('less', ['clean'], function () {
   return gulp.src(config.less)
     .pipe(plugins.less({
       paths: [
@@ -88,7 +88,7 @@ gulp.task('concat', ['template'], function() {
   .pipe(gulp.dest(config.dist));
 });
 
-gulp.task('clean', ['concat'], function() {
+gulp.task('clean-temp-files', ['concat'], function() {
   return del(['templates.js', 'compiled.js']);
 });
 
@@ -162,6 +162,6 @@ gulp.task('version', function() {
     .pipe(gulp.dest(config.dist));
 });
 
-gulp.task('build', ['tsc', 'less', 'template', 'concat', 'clean']);
+gulp.task('build', ['tsc', 'less', 'template', 'concat', 'clean-temp-files']);
 
 gulp.task('default', ['connect', 'watch']);

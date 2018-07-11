@@ -74,8 +74,8 @@
     urijs "^1.18.10"
 
 "@hawtio/ui@^4.0.0":
-  version "4.0.0"
-  resolved "https://registry.yarnpkg.com/@hawtio/ui/-/ui-4.0.0.tgz#0ae606bbc4f32e1e8e55b0660d39ede4fb177140"
+  version "4.0.1"
+  resolved "https://registry.yarnpkg.com/@hawtio/ui/-/ui-4.0.1.tgz#747075eb87175cda378262cd524a87d75e5e7ebe"
   dependencies:
     "@hawtio/core" "^4.0.0"
     "@hawtio/core-dts" "3.0.18"
@@ -923,8 +923,8 @@ combined-stream@^1.0.5, combined-stream@~1.0.5:
     delayed-stream "~1.0.0"
 
 commander@^2.9.0:
-  version "2.15.1"
-  resolved "https://registry.yarnpkg.com/commander/-/commander-2.15.1.tgz#df46e867d0fc2aec66a34662b406a9ccafff5b0f"
+  version "2.16.0"
+  resolved "https://registry.yarnpkg.com/commander/-/commander-2.16.0.tgz#f16390593996ceb4f3eeb020b31d78528f7f8a50"
 
 component-bind@1.0.0:
   version "1.0.0"

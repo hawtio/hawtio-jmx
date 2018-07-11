@@ -3,7 +3,7 @@
  * @main RBAC
  */
 /// <reference path="../../jmx/ts/workspace.ts"/>
-/// <reference path="../../jvm/ts/jolokiaService.ts"/>
+/// <reference path="../../jvm/ts/jolokia/jolokiaService.ts"/>
 /// <reference path="models.ts"/>
 /// <reference path="rbac.directive.ts"/>
 /// <reference path="rbac.service.ts"/>

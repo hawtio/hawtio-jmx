@@ -9,7 +9,7 @@
 
 namespace JVM {
 
-  export const ConnectModule = angular
+  export const connectModule = angular
     .module('hawtio-jvm-connect', [])
     .component('connect', connectComponent)
     .component('connectEditModal', connectEditModalComponent)

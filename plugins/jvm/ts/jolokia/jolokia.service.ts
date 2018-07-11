@@ -229,6 +229,4 @@ namespace JVM {
     }
   }
 
-  _module.service("jolokiaService", JolokiaService);
-
 }

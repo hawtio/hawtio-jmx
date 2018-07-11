@@ -10,7 +10,7 @@
     "start": "gulp",
     "build": "gulp build",
     "test": "gulp test",
-    "version": "gulp version && git add -A dist"
+    "version": "gulp version"
   },
   "dependencies": {
     "@hawtio/core": "^4.0.0",

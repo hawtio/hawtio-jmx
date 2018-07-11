@@ -1,4 +1,4 @@
-/// <reference path="../../jvm/ts/jolokiaService.ts"/>
+/// <reference path="../../jvm/ts/jolokia/jolokiaService.ts"/>
 /// <reference path="tree/tree-event.ts"/>
 
 namespace Jmx {
