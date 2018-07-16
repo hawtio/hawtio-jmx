@@ -13,9 +13,9 @@
     "version": "gulp version && git add -A dist"
   },
   "dependencies": {
-    "@hawtio/core": "~3.2.0",
-    "@hawtio/forms": "~3.2.0",
-    "@hawtio/ui": "~3.2.0",
+    "@hawtio/core": "~3.3.0",
+    "@hawtio/forms": "~3.3.0",
+    "@hawtio/ui": "~3.3.0",
     "@types/angular-ui-bootstrap": "~0.13.46",
     "angular-resizable": "1.2.0",
     "patternfly-bootstrap-treeview": "2.1.5"
