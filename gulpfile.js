@@ -31,8 +31,10 @@ const config = {
 
 const tsProject = plugins.typescript.createProject('tsconfig.json');
 
-gulp.task('clean', function() {
-  return del(config.dist );
+gulp.task('clean', function () {
+  if (!argv.out) {
+    return del(config.dist);
+  }
 });
 
 gulp.task('tsc', ['clean'], function() {
