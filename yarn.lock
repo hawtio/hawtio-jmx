@@ -2751,7 +2751,7 @@ micromatch@^2.1.5, micromatch@^2.3.7, micromatch@^2.3.8:
     parse-glob "^3.0.4"
     regex-cache "^0.4.2"
 
-mime-db@1.30.0, mime-db@~1.30.0, mime-db@~1.33.0:
+mime-db@1.30.0, mime-db@~1.30.0, mime-db@~1.35.0:
   version "1.30.0"
   resolved "https://registry.yarnpkg.com/mime-db/-/mime-db-1.30.0.tgz#74c643da2dd9d6a45399963465b26d5ca7d71f01"
 
