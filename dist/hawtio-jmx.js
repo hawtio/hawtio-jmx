@@ -8467,7 +8467,7 @@ var Jmx;
         }]);
     Jmx._module.run(["aboutService", function (aboutService) {
         'ngInject';
-        aboutService.addProductInfo('Hawtio JMX', '3.3.0');
+        aboutService.addProductInfo('Hawtio JMX', 'PACKAGE_VERSION_PLACEHOLDER');
     }]);
     hawtioPluginLoader.addModule(Jmx.pluginName);
     hawtioPluginLoader.addModule('dangle');
@@ -8535,7 +8535,7 @@ var Jmx;
                     // For ENTESB-4165. This is a bit hacky but needed to deal with special conditions like
                     // where there is only a single queue or topic
                     result = $scope.selectedAttributes.length && $scope.selectedMBeans.length &&
-                        ($scope.size($scope.mbeans) + $scope.size($scope.metrics) > 2);
+                        ($scope.size($scope.mbeans) + $scope.size($scope.metrics) >= 2);
                 }
                 else {
                     result = $scope.selectedAttributes.length && $scope.selectedMBeans.length &&
