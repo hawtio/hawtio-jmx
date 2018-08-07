@@ -7,11 +7,9 @@ namespace JVM {
     $scope.showAlert = false;
 
     $scope.doClearConnectSettings = () => {
-      delete localStorage[connectControllerKey];
       delete localStorage[connectionSettingsKey];
       $scope.showAlert = true;
     };
 
   }]);
-
 }
