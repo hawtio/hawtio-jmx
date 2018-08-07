@@ -26,8 +26,8 @@
     "@types/jquery" "~2.0.46"
 
 "@hawtio/core@^4.0.0":
-  version "4.0.0"
-  resolved "https://registry.yarnpkg.com/@hawtio/core/-/core-4.0.0.tgz#6f16ced3ab0188d8cfce9793534c8232db37c365"
+  version "4.0.9"
+  resolved "https://registry.yarnpkg.com/@hawtio/core/-/core-4.0.9.tgz#ed97736c7c6720d9ded7968e2d8e856b73bd8f4a"
   dependencies:
     "@hawtio/core-dts" "3.0.18"
     "@types/angular" "*"
@@ -90,20 +90,20 @@
     js-beautify "1.7.5"
 
 "@types/angular-route@*":
-  version "1.3.5"
-  resolved "https://registry.yarnpkg.com/@types/angular-route/-/angular-route-1.3.5.tgz#78b8e0b069d5efe55ec7072461f4e2f6ae20767b"
+  version "1.7.0"
+  resolved "https://registry.yarnpkg.com/@types/angular-route/-/angular-route-1.7.0.tgz#ba12d09df1aac3c88e3684500001daedfc97fb69"
   dependencies:
     "@types/angular" "*"
 
 "@types/angular-ui-bootstrap@~0.13.46":
-  version "0.13.46"
-  resolved "https://registry.yarnpkg.com/@types/angular-ui-bootstrap/-/angular-ui-bootstrap-0.13.46.tgz#67b2bc2801cdaec515567840c9d82cc649c34656"
+  version "0.13.47"
+  resolved "https://registry.yarnpkg.com/@types/angular-ui-bootstrap/-/angular-ui-bootstrap-0.13.47.tgz#e9fd4baf09dd98ff2b868ed00474310b2a66fa37"
   dependencies:
     "@types/angular" "*"
 
 "@types/angular@*":
-  version "1.6.43"
-  resolved "https://registry.yarnpkg.com/@types/angular/-/angular-1.6.43.tgz#6235ef416053a86302970717510a936d889cbb9a"
+  version "1.6.49"
+  resolved "https://registry.yarnpkg.com/@types/angular/-/angular-1.6.49.tgz#8a5dd666100155d27cda9801f961360eb24b8d96"
 
 "@types/bootstrap@3.3.36":
   version "3.3.36"
@@ -186,8 +186,8 @@
     "@types/geojson" "*"
 
 "@types/d3-hierarchy@*":
-  version "1.1.2"
-  resolved "https://registry.yarnpkg.com/@types/d3-hierarchy/-/d3-hierarchy-1.1.2.tgz#63a4e433f321ffc4dbd9aa05ff95962072b51993"
+  version "1.1.3"
+  resolved "https://registry.yarnpkg.com/@types/d3-hierarchy/-/d3-hierarchy-1.1.3.tgz#c5364aac0ff4491fc78f73b7c0d546b57b561230"
 
 "@types/d3-interpolate@*":
   version "1.2.0"
@@ -204,8 +204,8 @@
   resolved "https://registry.yarnpkg.com/@types/d3-polygon/-/d3-polygon-1.0.6.tgz#db25c630a2afb9191fe51ba61dd37baee9dd44c7"
 
 "@types/d3-quadtree@*":
-  version "1.0.5"
-  resolved "https://registry.yarnpkg.com/@types/d3-quadtree/-/d3-quadtree-1.0.5.tgz#1ce1e659eae4530df0cb127f297f1741a367a82e"
+  version "1.0.6"
+  resolved "https://registry.yarnpkg.com/@types/d3-quadtree/-/d3-quadtree-1.0.6.tgz#45da9e603688ba90eedd3d40f6e504764e06e493"
 
 "@types/d3-queue@*":
   version "3.0.6"
@@ -250,8 +250,8 @@
   resolved "https://registry.yarnpkg.com/@types/d3-timer/-/d3-timer-1.0.7.tgz#053e6369d9485c9dc80bc62fc0851123341d7816"
 
 "@types/d3-transition@*":
-  version "1.1.1"
-  resolved "https://registry.yarnpkg.com/@types/d3-transition/-/d3-transition-1.1.1.tgz#c209fce6a966d6696356dd42b091a9c6cc79929f"
+  version "1.1.2"
+  resolved "https://registry.yarnpkg.com/@types/d3-transition/-/d3-transition-1.1.2.tgz#1106fc3129decc9ad5682a9f52b2dfa52f14e57c"
   dependencies:
     "@types/d3-selection" "*"
 
@@ -302,8 +302,8 @@
     "@types/d3-zoom" "*"
 
 "@types/geojson@*":
-  version "7946.0.3"
-  resolved "https://registry.yarnpkg.com/@types/geojson/-/geojson-7946.0.3.tgz#e5791534ab0acfb2b3a39b713966cfcee85d469f"
+  version "7946.0.4"
+  resolved "https://registry.yarnpkg.com/@types/geojson/-/geojson-7946.0.4.tgz#4e049756383c3f055dd8f3d24e63fb543e98eb07"
 
 "@types/jasmine@2.8.2", "@types/jasmine@2.8.6", "@types/jasmine@~2.8.0":
   version "2.8.6"
@@ -421,8 +421,8 @@ angular-drag-and-drop-lists@2.0.0:
   resolved "https://registry.yarnpkg.com/angular-drag-and-drop-lists/-/angular-drag-and-drop-lists-2.0.0.tgz#a01d44b94cf233c9c2d45a31842cb35a9d0882ca"
 
 angular-patternfly@^4.0.0:
-  version "4.18.0"
-  resolved "https://registry.yarnpkg.com/angular-patternfly/-/angular-patternfly-4.18.0.tgz#802a4604f232afde39ec1009e7580913a3456b65"
+  version "4.18.4"
+  resolved "https://registry.yarnpkg.com/angular-patternfly/-/angular-patternfly-4.18.4.tgz#91c33ac364bafb09923d307eaf23adecacc0bf8f"
   dependencies:
     angular "1.5.*"
     angular-animate "1.5.*"
@@ -449,8 +449,8 @@ angular-resizable@1.2.0:
   resolved "https://registry.yarnpkg.com/angular-resizable/-/angular-resizable-1.2.0.tgz#9dd29af008f8b54abfc051bd269a8f0b4fe43f1a"
 
 angular-route@~1.7.0:
-  version "1.7.1"
-  resolved "https://registry.yarnpkg.com/angular-route/-/angular-route-1.7.1.tgz#8e2c1ce1d01b0d9b944692de7eba900b9a3ec451"
+  version "1.7.2"
+  resolved "https://registry.yarnpkg.com/angular-route/-/angular-route-1.7.2.tgz#a24b7a0c8ef09a3d4e2ca20de7f84e0e857a61ae"
 
 angular-sanitize@1.5.*, angular-sanitize@1.7.1, angular-sanitize@~1.7.0:
   version "1.7.1"
@@ -1034,10 +1034,10 @@ dashdash@^1.12.0:
     assert-plus "^1.0.0"
 
 datatables.net-bs@>=1.10.9:
-  version "1.10.16"
-  resolved "https://registry.yarnpkg.com/datatables.net-bs/-/datatables.net-bs-1.10.16.tgz#b0854f5b374f713ae3db4156c7cea8a760c3de76"
+  version "1.10.19"
+  resolved "https://registry.yarnpkg.com/datatables.net-bs/-/datatables.net-bs-1.10.19.tgz#08763b4e4d0cef1a427d019dc15e717c7ed67a4d"
   dependencies:
-    datatables.net "1.10.16"
+    datatables.net "1.10.19"
     jquery ">=1.7"
 
 datatables.net-colreorder-bs@~1.3.2:
@@ -1056,20 +1056,20 @@ datatables.net-colreorder@1.4.1, datatables.net-colreorder@>=1.2.0, datatables.n
     jquery ">=1.7"
 
 datatables.net-dt@^1.10.11:
-  version "1.10.16"
-  resolved "https://registry.yarnpkg.com/datatables.net-dt/-/datatables.net-dt-1.10.16.tgz#6758a308fb9e5f9629fb6541cc301e48ec9ec555"
+  version "1.10.19"
+  resolved "https://registry.yarnpkg.com/datatables.net-dt/-/datatables.net-dt-1.10.19.tgz#fc668e4942ac6e331be2707975d0f33e01afb60f"
   dependencies:
-    datatables.net "1.10.16"
+    datatables.net "1.10.19"
     jquery ">=1.7"
 
 datatables.net-select@~1.2.0:
-  version "1.2.5"
-  resolved "https://registry.yarnpkg.com/datatables.net-select/-/datatables.net-select-1.2.5.tgz#4f764669b464d5576a59c576c1250a5d069aa2e9"
+  version "1.2.7"
+  resolved "https://registry.yarnpkg.com/datatables.net-select/-/datatables.net-select-1.2.7.tgz#7d5badfca49c438f8b51df04483d8d77857e917c"
   dependencies:
     datatables.net "^1.10.15"
     jquery ">=1.7"
 
-datatables.net@1.10.16, datatables.net@^1.10.11, datatables.net@^1.10.12, datatables.net@^1.10.15:
+datatables.net@1.10.16, datatables.net@1.10.19, datatables.net@^1.10.11, datatables.net@^1.10.12, datatables.net@^1.10.15:
   version "1.10.16"
   resolved "https://registry.yarnpkg.com/datatables.net/-/datatables.net-1.10.16.tgz#4b052d1082824261b68eed9d22741b711d3d2469"
   dependencies:
@@ -3056,8 +3056,8 @@ patternfly-bootstrap-treeview@2.1.5, patternfly-bootstrap-treeview@~2.1.0:
     jquery ">= 2.1.x"
 
 patternfly@^3.37.1:
-  version "3.48.4"
-  resolved "https://registry.yarnpkg.com/patternfly/-/patternfly-3.48.4.tgz#0c4f8d8ac5bfc49b32464a4f5420c3e6a6e079d4"
+  version "3.54.1"
+  resolved "https://registry.yarnpkg.com/patternfly/-/patternfly-3.54.1.tgz#a0f8b52076aa405486e77ecb504460b1ff35fe92"
   dependencies:
     bootstrap "~3.3.7"
     font-awesome "^4.7.0"

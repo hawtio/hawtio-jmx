@@ -20,7 +20,7 @@ namespace Diagnostics {
     'ngInject';
     mainNavService.addItem({
       title: 'Diagnostics',
-      href: '/diagnostics',
+      basePath: '/diagnostics',
       template: '<diagnostics></diagnostics>',
       isValid: () => diagnosticsService.getTabs().length > 0,
       rank: -1

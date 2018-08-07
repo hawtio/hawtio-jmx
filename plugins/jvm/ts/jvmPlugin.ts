@@ -83,7 +83,7 @@ namespace JVM {
 
     mainNavService.addItem({
       title: 'Connect',
-      href: '/jvm',
+      basePath: '/jvm',
       template: '<jvm></jvm>',
       isValid: () => ConnectOptions == null || ConnectOptions.name == null
     });    

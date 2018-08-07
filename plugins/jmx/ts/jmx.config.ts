@@ -27,7 +27,7 @@ namespace Jmx {
     'ngInject';
     mainNavService.addItem({
       title: 'JMX',
-      href: '/jmx',
+      basePath: '/jmx',
       template: '<jmx></jmx>',
       isValid: () => workspace.hasMBeans()
     });

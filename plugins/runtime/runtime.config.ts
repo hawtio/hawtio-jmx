@@ -19,7 +19,7 @@ namespace Runtime {
     'ngInject';
     mainNavService.addItem({
       title: 'Runtime',
-      href: '/runtime',
+      basePath: '/runtime',
       template: '<runtime></runtime>',
       isValid: () => workspace.treeContainsDomainAndProperties('java.lang')
     });
