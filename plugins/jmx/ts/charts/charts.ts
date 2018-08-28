@@ -17,7 +17,7 @@ namespace Jmx {
         primaryActions: [
           {
             name: 'Edit',
-            actionFn: () => $location.path($location.path().replace('/charts', '/chartEdit'))
+            actionFn: () => $location.path($location.path().replace('/charts', '/charts/edit'))
           }
         ]
       }
@@ -110,7 +110,7 @@ namespace Jmx {
               .clientDelay($scope.updateRate)
               .step($scope.updateRate)
               .size(width);
-              
+
       var horizon = context.horizon();
       horizon.height(40);
       horizon.colors(["#6a96c3", "#83b4d7", "#a6cee6", "#d7e7f0", "#d5eed1", "#abdbac", "#83c798", "#66a780"]);
@@ -227,7 +227,7 @@ namespace Jmx {
         if (node.children.length && !$scope.metrics.length) {
           // lets forward to the chart selection UI if we have some children; they may have
           // chartable attributes
-          $location.path($location.path().replace('/charts', '/chartEdit'));
+          $location.path($location.path().replace('/charts', '/charts/edit'));
         }
       }
 

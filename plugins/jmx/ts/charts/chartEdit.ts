@@ -57,7 +57,7 @@ namespace Jmx {
       }
       search['sub-tab'] = 'jmx-chart';
       $location.search(search);
-      $location.path($location.path().replace('/chartEdit', '/charts'));
+      $location.path($location.path().replace('/charts/edit', '/charts'));
     };
 
     $scope.$on("$routeChangeSuccess", function (event, current, previous) {

@@ -3,21 +3,21 @@
 namespace Jmx {
 
   export let currentProcessId = '';
-  
+
   export function configureRoutes($routeProvider) {
     'ngInject';
     $routeProvider
       .when('/jmx/attributes', {templateUrl: 'plugins/jmx/html/attributes/attributes.html'})
       .when('/jmx/operations', {template: '<operations></operations>'})
       .when('/jmx/charts', {templateUrl: 'plugins/jmx/html/charts.html'})
-      .when('/jmx/chartEdit', {templateUrl: 'plugins/jmx/html/chartEdit.html'});
+      .when('/jmx/charts/edit', {templateUrl: 'plugins/jmx/html/chartEdit.html'});
   }
 
   export function configureAbout(aboutService: About.AboutService) {
     'ngInject';
     aboutService.addProductInfo('Hawtio JMX', 'PACKAGE_VERSION_PLACEHOLDER');
   }
-  
+
   export function configureHelp(helpRegistry) {
     'ngInject';
     helpRegistry.addUserDoc('jmx', 'plugins/jmx/doc/help.md');
@@ -32,7 +32,7 @@ namespace Jmx {
       isValid: () => workspace.hasMBeans()
     });
   }
-  
+
   export function configurePageTitle(pageTitle, jolokia) {
     'ngInject';
     pageTitle.addTitleElement(() => {
