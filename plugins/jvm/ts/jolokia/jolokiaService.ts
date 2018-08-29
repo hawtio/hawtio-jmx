@@ -138,7 +138,7 @@ namespace JVM {
       return null;
     }
     let answer = getConnectOptions(name);
-   
+
     // load saved credentials when connecting to remote server
     answer.userName = sessionStorage.getItem('username');
     answer.password = sessionStorage.getItem('password');
@@ -235,26 +235,19 @@ namespace JVM {
         let errorCount = 0;
         jolokiaParams.ajaxError = (xhr: JQueryXHR, textStatus: string, error: any) => {
           if (xhr.status === 403) {
-            // If window was opened to connect to remote Jolokia endpoint
-            if (window.opener) {
-              // ... and not showing the login modal
-              if ($location.path() !== '/jvm/connect-login') {
-                jolokia.stop();
-                const redirectUrl = $location.absUrl();
-                $location.path('/jvm/connect-login').search('redirect', redirectUrl);
-              }
-            } else {
-              // just logout
-              if (userDetails.loggedIn) {
-                userDetails.logout();
-              }
+            jolokia.stop();
+            if (userDetails.loggedIn) {
+              userDetails.logout();
+            } else if ($location.path() !== '/jvm/connect-login') {
+              const redirectUrl = $location.absUrl();
+              $location.path('/jvm/connect-login').search('redirect', redirectUrl);
             }
           } else {
             errorCount++;
-            
+
             const validityPeriod = localStorage['updateRate'] * (errorThreshold + 1);
             $timeout(() => errorCount--, validityPeriod);
-            
+
             if (errorCount > errorThreshold) {
               Core.notification('danger', 'Connection lost. Retrying...', localStorage['updateRate']);
             }

@@ -19,7 +19,6 @@ const packageJson = require('./package.json');
 const tsconfig = require('./tsconfig.json');
 
 const config = {
-  proxyPort: argv.port || 8181,
   targetPath: argv.path || '/jolokia',
   logLevel: argv.debug ? logger.DEBUG : logger.INFO,
   less: ['plugins/**/*.less'],
@@ -101,7 +100,6 @@ gulp.task('connect', ['build'], function() {
     port: 2772,
     proxy: '/hawtio/proxy',
     staticProxies: [{
-      port: config.proxyPort,
       path: '/jolokia',
       targetPath: config.targetPath
     }],
