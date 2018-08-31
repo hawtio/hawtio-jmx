@@ -4,7 +4,7 @@ namespace JVM {
 
   export class ConnectService {
 
-    constructor(private $q: ng.IQService, private $window: ng.IWindowService) {
+    constructor(private $q: ng.IQService, private $window: ng.IWindowService, private $location: ng.ILocationService) {
       'ngInject';
     }
 
@@ -31,7 +31,7 @@ namespace JVM {
           return connection;
         });
     }
-    
+
     saveConnections(connections: ConnectOptions[]) {
       this.$window.localStorage.setItem(connectionSettingsKey, JSON.stringify(connections));
     }
@@ -85,11 +85,44 @@ namespace JVM {
         });
       });
     };
-    
+
     connect(connection: ConnectOptions) {
       log.debug("Connecting with options: ", StringHelpers.toString(connection));
       const url = URI('').search({ con: connection.name }).toString();
       this.$window.open(url);
+    }
+
+    getDefaultOptions(): ConnectOptions {
+      return {
+        port: this.getBrowserUrlPortNumber(),
+        path: this.getBrowserUrlContextPath() + '/jolokia'
+      };
+    }
+
+    private getBrowserUrlPortNumber(): number {
+      let port = null;
+      try {
+        const uri = URI(this.$location.absUrl());
+        if (uri.port()) {
+          port = parseInt(uri.port());
+        }
+      } catch (error) {
+        log.error(error);
+      }
+      return port;
+    }
+
+    private getBrowserUrlContextPath(): string {
+      let contextPath = null;
+      try {
+        const uri = URI(this.$location.absUrl());
+        const uriPath = uri.path();
+        const locationPath = this.$location.path();
+        contextPath = uriPath.slice(0, uriPath.indexOf(locationPath));
+      } catch (error) {
+        log.error(error);
+      }
+      return contextPath;
     }
 
   }

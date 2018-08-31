@@ -5,7 +5,7 @@ namespace JVM {
   class ConnectController {
     connections: ConnectOptions[] = [];
     promise: ng.IPromise<any>;
-    
+
     toolbarConfig = {
       actionsConfig: {
         primaryActions: [
@@ -23,7 +23,7 @@ namespace JVM {
     listActionButtons = [
       { name: 'Connect', actionFn: (action, connection) => this.connect(connection) }
     ];
-    
+
     listActionDropDown = [
       { name: 'Edit', actionFn: (action, connection) => this.editConnection(connection) },
       { name: 'Delete', actionFn: (action, connection) => this.deleteConnection(connection) }
@@ -53,9 +53,10 @@ namespace JVM {
     }
 
     private addConnection() {
+      const defaultOptions = this.connectService.getDefaultOptions();
       this.$uibModal.open({
         component: 'connectEditModal',
-        resolve: { connection: () => createConnectOptions() }
+        resolve: { connection: () => createConnectOptions(defaultOptions) }
       })
       .result.then(connection => {
         this.connections.unshift(connection);
