@@ -2,7 +2,9 @@
   <h1>Remote</h1>
   <div class="row">
     <div class="col-md-7">
-      <pf-toolbar config="$ctrl.toolbarConfig"></pf-toolbar>
+      <hawtio-action-bar>
+        <button type="button" class="btn btn-default" ng-click="$ctrl.addConnection()">Add connection</button>
+      </hawtio-action-bar>
       <pf-list-view class="jvm-connection-list" items="$ctrl.connections" config="$ctrl.listConfig"
         action-buttons="$ctrl.listActionButtons" menu-actions="$ctrl.listActionDropDown">
         <div class="list-view-pf-left">
@@ -22,7 +24,7 @@
               {{item | connectionUrl}}
             </div>
           </div>
-        </div>    
+        </div>
       </pf-list-view>
     </div>
     <div class="col-md-5">

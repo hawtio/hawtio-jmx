@@ -4,7 +4,7 @@ namespace Jmx {
 
   export let currentProcessId = '';
 
-  export function configureRoutes($routeProvider) {
+  export function configureRoutes($routeProvider: ng.route.IRouteProvider) {
     'ngInject';
     $routeProvider
       .when('/jmx/attributes', {templateUrl: 'plugins/jmx/html/attributes/attributes.html'})

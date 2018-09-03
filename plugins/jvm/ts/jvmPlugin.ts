@@ -15,15 +15,14 @@ namespace JVM {
     .run(startJolokia)
     .component("jvm", jvmComponent);
 
-  function defineRoutes(configManager: Core.ConfigManager) {
+  function defineRoutes($routeProvider: angular.route.IRouteProvider) {
     'ngInject';
-
-    configManager
-      .addRoute('/jvm/connect', { template: '<connect></connect>' })
-      .addRoute('/jvm/connect-login', { template: '<connect-login></connect-login>' })
-      .addRoute('/jvm/welcome', { templateUrl: UrlHelpers.join(templatePath, 'welcome.html') })
-      .addRoute('/jvm/discover', { templateUrl: UrlHelpers.join(templatePath, 'discover.html') })
-      .addRoute('/jvm/local', { templateUrl: UrlHelpers.join(templatePath, 'local.html') });
+    $routeProvider
+      .when('/jvm/connect', { template: '<connect></connect>' })
+      .when('/jvm/connect-login', { template: '<connect-login></connect-login>' })
+      .when('/jvm/welcome', { templateUrl: UrlHelpers.join(templatePath, 'welcome.html') })
+      .when('/jvm/discover', { templateUrl: UrlHelpers.join(templatePath, 'discover.html') })
+      .when('/jvm/local', { templateUrl: UrlHelpers.join(templatePath, 'local.html') });
   }
 
   function configurePlugin(
@@ -86,7 +85,7 @@ namespace JVM {
       basePath: '/jvm',
       template: '<jvm></jvm>',
       isValid: () => ConnectOptions == null || ConnectOptions.name == null
-    });    
+    });
   }
 
   function startJolokia($q: ng.IQService, initService: Init.InitService, jolokia: Jolokia.IJolokia, localStorage: Storage) {

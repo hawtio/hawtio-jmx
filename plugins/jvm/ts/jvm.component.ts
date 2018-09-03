@@ -3,13 +3,13 @@ namespace JVM {
   export class JvmController {
     tabs: Nav.HawtioTab[];
 
-    constructor(private workspace: Jmx.Workspace, configManager: Core.ConfigManager) {
+    constructor(workspace: Jmx.Workspace) {
       'ngInject';
       this.tabs = [new Nav.HawtioTab('Remote', '/jvm/connect')];
-      if (configManager.isRouteEnabled('/jvm/local') && hasLocalMBean(workspace)) {
+      if (hasLocalMBean(workspace)) {
         this.tabs.push(new Nav.HawtioTab('Local', '/jvm/local'));
       }
-      if (configManager.isRouteEnabled('/jvm/discover') && hasDiscoveryMBean(workspace)) {
+      if (hasDiscoveryMBean(workspace)) {
         this.tabs.push(new Nav.HawtioTab('Discover', '/jvm/discover'));
       }
     }

@@ -1,11 +1,10 @@
 /// <reference path="logs.service.ts"/>
 
 namespace Logs {
-  
-  export function configureLogsRoutes($routeProvider) {
+
+  export function configureLogsRoutes($routeProvider: ng.route.IRouteProvider) {
     'ngInject';
-    $routeProvider.
-      when('/logs', {template: '<logs></logs>'});
+    $routeProvider.when('/logs', {template: '<logs></logs>'});
   }
 
   export function configureLogsHelp(helpRegistry, logsService: LogsService) {

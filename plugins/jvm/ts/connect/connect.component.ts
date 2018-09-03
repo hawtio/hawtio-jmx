@@ -6,14 +6,6 @@ namespace JVM {
     connections: ConnectOptions[] = [];
     promise: ng.IPromise<any>;
 
-    toolbarConfig = {
-      actionsConfig: {
-        primaryActions: [
-          { name: 'Add connection', actionFn: () => this.addConnection() }
-        ]
-      }
-    };
-
     listConfig = {
       selectionMatchProp: 'name',
       selectItems: false,
@@ -52,7 +44,7 @@ namespace JVM {
       }, 20000);
     }
 
-    private addConnection() {
+    addConnection() {
       const defaultOptions = this.connectService.getDefaultOptions();
       this.$uibModal.open({
         component: 'connectEditModal',
