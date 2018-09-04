@@ -26,8 +26,8 @@
     "@types/jquery" "~2.0.46"
 
 "@hawtio/core@^4.0.0":
-  version "4.0.11"
-  resolved "https://registry.yarnpkg.com/@hawtio/core/-/core-4.0.11.tgz#875eb1388c191ded3318c3439fdb6ee8131fa37b"
+  version "4.0.12"
+  resolved "https://registry.yarnpkg.com/@hawtio/core/-/core-4.0.12.tgz#ee7ddc3b07bb01de5c07fe88eb0034280e892471"
   dependencies:
     "@hawtio/core-dts" "3.0.18"
     "@types/angular" "*"

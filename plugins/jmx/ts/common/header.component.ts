@@ -16,10 +16,10 @@ namespace Jmx {
   export const headerComponent: angular.IComponentOptions = {
     template: `
       <div class="jmx-header">
-        <h1>
-          {{$ctrl.title}}
-          <small class="text-muted">{{$ctrl.objectName}}</small>
-        </h1>
+        <header>
+          <h1>{{$ctrl.title}}</h1>
+          <p class="text-muted">{{$ctrl.objectName}}</p>
+        </header>
       </div>
       `,
     controller: HeaderController
