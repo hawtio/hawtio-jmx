@@ -31,7 +31,6 @@ const config = {
   dts: 'hawtio-jmx.d.ts',
   css: 'hawtio-jmx.css',
   sourceMap: argv.sourcemap,
-  vendor: './vendor/',
 };
 
 const tsProject = typescript.createProject('tsconfig.json');
