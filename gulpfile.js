@@ -76,11 +76,7 @@ gulp.task('template', ['tsc'], function() {
 });
 
 gulp.task('concat', ['template'], function() {
-  return gulp.src([
-    config.vendor + 'dangle.js',
-    'compiled.js',
-    'templates.js'
-  ])
+  return gulp.src(['compiled.js', 'templates.js'])
   .pipe(concat(config.js))
   .pipe(gulp.dest(config.dist));
 });

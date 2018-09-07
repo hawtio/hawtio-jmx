@@ -27,7 +27,6 @@ namespace Jmx {
   .factory('jmxTreeLazyLoadRegistry', () => Core.lazyLoaders);
 
   hawtioPluginLoader.addModule(jmxModule.name);
-  hawtioPluginLoader.addModule('dangle');
 
-  export const log: Logging.Logger = Logger.get(jmxModule.name);  
+  export const log: Logging.Logger = Logger.get(jmxModule.name);
 }
