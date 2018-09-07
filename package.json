@@ -19,6 +19,7 @@
     "@hawtio/ui": "^4.0.0",
     "@types/angular-ui-bootstrap": "~0.13.46",
     "angular-resizable": "1.2.0",
+    "jolokia.js": "^1.6.0-1",
     "patternfly-bootstrap-treeview": "2.1.5"
   },
   "devDependencies": {

@@ -78,10 +78,7 @@ gulp.task('template', ['tsc'], function() {
 gulp.task('concat', ['template'], function() {
   return gulp.src([
     config.vendor + 'dangle.js',
-    config.vendor + 'jolokia.js',
-    config.vendor + 'jolokia-simple.js',
     config.vendor + 'cubism.v1.js',
-    config.vendor + 'jolokia-cubism.js',
     'compiled.js',
     'templates.js'
   ])
