@@ -1029,11 +1029,17 @@ css@2.X, css@^2.2.1:
     source-map-resolve "^0.5.1"
     urix "^0.1.0"
 
+cubism@^1.6.0:
+  version "1.6.0"
+  resolved "https://registry.yarnpkg.com/cubism/-/cubism-1.6.0.tgz#a566e10594ac59abfc73b829bdee32d91a2f0350"
+  dependencies:
+    d3 "3.x"
+
 custom-event@~1.0.0:
   version "1.0.1"
   resolved "https://registry.yarnpkg.com/custom-event/-/custom-event-1.0.1.tgz#5d02a46850adf1b4a317946a3928fccb5bfd0425"
 
-d3@~3.5.0, d3@~3.5.17:
+d3@3.x, d3@~3.5.0, d3@~3.5.17:
   version "3.5.17"
   resolved "https://registry.yarnpkg.com/d3/-/d3-3.5.17.tgz#bc46748004378b21a360c9fc7cf5231790762fb8"
 

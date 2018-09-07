@@ -78,7 +78,6 @@ gulp.task('template', ['tsc'], function() {
 gulp.task('concat', ['template'], function() {
   return gulp.src([
     config.vendor + 'dangle.js',
-    config.vendor + 'cubism.v1.js',
     'compiled.js',
     'templates.js'
   ])
