@@ -220,7 +220,6 @@
     "is-relative": "1.0.0",
     "is-unc-path": "1.0.0",
     "duplexify": "3.6.0",
-    "gulp-rename": "1.4.0",
-    "@hawtio/core-dts": "3.2.0"
+    "gulp-rename": "1.4.0"
   }
 }
