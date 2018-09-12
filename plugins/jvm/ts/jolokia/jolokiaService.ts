@@ -235,12 +235,19 @@ namespace JVM {
         let errorCount = 0;
         jolokiaParams.ajaxError = (xhr: JQueryXHR, textStatus: string, error: any) => {
           if (xhr.status === 403) {
-            jolokia.stop();
-            if (userDetails.loggedIn) {
-              userDetails.logout();
-            } else if ($location.path() !== '/jvm/connect-login') {
-              const redirectUrl = $location.absUrl();
-              $location.path('/jvm/connect-login').search('redirect', redirectUrl);
+            // If window was opened to connect to remote Jolokia endpoint
+            if (isRemoteConnection()) {
+              // ... and not showing the login modal
+              if ($location.path() !== '/jvm/connect-login') {
+                jolokia.stop();
+                const redirectUrl = $location.absUrl();
+                $location.path('/jvm/connect-login').search('redirect', redirectUrl);
+              }
+            } else {
+              // just logout
+              if (userDetails.loggedIn) {
+                userDetails.logout();
+              }
             }
           } else {
             errorCount++;
