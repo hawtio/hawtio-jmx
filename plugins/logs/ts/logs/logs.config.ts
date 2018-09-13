@@ -9,7 +9,7 @@ namespace Logs {
 
   export function configureLogsHelp(helpRegistry, logsService: LogsService) {
     'ngInject';
-    helpRegistry.addUserDoc('log', 'plugins/log-jmx/doc/help.md', () => {
+    helpRegistry.addUserDoc('log', 'plugins/logs/doc/help.md', () => {
       return logsService.hasLogQueryMBean();
     });
   }
