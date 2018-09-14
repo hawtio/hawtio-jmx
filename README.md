@@ -1,6 +1,6 @@
 # hawtio-jmx
 
-This plugin provides JMX for hawtio.
+This plugin provides JMX for Hawtio.
 
 ## Installation
 
