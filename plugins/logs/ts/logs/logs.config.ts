@@ -7,11 +7,9 @@ namespace Logs {
     $routeProvider.when('/logs', {template: '<logs></logs>'});
   }
 
-  export function configureLogsHelp(helpRegistry, logsService: LogsService) {
+  export function configureLogsHelp(helpRegistry: Help.HelpRegistry, logsService: LogsService) {
     'ngInject';
-    helpRegistry.addUserDoc('log', 'plugins/logs/doc/help.md', () => {
-      return logsService.hasLogQueryMBean();
-    });
+    helpRegistry.addUserDoc('log', 'plugins/logs/doc/help.md', () => logsService.isValid());
   }
 
   export function configureLogsMainNav(mainNavService: Nav.MainNavService, logsService: LogsService) {
@@ -19,7 +17,7 @@ namespace Logs {
     mainNavService.addItem({
       title: 'Logs',
       href: '/logs',
-      isValid: () => logsService.hasLogQueryMBean(),
+      isValid: () => logsService.isValid(),
       rank: -1
     });
   }

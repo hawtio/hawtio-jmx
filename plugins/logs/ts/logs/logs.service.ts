@@ -13,8 +13,9 @@ namespace Logs {
       return this.workspace.findMBeanWithProperties('hawtio', {type: 'LogQuery'});
     }
 
-    hasLogQueryMBean(): boolean {
-      return this.getLogQueryMBean() !== null;
+    isValid(): boolean {
+      const logQueryMBean = this.getLogQueryMBean();
+      return logQueryMBean && this.workspace.hasInvokeRightsForName(logQueryMBean.objectName, 'getLogResults(int)');
     }
 
     getInitialLogs(): ng.IPromise<any> {
@@ -47,7 +48,7 @@ namespace Logs {
 
     filterLogs(logs: LogEntry[], filterConfig): LogEntry[] {
       let filteredLogs = [...logs];
-      
+
       filterConfig.appliedFilters.forEach(filter => {
         switch (filter.id) {
           case 'level':
@@ -62,14 +63,14 @@ namespace Logs {
             break;
         }
       });
-      
+
       if (!this.isLogSortAsc()) {
         filteredLogs = filteredLogs.reverse();
       }
-      
+
       filterConfig.totalCount = logs.length;
       filterConfig.resultsCount = filteredLogs.length;
-      
+
       return filteredLogs;
     }
 
