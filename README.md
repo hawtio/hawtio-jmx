@@ -1,5 +1,7 @@
 # hawtio-jmx
 
+[![CircleCI](https://circleci.com/gh/hawtio/hawtio-jmx.svg?style=svg)](https://circleci.com/gh/hawtio/hawtio-jmx)
+
 This plugin provides JMX for Hawtio.
 
 ## Installation
