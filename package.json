@@ -21,7 +21,7 @@
     "angular-resizable": "1.2.0",
     "cubism": "^1.6.0",
     "jolokia.js": "^1.6.0-1",
-    "patternfly-bootstrap-treeview": "2.1.5"
+    "patternfly-bootstrap-treeview": "~2.1.0"
   },
   "devDependencies": {
     "@hawtio/node-backend": "~3.0.0",
