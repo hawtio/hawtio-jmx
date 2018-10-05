@@ -48,7 +48,10 @@ namespace JVM {
       const defaultOptions = this.connectService.getDefaultOptions();
       this.$uibModal.open({
         component: 'connectEditModal',
-        resolve: { connection: () => createConnectOptions(defaultOptions) }
+        resolve: {
+          connection: () => createConnectOptions(defaultOptions),
+          connectionNames: () => this.connections.map(conn => conn.name)
+        },
       })
       .result.then(connection => {
         this.connections.unshift(connection);
@@ -61,7 +64,12 @@ namespace JVM {
       const clone = angular.extend({}, connection);
       this.$uibModal.open({
         component: 'connectEditModal',
-        resolve: { connection: () => clone }
+        resolve: {
+          connection: () => clone,
+          connectionNames: () => this.connections
+            .filter(conn => conn.name !== clone.name)
+            .map(conn => conn.name)
+        },
       })
       .result.then(clone => {
         angular.extend(connection, clone);

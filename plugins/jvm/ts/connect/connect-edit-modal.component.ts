@@ -4,10 +4,11 @@ namespace JVM {
 
     modalInstance: any;
     operation: 'add' | 'edit';
-    resolve: { connection:ConnectOptions };
+    resolve: { connection:ConnectOptions, connectionNames: string[] };
     connection: ConnectOptions;
     errors = {};
     test = {ok: false, message: null};
+    connectionNames: string[];
 
     constructor(private connectService: ConnectService) {
       'ngInject';
@@ -15,6 +16,7 @@ namespace JVM {
 
     $onInit() {
       this.connection = this.resolve.connection;
+      this.connectionNames = this.resolve.connectionNames;
       this.operation = this.connection.name ? 'edit' : 'add';
     }
 
@@ -25,14 +27,14 @@ namespace JVM {
           this.test.message = ok ? 'Connected successfully' : 'Connection failed';
         });
     };
-    
+
     cancel() {
       this.modalInstance.dismiss();
     }
 
     saveConnection(connection) {
       this.errors = this.validateConnection(connection);
-      
+
       if (Object.keys(this.errors).length === 0) {
         this.modalInstance.close(this.connection);
       }
@@ -42,6 +44,9 @@ namespace JVM {
       let errors = {};
       if (connection.name === null || connection.name.trim().length === 0) {
         errors['name'] = 'Please fill out this field';
+      }
+      if(this.connectionNames.indexOf(connection.name.trim()) >= 0) {
+        errors['name'] = `Connection name '${connection.name.trim()}' is already in use`;
       }
       if (connection.host === null || connection.host.trim().length === 0) {
         errors['host'] = 'Please fill out this field';
