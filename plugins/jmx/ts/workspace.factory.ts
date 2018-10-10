@@ -8,8 +8,6 @@ namespace Jmx {
     'ngInject';
     let workspace = new Workspace(jolokia, jolokiaStatus, jmxTreeLazyLoadRegistry, $location, $compile,
       $templateCache, localStorage, $rootScope);
-    workspace.loadTree();
     return workspace;
   }
-
 }
