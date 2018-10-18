@@ -45,6 +45,15 @@ namespace Jmx {
       return $scope.canViewChart() && $scope.size($scope.mbeans) > 1;
     };
 
+    $scope.onSelectedAttributesChange = () => {
+      // hack to avoid having an empty array of attributes
+      if ($scope.selectedAttributes.length == 0 && $scope.selectedAttributesBackup) {
+        $scope.selectedAttributes = $scope.selectedAttributesBackup;
+      } else {
+        $scope.selectedAttributesBackup = $scope.selectedAttributes;
+      }
+    }
+
     $scope.viewChart = () => {
       // lets add the attributes and mbeans into the URL so we can navigate back to the charts view
       var search = $location.search();
