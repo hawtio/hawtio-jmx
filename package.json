@@ -1,6 +1,6 @@
 {
   "name": "@hawtio/jmx",
-  "version": "4.1.0",
+  "version": "4.1.1",
   "main": "dist/hawtio-jmx.js",
   "types": "dist/hawtio-jmx.d.ts",
   "files": [
@@ -64,7 +64,6 @@
     "jquery": "2.2.4",
     "moment": "2.18.1",
     "gulp-concat": "2.6.1",
-    "underscore.string": "3.3.4",
     "yargs": "8.0.2",
     "nopt": "3.0.6",
     "lru-cache": "3.2.0",
@@ -148,10 +147,8 @@
     "cliui": "3.2.0",
     "wordwrap": "0.0.3",
     "acorn": "4.0.13",
-    "sprintf-js": "1.1.1",
     "string-width": "2.1.1",
     "is-fullwidth-code-point": "2.0.0",
-    "js-logger": "1.4.1",
     "parseurl": "1.3.2",
     "urijs": "1.19.0",
     "content-type": "1.0.4",
@@ -214,7 +211,6 @@
     "is-unc-path": "1.0.0",
     "duplexify": "3.6.0",
     "gulp-rename": "1.4.0",
-    "typescript": "3.0.3",
     "lodash": "4.17.11",
     "angular": "1.7.4",
     "angular-animate": "1.7.4",
@@ -223,6 +219,10 @@
     "map-stream": "0.1.0",
     "split": "1.0.1",
     "stream-combiner": "0.2.2",
-    "@types/jasmine": "2.8.8"
+    "js-logger": "1.5.0",
+    "typescript": "3.1.3",
+    "underscore.string": "3.3.5",
+    "sprintf-js": "1.1.1",
+    "@types/jasmine": "2.8.9"
   }
 }
