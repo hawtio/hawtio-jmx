@@ -29,9 +29,9 @@
     "@types/jquery" "~2.0.46"
 
 "@hawtio/core@~4.1.0":
-  version "4.1.1"
-  resolved "https://registry.yarnpkg.com/@hawtio/core/-/core-4.1.1.tgz#730ecb97a7007d71db4e325d013039d33f925442"
-  integrity sha512-bq28sfe7zLsprl35/FZczMZs7EcDcUXjjYFXB0cHE+rR2hoSrbxvuibBR1Pdze5qF6GoI00j02fFU6tw8AgHOw==
+  version "4.1.2"
+  resolved "https://registry.yarnpkg.com/@hawtio/core/-/core-4.1.2.tgz#9551fdfc46f99cc58f8331bd645a2f9b5d4eb28d"
+  integrity sha512-U6gZyULJbEwtQvdHHKLdYOGaiSkskDs3/kizP8juEqIk1Wwks22Djdem9tim2icu3/JT7g/QKALmZmmmFIFsGw==
   dependencies:
     "@hawtio/core-dts" "3.2.0"
     "@types/angular" "*"
@@ -386,6 +386,11 @@
   version "7.0.55"
   resolved "https://registry.yarnpkg.com/@types/node/-/node-7.0.55.tgz#7bb6215ff9425a1d714106be9f0d3e0e28829288"
   integrity sha512-diCxfWNT4g2UM9Y+BPgy4s3egcZ2qOXc0mXLauvbsBUq9SBKQfh0SmuEUEhJVFZt/p6UDsjg1s2EgfM6OSlp4g==
+
+"@types/sizzle@*":
+  version "2.3.2"
+  resolved "https://registry.yarnpkg.com/@types/sizzle/-/sizzle-2.3.2.tgz#a811b8c18e2babab7d542b3365887ae2e4d9de47"
+  integrity sha512-7EJYyKTL7tFR8+gDbB6Wwz/arpGa0Mywk1TJbNzKzHtzbwVmY4HR9WqS5VV7dsBUKQmPNr192jHr/VpBluj/hg==
 
 "@types/urijs@1.15.34":
   version "1.15.34"
