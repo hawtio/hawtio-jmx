@@ -29,9 +29,9 @@
     "@types/jquery" "~2.0.46"
 
 "@hawtio/core@~4.1.0":
-  version "4.1.2"
-  resolved "https://registry.yarnpkg.com/@hawtio/core/-/core-4.1.2.tgz#9551fdfc46f99cc58f8331bd645a2f9b5d4eb28d"
-  integrity sha512-U6gZyULJbEwtQvdHHKLdYOGaiSkskDs3/kizP8juEqIk1Wwks22Djdem9tim2icu3/JT7g/QKALmZmmmFIFsGw==
+  version "4.1.3"
+  resolved "https://registry.yarnpkg.com/@hawtio/core/-/core-4.1.3.tgz#7afb1bb43bc944579ccbef76b517f40a94e9752b"
+  integrity sha512-T9FgMwt2LKDZzj6bR6cZZaQQ9jxLZFQOzHof1UdNwZ8uMBEMLAYDeCNn7Iq7XUP1bICjBMCn3SKxtPzd2rTa/A==
   dependencies:
     "@hawtio/core-dts" "3.2.0"
     "@types/angular" "*"
@@ -3210,7 +3210,7 @@ micromatch@^2.1.5, micromatch@^2.3.7:
     parse-glob "^3.0.4"
     regex-cache "^0.4.2"
 
-mime-db@1.30.0, mime-db@~1.30.0, mime-db@~1.36.0:
+mime-db@1.30.0, mime-db@~1.30.0, mime-db@~1.37.0:
   version "1.30.0"
   resolved "https://registry.yarnpkg.com/mime-db/-/mime-db-1.30.0.tgz#74c643da2dd9d6a45399963465b26d5ca7d71f01"
   integrity sha1-dMZD2i3Z1qRTmZY0ZbJtXKfXHwE=
