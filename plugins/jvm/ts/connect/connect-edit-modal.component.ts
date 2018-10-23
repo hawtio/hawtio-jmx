@@ -7,7 +7,7 @@ namespace JVM {
     resolve: { connection:ConnectOptions, connectionNames: string[] };
     connection: ConnectOptions;
     errors = {};
-    test = {ok: false, message: null};
+    connectionTestResult: ConnectionTestResult;
     connectionNames: string[];
 
     constructor(private connectService: ConnectService) {
@@ -21,11 +21,12 @@ namespace JVM {
     }
 
     testConnection(connection: ConnectOptions) {
-      this.connectService.testConnection(connection)
-        .then(ok => {
-          this.test.ok = ok;
-          this.test.message = ok ? 'Connected successfully' : 'Connection failed';
-        });
+      this.errors = this.validateConnection(connection);
+
+      if (Object.keys(this.errors).length === 0) {
+        this.connectService.testConnection(connection)
+          .then(connectionTestResult => this.connectionTestResult = connectionTestResult);
+      }
     };
 
     cancel() {

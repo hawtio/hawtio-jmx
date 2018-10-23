@@ -16,9 +16,9 @@ namespace JVM {
     updateReachableFlags(connections: ConnectOptions[]): ng.IPromise<ConnectOptions[]> {
       const promises = connections.map(connection => this.testConnection(connection));
       return this.$q.all(promises)
-        .then(reachableFlags => {
+        .then(results => {
           for (let i = 0; i < connections.length; i++) {
-            connections[i].reachable = reachableFlags[i];
+            connections[i].reachable = results[i].ok;
           }
           return connections;
         });
@@ -26,8 +26,8 @@ namespace JVM {
 
     updateReachableFlag(connection: ConnectOptions): ng.IPromise<ConnectOptions> {
       return this.testConnection(connection)
-        .then(reachable => {
-          connection.reachable = reachable;
+        .then(result => {
+          connection.reachable = result.ok;
           return connection;
         });
     }
@@ -36,7 +36,7 @@ namespace JVM {
       this.$window.localStorage.setItem(connectionSettingsKey, JSON.stringify(connections));
     }
 
-    testConnection(connection: ConnectOptions): ng.IPromise<boolean> {
+    testConnection(connection: ConnectOptions): ng.IPromise<ConnectionTestResult> {
       return this.$q((resolve, reject) => {
         try {
           new Jolokia({
@@ -46,18 +46,26 @@ namespace JVM {
           }).request({
             type: 'version'
           }, {
-            success: response => {
-              resolve(true);
-            },
-            error: response => {
-              resolve(false);
-            },
-            ajaxError: response => {
-              resolve(response.status === 403 ? true : false);
-            }
-          });
+              success: () => {
+                resolve({ ok: true, message: 'Connection successful' });
+              },
+              ajaxError: (response: JQueryXHR) => {
+                let result: ConnectionTestResult;
+                if (response.status === 403) {
+                  const forbiddenReason = response.responseJSON && response.responseJSON['reason'];
+                  if (forbiddenReason === 'HOST_NOT_ALLOWED') {
+                    result = { ok: false, message: 'Host not whitelisted' }
+                  } else {
+                    result = { ok: true, message: 'Connection successful' }
+                  }
+                } else {
+                  result = { ok: false, message: 'Connection failed' }
+                }
+                resolve(result);
+              }
+            });
         } catch (error) {
-          resolve(false);
+          log.error(error);
         }
       });
     };
@@ -73,16 +81,13 @@ namespace JVM {
         }).request({
           type: 'version'
         }, {
-          success: response => {
-            resolve(true);
-          },
-          error: response => {
-            resolve(false);
-          },
-          ajaxError: response => {
-            resolve(false);
-          }
-        });
+            success: () => {
+              resolve(true);
+            },
+            ajaxError: () => {
+              resolve(false);
+            }
+          });
       });
     };
 

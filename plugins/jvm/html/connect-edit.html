@@ -48,9 +48,9 @@
         <button type="button" class="btn btn-default" ng-click="$ctrl.testConnection($ctrl.connection)">
           Test Connection
         </button>
-        <span class="jvm-connection-test-msg" ng-show="$ctrl.test.message">
-          <span class="pficon" ng-class="{'pficon-ok': $ctrl.test.ok, 'pficon-warning-triangle-o': !$ctrl.test.ok}"></span>
-          {{$ctrl.test.message}}
+        <span class="jvm-connection-test-msg" ng-show="$ctrl.connectionTestResult.message">
+          <span class="pficon" ng-class="{'pficon-ok': $ctrl.connectionTestResult.ok, 'pficon-warning-triangle-o': !$ctrl.connectionTestResult.ok}"></span>
+          {{$ctrl.connectionTestResult.message}}
         </span>
       </div>
     </div>
