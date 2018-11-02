@@ -35,7 +35,7 @@ namespace Logs {
         totalCount: this.logs.length,
         resultsCount: this.filteredLogs.length,
         appliedFilters: [],
-        onFilterChange: this.onFilterChange
+        onFilterChange: filters => this.applyFilters(filters)
       },
       isTableView: true
     }
@@ -43,7 +43,7 @@ namespace Logs {
 
     constructor(private $timeout, private $uibModal, private logsService: LogsService) {
       'ngInject';
-    }  
+    }
 
     $onInit() {
       this.scrollableTable = document.querySelector('.log-jmx-scrollable-table');
@@ -51,13 +51,13 @@ namespace Logs {
         .then(response => this.processLogEntries(response));
     }
 
-    onFilterChange(filters) {
+    applyFilters(filters) {
       let tableScrolled = this.isTableScrolled();
-      
+
       this.removePreviousLevelFilter(filters);
       this.messageSearchText = this.getMessageFilterValues(filters);
-      this.filteredLogs = this.logsService.filterLogs(this.logs, this);
-      
+      this.filteredLogs = this.logsService.filterLogs(this.logs, this.toolbarConfig.filterConfig);
+
       if (tableScrolled) {
         this.scrollTable();
       }
@@ -83,10 +83,10 @@ namespace Logs {
     processLogEntries(response) {
       if (response.logEntries.length > 0) {
         let tableScrolled = this.isTableScrolled();
-        
+
         this.logsService.appendLogs(this.logs, response.logEntries);
         this.filteredLogs = this.logsService.filterLogs(this.logs, this.toolbarConfig.filterConfig);
-        
+
         if (tableScrolled) {
           this.scrollTable();
         }

@@ -55,7 +55,8 @@ namespace Logs {
             filteredLogs = filteredLogs.filter(log => log.level === filter.value)
             break;
           case 'logger':
-            filteredLogs = filteredLogs.filter(log => log.logger.indexOf(filter.value) !== -1)
+            const regExp = new RegExp(filter.value, 'i');
+            filteredLogs = filteredLogs.filter(log => regExp.test(log.logger));
             break;
           case 'message':
             filteredLogs = filteredLogs.filter(log =>
