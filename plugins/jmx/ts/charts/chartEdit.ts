@@ -4,7 +4,9 @@ namespace Jmx {
 
   jmxModule.controller("Jmx.ChartEditController", ["$scope", "$location", "workspace", "jolokia", ($scope, $location, workspace:Workspace, jolokia) => {
     $scope.selectedAttributes = [];
+    $scope.selectedAttributesBackup = [];
     $scope.selectedMBeans = [];
+    $scope.selectedMBeansBackup = [];
     $scope.metrics = {};
     $scope.mbeans = {};
 
@@ -45,9 +47,18 @@ namespace Jmx {
       return $scope.canViewChart() && $scope.size($scope.mbeans) > 1;
     };
 
+    $scope.onSelectedMBeansChange = () => {
+      // hack to avoid having an empty array of mbeans
+      if ($scope.selectedMBeans.length === 0) {
+        $scope.selectedMBeans = $scope.selectedMBeansBackup;
+      } else {
+        $scope.selectedMBeansBackup = $scope.selectedMBeans;
+      }
+    }
+
     $scope.onSelectedAttributesChange = () => {
       // hack to avoid having an empty array of attributes
-      if ($scope.selectedAttributes.length == 0 && $scope.selectedAttributesBackup) {
+      if ($scope.selectedAttributes.length === 0) {
         $scope.selectedAttributes = $scope.selectedAttributesBackup;
       } else {
         $scope.selectedAttributesBackup = $scope.selectedAttributes;
@@ -154,6 +165,7 @@ namespace Jmx {
                   if ($scope.selectedMBeans.length < 1) {
                     $scope.selectedMBeans = _.keys($scope.mbeans);
                   }
+
                   if ($scope.selectedAttributes.length < 1) {
                     var attrKeys = _.keys($scope.metrics).sort();
                     if ($scope.selectedMBeans.length > 1) {
@@ -167,6 +179,9 @@ namespace Jmx {
                   $("#attributes").attr("size", _.keys($scope.metrics).length);
                   $("#mbeans").attr("size", _.keys($scope.mbeans).length);
                   Core.$apply($scope);
+
+                  $scope.selectedMBeansBackup = $scope.selectedMBeans;
+                  $scope.selectedAttributesBackup = $scope.selectedAttributes;
                 }
               }
 
