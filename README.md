@@ -37,14 +37,6 @@ yarn install
 yarn start
 ```
 
-### Change the default proxy port
-
-To proxy to a local JVM running on a different port than `8282` specify the `--port` CLI argument.
-
-```
-yarn start --port=8181
-```
-
 ### Turn on source maps generation for debugging TypeScript
 
 If you want to debug `.ts` using a browser developer tool such as Chrome DevTools, pass the `--sourcemap` flag:
