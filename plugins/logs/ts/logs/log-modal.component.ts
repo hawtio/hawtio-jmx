@@ -42,7 +42,20 @@ namespace Logs {
           </div>
           <dt>Thread</dt>
           <dd>{{$ctrl.logEntry.thread}}</dd>
-          <div ng-show="$ctrl.logEntry.hasOSGiProps">
+          <dt>Message</dt>
+          <dd ng-bind-html="$ctrl.logEntry.sanitizedMessage"></dd>
+        </dl>
+        <dl ng-if="$ctrl.logEntry.exception">
+          <dt>Stack Trace</dt>
+          <dd>
+            <ul class="list-unstyled">
+              <li ng-repeat="frame in $ctrl.logEntry.exception" class="log-jmx-stacktrace-list-item">{{frame}}</li>
+            </ul>
+          </dd>
+        </dl>
+        <div ng-show="$ctrl.logEntry.hasOSGiProps">
+          <h4>OSGi Properties</h4>
+          <dl class="dl-horizontal">
             <div ng-show="$ctrl.logEntry.properties['bundle.name']">
               <dt>Bundle Name</dt>
               <dd>{{$ctrl.logEntry.properties['bundle.name']}}</dd>
@@ -55,18 +68,15 @@ namespace Logs {
               <dt>Bundle Version</dt>
               <dd>{{$ctrl.logEntry.properties['bundle.version']}}</dd>
             </div>
-          </div>
-          <dt>Message</dt>
-          <dd ng-bind-html="$ctrl.logEntry.sanitizedMessage"></dd>
-        </dl>
-        <dl ng-if="$ctrl.logEntry.exception">
-          <dt>Stack Trace</dt>
-          <dd>
-            <ul class="list-unstyled">
-              <li ng-repeat="frame in $ctrl.logEntry.exception" class="log-jmx-stacktrace-list-item">{{frame}}</li>
-            </ul>
-          </dd>
-        </dl>
+          </dl>
+        </div>
+        <div ng-show="$ctrl.logEntry.hasMDCProps">
+          <h4>MDC Properties</h4>
+          <dl class="dl-horizontal">
+            <dt ng-repeat-start="(key, value) in $ctrl.logEntry.mdcProperties">{{key}}</dt>
+            <dd ng-repeat-end>{{value}}</dt>
+          </dl>
+        </div>
       </div>
     `,
     controller: LogModalController

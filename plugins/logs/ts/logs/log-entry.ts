@@ -7,6 +7,7 @@ namespace Logs {
     exception: string;
     fileName: string;
     hasOSGiProps: boolean;
+    hasMDCProps: boolean;
     hasLogSourceHref: boolean;
     hasLogSourceLineHref: boolean;
     host: string;
@@ -17,6 +18,7 @@ namespace Logs {
     logSourceUrl: string;
     methodName: string;
     properties: {};
+    mdcProperties: {};
     sanitizedMessage: string;
     seq: string;
     thread: string;
@@ -38,6 +40,8 @@ namespace Logs {
       this.logSourceUrl = LogEntry.getLogSourceUrl(event);
       this.methodName = event.methodName;
       this.properties = event.properties;
+      this.mdcProperties = LogEntry.mdcProperties(event.properties);
+      this.hasMDCProps = Object.keys(this.mdcProperties).length !== 0;
       this.sanitizedMessage = Core.escapeHtml(event.message);
       this.seq = event.seq;
       this.thread = event.thread;
@@ -55,7 +59,7 @@ namespace Logs {
 
     private static hasOSGiProps(properties: {}): boolean {
       return properties && Object.keys(properties).some(key => key.indexOf('bundle') === 0);
-    };
+    }
 
     private static hasLogSourceHref(properties: {}): boolean {
       return properties && properties['maven.coordinates'] && properties['maven.coordinates'] !== '';
@@ -87,6 +91,18 @@ namespace Logs {
 
     private static removeQuestion(text: string): string {
       return (!text || text === "?") ? null : text;
+    }
+
+    static mdcProperties(properties: {}): {} {
+      if (!properties) {
+        return properties;
+      }
+      return Object.keys(properties)
+        .filter(key => !_.startsWith(key, 'bundle.') && key !== 'maven.coordinates')
+        .reduce((custom, key) => {
+          custom[key] = properties[key];
+          return custom;
+        }, {});
     }
 
   }

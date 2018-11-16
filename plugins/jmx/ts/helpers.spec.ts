@@ -8,7 +8,7 @@ describe("coreHelpers", () => {
     let escaped = ['aaa!/bbb!/ccc', 'aaa!!bbb!!ccc', 'aaa!%22bbb!%22ccc', 'a!/b!!c!%22d'];
     // when
     let results = mbeans.map(mbean => Core.escapeMBean(mbean));
-    // when
+    // then
     _.zip(results, escaped).forEach(
       ([result, expected]) => expect(result).toBe(expected));
   });
@@ -19,7 +19,7 @@ describe("coreHelpers", () => {
     let escaped = ['java.lang/type=Memory'];
     // when
     let results = mbeans.map(mbean => Core.escapeMBeanPath(mbean));
-    // when
+    // then
     _.zip(results, escaped).forEach(
       ([result, expected]) => expect(result).toBe(expected));
   });
