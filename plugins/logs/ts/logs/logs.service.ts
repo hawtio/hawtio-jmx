@@ -10,7 +10,7 @@ namespace Logs {
     }
 
     getLogQueryMBean(): Jmx.Folder {
-      return this.workspace.findMBeanWithProperties('hawtio', {type: 'LogQuery'});
+      return this.workspace.findMBeanWithProperties('hawtio', { type: 'LogQuery' });
     }
 
     isValid(): boolean {
@@ -23,7 +23,7 @@ namespace Logs {
     }
 
     getMoreLogs(fromTimestamp: number): ng.IPromise<LogEntry[]> {
-      return this.getLogs('jsonQueryLogResults', {afterTimestamp: fromTimestamp, count: this.getLogBatchSize()});
+      return this.getLogs('jsonQueryLogResults', { afterTimestamp: fromTimestamp, count: this.getLogBatchSize() });
     }
 
     private getLogs(operation: string, arg1: any): ng.IPromise<LogEntry[]> {
@@ -59,8 +59,10 @@ namespace Logs {
             filteredLogs = filteredLogs.filter(log => regExp.test(log.logger));
             break;
           case 'message':
-            filteredLogs = filteredLogs.filter(log =>
-              log.sanitizedMessage.toLowerCase().indexOf(filter.value.toLowerCase()) !== -1)
+            filteredLogs = filteredLogs.filter(log => log.matchMessage(filter.value))
+            break;
+          case 'properties':
+            filteredLogs = filteredLogs.filter(log => log.matchProperties(filter.value))
             break;
         }
       });

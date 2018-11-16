@@ -30,6 +30,12 @@ namespace Logs {
             title:  'Message',
             placeholder: 'Filter by message...',
             filterType: 'text'
+          },
+          {
+            id: 'properties',
+            title:  'Properties',
+            placeholder: 'Filter by properties...',
+            filterType: 'text'
           }
         ],
         totalCount: this.logs.length,

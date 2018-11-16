@@ -35,4 +35,25 @@ describe("LogEntry", () => {
     });
   });
 
+  it("should match message with keyword", () => {
+    let log = new Logs.LogEntry({ message: 'abcde' });
+    expect(log.matchMessage('abc')).toBe(true);
+    expect(log.matchMessage('ABC')).toBe(true);
+    expect(log.matchMessage('xyz')).toBe(false);
+  });
+
+  it("should match property values with keyword", () => {
+    let log = new Logs.LogEntry({
+      properties: {
+        'key1': 'ABC',
+        'key2': 'xyz',
+        'key3': '123'
+      }
+    });
+    expect(log.matchProperties('abc')).toBe(true);
+    expect(log.matchProperties('XYZ')).toBe(true);
+    expect(log.matchProperties('123')).toBe(true);
+    expect(log.matchProperties('key')).toBe(false);
+  });
+
 });

@@ -70,16 +70,16 @@ namespace Logs {
     }
 
     private static getLogSourceUrl(event): string {
-      var fileName = LogEntry.removeQuestion(event.fileName);
-      var className = LogEntry.removeQuestion(event.className);
-      var properties = event.properties;
-      var mavenCoords = "";
+      let fileName = LogEntry.removeQuestion(event.fileName);
+      let className = LogEntry.removeQuestion(event.className);
+      let properties = event.properties;
+      let mavenCoords = "";
       if (properties) {
         mavenCoords = properties["maven.coordinates"];
       }
       if (mavenCoords && fileName) {
-        var link = "#/source/view/" + mavenCoords + "/class/" + className + "/" + fileName;
-        var line = event.lineNumber;
+        let link = "#/source/view/" + mavenCoords + "/class/" + className + "/" + fileName;
+        let line = event.lineNumber;
         if (line) {
           link += "?line=" + line;
         }
@@ -95,7 +95,7 @@ namespace Logs {
 
     static mdcProperties(properties: {}): {} {
       if (!properties) {
-        return properties;
+        return {};
       }
       return Object.keys(properties)
         .filter(key => !_.startsWith(key, 'bundle.') && key !== 'maven.coordinates')
@@ -103,6 +103,16 @@ namespace Logs {
           custom[key] = properties[key];
           return custom;
         }, {});
+    }
+
+    matchMessage(keyword: string): boolean {
+      return _.includes(this.sanitizedMessage.toLowerCase(), keyword.toLowerCase());
+    }
+
+    matchProperties(keyword: string): boolean {
+      let keywordToMatch = keyword.toLowerCase();
+      return Object.keys(this.properties)
+        .some(key => _.includes(this.properties[key].toLowerCase(), keywordToMatch));
     }
 
   }
