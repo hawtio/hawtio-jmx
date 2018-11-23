@@ -46,7 +46,7 @@ namespace Diagnostics {
     };
 
     $scope.tableDtOptions = {
-      order: [[1, "desc"]]
+      order: [[2, "desc"]]
     };
 
     $scope.pageConfig = {
