@@ -14,9 +14,7 @@
     "prepack": "gulp version"
   },
   "dependencies": {
-    "@hawtio/core": "~4.3.0",
-    "@hawtio/forms": "~4.3.0",
-    "@hawtio/ui": "~4.3.0",
+    "@hawtio/ui": "~4.4.0",
     "@types/angular-ui-bootstrap": "~0.13.46",
     "@types/jquery": "2.0.53",
     "angular-resizable": "1.2.0",

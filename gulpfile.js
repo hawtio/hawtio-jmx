@@ -80,6 +80,15 @@ gulp.task('concat', ['template'], function() {
   .pipe(gulp.dest(config.dist));
 });
 
+gulp.task('del-images', function () {
+  return del('img');
+});
+
+gulp.task('copy-images', ['del-images'], function () {
+  return gulp.src('node_modules/@hawtio/core/dist/img/*')
+    .pipe(gulp.dest('img'));
+});
+
 gulp.task('clean-temp-files', ['concat'], function() {
   return del(['templates.js', 'compiled.js']);
 });
@@ -147,6 +156,6 @@ gulp.task('version', function() {
     .pipe(gulp.dest(config.dist));
 });
 
-gulp.task('build', ['clean-temp-files', 'less']);
+gulp.task('build', ['clean-temp-files', 'less', 'copy-images']);
 
 gulp.task('default', ['connect', 'watch']);
