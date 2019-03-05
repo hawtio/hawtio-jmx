@@ -123,9 +123,8 @@ namespace Runtime {
         <div class="cards-pf" ng-if="$ctrl.metricGroups.length > 0">
           <div class="container-fluid container-cards-pf">
             <div class="row row-cards-pf">
-              <div class="col-xs-12 col-sm-6 col-md-4 col-lg-3" ng-repeat="group in $ctrl.metricGroups | orderBy: 'type'">
+              <div ng-if="group.metrics.length > 0" class="col-xs-12 col-sm-6 col-md-4 col-lg-3" ng-repeat="group in $ctrl.metricGroups | orderBy: 'type'">
                 <pf-card
-                  ng-if="group.metrics.length > 0"
                   head-title="{{group.type}}"
                   spinner-text="Loading">
                   <div class="card-pf-info-item" ng-repeat="metric in group.metrics | orderBy: 'name'">
