@@ -51,7 +51,7 @@ namespace Jmx {
     $scope.nid = 'empty';
     $scope.selectedItems = [];
     $scope.lastKey = null;
-    $scope.attributesInfoCache = {};
+    $scope.attributesInfoCache = null;
     $scope.entity = {};
     $scope.attributeSchema = {};
     $scope.gridData = [];
@@ -263,11 +263,20 @@ namespace Jmx {
       }
     }
 
-    function operationComplete(): void {
-      updateTableContents();
+    function updateTableContents(): void {
+      let mbean = workspace.getSelectedMBeanName();
+      if (mbean && $scope.attributesInfoCache === null) {
+        attributesService.listMBean(mbean, Core.onSuccess((response) => {
+          $scope.attributesInfoCache = response.value;
+          log.debug("Updated attributes info cache for mbean", mbean, $scope.attributesInfoCache);
+          updateScope();
+        }));
+      } else {
+        updateScope();
+      }
     }
 
-    function updateTableContents(): void {
+    function updateScope(): void {
       // lets clear any previous queries just in case!
       attributesService.unregisterJolokia($scope);
 
@@ -275,27 +284,6 @@ namespace Jmx {
       $scope.mbeanIndex = null;
       let mbean = workspace.getSelectedMBeanName();
       let node = workspace.selection;
-      if (_.isNil(node) || node.key !== $scope.lastKey) {
-        // cache attributes info, so we know if the attribute is read-only or read-write, and also the attribute description
-        $scope.attributesInfoCache = null;
-
-        if (mbean == null) {
-          // in case of refresh
-          let _key = $location.search()['nid'];
-          let _node = workspace.keyToNodeMap[_key];
-          if (_node) {
-            mbean = _node.objectName;
-          }
-        }
-
-        if (mbean) {
-          attributesService.listMBean(mbean, Core.onSuccess((response) => {
-            $scope.attributesInfoCache = response.value;
-            log.debug("Updated attributes info cache for mbean", mbean, $scope.attributesInfoCache);
-          }));
-        }
-      }
-
       let request = null;
       if (mbean) {
         request = { type: 'read', mbean: mbean };
