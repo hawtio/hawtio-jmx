@@ -68,7 +68,7 @@ module Jmx {
   });
 
   export var DEFAULT_MAX_DEPTH = 7;
-  export var DEFAULT_MAX_COLLECTION_SIZE = 500;
+  export var DEFAULT_MAX_COLLECTION_SIZE = 5000;
 
   _module.factory('jolokiaParams', ["jolokiaUrl", "localStorage", (jolokiaUrl, localStorage) => {
     var answer = {
@@ -94,7 +94,7 @@ module Jmx {
   _module.controller('Jmx.EditChartNav', ['$scope', '$location', ($scope, $location) => {
     $scope.valid = () => {
       return _.startsWith($location.path(), '/jmx/chart');
-    } 
+    }
   }]);
 
   _module.run(["HawtioNav", "$location", "workspace", "viewRegistry", "layoutTree", "jolokia", "helpRegistry", "pageTitle", "$templateCache", (nav:HawtioMainNav.Registry, $location: ng.ILocationService, workspace:Core.Workspace, viewRegistry, layoutTree, jolokia, helpRegistry, pageTitle, $templateCache) => {
