@@ -1,3 +1,7 @@
+# DEPRECATED
+
+**This project is not being actively developed or maintained. The code has been moved to hawtio-integration.**
+
 # hawtio-jmx
 
 [![CircleCI](https://circleci.com/gh/hawtio/hawtio-jmx.svg?style=svg)](https://circleci.com/gh/hawtio/hawtio-jmx)
